@@ -41,7 +41,7 @@ class Produk extends Model
     public static function generateSku(): string
     {
         $lastNumber = self::where('sku', 'like', 'MD%')
-            ->selectRaw('MAX(CAST(SUBSTRING(sku, 3) AS UNSIGNED)) as max_num')
+            ->selectRaw('MAX(CAST(SUBSTRING(sku, 4) AS UNSIGNED)) as max_num')
             ->value('max_num') ?? 0;
 
         return 'MDP' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);

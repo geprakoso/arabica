@@ -80,13 +80,9 @@ class BrandResource extends Resource
                     ->sortable(),
                 TextColumn::make('is_active')
                     ->label('Aktif')
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('diubah_oleh.name')
-                    ->label('Diubah Oleh')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
+                    ->color(fn (bool $state) => $state ? 'success' : 'danger')
                     ->sortable(),
             ])
             ->filters([

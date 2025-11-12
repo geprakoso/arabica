@@ -8,6 +8,8 @@ use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Form;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Get;
+use Filament\Resources\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -16,7 +18,6 @@ use Laravel\Pail\File;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str; // Import Str
 use Closure; // Import Closure for callable type hint
-use Filament\Forms\Components\Get;
 
 
 class ProdukResource extends Resource
@@ -44,28 +45,30 @@ class ProdukResource extends Resource
                         Forms\Components\Select::make('kategori_id')
                             ->label('Kategori')
                             ->relationship('kategori', 'nama_kategori')
-                            ->required(),
+                            ->required()
+                            ->native(false),
                         Forms\Components\Select::make('brand_id')
                             ->label('Brand')
                             ->relationship('brand', 'nama_brand')
-                            ->required(),
+                            ->required()
+                            ->native(false),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU')
                             ->default(fn () => Produk::generateSku())
                             ->disabled()
                             ->dehydrated()
                             ->required()
-                            ->unique(),
+                            ->unique(ignoreRecord: true),
                         FileUpload::make('image_url')
                             ->label('Gambar Produk')
                             ->image()
                             ->disk('public')
                             ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
-                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Closure $set, Closure $get) {
+                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
                                 $datePrefix = now()->format('ymd');
                                 $slug = Str::slug($get('nama_produk') ?? 'produk');
                                 $extension = $file->getClientOriginalExtension();
-                                return "{$datePrefix}-{$slug}." . $extension;
+                                return "{$datePrefix}-{$slug}.{$extension}";
                             })
                             ->preserveFilenames()
                             ->required(),
@@ -103,7 +106,7 @@ class ProdukResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([ 
+            ->columns([
                 //
                 TextColumn::make('nama_produk')
                     ->label('Nama Produk')

@@ -5,11 +5,13 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\JasaResource\Pages;
 use App\Filament\Resources\JasaResource\RelationManagers;
 use App\Models\Jasa;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\TimePicker;
@@ -42,23 +44,26 @@ class JasaResource extends Resource
                         Forms\Components\TextInput::make('nama_jasa')
                             ->label('Nama Jasa')
                             ->required(),
-                        Forms\Components\TextInput::make('kode_jasa')
-                            ->label('Kode Jasa')
+                        Forms\Components\TextInput::make('sku')
+                            ->label('SKU Jasa')
+                            ->default(fn () => Jasa::generateSku())
+                            ->disabled()
+                            ->dehydrated()
                             ->required()
-                            ->unique(),
+                            ->unique(ignoreRecord: true),
                         FileUpload::make('image_url')
                             ->label('Gambar Jasa')
                             ->image()
                             ->disk('public')
                             ->directory(fn () => 'jasas/' . now()->format('Y/m/d'))
-                            ->getUploadedFileNameForStorageUsing(function (LivewireTemporaryUploadedFile $file, Closure $set, Closure $get) {
+                            ->getUploadedFileNameForStorageUsing(function (LivewireTemporaryUploadedFile $file, Get $get): string {
                                 $datePrefix = now()->format('ymd');
                                 $slug = Str::slug($get('nama_jasa') ?? 'jasa');
                                 $extension = $file->getClientOriginalExtension();
-                                return "{$datePrefix}-{$slug}." . $extension;
+                                return "{$datePrefix}-{$slug}.{$extension}";
                             })
                             ->preserveFilenames()
-                            ->required(),
+                            ->nullable(),
                     ]),
 
                 Fieldset::make('Harga')
@@ -70,17 +75,20 @@ class JasaResource extends Resource
                     ]),
 
                 Fieldset::make('Detail')
+                    ->columns(1)
                     ->schema([
-                        TimePicker::make('estimasi_waktu')
+                        TimePicker::make('estimasi_waktu_jam')
                             ->label('Estimasi Waktu Penyelesaian')
                             ->required()
                             ->seconds(false)
-                            ->prefix('Durasi'),
-                        Forms\Components\Textarea::make('deskripsi')
+                            ->prefix('Durasi')
+                            ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::createFromFormat('H:i', $state)->hour : null)
+                            ->afterStateHydrated(fn (TimePicker $component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
+                        Forms\Components\RichEditor::make('deskripsi')
                         ->label('Deskripsi Jasa')
-                        ->rows(3),
+                        ->nullable(),
                     ]),
-                
+
             ]);
     }
 

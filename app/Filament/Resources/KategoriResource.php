@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\KategoriResource\Pages;
 use App\Filament\Resources\KategoriResource\RelationManagers;
 use App\Models\Kategori;
+use Filament\Tables\Columns\TextColumn;
+use Dom\Text;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Toggle;
@@ -40,8 +42,7 @@ class KategoriResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make('slug')
                             ->label('Slug')
-                            ->required()
-                            ->unique(),
+                            ->unique(ignoreRecord: true),
                     ]),
 
                 Fieldset::make('Status')
@@ -59,6 +60,16 @@ class KategoriResource extends Resource
         return $table
             ->columns([
                 //
+                TextColumn::make('nama_kategori')
+                    ->label('Nama Kategori')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('is_active')
+                    ->label('Aktif')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
+                    ->color(fn (bool $state) => $state ? 'success' : 'danger')
+                    ->sortable(),
             ])
             ->filters([
                 //

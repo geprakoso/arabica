@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('slug')->unique();
             $table->string('nama_brand')->unique();
-            $table->string('logo_url');
+            $table->string('logo_url')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->foreignId('diubah_oleh_id')->nullable()->constrained('users')->nullOnDelete();

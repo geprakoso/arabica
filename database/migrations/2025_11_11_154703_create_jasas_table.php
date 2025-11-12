@@ -17,12 +17,13 @@ return new class extends Migration
             $table->string('nama_jasa')->unique();
             $table->string('sku')->unique();
             $table->decimal('harga', 10, 2);
-            $table->string('image_url')->nullable();
+            $table->check('harga >= 0');
             $table->boolean('is_active')->default(true);
             $table->integer('estimasi_waktu_jam')->nullable();
             $table->longText('deskripsi')->nullable();
             $table->timestamps();
             $table->foreignId('diubah_oleh_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('image_url')->nullable();
         });
     }
 
