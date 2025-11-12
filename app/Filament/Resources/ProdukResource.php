@@ -3,15 +3,21 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProdukResource\Pages;
-use App\Filament\Resources\ProdukResource\RelationManagers;
 use App\Models\Produk;
 use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Form;
+use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Laravel\Pail\File;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Illuminate\Support\Str; // Import Str
+use Closure; // Import Closure for callable type hint
+use Filament\Forms\Components\Get;
+
 
 class ProdukResource extends Resource
 {
@@ -19,19 +25,102 @@ class ProdukResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Master Data';
+
+    protected static ?string $navigationLabel = 'Produk';
+
+    protected static ?int $navigationSort = 1;
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 //
+                Fieldset::make('Detail Produk')
+                    ->schema([
+                        Forms\Components\TextInput::make('nama_produk')
+                            ->label('Nama Produk') // $form is not used here, so no change needed.
+                            ->required(),
+                        Forms\Components\Select::make('kategori_id')
+                            ->label('Kategori')
+                            ->relationship('kategori', 'nama_kategori')
+                            ->required(),
+                        Forms\Components\Select::make('brand_id')
+                            ->label('Brand')
+                            ->relationship('brand', 'nama_brand')
+                            ->required(),
+                        Forms\Components\TextInput::make('sku')
+                            ->label('SKU')
+                            ->default(fn () => Produk::generateSku())
+                            ->disabled()
+                            ->dehydrated()
+                            ->required()
+                            ->unique(),
+                        FileUpload::make('image_url')
+                            ->label('Gambar Produk')
+                            ->image()
+                            ->disk('public')
+                            ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
+                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Closure $set, Closure $get) {
+                                $datePrefix = now()->format('ymd');
+                                $slug = Str::slug($get('nama_produk') ?? 'produk');
+                                $extension = $file->getClientOriginalExtension();
+                                return "{$datePrefix}-{$slug}." . $extension;
+                            })
+                            ->preserveFilenames()
+                            ->required(),
+                    ]),
+                //
+                Fieldset::make('Spesifikasi Produk')
+                    ->schema([
+                        Forms\Components\TextInput::make('berat')
+                            ->label('Berat (kg)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->nullable(),
+                        Forms\Components\TextInput::make('panjang')
+                            ->label('Panjang (cm)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->nullable(),
+                        Forms\Components\TextInput::make('lebar')
+                            ->label('Lebar (cm)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->nullable(),
+                        Forms\Components\TextInput::make('tinggi')
+                            ->label('Tinggi (cm)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->nullable(),
+                    ]),
+                Forms\Components\RichEditor::make('deskripsi')
+                    ->label('Deskripsi')
+                    ->nullable(),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
+            ->columns([ 
                 //
+                TextColumn::make('nama_produk')
+                    ->label('Nama Produk')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('kategori.nama_kategori')
+                    ->label('Kategori')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('brand.nama_brand')
+                    ->label('Brand')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('sku')
+                    ->label('SKU')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
                 //

@@ -6,12 +6,15 @@ use App\Filament\Resources\KategoriResource\Pages;
 use App\Filament\Resources\KategoriResource\RelationManagers;
 use App\Models\Kategori;
 use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Ramsey\Uuid\Guid\Fields;
 
 class KategoriResource extends Resource
 {
@@ -19,11 +22,35 @@ class KategoriResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Master Data';
+
+    protected static ?string $navigationLabel = 'Kategori';
+
+    protected static ?int $navigationSort = 4;
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 //
+                Fieldset::make('Detail Kategori')
+                    ->schema([
+                        Forms\Components\TextInput::make('nama_kategori')
+                            ->label('Nama Kategori')
+                            ->required(),
+                        Forms\Components\TextInput::make('slug')
+                            ->label('Slug')
+                            ->required()
+                            ->unique(),
+                    ]),
+
+                Fieldset::make('Status')
+                    ->schema([
+                        Toggle::make('is_active')
+                            ->label('Aktifkan Kategori')
+                            ->default(true)
+                            ->required(),
+                    ]),
             ]);
     }
 

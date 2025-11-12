@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('nama_jasa')->unique();
             $table->string('sku')->unique();
             $table->decimal('harga', 10, 2);
+            $table->string('image_url')->nullable();
             $table->boolean('is_active')->default(true);
             $table->integer('estimasi_waktu_jam')->nullable();
             $table->longText('deskripsi')->nullable();
