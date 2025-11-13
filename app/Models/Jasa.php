@@ -59,4 +59,13 @@ class Jasa extends Model
     {
         return $this->belongsTo(User::class, 'diubah_oleh_id');
     }
+
+    public function getHargaFormattedAttribute(): string
+        {
+            if ($this->harga === null) {
+            return '-';
+        }
+
+        return 'Rp ' . number_format((float) $this->harga, 0, ',', '.');
+    }
 }

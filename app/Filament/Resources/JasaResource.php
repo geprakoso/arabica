@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -71,6 +72,12 @@ class JasaResource extends Resource
                         Forms\Components\TextInput::make('harga')
                             ->label('Harga Jasa')
                             ->numeric()
+                            ->default(10000)
+                            ->prefix('Rp')
+                            ->live(onBlur: true) // keep mask stable
+                            ->mask(RawJs::make('$money($input, ".", ",", 0)'))
+                            ->dehydrateStateUsing(fn ($state) => (int) str_replace(['Rp', ' ', '.'], '', $state))
+                            ->afterStateHydrated(fn ($component, $state) => $component->state(number_format($state ?? 0, 0, ',', '.')))
                             ->required(),
                     ]),
 
@@ -80,8 +87,19 @@ class JasaResource extends Resource
                         TimePicker::make('estimasi_waktu_jam')
                             ->label('Estimasi Waktu Penyelesaian')
                             ->required()
+                            ->native(false)
+                            ->datalist([
+                                '01:00',
+                                '02:00',
+                                '03:00',
+                                '04:30',
+                                '24:00',
+                                '11:30',
+                                '12:00',
+                            ])
                             ->seconds(false)
                             ->prefix('Durasi')
+                            ->suffix('Jam')
                             ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::createFromFormat('H:i', $state)->hour : null)
                             ->afterStateHydrated(fn (TimePicker $component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
                         Forms\Components\RichEditor::make('deskripsi')
@@ -101,10 +119,9 @@ class JasaResource extends Resource
                     ->label('Nama Jasa')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('harga')
+                TextColumn::make('harga_formatted')
                     ->label('Harga')
-                    ->searchable()
-                    ->sortable(),
+                    ->alignRight(),
                 TextColumn::make('estimasi_waktu_jam')
                     ->label('Estimasi Waktu (Jam)')
                     ->sortable(),
