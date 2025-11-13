@@ -11,6 +11,8 @@ use App\Models\User;
 class Produk extends Model
 {
     //
+    protected $table = 'md_produk';
+
     protected $fillable = [
         'nama_produk',
         'kategori_id',
@@ -22,6 +24,7 @@ class Produk extends Model
         'tinggi',
         'deskripsi',
         'diubah_oleh_id',
+        'image_url',
     ];
 
     protected $casts = [

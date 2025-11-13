@@ -12,6 +12,8 @@ class Jasa extends Model
     //
     use HasFactory;
 
+    protected $table = 'md_jasa';
+
     protected $fillable = [
         'slug',
         'nama_jasa',

@@ -12,11 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('produks', function (Blueprint $table) {
+        Schema::create('md_produk', function (Blueprint $table) {
             $table->id();
             $table->string('nama_produk');
-            $table->foreignId('kategori_id')->constrained('kategoris')->cascadeOnDelete(false);
-            $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete(false);
+            $table->foreignId('kategori_id')->constrained('md_kategori')->cascadeOnDelete(false);
+            $table->foreignId('brand_id')->constrained('md_brand')->cascadeOnDelete(false);
             $table->string('sku')->unique();
             $table->decimal('berat', 10, 2)->nullable();
             $table->decimal('panjang', 8, 2)->nullable();
@@ -29,7 +29,7 @@ return new class extends Migration
             //
         });
 
-        DB::statement('ALTER TABLE produks ADD CONSTRAINT chk_produks_non_negative
+        DB::statement('ALTER TABLE md_produk ADD CONSTRAINT chk_md_produk_non_negative
             CHECK (
                 (berat   IS NULL OR berat   >= 0) AND
                 (panjang IS NULL OR panjang >= 0) AND
@@ -44,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('produks');
+        Schema::dropIfExists('md_produk');
     }
 };

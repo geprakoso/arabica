@@ -71,13 +71,13 @@ class ProdukResource extends Resource
                                 return "{$datePrefix}-{$slug}.{$extension}";
                             })
                             ->preserveFilenames()
-                            ->required(),
+                            ->nullable(),
                     ]),
                 //
                 Fieldset::make('Spesifikasi Produk')
                     ->schema([
                         Forms\Components\TextInput::make('berat')
-                            ->label('Berat (kg)')
+                            ->label('Berat (gr)')
                             ->numeric()
                             ->minValue(0)
                             ->nullable(),

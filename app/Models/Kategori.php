@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 
 class Kategori extends Model
 {
+    protected $table = 'md_kategori';
     //
     protected $fillable = [
         'slug',
