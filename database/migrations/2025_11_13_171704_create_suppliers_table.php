@@ -22,6 +22,16 @@ return new class extends Migration
             $table->string('kota')->nullable();
             $table->string('kecamatan')->nullable();
         });
+
+        Schema::create('md_supplier_agents', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('supplier_id')->constrained('md_suppliers')->cascadeOnDelete();
+            $table->string('nama_agen');
+            $table->string('no_hp_agen');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
     }
 
     /**

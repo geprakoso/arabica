@@ -13,6 +13,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\SupplierResource\RelationManagers\AgentsRelationManager;
+use Dom\Text;
+use Filament\Tables\Columns\TextColumn;
+use Ramsey\Uuid\Type\Time;
 
 class SupplierResource extends Resource
 {
@@ -62,6 +66,19 @@ class SupplierResource extends Resource
         return $table
             ->columns([
                 //
+                TextColumn::make('nama_supplier')
+                    ->label('Nama Supplier')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('no_hp')
+                    ->label('No. HP')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('created_at')
+                    ->label('Terdaftar')
+                    ->dateTime('d M Y')
+                    ->sortable(),
+
             ])
             ->filters([
                 //
@@ -81,6 +98,7 @@ class SupplierResource extends Resource
     {
         return [
             //
+            AgentsRelationManager::class,
         ];
     }
 
