@@ -33,33 +33,33 @@ class MemberResource extends Resource
         return $form
             ->schema([
                 Split::make([
-                            Tabs::make('memberTabs')
-                                ->tabs([
-                                    Tab::make('Data Member')
-                                        ->schema([
-                                            TextInput::make('nama_member')
-                                                ->label('Nama Member')
-                                                ->required(),
-                                            TextInput::make('email')
-                                                ->label('Email')
-                                                ->email(),
-                                            TextInput::make('no_hp')
-                                                ->label('No. HP')
-                                                ->required()
-                                                ->unique(ignoreRecord: true),
-                                        ]),
-                                    Tab::make('Alamat')
-                                        ->schema([
-                                            TextInput::make('alamat')
-                                                ->label('Alamat'),
-                                            TextInput::make('provinsi')
-                                                ->label('Provinsi'),
-                                            TextInput::make('kota')
-                                                ->label('Kota'),
-                                            TextInput::make('kecamatan')
-                                                ->label('Kecamatan'),
-                                        ]),
+                    Tabs::make('memberTabs')
+                        ->tabs([
+                            Tab::make('Data Member')
+                                ->schema([
+                                    TextInput::make('nama_member')
+                                        ->label('Nama Member')
+                                        ->required(),
+                                    TextInput::make('email')
+                                        ->label('Email')
+                                        ->email(),
+                                    TextInput::make('no_hp')
+                                        ->label('No. HP')
+                                        ->required()
+                                        ->unique(ignoreRecord: true),
                                 ]),
+                            Tab::make('Alamat')
+                                ->schema([
+                                    TextInput::make('alamat')
+                                        ->label('Alamat'),
+                                    TextInput::make('provinsi')
+                                        ->label('Provinsi'),
+                                    TextInput::make('kota')
+                                        ->label('Kota'),
+                                    TextInput::make('kecamatan')
+                                        ->label('Kecamatan'),
+                                ]),
+                        ]),
                         
                     Section::make()
                         ->schema([
