@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\KategoriResource\Pages;
+namespace App\Filament\Resources\MasterData\KategoriResource\Pages;
 
-use App\Filament\Resources\KategoriResource;
+use App\Filament\Resources\MasterData\KategoriResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 

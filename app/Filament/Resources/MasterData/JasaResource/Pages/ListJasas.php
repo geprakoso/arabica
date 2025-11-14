@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\JasaResource\Pages;
+namespace App\Filament\Resources\MasterData\JasaResource\Pages;
 
-use App\Filament\Resources\JasaResource;
+use App\Filament\Resources\MasterData\JasaResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 

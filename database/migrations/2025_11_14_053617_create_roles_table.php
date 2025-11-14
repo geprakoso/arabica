@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('md_gudang', function (Blueprint $table) {
+        Schema::create('md_role', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
-            $table->string('nama_gudang', 255);
-            $table->string('lokasi_gudang', 255);
+            $table->string('name_role')->unique();
             $table->boolean('is_active')->default(true);
+            $table->text('kode_role')->nullable();
+            $table->text('deskripsi')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('md_gudang');
+        Schema::dropIfExists('md_role');
     }
 };

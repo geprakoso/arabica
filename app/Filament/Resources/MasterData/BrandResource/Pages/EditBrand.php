@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\BrandResource\Pages;
+namespace App\Filament\Resources\MasterData\BrandResource\Pages;
 
-use App\Filament\Resources\BrandResource;
+use App\Filament\Resources\MasterData\BrandResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 

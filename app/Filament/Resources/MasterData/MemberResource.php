@@ -1,25 +1,23 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\MemberResource\Pages;
-use App\Filament\Resources\MemberResource\RelationManagers;
+use App\Filament\Resources\MasterData\MemberResource\Pages;
 use App\Models\Member;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Get;;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Illuminate\Support\Str;
-use Dom\Text;
-use Filament\Forms;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Split;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\Section;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class MemberResource extends Resource
 {
@@ -34,44 +32,54 @@ class MemberResource extends Resource
     {
         return $form
             ->schema([
-                //
-                Section::make('Data Member')
-                    ->schema([
-                        TextInput::make('nama_member')
-                            ->label('Nama Member')
-                            ->required(),
-                        TextInput::make('email')
-                            ->label('Email')
-                            ->email(),
-                        TextInput::make('no_hp')
-                            ->label('No. HP')
-                            ->required()
-                            ->unique(ignoreRecord: true),
-                        FileUpload::make('image_url')
-                            ->label('Gambar Produk')
-                            ->image()
-                            ->disk('public')
-                            ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
-                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
-                                $datePrefix = now()->format('ymd');
-                                $slug = Str::slug($get('nama_produk') ?? 'produk');
-                                $extension = $file->getClientOriginalExtension();
-                                return "{$datePrefix}-{$slug}.{$extension}";
-                            })
-                            ->preserveFilenames()
-                            ->nullable(),
-                    ]),
-                Section::make('Alamat Member')
-                    ->schema([
-                        TextInput::make('alamat')
-                            ->label('Alamat'),
-                        TextInput::make('provinsi')
-                            ->label('Provinsi'),
-                        TextInput::make('kota')
-                            ->label('Kota'),
-                        TextInput::make('kecamatan')
-                            ->label('Kecamatan'),
-                    ]),
+                Split::make([
+                    
+                            Tabs::make('memberTabs')
+                                ->tabs([
+                                    Tab::make('Data Member')
+                                        ->schema([
+                                            TextInput::make('nama_member')
+                                                ->label('Nama Member')
+                                                ->required(),
+                                            TextInput::make('email')
+                                                ->label('Email')
+                                                ->email(),
+                                            TextInput::make('no_hp')
+                                                ->label('No. HP')
+                                                ->required()
+                                                ->unique(ignoreRecord: true),
+                                        ]),
+                                    Tab::make('Alamat')
+                                        ->schema([
+                                            TextInput::make('alamat')
+                                                ->label('Alamat'),
+                                            TextInput::make('provinsi')
+                                                ->label('Provinsi'),
+                                            TextInput::make('kota')
+                                                ->label('Kota'),
+                                            TextInput::make('kecamatan')
+                                                ->label('Kecamatan'),
+                                        ]),
+                                ]),
+                        
+                    Section::make()
+                        ->schema([
+                            FileUpload::make('image_url')
+                                ->label('Gambar Profil')
+                                ->image()
+                                ->disk('public')
+                                ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
+                                ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
+                                    $datePrefix = now()->format('ymd');
+                                    $slug = Str::slug($get('nama_produk') ?? 'produk');
+                                    $extension = $file->getClientOriginalExtension();
+                                    return "{$datePrefix}-{$slug}.{$extension}";
+                                })
+                                ->preserveFilenames()
+                                ->nullable(),
+                        ]),
+                ])->from('lg')
+                    ->columnSpanFull(),
             ]);
     }
 

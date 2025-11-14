@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\ProdukResource\Pages;
+use App\Filament\Resources\MasterData\ProdukResource\Pages;
 use App\Models\Produk;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;

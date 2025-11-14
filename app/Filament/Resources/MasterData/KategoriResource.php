@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\KategoriResource\Pages;
-use App\Filament\Resources\KategoriResource\RelationManagers;
+use App\Filament\Resources\MasterData\KategoriResource\Pages;
+use App\Filament\Resources\MasterData\KategoriResource\RelationManagers;
 use App\Models\Kategori;
 use Filament\Tables\Columns\TextColumn;
 use Dom\Text;

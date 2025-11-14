@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\GudangResource\Pages;
+namespace App\Filament\Resources\MasterData\GudangResource\Pages;
 
-use App\Filament\Resources\GudangResource;
+use App\Filament\Resources\MasterData\GudangResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 

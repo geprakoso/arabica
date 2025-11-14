@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\JasaResource\Pages;
-use App\Filament\Resources\JasaResource\RelationManagers;
+use App\Filament\Resources\MasterData\JasaResource\Pages;
+use App\Filament\Resources\MasterData\JasaResource\RelationManagers;
 use App\Models\Jasa;
 use Carbon\Carbon;
 use Filament\Forms;

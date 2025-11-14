@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\SupplierResource\Pages;
+namespace App\Filament\Resources\MasterData\SupplierResource\Pages;
 
-use App\Filament\Resources\SupplierResource;
+use App\Filament\Resources\MasterData\SupplierResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 

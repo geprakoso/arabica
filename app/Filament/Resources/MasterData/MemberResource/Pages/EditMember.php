@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\MemberResource\Pages;
+namespace App\Filament\Resources\MasterData\MemberResource\Pages;
 
-use App\Filament\Resources\MemberResource;
+use App\Filament\Resources\MasterData\MemberResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
