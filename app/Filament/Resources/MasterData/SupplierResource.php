@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\SupplierResource\Pages;
-use App\Filament\Resources\SupplierResource\RelationManagers;
+use App\Filament\Resources\MasterData\SupplierResource\Pages;
+use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
+use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRelationManager;
 use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,7 +14,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\SupplierResource\RelationManagers\AgentsRelationManager;
 use Dom\Text;
 use Filament\Tables\Columns\TextColumn;
 use Ramsey\Uuid\Type\Time;
