@@ -6,7 +6,8 @@ use App\Filament\Resources\MasterData\BrandResource\Pages;
 use App\Filament\Resources\MasterData\BrandResource\RelationManagers;
 use App\Models\Brand;
 use Filament\Forms;
-use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Split;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -35,37 +36,38 @@ class BrandResource extends Resource
     {
         return $form
             ->schema([
-                //
-                Fieldset::make('Detail Brand')
-                    ->schema([
-                        Forms\Components\TextInput::make('nama_brand')
-                            ->label('Nama Brand')
-                            ->required(),
-                        Forms\Components\TextInput::make('slug')
-                            ->label('Slug')
-                            ->unique(ignoreRecord: true),
-                        Toggle::make('is_active')
-                            ->label('Aktifkan Brand')
-                            ->default(true)
-                            ->required(),
-                    ]),
-                Fieldset::make('Logo Brand')
-                    ->schema([
-                        //
-                        Forms\Components\FileUpload::make('logo_url')
-                            ->label('Gambar Produk')
-                            ->image()
-                            ->disk('public')
-                            ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
-                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get): string {
-                                $datePrefix = now()->format('ymd');
-                                $slug = Str::slug($get('nama_brand') ?? 'brand');
-                                $extension = $file->getClientOriginalExtension();
-                                return "{$datePrefix}-{$slug}.{$extension}";
-                            })
-                            ->preserveFilenames()
-                            ->nullable(),
-                    ]),
+                Split::make([
+                    Section::make('Detail Brand')
+                        ->schema([
+                            Forms\Components\TextInput::make('nama_brand')
+                                ->label('Nama Brand')
+                                ->required(),
+                            Forms\Components\TextInput::make('slug')
+                                ->label('Slug')
+                                ->unique(ignoreRecord: true),
+                            Toggle::make('is_active')
+                                ->label('Aktifkan Brand')
+                                ->default(true)
+                                ->required(),
+                        ]),
+                    Section::make('Detail Brand')
+                        ->schema([
+                            Forms\Components\FileUpload::make('logo_url')
+                                ->label('Gambar Produk')
+                                ->image()
+                                ->disk('public')
+                                ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
+                                ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get): string {
+                                    $datePrefix = now()->format('ymd');
+                                    $slug = Str::slug($get('nama_brand') ?? 'brand');
+                                    $extension = $file->getClientOriginalExtension();
+                                    return "{$datePrefix}-{$slug}.{$extension}";
+                                })
+                                ->preserveFilenames()
+                                ->nullable(),
+                        ]),
+                ])->from('lg')
+                    ->columnSpanFull(),
             ]);
     }
 

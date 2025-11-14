@@ -8,6 +8,9 @@ use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRe
 use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Split;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Section;
 use Filament\Tables;
@@ -31,34 +34,39 @@ class SupplierResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Detail Supplier')
-                    ->schema([
-                        Forms\Components\TextInput::make('nama_supplier')
-                            ->label('Nama Supplier')
-                            ->required()
-                            ->unique(ignoreRecord: true),
-                        Forms\Components\TextInput::make('no_hp')
-                            ->label('No. HP')
-                            ->required()
-                            ->unique(ignoreRecord: true),
-                        Forms\Components\TextInput::make('email')
-                            ->label('Email')
-                            ->unique(ignoreRecord: true),
-                    ]),
+                Split::make([
+                    Tabs::make('memberTabs')
+                        ->tabs([
+                            Tab::make('Data Supplier')
+                                ->schema([
+                                    Forms\Components\TextInput::make('nama_supplier')
+                                        ->label('Nama Supplier')
+                                        ->required()
+                                        ->unique(ignoreRecord: true),
+                                    Forms\Components\TextInput::make('no_hp')
+                                        ->label('No. HP')
+                                        ->required()
+                                        ->unique(ignoreRecord: true),
+                                    Forms\Components\TextInput::make('email')
+                                        ->label('Email')
+                                        ->unique(ignoreRecord: true),
+                                ]),
+                            
 
-                Section::make('Alamat Supplier')
-                    ->schema([
-                        Forms\Components\TextInput::make('alamat')
-                            ->label('Alamat'),
-                        Forms\Components\TextInput::make('provinsi')
-                            ->label('Provinsi'),
-                        Forms\Components\TextInput::make('kota')
-                            ->label('Kota'),
-                        Forms\Components\TextInput::make('kecamatan')
-                            ->label('Kecamatan'),
-                    ]),
-                //
-            ]);
+                            Tab::make('Alamat')
+                                ->schema([
+                                    Forms\Components\TextInput::make('alamat')
+                                        ->label('Alamat'),
+                                    Forms\Components\TextInput::make('provinsi')
+                                        ->label('Provinsi'),
+                                    Forms\Components\TextInput::make('kota')
+                                        ->label('Kota'),
+                                    Forms\Components\TextInput::make('kecamatan')
+                                        ->label('Kecamatan'),
+                                    ]),
+                            ]),
+                    ])->from('lg')->columnSpanFull(),
+                ]);
     }
 
     public static function table(Table $table): Table

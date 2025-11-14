@@ -33,7 +33,6 @@ class MemberResource extends Resource
         return $form
             ->schema([
                 Split::make([
-                    
                             Tabs::make('memberTabs')
                                 ->tabs([
                                     Tab::make('Data Member')

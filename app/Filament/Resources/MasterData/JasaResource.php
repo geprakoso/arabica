@@ -8,6 +8,8 @@ use App\Models\Jasa;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Split;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -40,7 +42,8 @@ class JasaResource extends Resource
         return $form
             ->schema([
                 //
-                Fieldset::make('Detail Jasa')
+                Split::make([
+                Section::make('Detail Jasa')
                     ->schema([
                         Forms\Components\TextInput::make('nama_jasa')
                             ->label('Nama Jasa')
@@ -52,6 +55,10 @@ class JasaResource extends Resource
                             ->dehydrated()
                             ->required()
                             ->unique(ignoreRecord: true),
+                        
+                    ]),
+                Section::make()
+                    ->schema([
                         FileUpload::make('image_url')
                             ->label('Gambar Jasa')
                             ->image()
@@ -65,14 +72,15 @@ class JasaResource extends Resource
                             })
                             ->preserveFilenames()
                             ->nullable(),
-                    ]),
+                ]),
+                ])->from('lg')->columnSpanFull(),
 
-                Fieldset::make('Harga')
+                Section::make('Harga')
                     ->schema([
                         Forms\Components\TextInput::make('harga')
                             ->label('Harga Jasa')
                             ->numeric()
-                            ->default(10000)
+                            ->placeholder(50000)
                             ->prefix('Rp')
                             ->live(onBlur: true) // keep mask stable
                             ->mask(RawJs::make('$money($input, ".", ",", 0)'))
@@ -81,7 +89,7 @@ class JasaResource extends Resource
                             ->required(),
                     ]),
 
-                Fieldset::make('Detail')
+                Section::make('Keterangan')
                     ->columns(1)
                     ->schema([
                         TimePicker::make('estimasi_waktu_jam')
@@ -100,11 +108,11 @@ class JasaResource extends Resource
                             ->seconds(false)
                             ->prefix('Durasi')
                             ->suffix('Jam')
-                            ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::createFromFormat('H:i', $state)->hour : null)
+                            ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::parse($state)->hour : null)
                             ->afterStateHydrated(fn (TimePicker $component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
                         Forms\Components\RichEditor::make('deskripsi')
-                        ->label('Deskripsi Jasa')
-                        ->nullable(),
+                            ->label('Deskripsi Jasa')
+                            ->nullable(),
                     ]),
 
             ]);

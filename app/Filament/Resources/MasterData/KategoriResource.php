@@ -8,7 +8,7 @@ use App\Models\Kategori;
 use Filament\Tables\Columns\TextColumn;
 use Dom\Text;
 use Filament\Forms;
-use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -35,7 +35,7 @@ class KategoriResource extends Resource
         return $form
             ->schema([
                 //
-                Fieldset::make('Detail Kategori')
+                Section::make('Detail Kategori')
                     ->schema([
                         Forms\Components\TextInput::make('nama_kategori')
                             ->label('Nama Kategori')
@@ -45,7 +45,7 @@ class KategoriResource extends Resource
                             ->unique(ignoreRecord: true),
                     ]),
 
-                Fieldset::make('Status')
+                Section::make('Status')
                     ->schema([
                         Toggle::make('is_active')
                             ->label('Aktifkan Kategori')

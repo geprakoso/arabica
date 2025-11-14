@@ -8,17 +8,23 @@ use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Form;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Split;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Get;
+
 use Filament\Resources\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Laravel\Pail\File;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str; // Import Str
 use Closure; // Import Closure for callable type hint
-
+use Laravel\SerializableClosure\Serializers\Native;
 
 class ProdukResource extends Resource
 {
@@ -37,28 +43,32 @@ class ProdukResource extends Resource
         return $form
             ->schema([
                 //
-                Fieldset::make('Detail Produk')
-                    ->schema([
-                        Forms\Components\TextInput::make('nama_produk')
-                            ->label('Nama Produk') // $form is not used here, so no change needed.
-                            ->required(),
-                        Forms\Components\Select::make('kategori_id')
-                            ->label('Kategori')
-                            ->relationship('kategori', 'nama_kategori')
-                            ->required()
-                            ->native(false),
-                        Forms\Components\Select::make('brand_id')
-                            ->label('Brand')
-                            ->relationship('brand', 'nama_brand')
-                            ->required()
-                            ->native(false),
-                        Forms\Components\TextInput::make('sku')
-                            ->label('SKU')
-                            ->default(fn () => Produk::generateSku())
-                            ->disabled()
-                            ->dehydrated()
-                            ->required()
-                            ->unique(ignoreRecord: true),
+                Split::make([
+                    Section::make('Data Produk')
+                        ->schema([
+                            Forms\Components\TextInput::make('nama_produk')
+                                ->label('Nama Produk') // $form is not used here, so no change needed.
+                                ->required(),
+                            Forms\Components\Select::make('kategori_id')
+                                ->label('Kategori')
+                                ->relationship('kategori', 'nama_kategori')
+                                ->required()
+                                ->native(false),
+                            Forms\Components\Select::make('brand_id')
+                                ->label('Brand')
+                                ->relationship('brand', 'nama_brand')
+                                ->required()
+                                ->native(false),
+                            Forms\Components\TextInput::make('sku')
+                                ->label('SKU')
+                                ->default(fn () => Produk::generateSku())
+                                ->disabled()
+                                ->dehydrated()
+                                ->required()
+                                ->unique(ignoreRecord: true),
+                        ]),
+                        Section::make('Gambar Produk')
+                            ->schema([
                         FileUpload::make('image_url')
                             ->label('Gambar Produk')
                             ->image()
@@ -72,34 +82,44 @@ class ProdukResource extends Resource
                             })
                             ->preserveFilenames()
                             ->nullable(),
-                    ]),
+                        ]),
+                    ])->from('lg')
+                        ->columnSpanFull(),
                 //
-                Fieldset::make('Spesifikasi Produk')
-                    ->schema([
-                        Forms\Components\TextInput::make('berat')
-                            ->label('Berat (gr)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->nullable(),
-                        Forms\Components\TextInput::make('panjang')
-                            ->label('Panjang (cm)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->nullable(),
-                        Forms\Components\TextInput::make('lebar')
-                            ->label('Lebar (cm)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->nullable(),
-                        Forms\Components\TextInput::make('tinggi')
-                            ->label('Tinggi (cm)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->nullable(),
-                    ]),
-                Forms\Components\RichEditor::make('deskripsi')
-                    ->label('Deskripsi')
-                    ->nullable(),
+
+                Tabs::make('Spesifikasi Produk')
+                    ->columnSpanFull()
+                    ->tabs([
+                        Tab::make('Detail Produk')
+                            ->schema([
+                                Forms\Components\TextInput::make('berat')
+                                    ->label('Berat (gr)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->nullable(),
+                                Forms\Components\TextInput::make('panjang')
+                                    ->label('Panjang (cm)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->nullable(),
+                                Forms\Components\TextInput::make('lebar')
+                                    ->label('Lebar (cm)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->nullable(),
+                                Forms\Components\TextInput::make('tinggi')
+                                    ->label('Tinggi (cm)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->nullable(),
+                            ]),
+                        Tab::make('Deskripsi Produk')
+                            ->schema([
+                                Forms\Components\RichEditor::make('deskripsi')
+                                    ->label('Deskripsi')
+                                    ->nullable(),
+                            ]),
+                        ]),
             ]);
     }
 
@@ -127,6 +147,8 @@ class ProdukResource extends Resource
             ])
             ->filters([
                 //
+                SelectFilter::make('kategori')->relationship('kategori', 'nama_kategori')->native(false),
+                SelectFilter::make('brand')->relationship('brand', 'nama_brand')->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
