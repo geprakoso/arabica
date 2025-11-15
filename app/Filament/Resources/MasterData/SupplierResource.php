@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\SupplierResource\Pages;
-use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
+// use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
 use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRelationManager;
 use App\Models\Supplier;
 use Filament\Forms;
@@ -12,20 +12,20 @@ use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Resources\Resource;
-use Filament\Forms\Components\Section;
+// use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Dom\Text;
+// use Illuminate\Database\Eloquent\Builder;
+// use Illuminate\Database\Eloquent\SoftDeletingScope;
+// use Dom\Text;
 use Filament\Tables\Columns\TextColumn;
-use Ramsey\Uuid\Type\Time;
+// use Ramsey\Uuid\Type\Time;
 
 class SupplierResource extends Resource
 {
     protected static ?string $model = Supplier::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-truck';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Supplier';
     protected static ?int $navigationSort = 6;

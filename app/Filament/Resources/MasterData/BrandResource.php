@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\BrandResource\Pages;
-use App\Filament\Resources\MasterData\BrandResource\RelationManagers;
+// use App\Filament\Resources\MasterData\BrandResource\RelationManagers;
 use App\Models\Brand;
 use Filament\Forms;
 use Filament\Forms\Components\Split;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 use Filament\Forms\Get;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Str; // Import Str
-use Closure; // Import Closure for callable type hint
+// use Closure; // Import Closure for callable type hint
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 
@@ -24,7 +24,7 @@ class BrandResource extends Resource
 {
     protected static ?string $model = Brand::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-label-important';
 
     protected static ?string $navigationGroup = 'Master Data';
 
@@ -48,7 +48,8 @@ class BrandResource extends Resource
                             Toggle::make('is_active')
                                 ->label('Aktifkan Brand')
                                 ->default(true)
-                                ->required(),
+                                ->required()
+                                ->hidden(),
                         ]),
                     Section::make('Detail Brand')
                         ->schema([
@@ -80,12 +81,13 @@ class BrandResource extends Resource
                     ->label('Nama Brand')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('is_active')
-                    ->label('Aktif')
-                    ->badge()
-                    ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
-                    ->color(fn (bool $state) => $state ? 'success' : 'danger')
-                    ->sortable(),
+                // TextColumn::make('is_active')
+                //     ->label('Aktif')
+                //     ->badge()
+                //     ->hidden()
+                //     ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
+                //     ->color(fn (bool $state) => $state ? 'success' : 'danger')
+                //     ->sortable(),
             ])
             ->filters([
                 //

@@ -3,28 +3,28 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\GudangResource\Pages;
-use App\Filament\Resources\MasterData\GudangResource\RelationManagers;
+// use App\Filament\Resources\MasterData\GudangResource\RelationManagers;
 use App\Models\Gudang;
-use Filament\Forms;
+// use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions;
-use Filament\Tables\Columns;
+// use Filament\Tables\Actions;
+// use Filament\Tables\Columns;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+// use Illuminate\Database\Eloquent\Builder;
+// use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class GudangResource extends Resource
 {
     protected static ?string $model = Gudang::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-warehouse';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Gudang';
     protected static ?int $navigationSort = 7;

@@ -3,9 +3,10 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\ProdukResource\Pages;
+use App\Filament\Exports\ProdukExporter;
 use App\Models\Produk;
 use Filament\Forms;
-use Filament\Forms\Components\Fieldset;
+// use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Form;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Split;
@@ -13,24 +14,26 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Get;
-
-use Filament\Resources\Set;
+// use Filament\Resources\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Laravel\Pail\File;
+// use Laravel\Pail\File;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str; // Import Str
 use Closure; // Import Closure for callable type hint
-use Laravel\SerializableClosure\Serializers\Native;
+use Filament\Actions\Exports\Models\Export;
+use Filament\Tables\Actions\ExportAction;
+
+// use Laravel\SerializableClosure\Serializers\Native;
 
 class ProdukResource extends Resource
 {
     protected static ?string $model = Produk::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-package';
 
     protected static ?string $navigationGroup = 'Master Data';
 

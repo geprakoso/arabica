@@ -124,8 +124,8 @@ return [
      * Icons to use for navigation
      */
     'icons' => [
-        'role_navigation' => 'heroicon-o-lock-closed',
-        'permission_navigation' => 'heroicon-o-lock-closed',
+        'role_navigation' => 'hugeicons-id',
+        'permission_navigation' => 'eos-lock-open',
     ],
 
     /*

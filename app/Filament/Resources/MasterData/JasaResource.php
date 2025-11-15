@@ -3,11 +3,11 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\JasaResource\Pages;
-use App\Filament\Resources\MasterData\JasaResource\RelationManagers;
+// use App\Filament\Resources\MasterData\JasaResource\RelationManagers;
 use App\Models\Jasa;
 use Carbon\Carbon;
 use Filament\Forms;
-use Filament\Forms\Components\Fieldset;
+// use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\FileUpload;
@@ -19,17 +19,17 @@ use Filament\Tables\Table;
 use Filament\Support\RawJs;
 use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+// use Illuminate\Database\Eloquent\Builder;
+// use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str; // Import Str
-use Closure; // Import Closure for callable type hint
+// use Closure; // Import Closure for callable type hint
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile as LivewireTemporaryUploadedFile;
 
 class JasaResource extends Resource
 {
     protected static ?string $model = Jasa::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-tools';
 
     protected static ?string $navigationGroup = 'Master Data';
 

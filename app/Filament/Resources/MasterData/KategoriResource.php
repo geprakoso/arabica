@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\KategoriResource\Pages;
-use App\Filament\Resources\MasterData\KategoriResource\RelationManagers;
+// use App\Filament\Resources\MasterData\KategoriResource\RelationManagers;
 use App\Models\Kategori;
 use Filament\Tables\Columns\TextColumn;
-use Dom\Text;
+// use Dom\Text;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
@@ -14,15 +14,15 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Ramsey\Uuid\Guid\Fields;
+// use Illuminate\Database\Eloquent\Builder;
+// use Illuminate\Database\Eloquent\SoftDeletingScope;
+// use Ramsey\Uuid\Guid\Fields;
 
 class KategoriResource extends Resource
 {
     protected static ?string $model = Kategori::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-tags';
 
     protected static ?string $navigationGroup = 'Master Data';
 
@@ -50,6 +50,7 @@ class KategoriResource extends Resource
                         Toggle::make('is_active')
                             ->label('Aktifkan Kategori')
                             ->default(true)
+                            ->hidden()
                             ->required(),
                     ]),
             ]);
@@ -64,12 +65,12 @@ class KategoriResource extends Resource
                     ->label('Nama Kategori')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('is_active')
-                    ->label('Aktif')
-                    ->badge()
-                    ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
-                    ->color(fn (bool $state) => $state ? 'success' : 'danger')
-                    ->sortable(),
+                // TextColumn::make('is_active')
+                //     ->label('Aktif')
+                //     ->badge()
+                //     ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
+                //     ->color(fn (bool $state) => $state ? 'success' : 'danger')
+                //     ->sortable(),
             ])
             ->filters([
                 //

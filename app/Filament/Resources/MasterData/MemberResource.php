@@ -23,7 +23,7 @@ class MemberResource extends Resource
 {
     protected static ?string $model = Member::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-contact';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Member';
     protected static ?int $navigationSort = 5;
