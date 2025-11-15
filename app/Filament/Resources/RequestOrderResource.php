@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\RequestOrderResource\Pages;
 use App\Models\RequestOrder;
-use App\Models\User;
+use App\Models\Karyawan;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
@@ -14,7 +14,6 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\DB;
 
 class RequestOrderResource extends Resource
 {
@@ -88,7 +87,7 @@ class RequestOrderResource extends Resource
                     ->label('Tanggal')
                     ->date()
                     ->sortable(),
-                TextColumn::make('karyawan.name')
+                TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
                     ->toggleable()
                     ->sortable(),
@@ -136,20 +135,20 @@ class RequestOrderResource extends Resource
         $query = self::karyawanBaseQuery();
 
         if ($search) {
-            $userTable = (new User())->getTable();
-            $query->where("{$userTable}.name", 'like', "%{$search}%");
+            $karyawanTable = (new Karyawan())->getTable();
+            $query->where("{$karyawanTable}.nama_karyawan", 'like', "%{$search}%");
         }
 
         if ($limit !== null) {
             $query->limit($limit);
         }
 
-        $userTable = (new User())->getTable();
+        $karyawanTable = (new Karyawan())->getTable();
 
         return $query
-            ->orderBy("{$userTable}.name")
+            ->orderBy("{$karyawanTable}.nama_karyawan")
             ->get()
-            ->mapWithKeys(fn ($user) => [$user->id => self::formatKaryawanLabel($user->name, $user->role_names)])
+            ->mapWithKeys(fn ($karyawan) => [$karyawan->id => self::formatKaryawanLabel($karyawan->nama_karyawan, $karyawan->role_name)])
             ->toArray();
     }
 
@@ -159,37 +158,30 @@ class RequestOrderResource extends Resource
             return null;
         }
 
-        $userTable = (new User())->getTable();
-
         $record = self::karyawanBaseQuery()
-            ->where("{$userTable}.id", $value)
+            ->where((new Karyawan())->getTable() . '.id', $value)
             ->first();
 
         if (! $record) {
             return null;
         }
 
-        return self::formatKaryawanLabel($record->name, $record->role_names);
+        return self::formatKaryawanLabel($record->nama_karyawan, $record->role_name);
     }
 
     protected static function karyawanBaseQuery()
     {
-        $userTable = (new User())->getTable();
-        $pivotTable = config('permission.table_names.model_has_roles', 'model_has_roles');
+        $karyawanTable = (new Karyawan())->getTable();
         $rolesTable = config('permission.table_names.roles', 'roles');
 
-        return User::query()
+        return Karyawan::query()
             ->select([
-                "{$userTable}.id",
-                "{$userTable}.name",
-                DB::raw("GROUP_CONCAT(DISTINCT {$rolesTable}.name) as role_names"),
+                "{$karyawanTable}.id",
+                "{$karyawanTable}.nama_karyawan",
+                "{$rolesTable}.name as role_name",
             ])
-            ->join($pivotTable, function ($join) use ($pivotTable, $userTable) {
-                $join->on("{$pivotTable}.model_id", '=', "{$userTable}.id")
-                    ->where("{$pivotTable}.model_type", '=', User::class);
-            })
-            ->join($rolesTable, "{$rolesTable}.id", '=', "{$pivotTable}.role_id")
-            ->groupBy("{$userTable}.id", "{$userTable}.name");
+            ->leftJoin($rolesTable, "{$rolesTable}.id", '=', "{$karyawanTable}.role_id")
+            ->where("{$karyawanTable}.is_active", true);
     }
 
     protected static function formatKaryawanLabel(string $name, ?string $roles): string

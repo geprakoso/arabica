@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('no_ro')->unique();
             $table->date('tanggal');
             $table->text('catatan')->nullable();
-            $table->foreignId('karyawan_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('karyawan_id')->nullable()->constrained('md_karyawan')->nullOnDelete();
             $table->timestamps();
         });
 
