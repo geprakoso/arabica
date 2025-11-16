@@ -45,14 +45,14 @@ class KategoriResource extends Resource
                             ->unique(ignoreRecord: true),
                     ]),
 
-                Section::make('Status')
-                    ->schema([
-                        Toggle::make('is_active')
-                            ->label('Aktifkan Kategori')
-                            ->default(true)
-                            ->hidden()
-                            ->required(),
-                    ]),
+                // Section::make('Status')
+                //     ->schema([
+                //         Toggle::make('is_active')
+                //             ->label('Aktifkan Kategori')
+                //             ->default(true)
+                //             ->hidden()
+                //             ->required(),
+                //     ]),
             ]);
     }
 
