@@ -18,6 +18,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
+use App\Filament\Pages\ChatRoomPage;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -57,6 +59,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->plugin(FilamentSpatieRolesPermissionsPlugin::make());
+            ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
+            ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget());
     }
 }
