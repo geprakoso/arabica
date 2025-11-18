@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\KaryawanResource\Pages;
+use App\Filament\Resources\MasterData\KaryawanResource\Pages;
 use App\Models\Karyawan;
 use App\Models\User;
 use Dom\Text;

@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('nama_akun')->unique();
             $table->string('kode_akun')->unique();
-            $table->string('no_rekening')->nullable();
-            
+            $table->enum('jenis', ['tunai', 'transfer', 'e-wallet', 'gyro'])->default('transfer');
+            $table->string('nama_bank')->nullable();
+            $table->string('nama_rekening')->nullable();
+            $table->string('no_rekening')->nullable()->unique();
             $table->boolean('is_active')->default(true);
             $table->foreignId('diubah_oleh_id')->nullable()->constrained('users')->nullOnDelete();
             $table->longText('catatan')->nullable();

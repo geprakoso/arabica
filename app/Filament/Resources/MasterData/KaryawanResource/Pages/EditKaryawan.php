@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\KaryawanResource\Pages;
+namespace App\Filament\Resources\MasterData\KaryawanResource\Pages;
 
-use App\Filament\Resources\KaryawanResource;
+use App\Filament\Resources\MasterData\KaryawanResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 

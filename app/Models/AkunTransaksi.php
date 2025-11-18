@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class AkunTransaksi extends Model
 {
-    //
+    protected $guarded = [];
 }

@@ -80,6 +80,9 @@
     },
     "config": {
         "optimize-autoloader": true,
+        "github-oauth": {},
+        "http-timeout": 600,
+        "lock": false,
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {

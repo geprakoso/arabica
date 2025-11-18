@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\AkunTransaksiResource\Pages;
+namespace App\Filament\Resources\MasterData\AkunTransaksiResource\Pages;
 
-use App\Filament\Resources\AkunTransaksiResource;
+use App\Filament\Resources\MasterData\AkunTransaksiResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
