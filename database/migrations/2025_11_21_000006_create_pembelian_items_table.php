@@ -8,8 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tb_pembelianitem', function (Blueprint $table) {
-            $table->id('id_pembelianitem');
+        Schema::create('tb_pembelian_item', function (Blueprint $table) {
+            $table->id('id_pembelian_item');
             $table->foreignId('id_pembelian')
                 ->constrained('tb_pembelian', 'id_pembelian')
                 ->cascadeOnDelete();
@@ -26,6 +26,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('tb_pembelianitem');
+        Schema::dropIfExists('tb_pembelian_item');
     }
 };

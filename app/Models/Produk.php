@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\Kategori;
-use App\Models\Brand;
 use App\Models\User;
+use App\Models\Brand;
+use App\Models\Kategori;
 use App\Models\PembelianItem;
+use Illuminate\Database\Eloquent\Model;
 
 
 class Produk extends Model
