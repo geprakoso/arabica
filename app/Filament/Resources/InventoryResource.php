@@ -29,7 +29,7 @@ class InventoryResource extends Resource
 
     protected static ?string $navigationLabel = 'Inventory';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
