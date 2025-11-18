@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Kategori;
 use App\Models\Brand;
 use App\Models\User;
+use App\Models\PembelianItem;
 
 
 class Produk extends Model
@@ -63,5 +64,10 @@ class Produk extends Model
     public function diubahOleh()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function pembelianItems()
+    {
+        return $this->hasMany(PembelianItem::class, PembelianItem::productForeignKey());
     }
 }

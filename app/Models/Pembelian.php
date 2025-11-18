@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Pembelian extends Model
+{
+    use HasFactory;
+
+    protected $table = 'tb_pembelian';
+    protected $primaryKey = 'id_pembelian';
+
+    protected $fillable = [
+        'no_po',
+        'tanggal',
+        'harga_jual',
+        'catatan',
+        'tipe_pembelian',
+        'jenis_pembayaran',
+        'tgl_tempo',
+        'id_karyawan',
+        'id_supplier',
+    ];
+
+    protected $casts = [
+        'tanggal' => 'date',
+        'tgl_tempo' => 'date',
+        'harga_jual' => 'decimal:2',
+    ];
+
+    public function karyawan()
+    {
+        return $this->belongsTo(Karyawan::class, 'id_karyawan');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'id_supplier');
+    }
+
+    public function requestOrders()
+    {
+        return $this->belongsToMany(RequestOrder::class, 'pembelian_request_order', 'pembelian_id', 'request_order_id')
+            ->withTimestamps();
+    }
+
+    public function items()
+    {
+        return $this->hasMany(PembelianItem::class, 'id_pembelian', 'id_pembelian');
+    }
+}

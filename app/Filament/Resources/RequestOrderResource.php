@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\RequestOrderResource\Pages;
 use App\Models\RequestOrder;
-use App\Models\Karyawan;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
@@ -37,18 +36,15 @@ class RequestOrderResource extends Resource
                             ->label('No. RO')
                             ->required()
                             ->unique(ignoreRecord: true),
+                        Forms\Components\Select::make('karyawan_id')
+                            ->label('Karyawan')
+                            ->relationship('karyawan', 'nama_karyawan')
+                            ->searchable()
+                            ->preload()
+                            ->native(false),
                         Forms\Components\DatePicker::make('tanggal')
                             ->label('Tanggal')
                             ->required()
-                            ->native(false),
-                        Forms\Components\Select::make('karyawan_id')
-                            ->label('Karyawan')
-                            ->options(fn () => self::getKaryawanOptions())
-                            ->getSearchResultsUsing(fn (string $search) => self::getKaryawanOptions($search))
-                            ->getOptionLabelUsing(fn ($value) => self::getKaryawanLabelById($value))
-                            ->required()
-                            ->searchable()
-                            ->preload()
                             ->native(false),
                         Forms\Components\RichEditor::make('catatan')
                             ->label('Catatan')
@@ -87,20 +83,19 @@ class RequestOrderResource extends Resource
                     ->label('Tanggal')
                     ->date()
                     ->sortable(),
-                TextColumn::make('karyawan.nama_karyawan')
-                    ->label('Karyawan')
-                    ->toggleable()
-                    ->sortable(),
                 TextColumn::make('items_count')
                     ->label('Jumlah Produk')
                     ->counts('items')
                     ->sortable(),
+                TextColumn::make('karyawan.nama_karyawan')
+                    ->label('Karyawan')
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 SelectFilter::make('karyawan_id')
                     ->label('Karyawan')
-                    ->options(fn () => self::getKaryawanOptions(limit: null))
-                    ->native(false),
+                    ->relationship('karyawan', 'nama_karyawan'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -116,7 +111,7 @@ class RequestOrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+
         ];
     }
 
@@ -130,81 +125,4 @@ class RequestOrderResource extends Resource
         ];
     }
 
-    protected static function getKaryawanOptions(?string $search = null, ?int $limit = 50): array
-    {
-        $query = self::karyawanBaseQuery();
-
-        if ($search) {
-            $karyawanTable = (new Karyawan())->getTable();
-            $query->where("{$karyawanTable}.nama_karyawan", 'like', "%{$search}%");
-        }
-
-        if ($limit !== null) {
-            $query->limit($limit);
-        }
-
-        $karyawanTable = (new Karyawan())->getTable();
-
-        return $query
-            ->orderBy("{$karyawanTable}.nama_karyawan")
-            ->get()
-            ->mapWithKeys(fn ($karyawan) => [$karyawan->id => self::formatKaryawanLabel($karyawan->nama_karyawan, $karyawan->role_name)])
-            ->toArray();
-    }
-
-    protected static function getKaryawanLabelById($value): ?string
-    {
-        if (blank($value)) {
-            return null;
-        }
-
-        $record = self::karyawanBaseQuery()
-            ->where((new Karyawan())->getTable() . '.id', $value)
-            ->first();
-
-        if (! $record) {
-            return null;
-        }
-
-        return self::formatKaryawanLabel($record->nama_karyawan, $record->role_name);
-    }
-
-    protected static function karyawanBaseQuery()
-    {
-        $karyawanTable = (new Karyawan())->getTable();
-        $rolesTable = config('permission.table_names.roles', 'roles');
-
-        return Karyawan::query()
-            ->select([
-                "{$karyawanTable}.id",
-                "{$karyawanTable}.nama_karyawan",
-                "{$rolesTable}.name as role_name",
-            ])
-            ->leftJoin($rolesTable, "{$rolesTable}.id", '=', "{$karyawanTable}.role_id")
-            ->where("{$karyawanTable}.is_active", true);
-    }
-
-    protected static function formatKaryawanLabel(string $name, ?string $roles): string
-    {
-        $roleLabel = self::formatRoleNames($roles);
-
-        return $roleLabel ? "{$name} - {$roleLabel}" : $name;
-    }
-
-    protected static function formatRoleNames(?string $roles): ?string
-    {
-        if ($roles === null) {
-            return null;
-        }
-
-        $parts = array_filter(array_map('trim', explode(',', $roles)));
-
-        if (empty($parts)) {
-            return null;
-        }
-
-        $unique = array_values(array_unique($parts));
-
-        return implode(', ', $unique);
-    }
 }
