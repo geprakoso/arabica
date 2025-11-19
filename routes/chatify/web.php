@@ -51,6 +51,16 @@ Route::post('/makeSeen', 'MessagesController@seen')->name('messages.seen');
 Route::get('/getContacts', 'MessagesController@getContacts')->name('contacts.get');
 
 /**
+ * List chat groups for the authenticated user
+ */
+Route::get('/groups/list', 'MessagesController@getGroups')->name('groups.list');
+
+/**
+ * Create a new chat group
+ */
+Route::post('/groups', 'MessagesController@storeGroup')->name('groups.store');
+
+/**
  * Update contact item data
  */
 Route::post('/updateContacts', 'MessagesController@updateContactItem')->name('contacts.update');

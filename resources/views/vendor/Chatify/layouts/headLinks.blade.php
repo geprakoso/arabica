@@ -7,6 +7,9 @@
 <meta name="messenger-theme" content="{{ $dark_mode }}">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta name="url" content="{{ url('').'/'.config('chatify.routes.prefix') }}" data-user="{{ Auth::user()->id }}">
+<meta name="conversation-type" content="user">
+<meta name="groups-url" content="{{ route('groups.list') }}">
+<meta name="groups-store-url" content="{{ route('groups.store') }}">
 
 {{-- scripts --}}
 <script

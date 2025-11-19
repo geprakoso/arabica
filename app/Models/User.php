@@ -6,9 +6,13 @@ namespace App\Models;
 
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Karyawan;
+use App\Models\ChatGroup;
 
 
 class User extends Authenticatable
@@ -59,5 +63,17 @@ class User extends Authenticatable
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->hasRole('Super Admin');
+    }
+
+    public function chatGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(ChatGroup::class, 'ch_group_user', 'user_id', 'group_id')
+            ->withPivot('role')
+            ->withTimestamps(); // Provide quick access to groups this user belongs to.
+    }
+
+    public function karyawan(): HasOne
+    {
+        return $this->hasOne(Karyawan::class, 'user_id'); // Link user to their employee profile if one exists.
     }
 }

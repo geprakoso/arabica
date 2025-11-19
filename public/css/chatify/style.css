@@ -120,7 +120,9 @@ body {
   overflow: auto;
 }
 .messenger-listView .m-header {
-  height: var(--listView-header-height);
+  height: auto;
+  min-height: var(--listView-header-height); /* Keep original spacing without forcing overflow */
+  padding-bottom: 0.5rem;
 }
 .messenger-listView .m-header > nav {
   padding: var(--headers-padding);
@@ -204,6 +206,58 @@ body {
 .active-tab {
   border-bottom: 2px solid var(--primary-color);
 }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+.btn-light {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+.btn:hover {
+  opacity: 0.85;
+}
+.listOfGroups {
+  padding: 0 0 1rem 0;
+}
+.create-group-form {
+  margin: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-color);
+}
+.create-group-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+.create-group-form label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+}
+.create-group-form input,
+.create-group-form textarea {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  font-size: 0.9rem;
+  background: var(--primary-bg-color);
+  color: inherit;
+}
 .messenger-tab {
   overflow: auto;
   height: calc(100vh - var(--listView-header-height) - 2px);
@@ -257,6 +311,19 @@ body {
 .messenger-list-item tr > td:first-child {
   padding-right: 0;
   width: 55px;
+}
+.group-avatar {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: 100%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
 }
 .messenger-list-item td p {
   margin-bottom: 4px;
@@ -370,6 +437,12 @@ body {
   right: 0;
   z-index: 0;
 }
+.messenger-title--actions {
+  justify-content: space-between !important; /* keep triggers spaced without divider interfering */
+}
+.messenger-title--actions::before {
+  display: none; /* remove the decorative divider so buttons are clickable */
+}
 .messenger-infoView {
   display: block;
   overflow: auto;
@@ -398,6 +471,38 @@ body {
   margin-top: 15px;
   font-size: 18px;
   font-weight: 600;
+}
+.messenger-infoView-members {
+  margin-top: 1rem;
+  display: none;
+}
+.group-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+.group-member-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.group-member-row .avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  background-position: center;
+  background-size: cover;
+}
+.group-member-row .member-meta {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.group-member-row .member-meta span {
+  color: #9ca3af;
+  text-transform: capitalize;
+  font-size: 12px;
 }
 .messenger-infoView-btns a {
   display: block;

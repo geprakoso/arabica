@@ -12,6 +12,12 @@ var messenger,
   dark_mode,
   messages_page = 1;
 
+let conversationType =
+    $("meta[name=conversation-type]").attr("content") || "user"; // Track whether we are in a user or group thread.
+const groupsListUrl = $("meta[name=groups-url]").attr("content"); // Endpoint for loading group list.
+const groupsStoreUrl = $("meta[name=groups-store-url]").attr("content"); // Endpoint for creating groups.
+let groupChannel = null; // Holds active Pusher subscription for the current group.
+
 const messagesContainer = $(".messenger-messagingView .m-body"),
   messengerTitleDefault = $(".messenger-headTitle").text(),
   messageInputContainer = $(".messenger-sendCard"),
@@ -24,6 +30,18 @@ const messagesContainer = $(".messenger-messagingView .m-body"),
 
 const getMessengerId = () => $("meta[name=id]").attr("content");
 const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
+const getConversationType = () => conversationType; // Helper to read active conversation type.
+const setConversationType = (type = "user") => {
+  conversationType = type;
+  $("meta[name=conversation-type]").attr("content", conversationType);
+  $(".add-to-favorite").toggle(conversationType === "user"); // Hide favorites for group chats.
+  $(".messenger-infoView nav p").text(
+    conversationType === "group" ? "Group Details" : "User Details"
+  ); // Update info sidebar header.
+  if (conversationType !== "group") {
+    leaveGroupChannel(); // Drop previous group subscription if switching back to direct chat.
+  }
+};
 
 /**
  *-------------------------------------------------------------
@@ -73,11 +91,9 @@ function routerPush(title, url) {
 }
 function updateSelectedContact(user_id) {
   $(document).find(".messenger-list-item").removeClass("m-list-active");
-  $(document)
-    .find(
-      ".messenger-list-item[data-contact=" + (user_id || getMessengerId()) + "]"
-    )
-    .addClass("m-list-active");
+  const currentId = user_id || getMessengerId();
+  const selector = `.messenger-list-item[data-contact="${currentId}"][data-type="${getConversationType()}"]`;
+  $(document).find(selector).addClass("m-list-active");
 }
 /**
  *-------------------------------------------------------------
@@ -381,14 +397,19 @@ function IDinfo(id) {
   NProgress.start();
   // disable message form
   disableOnLoad();
+  const currentType = getConversationType(); // Capture current conversation type.
   if (messenger != 0) {
     // get shared photos
-    getSharedPhotos(id);
+    if (currentType === "user") {
+      getSharedPhotos(id); // Only fetch shared media for direct conversations.
+    } else {
+      $(".messenger-infoView-shared").hide(); // Hide shared tab for groups.
+    }
     // Get info
     $.ajax({
       url: url + "/idInfo",
       method: "POST",
-      data: { _token: csrfToken, id },
+      data: { _token: csrfToken, id, type: currentType },
       dataType: "JSON",
       success: (data) => {
         if (!data?.fetch) {
@@ -405,19 +426,57 @@ function IDinfo(id) {
           'url("' + data.user_avatar + '")'
         );
         // Show shared and actions
-        $(".messenger-infoView-btns .delete-conversation").show();
-        $(".messenger-infoView-shared").show();
+        $(".messenger-infoView-btns .delete-conversation").toggle(
+          currentType === "user"
+        ); // Hide delete button for groups for now.
+        $(".messenger-infoView-shared").toggle(currentType === "user");
         // fetch messages
         fetchMessages(id, true);
         // focus on messaging input
         messageInput.focus();
         // update info in view
         $(".messenger-infoView .info-name").text(data.fetch.name);
-        $(".m-header-messaging .user-name").text(data.fetch.name);
+        $(".m-header-messaging .user-name").text(
+          currentType === "group"
+            ? `${data.fetch.name} (${data.fetch.members_count} members)`
+            : data.fetch.name
+        );
+        const membersWrapper = $(".messenger-infoView-members");
+        const membersList = $(".group-members-list");
+        if (currentType === "group") {
+          membersWrapper.show();
+          const members = data.members || [];
+          if (members.length) {
+            const listMarkup = members
+              .map(
+                (member) => `
+              <div class="group-member-row">
+                <div class="avatar av-s" style="background-image:url('${member.avatar}')"></div>
+                <div class="member-meta">
+                  <p>${escapeHtml(member.name)}</p>
+                  <span>${escapeHtml(member.role)}</span>
+                </div>
+              </div>`
+              )
+              .join("");
+            membersList.html(listMarkup);
+          } else {
+            membersList.html(
+              `<p class="message-hint center-el"><span>No members yet.</span></p>`
+            );
+          }
+        } else {
+          membersWrapper.hide();
+          membersList.html(
+            `<p class="message-hint center-el"><span>Select a group to view members</span></p>`
+          );
+        }
         // Star status
-        data.favorite > 0
-          ? $(".add-to-favorite").addClass("favorite")
-          : $(".add-to-favorite").removeClass("favorite");
+        if (currentType === "user") {
+          data.favorite > 0
+            ? $(".add-to-favorite").addClass("favorite")
+            : $(".add-to-favorite").removeClass("favorite");
+        }
         // form reset and focus
         $("#message-form").trigger("reset");
         cancelAttachment();
@@ -452,6 +511,7 @@ function sendMessage() {
     formData.append("id", getMessengerId());
     formData.append("temporaryMsgId", tempID);
     formData.append("_token", csrfToken);
+    formData.append("type", getConversationType());
     $.ajax({
       url: $("#message-form").attr("action"),
       method: "POST",
@@ -492,7 +552,9 @@ function sendMessage() {
           console.error(data.error_msg);
         } else {
           // update contact item
-          updateContactItem(getMessengerId());
+          if (getConversationType() === "user") {
+            updateContactItem(getMessengerId());
+          }
           // temporary message card
           const tempMsgCardElement = messagesContainer.find(
             `.message-card[data-id=${data.tempID}]`
@@ -504,7 +566,9 @@ function sendMessage() {
           // scroll to bottom
           scrollToBottom(messagesContainer);
           // send contact item updates
-          sendContactItemUpdates(true);
+          if (getConversationType() === "user") {
+            sendContactItemUpdates(true);
+          }
         }
       },
       error: () => {
@@ -555,6 +619,7 @@ function fetchMessages(id, newFetch = false) {
         _token: csrfToken,
         id: id,
         page: messagesPage,
+        type: getConversationType(),
       },
       dataType: "JSON",
       success: (data) => {
@@ -572,7 +637,9 @@ function fetchMessages(id, newFetch = false) {
           messagesContainer.scrollTop(lastMsg.offset().top - curOffset);
         }
         // trigger seen event
-        makeSeen(true);
+        if (getConversationType() === "user") {
+          makeSeen(true);
+        }
         // Pagination lock & messages page
         noMoreMessages = messagesPage >= data?.last_page;
         if (!noMoreMessages) messagesPage += 1;
@@ -631,6 +698,33 @@ function initClientChannel() {
 }
 initClientChannel();
 
+function handleIncomingGroupMessage(data) {
+  if (
+    getConversationType() !== "group" ||
+    parseInt(getMessengerId()) !== parseInt(data.group_id)
+  ) {
+    return; // Ignore broadcasts meant for other groups or when we are in DM mode.
+  }
+  $(".messages").find(".message-hint").remove();
+  messagesContainer.find(".messages").append(data.message);
+  scrollToBottom(messagesContainer);
+}
+
+function leaveGroupChannel() {
+  if (!groupChannel) return; // Nothing to clean up.
+  groupChannel.unbind("messaging");
+  pusher.unsubscribe(groupChannel.name);
+  groupChannel = null;
+}
+
+function joinGroupChannel(groupId) {
+  leaveGroupChannel(); // Always reset previous subscription first.
+  if (!groupId) return;
+  const name = `private-chatify-group.${groupId}.${auth_id}`;
+  groupChannel = pusher.subscribe(name);
+  groupChannel.bind("messaging", handleIncomingGroupMessage);
+}
+
 // Listen to messages, and append if data received
 channel.bind("messaging", function (data) {
   if (data.from_id == getMessengerId() && data.to_id == auth_id) {
@@ -639,7 +733,11 @@ channel.bind("messaging", function (data) {
     scrollToBottom(messagesContainer);
     makeSeen(true);
     // remove unseen counter for the user from the contacts list
-    $(".messenger-list-item[data-contact=" + getMessengerId() + "]")
+    $(
+      '.messenger-list-item[data-type="user"][data-contact=' +
+        getMessengerId() +
+        "]"
+    )
       .find("tr>td>b")
       .remove();
   }
@@ -702,10 +800,14 @@ var activeStatusChannel = pusher.subscribe("presence-activeStatus");
 // Joined
 activeStatusChannel.bind("pusher:member_added", function (member) {
   setActiveStatus(1);
-  $(".messenger-list-item[data-contact=" + member.id + "]")
+  $(
+    '.messenger-list-item[data-type="user"][data-contact=' + member.id + "]"
+  )
     .find(".activeStatus")
     .remove();
-  $(".messenger-list-item[data-contact=" + member.id + "]")
+  $(
+    '.messenger-list-item[data-type="user"][data-contact=' + member.id + "]"
+  )
     .find(".avatar")
     .before(activeStatusCircle());
 });
@@ -713,7 +815,9 @@ activeStatusChannel.bind("pusher:member_added", function (member) {
 // Leaved
 activeStatusChannel.bind("pusher:member_removed", function (member) {
   setActiveStatus(0);
-  $(".messenger-list-item[data-contact=" + member.id + "]")
+  $(
+    '.messenger-list-item[data-type="user"][data-contact=' + member.id + "]"
+  )
     .find(".activeStatus")
     .remove();
 });
@@ -732,6 +836,9 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
  *-------------------------------------------------------------
  */
 function isTyping(status) {
+  if (!clientSendChannel || getConversationType() === "group") {
+    return;
+  }
   return clientSendChannel.trigger("client-typing", {
     from_id: auth_id, // Me
     to_id: getMessengerId(), // Messenger
@@ -748,8 +855,13 @@ function makeSeen(status) {
   if (document?.hidden) {
     return;
   }
+  if (getConversationType() === "group" || !clientSendChannel) {
+    return; // Skip group chats or undefined channels.
+  }
   // remove unseen counter for the user from the contacts list
-  $(".messenger-list-item[data-contact=" + getMessengerId() + "]")
+  $(
+    `.messenger-list-item[data-contact="${getMessengerId()}"][data-type="${getConversationType()}"]`
+  )
     .find("tr>td>b")
     .remove();
   // seen
@@ -772,6 +884,9 @@ function makeSeen(status) {
  *-------------------------------------------------------------
  */
 function sendContactItemUpdates(status) {
+  if (!clientSendChannel || getConversationType() === "group") {
+    return; // No need to ping others for group threads in this iteration.
+  }
   return clientSendChannel.trigger("client-contactItem", {
     from: auth_id, // Me
     to: getMessengerId(), // Messenger
@@ -785,6 +900,9 @@ function sendContactItemUpdates(status) {
  *-------------------------------------------------------------
  */
 function sendMessageDeleteEvent(messageId) {
+  if (!clientSendChannel || getConversationType() === "group") {
+    return; // Skip broadcasting for groups.
+  }
   return clientSendChannel.trigger("client-messageDelete", {
     id: messageId,
   });
@@ -795,6 +913,9 @@ function sendMessageDeleteEvent(messageId) {
  *-------------------------------------------------------------
  */
 function sendDeleteConversationEvent() {
+  if (!clientSendChannel || getConversationType() === "group") {
+    return;
+  }
   return clientSendChannel.trigger("client-deleteConversation", {
     from: auth_id,
     to: getMessengerId(),
@@ -910,7 +1031,11 @@ function updateContactItem(user_id) {
       dataType: "JSON",
       success: (data) => {
         $(".listOfContacts")
-          .find(".messenger-list-item[data-contact=" + user_id + "]")
+          .find(
+            '.messenger-list-item[data-type="user"][data-contact=' +
+              user_id +
+              "]"
+          )
           .remove();
         if (data.contactItem) $(".listOfContacts").prepend(data.contactItem);
         if (user_id == getMessengerId()) updateSelectedContact(user_id);
@@ -929,6 +1054,34 @@ function updateContactItem(user_id) {
         console.error(error);
       },
     });
+  }
+}
+
+/**
+ *-------------------------------------------------------------
+ * Manage group list / creation helpers
+ *-------------------------------------------------------------
+ */
+function loadGroups() {
+  if (!groupsListUrl) {
+    return; // Guard when route is missing.
+  }
+  $.ajax({
+    url: groupsListUrl,
+    method: "GET",
+    dataType: "JSON",
+    success: (data) => {
+      $(".listOfGroups").html(data.html);
+      updateSelectedContact(); // Keep selection highlight in sync.
+    },
+    error: () => console.error("Unable to load chat groups."),
+  });
+}
+
+function toggleGroupForm(show = true) {
+  $(".create-group-form").toggle(show);
+  if (!show) {
+    $("#create-group-form").trigger("reset"); // Reset form when hiding it.
   }
 }
 
@@ -991,10 +1144,14 @@ function getFavoritesList() {
  *-------------------------------------------------------------
  */
 function getSharedPhotos(user_id) {
+  if (getConversationType() === "group") {
+    $(".shared-photos-list").html(""); // Clear list for groups until API supports it.
+    return;
+  }
   $.ajax({
     url: url + "/shared",
     method: "POST",
-    data: { _token: csrfToken, user_id: user_id },
+    data: { _token: csrfToken, user_id: user_id, type: getConversationType() },
     dataType: "JSON",
     success: (data) => {
       $(".shared-photos-list").html(data.shared);
@@ -1068,6 +1225,9 @@ function messengerSearch(input) {
  *-------------------------------------------------------------
  */
 function deleteConversation(id) {
+  if (getConversationType() === "group") {
+    return; // Conversation delete currently applies to direct chats only.
+  }
   $.ajax({
     url: url + "/deleteConversation",
     method: "POST",
@@ -1090,7 +1250,9 @@ function deleteConversation(id) {
     success: (data) => {
       // delete contact from the list
       $(".listOfContacts")
-        .find(".messenger-list-item[data-contact=" + id + "]")
+        .find(
+          '.messenger-list-item[data-type="user"][data-contact=' + id + "]"
+        )
         .remove();
       // refresh info
       IDinfo(id);
@@ -1257,6 +1419,9 @@ $(document).ready(function () {
   // get contacts list
   getFavoritesList();
 
+  // pull groups list
+  loadGroups();
+
   // Clear typing timeout
   clearTimeout(typingTimeout);
 
@@ -1299,9 +1464,12 @@ $(document).ready(function () {
   $("body").on("click", ".messenger-list-item", function () {
     $(".messenger-list-item").removeClass("m-list-active");
     $(this).addClass("m-list-active");
-    const userID = $(this).attr("data-contact");
-    routerPush(document.title, `${url}/${userID}`);
-    updateSelectedContact(userID);
+    const idElement = $(this).find("p[data-id]");
+    const dataID = idElement.attr("data-id");
+    const dataType = idElement.data("type") || "user";
+    const destination =
+      dataType === "group" ? `${url}/group/${dataID}` : `${url}/${dataID}`;
+    routerPush(document.title, destination);
   });
 
   // show info side button
@@ -1317,9 +1485,16 @@ $(document).ready(function () {
     if ($(this).find("tr[data-action]").attr("data-action") == "1") {
       $(".messenger-listView").hide();
     }
-    const dataId = $(this).find("p[data-id]").attr("data-id");
+    const infoElement = $(this).find("p[data-id]");
+    const dataId = infoElement.attr("data-id");
+    const dataType = infoElement.data("type") || "user";
+    setConversationType(dataType);
     setMessengerId(dataId);
+    if (dataType === "group") {
+      joinGroupChannel(dataId);
+    }
     IDinfo(dataId);
+    updateSelectedContact(dataId);
   });
 
   // click action for favorite button
@@ -1328,6 +1503,7 @@ $(document).ready(function () {
       $(".messenger-listView").hide();
     }
     const uid = $(this).find("div.avatar").attr("data-id");
+    setConversationType("user");
     setMessengerId(uid);
     IDinfo(uid);
     updateSelectedContact(uid);
@@ -1355,6 +1531,32 @@ $(document).ready(function () {
   $("#message-form").on("submit", (e) => {
     e.preventDefault();
     sendMessage();
+  });
+
+  // group creation toggles
+  $("body").on("click", ".create-group-trigger", () => toggleGroupForm(true));
+  $("body").on("click", ".cancel-group-btn", () => toggleGroupForm(false));
+  $("#create-group-form").on("submit", function (e) {
+    e.preventDefault();
+    if (!groupsStoreUrl) return;
+    const payload = {
+      _token: csrfToken,
+      name: $(".create-group-name").val(),
+      description: $("#create-group-description").val(),
+    };
+    $.ajax({
+      url: groupsStoreUrl,
+      method: "POST",
+      data: payload,
+      dataType: "JSON",
+      success: () => {
+        toggleGroupForm(false);
+        loadGroups();
+      },
+      error: (xhr) => {
+        console.error(xhr?.responseJSON || "Failed to create group");
+      },
+    });
   });
 
   // message input on keyup [Enter to send, Enter+Shift for new line]

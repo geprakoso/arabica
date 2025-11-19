@@ -1,6 +1,6 @@
 {{-- -------------------- Saved Messages -------------------- --}}
 @if($get == 'saved')
-    <table class="messenger-list-item" data-contact="{{ Auth::user()->id }}">
+    <table class="messenger-list-item" data-contact="{{ Auth::user()->id }}" data-type="user">
         <tr data-action="0">
             {{-- Avatar side --}}
             <td>
@@ -23,7 +23,7 @@
 $lastMessageBody = mb_convert_encoding($lastMessage->body, 'UTF-8', 'UTF-8');
 $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0, 30, 'UTF-8').'..' : $lastMessageBody;
 ?>
-<table class="messenger-list-item" data-contact="{{ $user->id }}">
+<table class="messenger-list-item" data-contact="{{ $user->id }}" data-type="user">
     <tr data-action="0">
         {{-- Avatar side --}}
         <td style="position: relative">
@@ -64,7 +64,7 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
 
 {{-- -------------------- Search Item -------------------- --}}
 @if($get == 'search_item')
-<table class="messenger-list-item" data-contact="{{ $user->id }}">
+<table class="messenger-list-item" data-contact="{{ $user->id }}" data-type="user">
     <tr data-action="0">
         {{-- Avatar side --}}
         <td>
@@ -86,5 +86,4 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
 @if($get == 'sharedPhoto')
 <div class="shared-photo chat-image" style="background-image: url('{{ $image }}')"></div>
 @endif
-
 

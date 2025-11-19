@@ -15,10 +15,14 @@
             {{-- Search input --}}
             <input type="text" class="messenger-search" placeholder="Search" />
             {{-- Tabs --}}
-            {{-- <div class="messenger-listView-tabs">
+            <div class="messenger-listView-tabs">
                 <a href="#" class="active-tab" data-view="users">
-                    <span class="far fa-user"></span> Contacts</a>
-            </div> --}}
+                    <span class="far fa-user"></span> Contacts
+                </a>
+                <a href="#" data-view="groups">
+                    <span class="fas fa-users"></span> Groups
+                </a>
+            </div>
         </div>
         {{-- tabs and lists --}}
         <div class="m-body contacts-container">
@@ -37,6 +41,38 @@
                <p class="messenger-title"><span>All Messages</span></p>
                <div class="listOfContacts" style="width: 100%;height: calc(100% - 272px);position: relative;"></div>
            </div>
+             {{-- ---------------- [ Search Tab ] ---------------- --}}
+           <div class="messenger-tab groups-tab app-scroll" data-view="groups">
+                {{-- Keep the action buttons clear of the divider line --}}
+                <div class="messenger-title messenger-title--actions chatify-d-flex chatify-justify-content-between chatify-align-items-center">
+                    <span>Rooms & Teams</span>
+                    <button class="btn btn-primary create-group-trigger" type="button">
+                        <span class="fas fa-plus"></span> New Group
+                    </button>
+                </div>
+                <div class="listOfGroups app-scroll">
+                    <p class="message-hint center-el"><span>No groups yet. Create one above.</span></p>
+                </div>
+                <div class="create-group-form" style="display: none;">
+                    <form id="create-group-form">
+                        @csrf
+                        <div class="form-group">
+                            <label for="create-group-name">Group name</label>
+                            <input type="text" id="create-group-name" name="name" class="create-group-name" placeholder="Team standup" />
+                        </div>
+                        <div class="form-group">
+                            <label for="create-group-description">Description</label>
+                            <textarea id="create-group-description" name="description" rows="2" placeholder="Optional context"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary save-group-btn">
+                            <span class="fas fa-save"></span> Save
+                        </button>
+                        <button type="button" class="btn btn-light cancel-group-btn">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </div>
              {{-- ---------------- [ Search Tab ] ---------------- --}}
            <div class="messenger-tab search-tab app-scroll" data-view="search">
                 {{-- items --}}
