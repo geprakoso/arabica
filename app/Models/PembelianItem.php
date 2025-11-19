@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Produk;
+use App\Models\PenjualanItem;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,6 +37,11 @@ class PembelianItem extends Model
     public function produk()
     {
         return $this->belongsTo(Produk::class, self::productForeignKey());
+    }
+
+    public function penjualanItems()
+    {
+        return $this->hasMany(PenjualanItem::class, 'id_pembelian_item', 'id_pembelian_item');
     }
 
     public static function productForeignKey(): string
