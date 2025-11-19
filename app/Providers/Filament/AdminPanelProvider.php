@@ -60,6 +60,10 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
-            ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget());
+            ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
+            ->plugin(
+                \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
+                    ->allowSubFolders()
+            );
     }
 }
