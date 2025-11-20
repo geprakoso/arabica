@@ -24,6 +24,15 @@ class Pembelian extends Model
         'id_supplier',
     ];
 
+    public static function generatePO(): string
+    {
+        $lastNumber = self::where('no_po', 'like', 'MD%')
+            ->selectRaw('MAX(CAST(SUBSTRING(no_po, 4) AS UNSIGNED)) as max_num')
+            ->value('max_num') ?? 0;
+
+        return 'PO-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
     protected $casts = [
         'tanggal' => 'date',
         'tgl_tempo' => 'date',

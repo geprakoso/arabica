@@ -42,6 +42,8 @@ class PembelianResource extends Resource
                                 TextInput::make('no_po')
                                     ->label('No. PO')
                                     ->required()
+                                    ->default(fn () => Pembelian::generatePO())
+                                    ->disabled()
                                     ->unique(ignoreRecord: true),
                                 DatePicker::make('tanggal')
                                     ->label('Tanggal Pembelian')

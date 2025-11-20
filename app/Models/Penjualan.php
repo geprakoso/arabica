@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 
 class Penjualan extends Model
@@ -29,6 +30,32 @@ class Penjualan extends Model
     {
         static::deleting(function (Penjualan $penjualan): void {
             $penjualan->items()->get()->each->delete();
+        });
+
+        static::creating(function ($model) {
+            if (empty($model->no_nota)) {
+                $model->no_nota = static::generateNoNota();
+            }
+        });
+    }
+
+    public static function generateNoNota(): string
+    {
+        return DB::transaction(function () {
+            $date = now()->format('Ymd');
+            $prefix = 'PJ-' . $date . '-';
+            
+            $latest = static::where('no_nota', 'like', $prefix . '%')
+                ->orderBy('no_nota', 'desc')
+                ->lockForUpdate()
+                ->first();
+
+            $next = 1;
+            if ($latest && preg_match('/' . preg_quote($prefix) . '(\d+)$/', $latest->no_nota, $m)) {
+                $next = (int) $m[1] + 1;
+            }
+
+            return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
         });
     }
 

@@ -19,6 +19,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 
+use function Symfony\Component\String\s;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,6 +30,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->registration()
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->login()
             ->colors([
                 'primary' => Color::Amber,

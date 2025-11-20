@@ -35,6 +35,8 @@ class RequestOrderResource extends Resource
                         Forms\Components\TextInput::make('no_ro')
                             ->label('No. RO')
                             ->required()
+                            ->default(fn () => RequestOrder::generateRO())
+                            ->disabled()
                             ->unique(ignoreRecord: true),
                         Forms\Components\Select::make('karyawan_id')
                             ->label('Karyawan')
@@ -62,6 +64,7 @@ class RequestOrderResource extends Resource
                                     ->label('Produk')
                                     ->relationship('produk', 'nama_produk' , )
                                     ->searchable()
+                                    ->preload()
                                     ->required()
                                     ->native(false),
                             ])
