@@ -64,6 +64,10 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
                     ->allowSubFolders()
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn () => view('filament.hooks.absensi-geolocation-script')
             );
     }
 }

@@ -50,6 +50,15 @@ class GudangResource extends Resource
                             ->label('Aktifkan Gudang')
                             ->default(true),
                 ]),
+                Section::make('Koordinat')
+                    ->schema([
+                TextInput::make('latitude')->numeric(),
+                TextInput::make('longitude')->numeric(),
+                TextInput::make('radius_km')
+                    ->label('Radius (Meter)')
+                    ->numeric()
+                    ->default(50),
+                    ]),
             ]);
     }
 
