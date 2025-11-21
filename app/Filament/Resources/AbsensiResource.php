@@ -22,6 +22,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class AbsensiResource extends Resource
 {
@@ -36,15 +37,17 @@ class AbsensiResource extends Resource
                 //
                 Section::make('Detail Kehadiran')
                 ->schema([
-                    // Pilih User (Karyawan)
+                    // Otomatis pakai user yang sedang login; karyawan tidak bisa diubah
                     Select::make('user_id')
                         ->label('Karyawan')
                         ->options(
                             Karyawan::query()
                                 ->whereNotNull('user_id')
                                 ->pluck('nama_karyawan', 'user_id')
-                        ) // Gunakan nama karyawan sebagai label dan simpan user_id
-                        ->searchable()
+                        )
+                        ->default(fn () => Auth::auth()->id())
+                        ->disabled()
+                        ->dehydrated()
                         ->required(),
 
                     // Tanggal Absen

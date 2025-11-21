@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\AbsensiResource\Pages;
 
 use App\Filament\Resources\AbsensiResource;
-use App\Models\Gudang;
+use App\Models\ProfilePerusahaan;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Actions\Action;
@@ -14,49 +14,49 @@ class CreateAbsensi extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // // 1. Ambil Lokasi Kantor (Misalnya kita ambil Gudang Pusat atau berdasarkan user)
-        // // Disini saya hardcode ambil Gudang pertama, nanti bisa disesuaikan relasi user->gudang
-        //     $kantor = Gudang::first(); 
+        // Radius maksimal (meter) dari titik kantor untuk validasi absensi
+        $radiusMeter = 100;
 
-        //     if (!$kantor) {
-        //         Notification::make()->title('Data Kantor/Gudang belum diatur!')->danger()->send();
-        //         $this->halt();
-        //     }
+        // Ambil titik kantor dari Profil Perusahaan
+        $kantor = ProfilePerusahaan::first();
 
-        // // 2. Ambil Lokasi Inputan User (Dari Form)
-        //     $userLat = $data['lat_absen'] ?? null;
-        //     $userLong = $data['long_absen'] ?? null;
+        if (!$kantor || !$kantor->lat_perusahaan || !$kantor->long_perusahaan) {
+            Notification::make()
+                ->title('Koordinat kantor belum diset')
+                ->body('Setel Latitude/Longitude di Profil Perusahaan terlebih dahulu.')
+                ->danger()
+                ->send();
 
-        //     if (!$userLat || !$userLong) {
-        //      // Jika browser gagal ambil lokasi
-        //     Notification::make()->title('Lokasi Anda tidak terdeteksi! Pastikan GPS aktif.')->danger()->send();
-        //     $this->halt();
-        //     }
+            $this->halt();
+        }
 
-        // // 3. Hitung Jarak (Haversine Formula)
-        //     $jarak = $this->hitungJarak($kantor->latitude, $kantor->longitude, $userLat, $userLong);
+        $userLat = $data['lat_absen'] ?? null;
+        $userLong = $data['long_absen'] ?? null;
 
-        // // 4. Cek apakah dalam radius (meter)
-        //     if ($jarak > $kantor->radius_km) {
-        //         Notification::make()
-        //             ->title('Gagal Absen!')
-        //             ->body("Anda berada $jarak meter dari kantor. Maksimal jarak adalah {$kantor->radius_km} meter.")
-        //             ->danger()
-        //             ->send();
-                
-                $allowedIps = ['103.100.xxx.xxx', '127.0.0.1']; // Tambahkan localhost untuk test
+        // Pastikan browser memberi koordinat pengguna
+        if (!$userLat || !$userLong) {
+            Notification::make()
+                ->title('Lokasi Anda tidak terdeteksi')
+                ->body('Pastikan GPS/Location diizinkan di browser.')
+                ->danger()
+                ->send();
 
-                $userIp = request()->ip();
+            $this->halt();
+        }
 
-                if (!in_array($userIp, $allowedIps)) {
-                    Notification::make()
-                        ->title('Akses Ditolak!')
-                        ->body("Anda harus terhubung ke Wi-Fi Kantor untuk absen. IP Anda: $userIp")
-                        ->danger()
-                        ->send();
+        // Hitung jarak dari pengguna ke titik kantor
+        $jarak = $this->hitungJarak($kantor->lat_perusahaan, $kantor->long_perusahaan, $userLat, $userLong);
 
-                $this->halt(); // Batalkan proses simpan
-            }
+        // Tolak jika di luar radius
+        if ($jarak > $radiusMeter) {
+            Notification::make()
+                ->title('Gagal Absen')
+                ->body("Anda berada {$jarak} meter dari titik kantor. Maksimal jarak adalah {$radiusMeter} meter.")
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
 
         return $data;
     }
