@@ -26,13 +26,13 @@
                 <div>
                     <dt class="text-gray-500 dark:text-gray-400">HPP</dt>
                     <dd class="font-semibold text-gray-900 dark:text-white">
-                        {{ isset($batch['hpp']) ? 'Rp ' . number_format($batch['hpp'], 0, ',', '.') : '-' }}
+                        {{ $batch['hpp_display'] ?? '-' }}
                     </dd>
                 </div>
                 <div>
                     <dt class="text-gray-500 dark:text-gray-400">Harga Jual</dt>
                     <dd class="font-semibold text-gray-900 dark:text-white">
-                        {{ isset($batch['harga_jual']) ? 'Rp ' . number_format($batch['harga_jual'], 0, ',', '.') : '-' }}
+                        {{ $batch['harga_jual_display'] ?? '-' }}
                     </dd>
                 </div>
                 <div>

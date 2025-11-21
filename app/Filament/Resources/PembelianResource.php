@@ -44,6 +44,7 @@ class PembelianResource extends Resource
                                     ->required()
                                     ->default(fn () => Pembelian::generatePO())
                                     ->disabled()
+                                    ->dehydrated(true)
                                     ->unique(ignoreRecord: true),
                                 DatePicker::make('tanggal')
                                     ->label('Tanggal Pembelian')
@@ -122,12 +123,14 @@ class PembelianResource extends Resource
                                             ->native(false),
                                         TextInput::make('hpp')
                                             ->label('HPP')
+                                            ->currencyMask('.', ',', 0)
                                             ->numeric()
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('harga_jual')
                                             ->label('Harga Jual')
                                             ->numeric()
+                                            ->currencyMask('.', ',', 0)
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('qty')
@@ -160,6 +163,7 @@ class PembelianResource extends Resource
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
+
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal')

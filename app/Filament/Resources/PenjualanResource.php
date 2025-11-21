@@ -10,7 +10,6 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -39,10 +38,10 @@ class PenjualanResource extends Resource
                     ->schema([
                         TextInput::make('no_nota')
                             ->label('No. Nota')
-                            ->required()
+                            ->default(fn () => Penjualan::generateNoNota())
+                            ->disabled()
                             ->unique(ignoreRecord: true)
-                            ->default(fn () => \App\Models\Penjualan::generateNoNota())
-                            ->disabled(),
+                            ->required(),
                         DatePicker::make('tanggal_penjualan')
                             ->label('Tanggal Penjualan')
                             ->required()

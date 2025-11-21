@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\PenjualanResource\Pages;
 
 use App\Filament\Resources\PenjualanResource;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
 
@@ -24,8 +26,7 @@ class CreatePenjualan extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $user = auth()->user();
-
+        $user = Auth::user();
         if (! $user) {
             return;
         }
@@ -35,5 +36,12 @@ class CreatePenjualan extends CreateRecord
             ->body("No. Nota {$this->record->no_nota} siap ditambahkan produk.")
             ->icon('heroicon-o-check-circle')
             ->sendToDatabase($user);
+    }
+
+    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+    {
+        return DB::transaction(function () use ($data) {
+            return parent::handleRecordCreation($data);
+        });
     }
 }

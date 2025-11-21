@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use Akaunting\Money\Money;
 use App\Models\Produk;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -16,8 +17,6 @@ use Filament\Infolists\Components\TextEntry;
 use App\Filament\Resources\InventoryResource\Pages;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\ViewEntry;
-
-use function Laravel\Prompts\form;
 
 class InventoryResource extends Resource
 {
@@ -62,13 +61,13 @@ class InventoryResource extends Resource
                     ->sortable(),
                 TextColumn::make('latest_batch.hpp')
                     ->label('HPP Terbaru')
-                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? 0)
-                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state ?? 0, 0, ',', '.'))
+                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
+                    ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
                 TextColumn::make('latest_batch.harga_jual')
                     ->label('Harga Jual Terbaru')
-                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? 0)
-                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state ?? 0, 0, ',', '.'))
+                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
+                    ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
                 TextColumn::make('batch_count')
                     ->label('Jumlah Batch Aktif')
@@ -180,25 +179,36 @@ class InventoryResource extends Resource
             $tanggal = $purchase && $purchase->tanggal
                 ? $purchase->tanggal->format('d M Y')
                 : '-';
+            $rawHpp = $item->hpp;
+            $rawHargaJual = $item->harga_jual;
+            $hpp = is_null($rawHpp) ? null : (float) $rawHpp;
+            $hargaJual = is_null($rawHargaJual) ? null : (float) $rawHargaJual;
 
             return [
                 'no_po' => $purchase->no_po ?? '-',
                 'tanggal' => $tanggal,
                 'qty' => (int) ($item->{$qtySisaColumn} ?? 0),
-                'hpp' => (int) ($item->hpp ?? 0),
-                'harga_jual' => (int) ($item->harga_jual ?? 0),
+                'hpp' => $hpp,
+                'harga_jual' => $hargaJual,
+                'hpp_display' => is_null($hpp) ? null : self::formatCurrency($hpp),
+                'harga_jual_display' => is_null($hargaJual) ? null : self::formatCurrency($hargaJual),
                 'kondisi' => ucfirst($item->kondisi ?? '-'),
             ];
         })->toArray();
 
         $latestBatchRecord = $activeBatches->last();
-        $latestBatch = $latestBatchRecord
-            ? [
-                'hpp' => (int) ($latestBatchRecord->hpp ?? 0),
-                'harga_jual' => (int) ($latestBatchRecord->harga_jual ?? 0),
+        $latestBatch = null;
+
+        if ($latestBatchRecord) {
+            $latestHpp = $latestBatchRecord->hpp;
+            $latestHargaJual = $latestBatchRecord->harga_jual;
+
+            $latestBatch = [
+                'hpp' => is_null($latestHpp) ? null : (float) $latestHpp,
+                'harga_jual' => is_null($latestHargaJual) ? null : (float) $latestHargaJual,
                 'tanggal' => optional($latestBatchRecord->pembelian?->tanggal)->format('d M Y'),
-            ]
-            : null;
+            ];
+        }
 
         return self::$inventorySnapshotCache[$cacheKey] = [
             'qty' => $totalQty,
@@ -258,6 +268,9 @@ class InventoryResource extends Resource
 
     protected static function formatCurrency($value): string
     {
-        return 'Rp ' . number_format((int) ($value ?? 0), 0, ',', '.');
+        $amount = (float) ($value ?? 0);
+
+        return Money::IDR($amount, true)->formatWithoutZeroes();
     }
+
 }

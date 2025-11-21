@@ -55,11 +55,21 @@ class ProdukResource extends Resource
                             Forms\Components\Select::make('kategori_id')
                                 ->label('Kategori')
                                 ->relationship('kategori', 'nama_kategori')
+                                ->createoptionForm([
+                                    Forms\Components\TextInput::make('nama_kategori')
+                                        ->label('Nama Kategori')
+                                        ->required(),
+                                ])
                                 ->required()
                                 ->native(false),
                             Forms\Components\Select::make('brand_id')
                                 ->label('Brand')
                                 ->relationship('brand', 'nama_brand')
+                                ->createoptionForm([
+                                    Forms\Components\TextInput::make('nama_brand')
+                                        ->label('Nama Brand')
+                                        ->required(),
+                                ])
                                 ->required()
                                 ->native(false),
                             Forms\Components\TextInput::make('sku')

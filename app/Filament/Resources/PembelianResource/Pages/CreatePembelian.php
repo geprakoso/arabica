@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Filament\Resources\PembelianResource\Pages;
+use App\Models\Pembelian;
+use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
-use App\Filament\Resources\PembelianResource;
 use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\PembelianResource;
 
 class CreatePembelian extends CreateRecord
 {
@@ -16,7 +18,7 @@ class CreatePembelian extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (! $user) {
             return;
@@ -27,6 +29,11 @@ class CreatePembelian extends CreateRecord
             ->body("No.PO {$this->record->no_po} ditambahkan inventory.")
             ->icon('heroicon-o-check-circle')
             ->sendToDatabase($user);
+    }
+        protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['no_po'] = Pembelian::generatePO();
+        return $data;
     }
 }
 

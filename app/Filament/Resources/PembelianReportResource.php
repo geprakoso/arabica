@@ -2,17 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Form;
+use App\Models\Pembelian;
+use Akaunting\Money\Money;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Actions\ExportAction;
+use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Exports\PembelianExporter;
 use App\Filament\Resources\PembelianReportResource\Pages;
-use App\Models\Pembelian;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\ExportAction;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class PembelianReportResource extends Resource
 {
@@ -53,20 +55,17 @@ class PembelianReportResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_items')
                     ->label('Total Qty')
-                    ->state(fn (Pembelian $record) => $record->items->sum('qty'))
-                    ->sortable(),
+                    ->state(fn (Pembelian $record) => $record->items->sum('qty')),
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
                     ->state(fn (Pembelian $record) => self::formatCurrency(
                         $record->items->sum(fn ($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
-                    ))
-                    ->sortable(),
+                    )),
                 TextColumn::make('total_harga_jual')
                     ->label('Total Harga Jual')
                     ->state(fn (Pembelian $record) => self::formatCurrency(
                         $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
-                    ))
-                    ->sortable(),
+                    )),
             ])
             ->filters([
                 Tables\Filters\Filter::make('periode')
@@ -97,6 +96,12 @@ class PembelianReportResource extends Resource
     {
         return [];
     }
+    
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->can('view Laporan Pembelian');
+    }
+
 
     public static function getPages(): array
     {
@@ -105,8 +110,9 @@ class PembelianReportResource extends Resource
         ];
     }
 
-    protected static function formatCurrency(float | int $value): string
+    protected static function formatCurrency(int $value): string
     {
-        return 'Rp ' . number_format($value, 0, ',', '.');
+        
+        return Money::IDR($value * 100)->formatWithoutZeroes() ;
     }
 }
