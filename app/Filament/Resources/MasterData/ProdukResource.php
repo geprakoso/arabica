@@ -50,7 +50,11 @@ class ProdukResource extends Resource
                     Section::make('Data Produk')
                         ->schema([
                             Forms\Components\TextInput::make('nama_produk')
-                                ->label('Nama Produk') // $form is not used here, so no change needed.
+                                ->label('Nama Produk') 
+                                ->rules(['regex:/^[A-Z0-9\s]+$/'])
+                                ->validationMessages([
+                                    'regex' => 'Nama produk harus UPPERCASE.',
+                                ])
                                 ->required(),
                             Forms\Components\Select::make('kategori_id')
                                 ->label('Kategori')

@@ -6,6 +6,7 @@ use App\Filament\Resources\PenjualanResource\Pages;
 use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
 use App\Models\PembelianItem;
 use App\Models\Penjualan;
+use App\Models\Produk;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
@@ -163,5 +164,17 @@ class PenjualanResource extends Resource
         ];
 
         return implode(' | ', array_filter($labelParts));
+    }
+
+    public static function getAvailableProductOptions(): array
+    {
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        return Produk::query()
+            ->whereHas('pembelianItems', fn (Builder $query) => $query->where($qtyColumn, '>', 0))
+            ->orderBy('nama_produk')
+            ->pluck('nama_produk', 'id')
+            ->all();
     }
 }

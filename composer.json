@@ -13,6 +13,7 @@
         "codeat3/blade-carbon-icons": "^2.37",
         "codeat3/blade-eos-icons": "^1.15",
         "filament/filament": "3.3",
+        "icetalker/filament-table-repeater": "^1.4",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },

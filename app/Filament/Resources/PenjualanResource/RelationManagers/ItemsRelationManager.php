@@ -25,7 +25,7 @@ class ItemsRelationManager extends RelationManager
         return $form->schema([
             Select::make('id_produk')
                 ->label('Produk')
-                ->relationship('produk', 'nama_produk')
+                ->options(fn () => PenjualanResource::getAvailableProductOptions())
                 ->searchable()
                 ->preload()
                 ->required()

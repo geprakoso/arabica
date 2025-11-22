@@ -10,8 +10,8 @@ use App\Models\RequestOrder;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\RequestOrderResource\Pages;
 
@@ -63,29 +63,29 @@ class RequestOrderResource extends Resource
 
                 Section::make('Daftar Produk')
                     ->schema([
-                        Repeater::make('items')
-                            ->label('Produk Diminta')
-                            ->relationship('items')
-                            ->minItems(1)
-                            ->schema([
-                                Forms\Components\Select::make('produk_id')
-                                    ->label('Produk')
-                                    ->relationship('produk', 'nama_produk')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required()
-                                    ->native(false)
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state, callable $set) {
-                                        if (! $state) {
-                                            $set('kategori_nama', null);
-                                            $set('brand_nama', null);
-                                            return;
-                                        }
-                                        $product = \App\Models\Produk::with(['kategori', 'brand'])->find($state);
-                                        $set('kategori_nama', $product?->kategori?->nama_kategori ?? null);
-                                        $set('brand_nama', $product?->brand?->nama_brand ?? null);
-                                    }),
+                    TableRepeater::make('items')
+                        ->label('Produk Diminta')
+                        ->relationship('items')
+                        ->minItems(1)
+                        ->schema([
+                            Forms\Components\Select::make('produk_id')
+                                ->label('Produk')
+                                ->relationship('produk', 'nama_produk')
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->native(false)
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if (! $state) {
+                                        $set('kategori_nama', null);
+                                        $set('brand_nama', null);
+                                        return;
+                                    }
+                                    $product = \App\Models\Produk::with(['kategori', 'brand'])->find($state);
+                                    $set('kategori_nama', $product?->kategori?->nama_kategori ?? null);
+                                    $set('brand_nama', $product?->brand?->nama_brand ?? null);
+                                }),
                                 Forms\Components\TextInput::make('kategori_nama')
                                     ->label('Kategori')
                                     ->disabled(),
@@ -94,7 +94,8 @@ class RequestOrderResource extends Resource
                                     ->disabled(),
                             ])
                             ->reorderable(false)
-                            ->columns(3),
+                            ->columns(3)
+                            ->cloneable(),
                     ])
                     ->collapsed(false),
             ]);

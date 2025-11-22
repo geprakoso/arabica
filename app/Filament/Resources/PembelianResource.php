@@ -9,8 +9,7 @@ use Filament\Tables\Table;
 use Filament\Tables;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Tables\Columns\TextColumn;
@@ -109,7 +108,7 @@ class PembelianResource extends Resource
                             ->columns(2),
                         Tab::make('Produk Dibeli')
                             ->schema([
-                                Repeater::make('items')
+                               TableRepeater::make('items')
                                     ->relationship('items')
                                     ->label('Daftar Produk')
                                     ->minItems(1)
@@ -148,7 +147,14 @@ class PembelianResource extends Resource
                                             ->required()
                                             ->native(false),
                                     ])
+                                    ->colStyles([
+                                        'hpp' => 'width: 180px;',
+                                        'harga_jual' => 'width: 180px;',
+                                        'qty' => 'width: 80px;',
+                                        'kondisi' => 'width: 150px;',
+                                    ])
                                     ->columns(5)
+                                    ->cloneable()
                                     ->reorderable(false),
                             ]),
                     ])
