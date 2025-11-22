@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Chatify\ChatifyMessenger as VendorChatifyMessenger;
 use App\Support\ChatifyMessenger;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+        if (app()->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') == 'https') {
+            URL::forceScheme('https');
     }
+}
 }

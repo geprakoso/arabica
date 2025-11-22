@@ -17,7 +17,7 @@ class ServeWithLink extends Command
         $this->info('Running storage:link...');
         Artisan::call('storage:link');
         $this->info('Starting server...');
-        passthru('php artisan serve');
+        passthru('php artisan serve --host=0.0.0.0');
     }
 }
 
