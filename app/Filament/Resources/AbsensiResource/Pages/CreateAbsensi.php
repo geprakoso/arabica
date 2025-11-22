@@ -14,6 +14,18 @@ class CreateAbsensi extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $status = $data['status'] ?? null;
+
+        // Izin atau sakit tidak perlu validasi lokasi
+        if (in_array($status, ['izin', 'sakit'], true)) {
+            return $data;
+        }
+
+        // Hanya wajib cek koordinat saat status hadir
+        if ($status !== 'hadir') {
+            return $data;
+        }
+
         // Radius maksimal (meter) dari titik kantor untuk validasi absensi
         $radiusMeter = 100;
 

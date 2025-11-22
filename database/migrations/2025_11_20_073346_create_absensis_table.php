@@ -18,9 +18,14 @@ return new class extends Migration
             $table->date('tanggal');
             $table->time('jam_masuk');
             $table->time('jam_keluar')->nullable(); // Nullable karena saat absen masuk, jam keluar belum ada
+            // Durasi kerja (dihitung saat pulang)
+            $table->integer('durasi_menit')->default(0);
             // Status kehadiran
-            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpa'])->default('hadir');
+            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha'])->default('hadir');
             $table->text('keterangan')->nullable(); // Untuk catatan jika telat atau izin
+            // kordinat (disimpan untuk history)
+            $table->decimal('lat_absen', 10, 8)->nullable();
+            $table->decimal('long_absen', 11, 8)->nullable();
             $table->timestamps();
         });
     }

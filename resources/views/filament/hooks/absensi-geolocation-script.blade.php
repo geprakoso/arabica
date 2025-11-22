@@ -37,10 +37,21 @@
             return R * c;
         };
 
-        const alertUser = (message) => {
-            // Filament notification would be nicer, but this hook runs before Livewire is ready
-            // so we fall back to a simple alert.
-            alert(message);
+        // const alertUser = (message) => {
+        //     // Filament notification would be nicer, but this hook runs before Livewire is ready
+        //     // so we fall back to a simple alert.
+        //     alert(message);
+        // };
+
+        const notify = (message, status = 'danger') => {
+            window.dispatchEvent(
+                new CustomEvent('filament-notify', {
+                    detail: {
+                        status,
+                        message,
+                    },
+                }),
+            );
         };
 
         const attachSubmitGuard = (form, latitudeInput, longitudeInput) => {
@@ -51,7 +62,8 @@
             form.addEventListener('submit', (event) => {
                 if (!haveCompanyLocation) {
                     event.preventDefault();
-                    alertUser('Koordinat kantor belum diatur. Hubungi admin.');
+                    // alertUser('Koordinat kantor belum diatur. Hubungi admin.');
+                    notify('Koordinat kantor belum diatur. Hubungi Admin');
                     return;
                 }
 
@@ -60,7 +72,8 @@
 
                 if (!Number.isFinite(userLat) || !Number.isFinite(userLong)) {
                     event.preventDefault();
-                    alertUser('Lokasi Anda belum tersedia. Izinkan akses lokasi dan coba lagi.');
+                    // alertUser('Lokasi Anda belum tersedia. Izinkan akses lokasi dan coba lagi.');
+                    notify('Lokasi Anda belum tersedia. Izinkan akses lokasi dan coba lagi.');
                     return;
                 }
 
@@ -70,7 +83,10 @@
 
                 if (distance > geofenceRadiusMeters) {
                     event.preventDefault();
-                    alertUser(
+                    // alertUser(
+                    //     `Jarak Anda ${distance.toFixed(0)}m dari titik kantor. Maksimum ${geofenceRadiusMeters}m untuk absensi.`
+                    // );
+                    notify(
                         `Jarak Anda ${distance.toFixed(0)}m dari titik kantor. Maksimum ${geofenceRadiusMeters}m untuk absensi.`
                     );
                 }

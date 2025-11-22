@@ -45,24 +45,28 @@ class AbsensiResource extends Resource
                                 ->whereNotNull('user_id')
                                 ->pluck('nama_karyawan', 'user_id')
                         )
-                        ->default(fn () => Auth::auth()->id())
+                        ->default(fn () => auth()->id())
                         ->disabled()
                         ->dehydrated()
                         ->required(),
 
                     // Tanggal Absen
                     DatePicker::make('tanggal')
-                        ->default(now())
                         ->required()
+                        ->disabled()
+                        ->dehydrated()
                         ->default(today()),
 
                     // Jam Masuk & Keluar
                     TimePicker::make('jam_masuk')
                         ->default(now())
                         ->seconds(false) // Biasanya absensi tidak butuh detik
+                        ->disabled()
+                        ->dehydrated()
                         ->required(),
                     
                     TimePicker::make('jam_keluar')
+                        ->label('Jam Pulang')
                         ->seconds(false),
 
                     // Status dengan Pilihan
@@ -71,7 +75,7 @@ class AbsensiResource extends Resource
                             'hadir' => 'Hadir',
                             'izin' => 'Izin',
                             'sakit' => 'Sakit',
-                            'alpa' => 'Alpa',
+                            'alpha' => 'Alpha',
                         ])
                         ->default('hadir')
                         ->required(),
@@ -122,7 +126,9 @@ class AbsensiResource extends Resource
                         'hadir' => 'success', // Hijau
                         'izin' => 'warning',  // Kuning
                         'sakit' => 'danger',  // Merah
-                        'alpa' => 'gray',     // Abu-abu
+                        'alpha' => 'gray',    // Abu-abu
+                        'alpa' => 'gray',     // fallback jika data lama pakai ejaan lama
+                        default => 'gray',    // fallback agar tidak error
                     }),
                     
                 ])
@@ -146,7 +152,8 @@ class AbsensiResource extends Resource
                         'hadir' => 'Hadir',
                         'izin' => 'Izin',
                         'sakit' => 'Sakit',
-                        'alpa' => 'Alpa',
+                        'alpha' => 'Alpha',
+                        'alpa' => 'Alpa', // fallback data lama
                 ]),
             ])
             ->actions([
