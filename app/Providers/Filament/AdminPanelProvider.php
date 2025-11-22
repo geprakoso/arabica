@@ -17,7 +17,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
 use App\Filament\Pages\ChatRoomPage;
 
@@ -59,7 +59,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
+            ->plugin(FilamentShieldPlugin::make())
             ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
