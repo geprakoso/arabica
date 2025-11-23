@@ -11,6 +11,7 @@ use App\Models\Karyawan;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
@@ -20,6 +21,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\Section;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
@@ -111,13 +116,56 @@ class AbsensiResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make('Detail Kehadiran')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            ImageEntry::make('camera_test')
+                                ->label('Foto Absensi')
+                                ->disk('public')
+                                ->visibility('public')
+                                ->height(200)
+                                ->columnSpanFull(),
+                            TextEntry::make('user.name')
+                                ->label('Karyawan'),
+                            TextEntry::make('tanggal')
+                                ->date('d M Y'),
+                            TextEntry::make('jam_masuk')
+                                ->time('H:i'),
+                            TextEntry::make('jam_keluar')
+                                ->time('H:i')
+                                ->placeholder('Belum pulang'),
+                            TextEntry::make('status')
+                                ->badge(),
+                        ]),
+                        TextEntry::make('keterangan')
+                            ->columnSpanFull(),
+                        
+                    ]),
+                InfolistSection::make('Lokasi')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            TextEntry::make('lat_absen')
+                                ->label('Latitude')
+                                ->copyable(),
+                            TextEntry::make('long_absen')
+                                ->label('Longitude')
+                                ->copyable(),
+                        ]),
+                    ]),
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 //
                 TextColumn::make('user.name')
-                    ->label('Nama Karyawan')
+                    ->label('Nama Karyawan') 
                     ->searchable()
                     ->sortable(),
 
@@ -175,7 +223,7 @@ class AbsensiResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

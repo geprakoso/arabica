@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AbsensiResource\Pages;
 
 use App\Filament\Resources\AbsensiResource;
+use App\Models\Absensi;
 use App\Models\ProfilePerusahaan;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -14,6 +15,22 @@ class CreateAbsensi extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Batasi 1 absensi per user per hari
+        $sudahAbsen = Absensi::query()
+            ->where('user_id', $data['user_id'] ?? auth()->id())
+            ->whereDate('tanggal', $data['tanggal'] ?? now())
+            ->exists();
+
+        if ($sudahAbsen) {
+            Notification::make()
+                ->title('Sudah absen hari ini')
+                ->body('Anda hanya dapat melakukan absensi 1 kali per hari.')
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
         $status = $data['status'] ?? null;
 
         // Izin atau sakit tidak perlu validasi lokasi
