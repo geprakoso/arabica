@@ -27,6 +27,8 @@ class BrandResource extends Resource
     protected static ?string $navigationIcon = 'hugeicons-label-important';
 
     protected static ?string $navigationGroup = 'Master Data';
+    
+    protected static ?string $pluralModelLabel = 'Brand';
 
     protected static ?string $navigationLabel = 'Brand';
 

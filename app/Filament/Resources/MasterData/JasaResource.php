@@ -33,6 +33,8 @@ class JasaResource extends Resource
 
     protected static ?string $navigationGroup = 'Master Data';
 
+    protected static ?string $pluralModelLabel = 'Jasa';
+
     protected static ?string $navigationLabel = 'Jasa';
 
     protected static ?int $navigationSort = 2;

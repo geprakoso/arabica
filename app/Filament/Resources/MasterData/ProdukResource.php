@@ -39,6 +39,8 @@ class ProdukResource extends Resource
 
     protected static ?string $navigationLabel = 'Produk';
 
+    protected static ?string $pluralModelLabel = 'Produk';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -50,11 +52,11 @@ class ProdukResource extends Resource
                     Section::make('Data Produk')
                         ->schema([
                             Forms\Components\TextInput::make('nama_produk')
-                                ->label('Nama Produk') 
-                                ->rules(['regex:/^[A-Z0-9\s]+$/'])
-                                ->validationMessages([
-                                    'regex' => 'Nama produk harus UPPERCASE.',
-                                ])
+                                ->label('Nama Produk')
+                                // ->rules(['regex:/^[A-Z0-9\s]+$/'])
+                                // ->validationMessages([
+                                //     'regex' => 'Nama produk harus UPPERCASE.',
+                                // ])
                                 ->required(),
                             Forms\Components\Select::make('kategori_id')
                                 ->label('Kategori')
@@ -147,6 +149,7 @@ class ProdukResource extends Resource
                 //
                 TextColumn::make('nama_produk')
                     ->label('Nama Produk')
+                    ->formatStateUsing(fn ($state) => strtoupper($state))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('kategori.nama_kategori')
