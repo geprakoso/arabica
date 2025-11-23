@@ -19,6 +19,7 @@ class Absensi extends Model
         'keterangan',
         'lat_absen',
         'long_absen',
+        'camera_test',
     ];
 
     protected $casts = [

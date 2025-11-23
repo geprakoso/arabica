@@ -26,6 +26,7 @@ return new class extends Migration
             // kordinat (disimpan untuk history)
             $table->decimal('lat_absen', 10, 8)->nullable();
             $table->decimal('long_absen', 11, 8)->nullable();
+            $table->string('camera_test')->nullable();
             $table->timestamps();
         });
     }

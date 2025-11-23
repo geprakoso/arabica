@@ -23,6 +23,7 @@ use Filament\Forms\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 
 class AbsensiResource extends Resource
 {
@@ -37,6 +38,18 @@ class AbsensiResource extends Resource
                 //
                 Section::make('Detail Kehadiran')
                 ->schema([
+                    //Camera Module
+                    TakePicture::make('camera_test')
+                        ->label('Camera Test')
+                        ->disk('public')
+                        ->directory('uploads/services/payment_receipts_proof')
+                        ->visibility('public')
+                        ->useModal(true)
+                        ->showCameraSelector(true)
+                        ->aspect('4:3')
+                        ->imageQuality(80)
+                        ->shouldDeleteOnEdit(false),
+
                     // Otomatis pakai user yang sedang login; karyawan tidak bisa diubah
                     Select::make('user_id')
                         ->label('Karyawan')
