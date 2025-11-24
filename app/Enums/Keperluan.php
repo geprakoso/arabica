@@ -7,14 +7,14 @@ use Filament\Support\Contracts\HasColor;
 
 enum Keperluan: string implements HasLabel, HasColor
 {
-    case Cuti = 'cuti';
     case Libur = 'libur'; // Mengganti 'libur' jika maksudnya izin pribadi
+    case Cuti = 'cuti';
 
     public function getLabel(): ?string
     {
         return match ($this) {
-            self::Cuti => 'Cuti Tahunan',
             self::Libur => 'Libur',
+            self::Cuti => 'Cuti',
         };
     }
 
