@@ -9,6 +9,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Database\Seeders\ProfilePerusahaanSeeder;
+use Database\Seeders\KaryawanSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -38,6 +40,9 @@ class DatabaseSeeder extends Seeder
         );
         $admin->assignRole($superAdminRole);
 
-
+        $this->call([
+            ProfilePerusahaanSeeder::class,
+            KaryawanSeeder::class,
+        ]);
     }
 }

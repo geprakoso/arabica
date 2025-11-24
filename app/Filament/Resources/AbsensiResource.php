@@ -35,6 +35,8 @@ class AbsensiResource extends Resource
     protected static ?string $model = Absensi::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationLabel = 'Absen';
 
     public static function form(Form $form): Form
     {
