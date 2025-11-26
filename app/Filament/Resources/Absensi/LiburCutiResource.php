@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\Absensi;
 
-use App\Filament\Resources\LiburCutiResource\Pages;
+use App\Filament\Resources\Absensi\LiburCutiResource\Pages;
 use App\Models\LiburCuti;
 use App\Models\Karyawan;
 use App\Enums\Keperluan;

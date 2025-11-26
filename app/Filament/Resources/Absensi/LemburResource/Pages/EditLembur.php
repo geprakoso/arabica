@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\LemburResource\Pages;
+namespace App\Filament\Resources\Absensi\LemburResource\Pages;
 
-use App\Filament\Resources\LemburResource;
+use App\Filament\Resources\Absensi\LemburResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 

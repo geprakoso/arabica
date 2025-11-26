@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\AbsensiResource\Pages;
+namespace App\Filament\Resources\Absensi\AbsensiResource\Pages;
 
-use App\Filament\Resources\AbsensiResource;
+use App\Filament\Resources\Absensi\AbsensiResource;
 use App\Models\Absensi;
 use App\Models\ProfilePerusahaan;
 use Filament\Notifications\Notification;

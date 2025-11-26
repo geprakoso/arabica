@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\Absensi;
 
 use App\Enums\StatusPengajuan;
-use App\Filament\Resources\LemburResource\Pages;
-use App\Filament\Resources\LemburResource\RelationManagers;
+use App\Filament\Resources\Absensi\LemburResource\Pages;
+use App\Filament\Resources\Absensi\LemburResource\RelationManagers;
 use App\Models\Lembur;
 use Filament\Forms;
 use Filament\Forms\Get;

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\Absensi;
 
-use App\Filament\Resources\AbsensiResource\Pages;
-use App\Filament\Resources\AbsensiResource\RelationManagers;
+use App\Filament\Resources\Absensi\AbsensiResource\Pages;
+use App\Filament\Resources\Absensi\AbsensiResource\RelationManagers;
 use App\Models\Absensi;
 use Filament\Forms;
 use Filament\Forms\Form;
