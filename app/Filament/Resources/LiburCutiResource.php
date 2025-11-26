@@ -24,7 +24,7 @@ class LiburCutiResource extends Resource
 {
     protected static ?string $model = LiburCuti::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-sailboat-offshore';
     protected static ?string $navigationGroup = 'Absensi';
 
     public static function form(Form $form): Form
@@ -81,7 +81,8 @@ class LiburCutiResource extends Resource
                 TextColumn::make('mulai_tanggal')
                     ->label('Mulai')
                     ->date('d M Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->default('today'),
                 TextColumn::make('sampai_tanggal')
                     ->label('Sampai')
                     ->date('d M Y')

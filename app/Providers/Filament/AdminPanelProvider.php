@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -68,6 +69,15 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::body.end',
                 fn () => view('filament.hooks.absensi-geolocation-script')
-            );
+            )
+            ->navigationGroups([
+                NavigationGroup::make('Master Data'),
+                NavigationGroup::make('Absensi'),
+                NavigationGroup::make('Inventory'),
+                NavigationGroup::make('Pengaturan'),
+                NavigationGroup::make('Content'),
+                
+            ]);
+            
     }
 }

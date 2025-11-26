@@ -18,7 +18,7 @@ class ChatGroupResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users'; // Represent groups with a people icon.
 
-    protected static ?string $navigationGroup = 'Communication'; // Group resource under a dedicated sidebar section.
+    protected static ?string $navigationGroup = 'Pengaturan'; // Group resource under a dedicated sidebar section.
 
     protected static ?string $navigationLabel = 'Chat Groups'; // Sidebar label.
 
