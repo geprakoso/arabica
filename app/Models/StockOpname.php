@@ -38,18 +38,17 @@ class StockOpname extends Model
     {
         $prefix = 'SO-' . now()->format('Ymd') . '-';
 
-        $latest = self::where('kode', 'like', $prefix . '%')
-            ->orderByDesc('kode')
-            ->first();
+        $number = (int) self::where('kode', 'like', $prefix . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(kode, ?) AS UNSIGNED)) as max_num', [strlen($prefix) + 1])
+            ->value('max_num');
 
-        $number = 1;
+        // Increment until we find an unused code to avoid duplicate key on race or stale form.
+        do {
+            $number++;
+            $kode = $prefix . str_pad((string) $number, 4, '0', STR_PAD_LEFT);
+        } while (self::where('kode', $kode)->exists());
 
-        if ($latest && Str::startsWith($latest->kode, $prefix)) {
-            $suffix = (int) Str::after($latest->kode, $prefix);
-            $number = $suffix + 1;
-        }
-
-        return $prefix . str_pad((string) $number, 4, '0', STR_PAD_LEFT);
+        return $kode;
     }
 
     public function items()

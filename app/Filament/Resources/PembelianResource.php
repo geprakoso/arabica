@@ -122,14 +122,14 @@ class PembelianResource extends Resource
                                             ->native(false),
                                         TextInput::make('hpp')
                                             ->label('HPP')
-                                            ->currencyMask('.', ',', 0)
                                             ->numeric()
+                                            ->prefix('Rp ')
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('harga_jual')
                                             ->label('Harga Jual')
                                             ->numeric()
-                                            ->currencyMask('.', ',', 0)
+                                            ->prefix('Rp ')
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('qty')

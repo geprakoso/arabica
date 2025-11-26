@@ -91,7 +91,7 @@ class StockOpnameResource extends Resource
                     ->label('Posting')
                     ->requiresConfirmation()
                     ->visible(fn (StockOpname $record) => ! $record->isPosted())
-                    ->action(fn (StockOpname $record) => $record->post(Auth::auth()->user()))
+                    ->action(fn (StockOpname $record) => $record->post(Auth::user()))
                     ->successNotificationTitle('Stock opname berhasil diposting.'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),

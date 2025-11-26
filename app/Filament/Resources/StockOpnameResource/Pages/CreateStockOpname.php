@@ -22,6 +22,6 @@ class CreateStockOpname extends CreateRecord
             ->title('Stock Opname berhasil dibuat. Silakan tambah produk melalui tabel di bawah.')
             ->success()
             ->icon('heroicon-o-check-circle')
-            ->sendToDatabase(Auth::auth()->user());
+            ->sendToDatabase(Auth::user());
     }
 }

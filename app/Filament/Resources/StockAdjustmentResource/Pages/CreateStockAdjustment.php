@@ -22,7 +22,7 @@ class CreateStockAdjustment extends CreateRecord
             ->title('Stock Adjustment berhasil dibuat. Silakan tambah produk melalui tabel di bawah.')
             ->success()
             ->icon('heroicon-o-check-circle')
-            ->sendToDatabase(Auth::auth()->user());
+            ->sendToDatabase(Auth::user());
     }
 
     

@@ -39,6 +39,7 @@ class RequestOrderResource extends Resource
                                 ->required()
                                 ->default(fn () => RequestOrder::generateRO())
                                 ->disabled()
+                                ->dehydrated(true)
                                 ->unique(ignoreRecord: true),
                             Forms\Components\Select::make('karyawan_id')
                                 ->label('Karyawan')

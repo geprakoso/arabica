@@ -75,8 +75,12 @@ class LiburCutiResource extends Resource
                     ->sortable(),
                 TextColumn::make('keperluan')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => filled($state) ? Keperluan::from($state)->getLabel() : null)
-                    ->color(fn (?string $state) => filled($state) ? Keperluan::from($state)->getColor() : null)
+                    ->formatStateUsing(fn (Keperluan|string|null $state) => $state instanceof Keperluan
+                        ? $state->getLabel()
+                        : (filled($state) ? Keperluan::from($state)->getLabel() : null))
+                    ->color(fn (Keperluan|string|null $state) => $state instanceof Keperluan
+                        ? $state->getColor()
+                        : (filled($state) ? Keperluan::from($state)->getColor() : null))
                     ->sortable(),
                 TextColumn::make('mulai_tanggal')
                     ->label('Mulai')
@@ -90,8 +94,12 @@ class LiburCutiResource extends Resource
                     ->sortable(),
                 TextColumn::make('status_pengajuan')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => filled($state) ? StatusPengajuan::from($state)->getLabel() : null)
-                    ->color(fn (?string $state) => filled($state) ? StatusPengajuan::from($state)->getColor() : null)
+                    ->formatStateUsing(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                        ? $state->getLabel()
+                        : (filled($state) ? StatusPengajuan::from($state)->getLabel() : null))
+                    ->color(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                        ? $state->getColor()
+                        : (filled($state) ? StatusPengajuan::from($state)->getColor() : null))
                     ->sortable(),
                 TextColumn::make('keterangan')
                     ->limit(40)
