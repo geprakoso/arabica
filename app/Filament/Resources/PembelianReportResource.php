@@ -97,10 +97,10 @@ class PembelianReportResource extends Resource
         return [];
     }
     
-    public static function canViewAny(): bool
-    {
-        return Auth::user()->can('view Laporan Pembelian');
-    }
+    // public static function canViewAny(): bool
+    // {
+    //     return Auth::user()->can('view Laporan Pembelian');
+    // }
 
 
     public static function getPages(): array
