@@ -82,6 +82,7 @@ return [
 
     'guard_names' => [
         'web' => 'web',
+        'api' => 'api',
     ],
 
     'toggleable_guard_names' => [

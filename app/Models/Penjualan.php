@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Model;
+
+class Penjualan extends Model
+{
+    use HasFactory;
+
+    protected $table = 'tb_penjualan';
+
+    protected $primaryKey = 'id_penjualan';
+
+    protected $fillable = [
+        'no_nota',
+        'tanggal_penjualan',
+        'catatan',
+        'id_karyawan',
+        'id_member',
+    ];
+
+    protected $casts = [
+        'tanggal_penjualan' => 'date',
+    ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Penjualan $penjualan): void {
+            $penjualan->items()->get()->each->delete();
+        });
+
+        static::creating(function ($model) {
+            if (empty($model->no_nota)) {
+                $model->no_nota = static::generateNoNota();
+            }
+        });
+    }
+
+    public static function generateNoNota(): string
+    {
+        return DB::transaction(function () {
+            $date = now()->format('Ymd');
+            $prefix = 'PJ-' . $date . '-';
+            
+            $latest = static::where('no_nota', 'like', $prefix . '%')
+                ->orderBy('no_nota', 'desc')
+                ->lockForUpdate()
+                ->first();
+
+            $next = 1;
+            if ($latest && preg_match('/' . preg_quote($prefix) . '(\d+)$/', $latest->no_nota, $m)) {
+                $next = (int) $m[1] + 1;
+            }
+
+            return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        });
+    }
+
+    public function karyawan()
+    {
+        return $this->belongsTo(Karyawan::class, 'id_karyawan');
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'id_member');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(PenjualanItem::class, 'id_penjualan', 'id_penjualan');
+    }
+}

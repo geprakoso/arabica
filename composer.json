@@ -8,11 +8,12 @@
     "require": {
         "php": "^8.2",
         "afatmustafa/blade-hugeicons": "^1.0",
-        "bezhansalleh/filament-shield": "^3.9",
+        "althinect/filament-spatie-roles-permissions": "^2.3",
         "codeat3/blade-carbon-icons": "^2.37",
         "codeat3/blade-eos-icons": "^1.15",
         "emmanpbarrameda/filament-take-picture-field": "^1.1",
         "filament/filament": "3.3",
+        "icetalker/filament-table-repeater": "^1.4",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "monzer/filament-chatify-integration": "^1.0",

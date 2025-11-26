@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Karyawan;
 
 class RequestOrder extends Model
 {
@@ -22,6 +21,14 @@ class RequestOrder extends Model
     protected $casts = [
         'tanggal' => 'date',
     ];
+    public static function generateRO(): string
+    {
+        $lastNumber = self::where('no_ro', 'like', 'MD%')
+            ->selectRaw('MAX(CAST(SUBSTRING(no_ro, 4) AS UNSIGNED)) as max_num')
+            ->value('max_num') ?? 0;
+
+        return 'RO-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
 
     public function items()
     {
@@ -30,6 +37,6 @@ class RequestOrder extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'karyawan_id');
+        return $this->belongsTo(Karyawan::class);
     }
 }

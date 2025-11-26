@@ -17,4 +17,11 @@ class EditProduk extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['nama_produk'] = strtoupper($data['nama_produk']);
+        return $data;
+    }
+
 }

@@ -37,4 +37,9 @@ class Karyawan extends Model
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function requestOrders()
+    {
+        return $this->hasMany(RequestOrder::class);
+    }
 }

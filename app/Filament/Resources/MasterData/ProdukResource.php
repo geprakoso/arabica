@@ -39,6 +39,8 @@ class ProdukResource extends Resource
 
     protected static ?string $navigationLabel = 'Produk';
 
+    protected static ?string $pluralModelLabel = 'Produk';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -50,16 +52,30 @@ class ProdukResource extends Resource
                     Section::make('Data Produk')
                         ->schema([
                             Forms\Components\TextInput::make('nama_produk')
-                                ->label('Nama Produk') // $form is not used here, so no change needed.
+                                ->label('Nama Produk')
+                                // ->rules(['regex:/^[A-Z0-9\s]+$/'])
+                                // ->validationMessages([
+                                //     'regex' => 'Nama produk harus UPPERCASE.',
+                                // ])
                                 ->required(),
                             Forms\Components\Select::make('kategori_id')
                                 ->label('Kategori')
                                 ->relationship('kategori', 'nama_kategori')
+                                ->createoptionForm([
+                                    Forms\Components\TextInput::make('nama_kategori')
+                                        ->label('Nama Kategori')
+                                        ->required(),
+                                ])
                                 ->required()
                                 ->native(false),
                             Forms\Components\Select::make('brand_id')
                                 ->label('Brand')
                                 ->relationship('brand', 'nama_brand')
+                                ->createoptionForm([
+                                    Forms\Components\TextInput::make('nama_brand')
+                                        ->label('Nama Brand')
+                                        ->required(),
+                                ])
                                 ->required()
                                 ->native(false),
                             Forms\Components\TextInput::make('sku')
@@ -133,6 +149,7 @@ class ProdukResource extends Resource
                 //
                 TextColumn::make('nama_produk')
                     ->label('Nama Produk')
+                    ->formatStateUsing(fn ($state) => strtoupper($state))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('kategori.nama_kategori')
