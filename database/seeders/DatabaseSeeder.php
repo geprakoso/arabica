@@ -11,6 +11,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Database\Seeders\ProfilePerusahaanSeeder;
 use Database\Seeders\KaryawanSeeder;
+use Database\Seeders\ProdukSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -43,6 +44,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProfilePerusahaanSeeder::class,
             KaryawanSeeder::class,
+            ProdukSeeder::class,
         ]);
     }
 }
