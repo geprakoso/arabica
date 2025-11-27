@@ -18,7 +18,9 @@
         "icetalker/filament-table-repeater": "^1.4",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "mokhosh/filament-kanban": "^2.11",
         "monzer/filament-chatify-integration": "^1.0",
+        "spatie/eloquent-sortable": "^4.5",
         "tomatophp/filament-media-manager": "^1.1"
     },
     "require-dev": {
