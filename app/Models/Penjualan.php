@@ -20,6 +20,13 @@ class Penjualan extends Model
         'catatan',
         'id_karyawan',
         'id_member',
+        'total',
+        'diskon_total',
+        'grand_total',
+        'metode_bayar',
+        'tunai_diterima',
+        'kembalian',
+        'gudang_id',
     ];
 
     protected $casts = [
