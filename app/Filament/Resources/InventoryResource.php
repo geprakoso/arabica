@@ -143,7 +143,7 @@ class InventoryResource extends Resource
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems')
+            ->whereHas('pembelianItems', fn ($q) => $q->where($qtySisaColumn, '>', 0))
             ->with(['brand', 'kategori'])
             ->withSum(['pembelianItems as total_qty' => fn ($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
             ->withCount(['pembelianItems as batch_count' => fn ($q) => $q->where($qtySisaColumn, '>', 0)]);
