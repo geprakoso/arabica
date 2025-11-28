@@ -7,6 +7,7 @@ use Filament\Panel;
 use Filament\Widgets;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use BezhanSalleh\PanelSwitch\PanelSwitch;
 use App\Filament\Pages\ChatRoomPage;
 use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\Authenticate;
@@ -69,7 +70,9 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
                     ->allowSubFolders()
+                    
             )
+           
             ->renderHook(
                 'panels::body.end',
                 fn () => view('filament.hooks.absensi-geolocation-script')

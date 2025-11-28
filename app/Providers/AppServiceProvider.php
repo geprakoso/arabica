@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Chatify\ChatifyMessenger as VendorChatifyMessenger;
 use App\Support\ChatifyMessenger;
 use Illuminate\Support\Facades\URL;
+use BezhanSalleh\PanelSwitch\PanelSwitch;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,9 +25,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
-        if (app()->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') == 'https') {
+        PanelSwitch::configureUsing(function (PanelSwitch $switch) {
+            $switch
+                ->panels(['admin', 'pos'])
+                ->labels([
+                    'admin' => 'Admin',
+                    'pos' => 'POS',
+                ])
+                ->icons([
+                    'admin' => 'heroicon-o-cog-6-tooth',
+                    'pos' => 'heroicon-o-shopping-cart',
+                ])
+                ->simple()
+                ->visible(fn () => auth()->check());
+        });
+
+        if (app()->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
             URL::forceScheme('https');
+        }
     }
-}
 }

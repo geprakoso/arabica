@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PosActivityResource\Pages;
 use App\Filament\Resources\PosActivityResource\Widgets\PosActivityStats;
 use App\Models\Penjualan;
+use Filament\Facades\Filament;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
@@ -22,7 +23,7 @@ class PosActivityResource extends Resource
 
     protected static ?string $navigationGroup = 'POS';
 
-    protected static ?string $modelLabel = 'Aktivitas POS';
+    protected static ?string $modelLabel = 'Aktivitas';
 
     public static function table(Table $table): Table
     {
@@ -42,7 +43,11 @@ class PosActivityResource extends Resource
                     ->icon('heroicon-o-printer')
                     ->openUrlInNewTab(),
             ])
-            ->bulkActions([]);
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     public static function getPages(): array
@@ -51,6 +56,11 @@ class PosActivityResource extends Resource
             'index' => Pages\ListPosActivities::route('/'),
             'view' => Pages\ViewPosActivity::route('/{record}'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
     }
 
     public static function getWidgets(): array
