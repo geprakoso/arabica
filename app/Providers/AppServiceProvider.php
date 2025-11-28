@@ -25,20 +25,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        PanelSwitch::configureUsing(function (PanelSwitch $switch) {
-            $switch
-                ->panels(['admin', 'pos'])
-                ->labels([
-                    'admin' => 'Admin',
-                    'pos' => 'POS',
-                ])
-                ->icons([
-                    'admin' => 'heroicon-o-cog-6-tooth',
-                    'pos' => 'heroicon-o-shopping-cart',
-                ])
-                ->simple()
-                ->visible(fn () => auth()->check());
-        });
+        if (class_exists(PanelSwitch::class)) {
+            PanelSwitch::configureUsing(function (PanelSwitch $switch) {
+                $switch
+                    ->panels(['admin', 'pos'])
+                    ->labels([
+                        'admin' => 'Admin',
+                        'pos' => 'POS',
+                    ])
+                    ->icons([
+                        'admin' => 'heroicon-o-cog-6-tooth',
+                        'pos' => 'heroicon-o-shopping-cart',
+                    ])
+                    ->simple()
+                    ->visible(fn () => auth()->check());
+            });
+        }
 
         if (app()->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
             URL::forceScheme('https');
