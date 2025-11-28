@@ -44,7 +44,26 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProfilePerusahaanSeeder::class,
             KaryawanSeeder::class,
+            AkunTransaksiSeeder::class,
+            BrandSeeder::class,
+            KategoriSeeder::class,
             ProdukSeeder::class,
+            MemberSeeder::class,
+            SupplierSeeder::class,
+            GudangSeeder::class,
+            JasaSeeder::class,
+            RequestOrderSeeder::class,
+            PembelianSeeder::class,
+            PenjualanSeeder::class,
+            StockAdjustmentSeeder::class,
+            StockOpnameSeeder::class,
+            PenjadwalanServiceSeeder::class,
+            PenjadwalanPengirimanSeeder::class,
+            PenjadwalanTugasSeeder::class,
+            AbsensiSeeder::class,
+            LiburCutiSeeder::class,
+            LemburSeeder::class,
+            ChatGroupSeeder::class,
         ]);
     }
 }

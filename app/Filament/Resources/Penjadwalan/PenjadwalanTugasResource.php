@@ -34,7 +34,7 @@ class PenjadwalanTugasResource extends Resource
 {
     protected static ?string $model = PenjadwalanTugas::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-task-daily-01';
     protected static ?string $navigationGroup = 'Penjadwalan';
     protected static ?string $navigationLabel = 'Tugas';
 
@@ -132,6 +132,7 @@ class PenjadwalanTugasResource extends Resource
                                         ->relationship('creator', 'name')
                                         ->default(fn () => Filament::auth()->id())
                                         ->disabled()
+                                        ->visible(false)
                                         ->dehydrated()
                                         ->required(),
                                 ]),
@@ -144,7 +145,8 @@ class PenjadwalanTugasResource extends Resource
                                         ->label('Tanggal Mulai')
                                         ->native(false)
                                         ->displayFormat('d M Y')
-                                        ->required(),
+                                        ->required()
+                                        ->default(now()),
                                     DatePicker::make('deadline')
                                         ->label('Tenggat Waktu')
                                         ->native(false)

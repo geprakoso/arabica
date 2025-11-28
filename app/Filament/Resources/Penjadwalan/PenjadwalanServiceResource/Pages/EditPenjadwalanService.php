@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\PenjadwalanServiceResource\Pages;
+namespace App\Filament\Resources\Penjadwalan\PenjadwalanServiceResource\Pages;
 
-use App\Filament\Resources\PenjadwalanServiceResource;
+use App\Filament\Resources\Penjadwalan\PenjadwalanServiceResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 

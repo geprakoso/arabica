@@ -1,17 +1,15 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\Penjadwalan;
 
-use App\Filament\Resources\PenjadwalanServiceResource\Pages;
-use App\Filament\Resources\PenjadwalanServiceResource\RelationManagers;
+use App\Filament\Resources\Penjadwalan\PenjadwalanServiceResource\Pages;
 use App\Models\PenjadwalanService;
+use App\Models\Member;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Grid as FormsGrid;
 use Filament\Forms\Components\Group as FormsGroup;
 use Filament\Forms\Components\Section as FormsSection;
@@ -20,13 +18,11 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
-use Illuminate\Support\Str;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Split;
 use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Support\Enums\FontFamily;
@@ -38,7 +34,7 @@ class PenjadwalanServiceResource extends Resource
 {
     protected static ?string $model = PenjadwalanService::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-service';
     protected static ?string $navigationGroup = 'Penjadwalan';
     protected static ?string $navigationLabel = 'Service';
 
@@ -46,53 +42,80 @@ class PenjadwalanServiceResource extends Resource
     {
         return $form
             ->schema([
-                //
                 FormsGrid::make(3)
                 ->schema([
                     // --- KOLOM KIRI (DATA UTAMA) ---
                     FormsGroup::make()
                         ->schema([
-                            // Section 1: Data Pelanggan & Unit
-                            FormsSection::make('Informasi Pelanggan & Unit')
-                                ->description('Data pemilik dan barang yang akan diservice.')
-                                ->icon('hugeicons-user-circle') // Icon user
+                            // Section 1: Data Pelanggan
+                            FormsSection::make('Informasi Pelanggan')
+                                ->description('Pilih pelanggan atau buat baru.')
+                                ->icon('hugeicons-user-circle')
                                 ->schema([
                                     Select::make('member_id')
                                         ->label('Pelanggan')
-                                        ->relationship('member', 'nama_member') // Relasi ke model Member
+                                        ->relationship('member', 'nama_member')
                                         ->searchable()
                                         ->preload()
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, callable $set) {
+                                            if (! $state) return;
+                                            $member = Member::find($state);
+                                            $set('member_no_hp', $member?->no_hp);
+                                            $set('member_alamat', $member?->alamat);
+                                        })
                                         ->createOptionForm([
-                                            // Quick Create Member kalau pelanggan baru
-                                            TextInput::make('nama_member')->required(),
-                                            TextInput::make('no_hp')->required(),
+                                            TextInput::make('nama_member')->required()->label('Nama Lengkap'),
+                                            TextInput::make('no_hp')->required()->label('No WhatsApp'),
+                                            TextInput::make('alamat')->label('Alamat Domisili'),
                                         ])
-                                        ->required(),
-
-                                    TextInput::make('nama_perangkat')
-                                        ->label('Nama Perangkat / Barang')
-                                        ->placeholder('Contoh: Laptop Ideapad 5 / VGA Colorful RTX 3060')
-                                        ->required(),
-                                        
-                                    TextInput::make('kelengkapan')
-                                        ->label('Kelengkapan')
-                                        ->placeholder('Contoh: Unit only, Dus, Charger')
+                                        ->required()
                                         ->columnSpanFull(),
-                                ])->columns(2),
 
-                            // Section 2: Diagnosa Awal
-                            FormsSection::make('Keluhan & Diagnosa')
-                                ->icon('hugeicons-clipboard') // Icon papan jalan
+                                    // Field Readonly (Tampil Rapi dengan Icon)
+                                    FormsGrid::make(2)
+                                        ->schema([
+                                            TextInput::make('member_no_hp')
+                                                ->label('Kontak (Auto)')
+                                                ->prefixIcon('heroicon-m-phone')
+                                                ->disabled()
+                                                ->dehydrated(false),
+                                            
+                                            TextInput::make('member_alamat')
+                                                ->label('Alamat (Auto)')
+                                                ->prefixIcon('heroicon-m-map-pin')
+                                                ->disabled()
+                                                ->dehydrated(false),
+                                        ]),
+                                ]),
+
+                            // Section 2: Unit & Diagnosa
+                            FormsSection::make('Unit & Keluhan')
+                                ->icon('hugeicons-clipboard')
                                 ->schema([
+                                    FormsGrid::make(2)
+                                        ->schema([
+                                            TextInput::make('nama_perangkat')
+                                                ->label('Nama Perangkat')
+                                                ->placeholder('Contoh: Laptop Lenovo Ideapad 3')
+                                                ->required(),
+                                            
+                                            TextInput::make('kelengkapan')
+                                                ->label('Kelengkapan')
+                                                ->placeholder('Unit, Charger, Dus...'),
+                                        ]),
+
                                     Textarea::make('keluhan')
                                         ->label('Keluhan Pelanggan')
                                         ->rows(3)
-                                        ->required(),
+                                        ->required()
+                                        ->columnSpanFull(),
 
                                     Textarea::make('catatan_teknisi')
-                                        ->label('Catatan Awal / Kondisi Fisik')
-                                        ->placeholder('Contoh: Lecet di bagian bezel, layar retak halus.')
-                                        ->rows(3),
+                                        ->label('Catatan Fisik (Optional)')
+                                        ->placeholder('Cth: Lecet bezel, baut hilang satu')
+                                        ->rows(2)
+                                        ->columnSpanFull(),
                                 ]),
                         ])
                         ->columnSpan(['lg' => 2]),
@@ -103,12 +126,10 @@ class PenjadwalanServiceResource extends Resource
                             FormsSection::make('Status & Penugasan')
                                 ->icon('hugeicons-settings-01')
                                 ->schema([
-                                    // Auto Generate No Resi
                                     TextInput::make('no_resi')
-                                        ->label('No. Resi Service')
+                                        ->label('No. Resi')
                                         ->default(fn () => 'SRV-' . now()->format('ymd') . '-' . rand(100, 999))
-                                        ->disabled()
-                                        ->dehydrated()
+                                        ->readOnly() // Readonly lebih baik visualnya daripada disabled untuk ID
                                         ->required(),
 
                                     Select::make('status')
@@ -126,27 +147,26 @@ class PenjadwalanServiceResource extends Resource
 
                                     Select::make('technician_id')
                                         ->label('Teknisi')
-                                        ->relationship('technician', 'name') // Relasi ke User
+                                        ->relationship('technician', 'name')
                                         ->searchable()
                                         ->preload(),
 
                                     Select::make('jasa_id')
                                         ->label('Layanan Utama')
-                                        ->relationship('jasa', 'nama_jasa') // Relasi ke Model Jasa
+                                        ->relationship('jasa', 'nama_jasa')
                                         ->searchable()
                                         ->preload(),
-                                        
+                                    
                                     DatePicker::make('estimasi_selesai')
                                         ->label('Estimasi Selesai')
                                         ->native(false),
                                 ]),
-                                
-                            // Info Tambahan (Read Only)
+
                             FormsSection::make()
                                 ->schema([
                                     Placeholder::make('created_at')
-                                        ->label('Diterima Tanggal')
-                                        ->content(fn ($record) => $record?->created_at?->format('d M Y H:i') ?? '-'),
+                                        ->label('Waktu Penerimaan')
+                                        ->content(fn ($record) => $record?->created_at?->format('d M Y, H:i') ?? now()->format('d M Y, H:i')),
                                 ]),
                         ])
                         ->columnSpan(['lg' => 1]),
@@ -160,6 +180,8 @@ class PenjadwalanServiceResource extends Resource
             ->columns([
                 TextColumn::make('no_resi')
                     ->label('No. Resi')
+                    ->fontFamily(FontFamily::Mono)
+                    ->weight(FontWeight::Bold)
                     ->sortable()
                     ->searchable()
                     ->copyable(),
@@ -169,18 +191,17 @@ class PenjadwalanServiceResource extends Resource
                     ->searchable(),
                 TextColumn::make('nama_perangkat')
                     ->label('Perangkat')
-                    ->limit(30)
+                    ->limit(25)
                     ->searchable(),
                 TextColumn::make('status')
-                    ->label('Status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'Menunggu Antrian',
-                        'diagnosa' => 'Sedang Diagnosa',
-                        'waiting_part' => 'Menunggu Sparepart',
-                        'progress' => 'Sedang Dikerjakan',
+                        'pending' => 'Antrian',
+                        'diagnosa' => 'Diagnosa',
+                        'waiting_part' => 'Wait Part',
+                        'progress' => 'Proses',
                         'done' => 'Selesai',
-                        'cancel' => 'Dibatalkan',
+                        'cancel' => 'Batal',
                         default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
@@ -196,20 +217,14 @@ class PenjadwalanServiceResource extends Resource
                 TextColumn::make('technician.name')
                     ->label('Teknisi')
                     ->placeholder('-')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('estimasi_selesai')
-                    ->label('Estimasi Selesai')
-                    ->date('d M Y')
                     ->sortable(),
-                TextColumn::make('created_at')
-                    ->label('Masuk')
-                    ->dateTime('d M Y H:i')
+                TextColumn::make('estimasi_selesai')
+                    ->label('Estimasi')
+                    ->date('d M')
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
-                    ->label('Status')
                     ->options([
                         'pending' => 'Menunggu Antrian',
                         'diagnosa' => 'Sedang Diagnosa',
@@ -234,145 +249,129 @@ class PenjadwalanServiceResource extends Resource
     }
 
     public static function infolist(Infolist $infolist): Infolist
-{
-    return $infolist
-        ->schema([
-            InfolistGrid::make(3)
+    {
+        return $infolist
+            ->schema([
+                InfolistGrid::make(3)
                 ->schema([
-                    // --- KOLOM KIRI (DETAIL UTAMA) ---
+                    // --- KOLOM KIRI ---
                     InfolistGroup::make()
                         ->schema([
-                            // Section Header: Informasi Perangkat & Pemilik
-                            InfolistSection::make('Detail Service')
+                            InfolistSection::make('Informasi Service')
                                 ->icon('heroicon-m-device-phone-mobile')
                                 ->schema([
-                                    // Baris 1: Perangkat (Highlight Besar)
+                                    // Header Besar
                                     TextEntry::make('nama_perangkat')
-                                        ->label('Unit / Perangkat')
+                                        ->label('Unit Service')
                                         ->weight(FontWeight::Bold)
                                         ->size(TextEntrySize::Large)
                                         ->columnSpanFull(),
                                     
-                                    // Baris 2: Kelengkapan
                                     TextEntry::make('kelengkapan')
-                                        ->label('Kelengkapan Unit')
                                         ->icon('heroicon-m-archive-box')
                                         ->color('gray')
                                         ->columnSpanFull(),
 
-                                    // Baris 3: Data Pemilik (Grid mini 2 kolom)
-                                    InfolistGroup::make()
+                                    // Data Pemilik dalam Grid
+                                    InfolistGrid::make(2)
                                         ->schema([
                                             TextEntry::make('member.nama_member')
                                                 ->label('Pemilik')
-                                                ->icon('heroicon-m-user-circle')
-                                                ->weight(FontWeight::Medium),
+                                                ->icon('heroicon-m-user'),
                                             
                                             TextEntry::make('member.no_hp')
-                                                ->label('Nomor HP')
+                                                ->label('WhatsApp')
                                                 ->icon('heroicon-m-phone')
-                                                ->copyable() // Agar mudah dicopy admin
-                                                ->url(fn ($record) => 'https://wa.me/' . $record->member->no_hp, true) // Klik langsung ke WA
-                                                ->color('primary'),
+                                                ->color('primary')
+                                                ->url(fn ($record) => 'https://wa.me/' . $record->member->no_hp, true),
                                         ])
-                                        ->columns(2)
-                                        ->columnSpanFull(),
+                                        ->extraAttributes(['class' => 'mt-4 border-t pt-4']), // Garis pemisah tipis
                                 ]),
 
-                            // Section: Diagnosa (Layout Full Text)
-                            InfolistSection::make('Catatan & Diagnosa')
+                            InfolistSection::make('Diagnosa & Keluhan')
                                 ->icon('heroicon-m-clipboard-document-list')
                                 ->schema([
                                     TextEntry::make('keluhan')
-                                        ->label('Keluhan Pelanggan')
-                                        ->markdown()
-                                        ->prose()
-                                        ->color('gray'),
-
+                                        ->label('Keluhan Awal')
+                                        ->markdown(),
+                                    
                                     TextEntry::make('catatan_teknisi')
                                         ->label('Catatan Teknisi')
+                                        ->placeholder('Belum ada catatan')
                                         ->markdown()
-                                        ->placeholder('Belum ada catatan teknisi')
                                         ->color('gray')
                                         ->extraAttributes(['class' => 'italic']),
                                 ]),
                         ])
                         ->columnSpan(['lg' => 2]),
 
-                    // --- KOLOM KANAN (SIDEBAR INFO) ---
+                    // --- KOLOM KANAN ---
                     InfolistGroup::make()
                         ->schema([
-                            // Kartu Status (Paling Atas & Menonjol)
-                            InfolistSection::make('Status Order')
+                            InfolistSection::make('Status')
                                 ->compact()
                                 ->schema([
                                     TextEntry::make('no_resi')
-                                        ->label('No. Resi')
+                                        ->fontFamily(FontFamily::Mono)
                                         ->weight(FontWeight::Bold)
-                                        ->fontFamily(FontFamily::Mono) // Font seperti tiket
                                         ->copyable()
                                         ->icon('heroicon-m-qr-code'),
-
+                                    
                                     TextEntry::make('status')
                                         ->badge()
                                         ->formatStateUsing(fn (string $state): string => match ($state) {
-                                            'pending' => 'Menunggu Antrian',
-                                            'diagnosa' => 'Sedang Diagnosa',
-                                            'waiting_part' => 'Menunggu Sparepart',
-                                            'progress' => 'Sedang Dikerjakan',
+                                            'pending' => 'Antrian',
+                                            'diagnosa' => 'Diagnosa',
+                                            'waiting_part' => 'Wait Part',
+                                            'progress' => 'Proses',
                                             'done' => 'Selesai',
-                                            'cancel' => 'Dibatalkan',
+                                            'cancel' => 'Batal',
                                             default => $state,
                                         })
                                         ->color(fn (string $state): string => match ($state) {
                                             'pending' => 'gray',
                                             'diagnosa' => 'info',
-                                            'waiting_part' => 'warning', // Kuning mencolok
+                                            'waiting_part' => 'warning',
                                             'progress' => 'info',
-                                            'done' => 'success', // Hijau
-                                            'cancel' => 'danger', // Merah
+                                            'done' => 'success',
+                                            'cancel' => 'danger',
                                             default => 'gray',
                                         }),
                                         
                                     TextEntry::make('created_at')
-                                        ->label('Masuk Tanggal')
+                                        ->label('Masuk')
                                         ->date('d M Y, H:i')
-                                        ->size(TextEntrySize::Small)
                                         ->color('gray'),
                                 ]),
 
-                            // Kartu Pengerjaan
                             InfolistSection::make('Pengerjaan')
                                 ->compact()
-                                ->icon('heroicon-m-wrench-screwdriver')
                                 ->schema([
                                     TextEntry::make('technician.name')
                                         ->label('Teknisi')
-                                        ->placeholder('Belum ditunjuk'),
-                                        
+                                        ->icon('heroicon-m-user-circle')
+                                        ->placeholder('-'),
+                                    
                                     TextEntry::make('jasa.nama_jasa')
-                                        ->label('Layanan Jasa')
+                                        ->label('Layanan')
                                         ->color('primary')
                                         ->url(fn ($record) => $record->jasa ? JasaResource::getUrl('view', ['record' => $record->jasa]) : null),
 
                                     TextEntry::make('estimasi_selesai')
-                                        ->label('Estimasi Selesai')
+                                        ->label('Deadline')
                                         ->date('d M Y')
-                                        ->badge()
-                                        ->color('gray')
                                         ->icon('heroicon-m-calendar'),
                                 ]),
                         ])
                         ->columnSpan(['lg' => 1]),
                 ]),
-        ]);
-}
-
+            ]);
+    }
+    
+    // ... relations dan pages tetap sama
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource\Pages;
+namespace App\Filament\Resources\Penjadwalan\PenjadwalanServiceResource\Pages;
 
-use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
+use App\Filament\Resources\Penjadwalan\PenjadwalanServiceResource;
+use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
-class CreatePenjadwalanTugas extends CreateRecord
+class CreatePenjadwalanService extends CreateRecord
 {
-    protected static string $resource = PenjadwalanTugasResource::class;
+    protected static string $resource = PenjadwalanServiceResource::class;
 
     protected function getHeaderActions(): array
     {
