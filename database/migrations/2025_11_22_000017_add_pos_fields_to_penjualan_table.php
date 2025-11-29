@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('tb_penjualan')) {
+            return;
+        }
+
         Schema::table('tb_penjualan', function (Blueprint $table): void {
             $table->decimal('total', 15, 2)->default(0)->after('id_member');
             $table->decimal('diskon_total', 15, 2)->default(0)->after('total');
@@ -25,6 +29,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('tb_penjualan')) {
+            return;
+        }
+
         Schema::table('tb_penjualan', function (Blueprint $table): void {
             $table->dropForeign(['gudang_id']);
             $table->dropColumn([

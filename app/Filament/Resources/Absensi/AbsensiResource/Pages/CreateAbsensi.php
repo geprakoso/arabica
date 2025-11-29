@@ -7,11 +7,11 @@ use App\Models\Absensi;
 use App\Models\ProfilePerusahaan;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Filament\Actions\Action;
 
 class CreateAbsensi extends CreateRecord
 {
     protected static string $resource = AbsensiResource::class;
+    protected ?string $heading = '';
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -88,6 +88,11 @@ class CreateAbsensi extends CreateRecord
         }
 
         return $data;
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
     }
 
     // Rumus Matematika menghitung jarak 2 koordinat dalam Meter
