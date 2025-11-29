@@ -23,6 +23,7 @@ class ListAbsensis extends ListRecords
                 ->whereDate('tanggal', $hariIni)
                 ->first()
             : null;
+        $statusTidakPerluPulang = ['izin', 'sakit', 'alpha', 'alpa'];
 
         return [
             Actions\CreateAction::make()
@@ -32,7 +33,8 @@ class ListAbsensis extends ListRecords
                 ->icon('heroicon-o-arrow-right-end-on-rectangle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn () => $absensiHariIni !== null)
+                ->visible(fn () => $absensiHariIni !== null
+                    && ! in_array($absensiHariIni->status, $statusTidakPerluPulang, true))
                 ->disabled(fn () => $absensiHariIni?->jam_keluar !== null)
                 ->action(function () use ($absensiHariIni): void {
                     if (! $absensiHariIni) {

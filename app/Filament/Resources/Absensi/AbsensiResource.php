@@ -28,6 +28,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\Action;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
+use Illuminate\Support\Carbon;
 
 class AbsensiResource extends Resource
 {
@@ -175,7 +176,17 @@ class AbsensiResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('jam_masuk')->time('H:i'),
-                TextColumn::make('jam_keluar')->time('H:i')->placeholder('Belum Pulang'),
+                TextColumn::make('jam_keluar')
+                    ->label('Jam Pulang')
+                    ->formatStateUsing(function ($state, Absensi $record) {
+                        if (in_array($record->status, ['izin', 'sakit', 'alpha', 'alpa'], true)) {
+                            return '-';
+                        }
+
+                        return $state
+                            ? Carbon::parse($state)->format('H:i')
+                            : 'Belum Pulang';
+                    }),
 
                 TextColumn::make('status')
                     ->badge()
@@ -209,17 +220,17 @@ class AbsensiResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Action::make('pulang')
-                    ->label('Pulang')
-                    ->icon('heroicon-o-arrow-right-end-on-rectangle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->visible(fn (Absensi $record) => blank($record->jam_keluar))
-                    ->action(function (Absensi $record): void {
-                        $record->update([
-                            'jam_keluar' => now()->format('H:i:s'),
-                        ]);
-                    }),
+                // Action::make('pulang')
+                //     ->label('Pulang')
+                //     ->icon('heroicon-o-arrow-right-end-on-rectangle')
+                //     ->color('success')
+                //     ->requiresConfirmation()
+                //     ->visible(fn (Absensi $record) => blank($record->jam_keluar))
+                //     ->action(function (Absensi $record): void {
+                //         $record->update([
+                //             'jam_keluar' => now()->format('H:i:s'),
+                //         ]);
+                //     }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
