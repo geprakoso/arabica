@@ -25,8 +25,10 @@ class SupplierResource extends Resource
 {
     protected static ?string $model = Supplier::class;
 
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-truck';
-    protected static ?string $navigationGroup = 'Master Data';
+    // protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Master Data';
     protected static ?string $navigationLabel = 'Supplier';
     protected static ?int $navigationSort = 6;
 

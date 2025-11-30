@@ -34,13 +34,11 @@ class ProdukResource extends Resource
     protected static ?string $model = Produk::class;
 
     protected static ?string $navigationIcon = 'hugeicons-package';
-
-    protected static ?string $navigationGroup = 'Master Data';
-
+    // protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Master Data';
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationLabel = 'Produk';
-
     protected static ?string $pluralModelLabel = 'Produk';
-
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form

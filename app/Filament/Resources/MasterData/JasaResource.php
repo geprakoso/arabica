@@ -29,16 +29,14 @@ class JasaResource extends Resource
 {
     protected static ?string $model = Jasa::class;
 
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-tools';
-
-    protected static ?string $navigationGroup = 'Master Data';
-
+    // protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Master Data';
     protected static ?string $pluralModelLabel = 'Jasa';
-
     protected static ?string $navigationLabel = 'Jasa';
-
     protected static ?int $navigationSort = 2;
-
+    
     public static function form(Form $form): Form
     {
         return $form

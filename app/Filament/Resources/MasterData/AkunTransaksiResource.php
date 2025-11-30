@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Pages\SubNavigationPosition;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -21,9 +22,12 @@ class AkunTransaksiResource extends Resource
 {
     protected static ?string $model = AkunTransaksi::class;
 
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-wallet-01';
     protected static ?string $navigationLabel = "Akun Transaksi";
-    protected static ?string $navigationGroup = "Master Data";
+    protected static ?string $navigationParentItem = 'Master Data';
+    // protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
+    // protected static ?string $navigationGroup = "Master Data";
     protected static ?int $navigationSort = 12;
 
     public static function form(Form $form): Form

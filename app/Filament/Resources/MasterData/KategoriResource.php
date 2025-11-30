@@ -21,13 +21,11 @@ use Filament\Tables\Table;
 class KategoriResource extends Resource
 {
     protected static ?string $model = Kategori::class;
-
-    protected static ?string $navigationIcon = 'hugeicons-tags';
-
-    protected static ?string $navigationGroup = 'Master Data';
-
+    // protected static ?string $cluster = MasterData::class;
+    // protected static ?string $navigationIcon = 'hugeicons-tags';
+    // protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Master Data';
     protected static ?string $pluralModelLabel = 'Kategori';
-
     protected static ?string $navigationLabel = 'Kategori';
 
     protected static ?int $navigationSort = 4;

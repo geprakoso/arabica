@@ -30,8 +30,10 @@ class KaryawanResource extends Resource
 {
     protected static ?string $model = Karyawan::class;
 
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-ai-user';
-    protected static ?string $navigationGroup = 'Master Data';
+    // protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Master Data';
     protected static ?string $navigationLabel = 'Karyawan';
     protected static ?int $navigationSort = 11;
 

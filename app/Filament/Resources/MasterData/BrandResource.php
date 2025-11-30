@@ -23,9 +23,10 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 class BrandResource extends Resource
 {
     protected static ?string $model = Brand::class;
-    protected static ?string $navigationIcon = 'hugeicons-label-important';
-    protected static ?string $navigationGroup = 'Master Data';
-
+    // protected static ?string $cluster = MasterData::class;
+    // protected static ?string $navigationIcon = 'hugeicons-label-important';
+    protected static ?string $navigationParentItem = 'Master Data';
+    // protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Brand';
     protected static ?int $navigationSort = 3;
 

@@ -7,6 +7,7 @@ use Chatify\ChatifyMessenger as VendorChatifyMessenger;
 use App\Support\ChatifyMessenger;
 use Illuminate\Support\Facades\URL;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
+use Filament\Tables\Table;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,5 +46,11 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
             URL::forceScheme('https');
         }
+
+        Table::configureUsing(function (Table $table): void {
+            $table
+            ->defaultPaginationPageOption(25)
+            ->striped();
+        });
     }
 }
