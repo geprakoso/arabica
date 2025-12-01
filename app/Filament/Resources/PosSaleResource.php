@@ -20,6 +20,7 @@ use Filament\Forms\Components\Wizard\Step;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Validation\ValidationException;
 
 class PosSaleResource extends Resource
 {
@@ -47,7 +48,7 @@ class PosSaleResource extends Resource
                                 ->label('Member')
                                 ->options(Member::query()->pluck('nama_member', 'id'))
                                 ->searchable()
-                                ->nullable(),
+                                ->required(),
                             Forms\Components\Select::make('gudang_id')
                                 ->label('Gudang')
                                 ->options(Gudang::query()->pluck('nama_gudang', 'id'))
@@ -70,7 +71,7 @@ class PosSaleResource extends Resource
                                             $qtyColumn = PembelianItem::qtySisaColumn();
 
                                             return Produk::query()
-                                                ->whereHas('pembelianItems', fn ($q) => $q->where($qtyColumn, '>', 0))
+                                                ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
                                                 ->orderBy('nama_produk')
                                                 ->pluck('nama_produk', 'id');
                                         })
@@ -112,6 +113,7 @@ class PosSaleResource extends Resource
                                         ->nullable(),
                                     Forms\Components\Select::make('kondisi')
                                         ->label('Kondisi')
+                                        // Mengambil opsi kondisi produk. Perhatikan bahwa jika produk tidak ditemukan atau tidak memiliki kondisi, daftar opsi akan kosong.
                                         ->options(function (Get $get): array {
                                             $productId = $get('id_produk');
 
@@ -119,12 +121,14 @@ class PosSaleResource extends Resource
                                                 ? self::getConditionOptionsForProduct((int) $productId)
                                                 : [];
                                         })
+                                        // disabled jika opsi kondisi hanya satu
                                         ->disabled(function (Get $get): bool {
                                             $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
 
                                             return count($options) <= 1;
                                         })
-                                        ->required(fn (Get $get): bool => count(self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0))) > 1)
+                                        ->required(fn(Get $get): bool => count(self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0))) > 1)
+                                        // placeholder jika opsi kondisi hanya satu
                                         ->placeholder(function (Get $get): string {
                                             $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
 
@@ -140,6 +144,7 @@ class PosSaleResource extends Resource
 
                                             return 'Pilih kondisi (' . implode(' / ', $labels) . ')';
                                         })
+                                        // set harga jual berdasarkan kondisi
                                         ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
                                             $productId = (int) ($get('id_produk') ?? 0);
 
@@ -158,12 +163,16 @@ class PosSaleResource extends Resource
                                     'harga_jual' => 'width: 30%;',
                                     'kondisi' => 'width: 15%;',
                                 ]),
-                        ]),
+                        ])
+                        ->afterValidation(function (Get $get): void {
+                            self::ensureStockIsAvailable($get('items'));
+                        }),
                     Step::make('Ringkasan & Pembayaran')
                         ->columns(2)
                         ->schema([
+                            // ringkasan transaksi 
                             LivewireComponent::make('pos-cart-summary')
-                                ->data(fn (Get $get): array => [
+                                ->data(fn(Get $get): array => [
                                     'items' => $get('items') ?? [],
                                     'discount' => (float) ($get('diskon_total') ?? 0),
                                 ])
@@ -192,22 +201,50 @@ class PosSaleResource extends Resource
                                     Forms\Components\TextInput::make('diskon_total')
                                         ->label('Diskon Transaksi')
                                         ->numeric()
-                                        ->default(0)
-                                        ->minValue(0)
+                                        ->currencyMask(
+                                            thousandSeparator: '.',
+                                            decimalSeparator: ',',
+                                            precision: 2,
+                                        )
+
                                         ->prefix('Rp')
-                                        ->live()
+                                        ->live(onBlur: true)
+                                        // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
-                                            // clamp to total keranjang agar tidak minus
                                             [, $totalAmount] = self::summarizeCart($get('items'));
                                             $discount = max(0, (float) ($state ?? 0));
-                                            $set('diskon_total', min($discount, $totalAmount));
-                                        })
-                                        ->columnSpan(1),
+                                            $discount = min($discount, $totalAmount);
+                                            $set('diskon_total', $discount);
+
+                                            self::refreshChangeField($set, $get, null, $discount);
+                                        }),
                                     Forms\Components\TextInput::make('tunai_diterima')
                                         ->label('Tunai Diterima')
                                         ->numeric()
+                                        ->required()
+                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
                                         ->prefix('Rp')
-                                        ->nullable(),
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(function (Set $set, $state, Get $get): void {
+                                            self::refreshChangeField($set, $get, $state);
+                                        })
+                                        // validasi tunai diterima tidak boleh kurang dari harga total
+                                        ->rule(function (Get $get) {
+                                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                [, $totalAmount] = self::summarizeCart($get('items'));
+                                                $discount = (float) ($get('diskon_total') ?? 0);
+                                                $grandTotal = max(0, $totalAmount - $discount);
+                                                if ($value < $grandTotal) {
+                                                    $fail("Tunai Kurang Dari Harga Total (Rp " . number_format($grandTotal, 0, ',', '.') . ")");
+                                                }
+                                            };
+                                        }),
+                                    Forms\Components\TextInput::make('kembalian')
+                                        ->label('Kembalian')
+                                        ->numeric()
+                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                                        ->prefix('Rp')
+                                        ->disabled(),
                                 ]),
                             Forms\Components\Placeholder::make('stock_protection_hint')
                                 ->label('Perlindungan Stok')
@@ -241,11 +278,17 @@ class PosSaleResource extends Resource
         ];
     }
 
+    /**
+     * Menghitung total qty dan total amount
+     *
+     * @param ?array $items
+     * @return array
+     */
     public static function summarizeCart(?array $items): array
     {
         $collection = collect($items ?? []);
 
-        $totalQty = (int) $collection->sum(fn (array $item) => (int) ($item['qty'] ?? 0));
+        $totalQty = (int) $collection->sum(fn(array $item) => (int) ($item['qty'] ?? 0));
 
         $totalAmount = (float) $collection->sum(function (array $item) {
             $qty = (int) ($item['qty'] ?? 0);
@@ -258,6 +301,126 @@ class PosSaleResource extends Resource
         return [$totalQty, $totalAmount];
     }
 
+    /**
+     * Memastikan stok tersedia untuk setiap item dalam keranjang 
+     * 
+     * @param ?array $items
+     * @throws ValidationException
+     */
+    protected static function ensureStockIsAvailable(?array $items): void
+    {
+        $items = $items ?? [];
+        $requests = [];
+
+        foreach ($items as $index => $item) {
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $qty = (int) ($item['qty'] ?? 0);
+
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+
+            $condition = $item['kondisi'] ?? null;
+            $key = $productId . '|' . ($condition ?? '*');
+
+            if (! isset($requests[$key])) {
+                $requests[$key] = [
+                    'product_id' => $productId,
+                    'condition' => $condition,
+                    'qty' => 0,
+                    'indexes' => [],
+                ];
+            }
+
+            $requests[$key]['qty'] += $qty;
+            $requests[$key]['indexes'][] = $index;
+        }
+
+        if (! $requests) {
+            return;
+        }
+
+        $errors = [];
+
+        foreach ($requests as $request) {
+            $available = self::getAvailableStockForProduct($request['product_id'], $request['condition']);
+
+            if ($request['qty'] <= $available) {
+                continue;
+            }
+
+            $message = 'Qty melebihi stok tersedia (' . $available . ').';
+
+            foreach ($request['indexes'] as $index) {
+                $errors["items.$index.qty"] = $message;
+            }
+        }
+
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    /**
+     * Mengambil total stok tersedia untuk produk tertentu dan kondisi tertentu
+     *
+     * @param int $productId
+     * @param ?string $condition
+     * @return int
+     */
+
+    protected static function getAvailableStockForProduct(int $productId, ?string $condition = null): int
+    {
+        if ($productId < 1) {
+            return 0;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        return (int) PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0)
+            ->when(
+                filled($condition),
+                fn($query) => $query->where('kondisi', $condition)
+            )
+            ->sum($qtyColumn);
+    }
+
+    /**
+     * Menghitung dan memperbarui field kembalian
+     *
+     * @param Set $set
+     * @param Get $get
+     * @param mixed $overrideCash
+     * @param ?float $overrideDiscount
+     * @return void
+     */
+
+    protected static function refreshChangeField(Set $set, Get $get, $overrideCash = null, ?float $overrideDiscount = null): void
+    {
+        $cashValue = $overrideCash ?? $get('tunai_diterima');
+
+        if ($cashValue === null || $cashValue === '') {
+            $set('kembalian', null);
+            return;
+        }
+
+        [, $totalAmount] = self::summarizeCart($get('items'));
+        $discount = $overrideDiscount ?? (float) ($get('diskon_total') ?? 0);
+        $discount = min(max($discount, 0), $totalAmount);
+
+        $grandTotal = max(0, $totalAmount - $discount);
+        $set('kembalian', max(0, (float) $cashValue - $grandTotal));
+    }
+
+    /**
+     * Menghitung harga satuan
+     *
+     * @param array $item
+     * @return float
+     */
     protected static function resolveUnitPrice(array $item): float
     {
         $price = $item['harga_jual'] ?? null;
@@ -271,6 +434,14 @@ class PosSaleResource extends Resource
 
         return (float) (self::getDefaultPriceForProduct($productId, $condition) ?? 0);
     }
+
+    /**
+     * Mengambil harga satuan produk
+     *
+     * @param ?int $productId
+     * @param ?string $condition
+     * @return ?float
+     */
 
     protected static function getDefaultPriceForProduct(?int $productId, ?string $condition = null): ?float
     {
@@ -291,11 +462,17 @@ class PosSaleResource extends Resource
         return PembelianItem::query()
             ->where($productColumn, $productId)
             ->where($qtyColumn, '>', 0)
-            ->when($condition, fn ($query, $condition) => $query->where('kondisi', $condition))
+            ->when($condition, fn($query, $condition) => $query->where('kondisi', $condition))
             ->orderBy('id_pembelian_item')
             ->first();
     }
 
+    /**
+     * Mengambil opsi kondisi produk
+     *
+     * @param int $productId
+     * @return array
+     */
     protected static function getConditionOptionsForProduct(int $productId): array
     {
         if ($productId < 1) {
@@ -310,21 +487,33 @@ class PosSaleResource extends Resource
             ->where($qtyColumn, '>', 0)
             ->pluck('kondisi')
             ->unique()
-            ->map(fn (?string $condition) => $condition !== null ? trim($condition) : null)
-            ->filter(fn (?string $condition) => filled($condition))
+            ->map(fn(?string $condition) => $condition !== null ? trim($condition) : null)
+            ->filter(fn(?string $condition) => filled($condition))
             ->unique()
-            ->mapWithKeys(fn (string $condition) => [$condition => ucfirst(strtolower($condition))])
+            ->mapWithKeys(fn(string $condition) => [$condition => ucfirst(strtolower($condition))])
             ->toArray();
     }
 
+    /**
+     * Menentukan apakah resource ini harus terdaftar di navigasi.
+     *
+     * Fungsi ini memeriksa apakah panel yang sedang aktif adalah panel 'pos'.
+     * Jika ya, maka resource ini akan terdaftar di navigasi.
+     *
+     * @return bool True jika panel saat ini adalah 'pos', false jika tidak.
+     */
     public static function shouldRegisterNavigation(): bool
     {
         return Filament::getCurrentPanel()?->getId() === 'pos';
     }
 
+    /**
+     * Mengembalikan URL untuk halaman navigasi.
+     *
+     * @return string URL untuk halaman navigasi.
+     */
     public static function getNavigationUrl(): string
     {
         return static::getUrl('create');
     }
-
 }

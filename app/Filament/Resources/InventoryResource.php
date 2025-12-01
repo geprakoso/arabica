@@ -38,7 +38,7 @@ class InventoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => self::applyInventoryScopes($query))
+            ->modifyQueryUsing(fn (Builder $query) => self::applyInventoryScopes($query)) // Terapkan scope inventory khusus
             ->defaultSort('nama_produk')
             ->columns([
                 TextColumn::make('nama_produk')
@@ -57,22 +57,24 @@ class InventoryResource extends Resource
                 TextColumn::make('total_qty')
                     ->label('Qty')
                     ->state(fn (Produk $record) => (int) ($record->total_qty ?? 0))
+                    ->badge()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.'))
                     ->sortable(),
-                TextColumn::make('latest_batch.hpp')
+                    TextColumn::make('latest_batch.hpp')
                     ->label('HPP Terbaru')
                     ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
                     ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
-                TextColumn::make('latest_batch.harga_jual')
+                    TextColumn::make('latest_batch.harga_jual')
                     ->label('Harga Jual Terbaru')
                     ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
                     ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
-                TextColumn::make('batch_count')
+                    TextColumn::make('batch_count')
                     ->label('Jumlah Batch Aktif')
                     ->state(fn (Produk $record) => (int) ($record->batch_count ?? 0))
                     ->badge()
+                    ->color('success')
                     ->sortable(),
             ])
             ->filters([
@@ -120,11 +122,13 @@ class InventoryResource extends Resource
                         ->placeholder('-'),
                     TextEntry::make('qty_display')
                         ->label('Qty')
+                        ->badge()
                         ->state(fn (Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty'])),
                     TextEntry::make('batch_count_display')
                         ->label('Jumlah Batch Aktif')
                         ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batch_count'])
-                        ->badge(),
+                        ->badge()
+                        ->color('success'),
                 ]),
             InfolistSection::make('Batch Pembelian Aktif')
                 ->schema([
@@ -135,6 +139,29 @@ class InventoryResource extends Resource
                 ]),
         ]);
     }
+
+        /**
+     * Apply inventory-specific scopes to the Produk query.
+     *
+     * Scopes yang diterapkan:
+     * 1. Menampilkan hanya produk yang masih memiliki stok (> 0) 
+     *    berdasarkan relasi pembelianItems (kolom qty_sisa).
+     *
+     * 2. Melakukan eager loading pada relasi:
+     *    - brand
+     *    - kategori
+     *
+     * 3. Menambahkan agregasi:
+     *    - total_qty   → jumlah total qty_sisa dari semua batch aktif
+     *    - batch_count → jumlah batch pembelian dengan qty_sisa > 0
+     *
+     * Digunakan oleh InventoryResource agar tabel hanya menampilkan
+     * produk yang benar-benar masih tersedia di gudang sekaligus
+     * menampilkan ringkasan stok dan batch aktif.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
 
     protected static function applyInventoryScopes(Builder $query): Builder
     {
@@ -150,9 +177,33 @@ class InventoryResource extends Resource
 
         return $query;
     }
-
-    protected static array $inventorySnapshotCache = [];
-
+    
+    /**
+     * Cache untuk snapshot inventory per produk selama satu request.
+     */
+    
+    protected static array $inventorySnapshotCache = []; 
+    
+    /**
+     * Mendapatkan snapshot inventory untuk produk tertentu.
+     *
+     * Snapshot meliputi:
+     * - total qty saat ini
+     * - jumlah batch aktif
+     * - detail setiap batch (no_po, tanggal, qty, hpp, harga_jual, kondisi)
+     * - informasi batch terbaru (hpp, harga_jual, tanggal)
+     *
+     * Hasil disimpan dalam cache statis agar tidak perlu menghitung ulang
+     * dalam satu siklus request yang sama.
+     *
+     * @param  \App\Models\Produk  $record
+     * @return array{
+     *     qty: int,
+     *     batch_count: int,
+     *     batches: array<int, array<string, mixed>>,
+     *     latest_batch: array<string, mixed>|null
+     * }
+     */
     protected static function getInventorySnapshot(Produk $record): array
     {
         $cacheKey = $record->getKey();
@@ -183,7 +234,6 @@ class InventoryResource extends Resource
             $rawHargaJual = $item->harga_jual;
             $hpp = is_null($rawHpp) ? null : (float) $rawHpp;
             $hargaJual = is_null($rawHargaJual) ? null : (float) $rawHargaJual;
-
             return [
                 'no_po' => $purchase->no_po ?? '-',
                 'tanggal' => $tanggal,
@@ -218,10 +268,7 @@ class InventoryResource extends Resource
         ];
     }
 
-    /**
-     * @param  array<int, array<string, mixed>>  $batches
-     * @return array<int, string>
-     */
+    // Helper untuk format ringkasan batch dalam bentuk string.
     protected static function formatBatchSummaries(array $batches): array
     {
         if (! count($batches)) {
@@ -261,11 +308,13 @@ class InventoryResource extends Resource
         return $summaries;
     }
 
+    // Helper untuk format angka dengan pemisah ribuan.
     protected static function formatNumber($value): string
     {
         return number_format((int) ($value ?? 0), 0, ',', '.');
     }
-
+    
+    // Helper untuk format mata uang IDR.
     protected static function formatCurrency($value): string
     {
         $amount = (float) ($value ?? 0);

@@ -39,7 +39,7 @@ class PenjualanResource extends Resource
                     ->schema([
                         TextInput::make('no_nota')
                             ->label('No. Nota')
-                            ->default(fn () => Penjualan::generateNoNota())
+                            ->default(fn() => Penjualan::generateNoNota())
                             ->disabled()
                             ->unique(ignoreRecord: true)
                             ->required(),
@@ -72,7 +72,7 @@ class PenjualanResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['items'])->withCount('items'))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items'])->withCount('items'))
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
@@ -96,7 +96,7 @@ class PenjualanResource extends Resource
                     ->sortable(),
                 TextColumn::make('total_qty')
                     ->label('Total Qty')
-                    ->state(fn (Penjualan $record) => $record->items->sum('qty'))
+                    ->state(fn(Penjualan $record) => $record->items->sum('qty'))
                     ->sortable(),
             ])
             ->filters([])
@@ -129,6 +129,16 @@ class PenjualanResource extends Resource
         ];
     }
 
+    /**
+     * Mendapatkan pilihan batch yang tersedia untuk suatu produk, siap ditampilkan.
+     *
+     * Fungsi ini mencari item pembelian (PembelianItem) yang cocok dengan ID produk yang diberikan.
+     * Hanya item dengan sisa stok positif yang akan diambil.
+     * Setiap item kemudian diubah menjadi teks yang mudah dibaca, berisi nomor batch, sisa stok, dan HPP (Harga Pokok Penjualan).
+     *
+     * @param int|null $idProduk ID produk yang ingin dicari batch-nya.
+     * @return array Daftar batch dalam bentuk array, di mana kunci adalah ID PembelianItem dan nilai adalah teks deskripsi batch.
+     */
     public static function getBatchOptions(?int $productId): array
     {
         if (! $productId) {
@@ -144,13 +154,23 @@ class PenjualanResource extends Resource
             ->with('pembelian')
             ->orderBy($qtyColumn, 'desc')
             ->get()
-            ->mapWithKeys(fn (PembelianItem $item) => [
+            ->mapWithKeys(fn(PembelianItem $item) => [
                 $item->id_pembelian_item => self::formatBatchLabel($item, $qtyColumn),
             ]);
 
         return $items->all();
     }
 
+    /**
+     * Membuat label batch untuk item pembelian.
+     *
+     * Mengambil data item pembelian lalu menghasilkan teks label yang mudah dibaca.
+     * Label ini berisi nomor batch, jumlah sisa stok, dan HPP (harga pokok penjualan).
+     *
+     * @param \App\Models\PembelianItem|null $item Data item pembelian yang akan dibuat labelnya.
+     * @param string $qtyColumn Nama kolom di database yang menyimpan jumlah sisa stok.
+     * @return string|null Teks label batch yang sudah diformat, atau null jika item tidak ada.
+     */
     public static function formatBatchLabel(?PembelianItem $item, string $qtyColumn): ?string
     {
         if (! $item) {
@@ -158,21 +178,29 @@ class PenjualanResource extends Resource
         }
 
         $labelParts = [
-            $item->pembelian?->no_po ? '#'.$item->pembelian->no_po : 'Batch '.$item->getKey(),
-            'Qty: '.number_format((int) ($item->{$qtyColumn} ?? 0), 0, ',', '.'),
-            'HPP: Rp '.number_format((int) ($item->hpp ?? 0), 0, ',', '.'),
+            $item->pembelian?->no_po ? '#' . $item->pembelian->no_po : 'Batch ' . $item->getKey(),
+            'Qty: ' . number_format((int) ($item->{$qtyColumn} ?? 0), 0, ',', '.'),
+            'HPP: Rp ' . number_format((int) ($item->hpp ?? 0), 0, ',', '.'),
         ];
 
         return implode(' | ', array_filter($labelParts));
     }
 
+    /**
+     * Mendapatkan daftar produk yang tersedia untuk dijual.
+     *
+     * Fungsi ini mencari produk-produk yang masih memiliki stok dari pembelian sebelumnya.
+     * Hasilnya adalah daftar produk yang bisa dipilih saat melakukan penjualan.
+     *
+     * @return array Array berisi ID produk (sebagai kunci) dan nama produk (sebagai nilai).
+     */
     public static function getAvailableProductOptions(): array
     {
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
 
         return Produk::query()
-            ->whereHas('pembelianItems', fn (Builder $query) => $query->where($qtyColumn, '>', 0))
+            ->whereHas('pembelianItems', fn(Builder $query) => $query->where($qtyColumn, '>', 0))
             ->orderBy('nama_produk')
             ->pluck('nama_produk', 'id')
             ->all();
