@@ -70,7 +70,7 @@ class PosSaleResource extends Resource
                                             $qtyColumn = PembelianItem::qtySisaColumn();
 
                                             return Produk::query()
-                                                ->whereHas('pembelianItems', fn ($q) => $q->where($qtyColumn, '>', 0))
+                                                ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
                                                 ->orderBy('nama_produk')
                                                 ->pluck('nama_produk', 'id');
                                         })
@@ -112,6 +112,7 @@ class PosSaleResource extends Resource
                                         ->nullable(),
                                     Forms\Components\Select::make('kondisi')
                                         ->label('Kondisi')
+                                        // Mengambil opsi kondisi produk. Perhatikan bahwa jika produk tidak ditemukan atau tidak memiliki kondisi, daftar opsi akan kosong.
                                         ->options(function (Get $get): array {
                                             $productId = $get('id_produk');
 
@@ -119,12 +120,14 @@ class PosSaleResource extends Resource
                                                 ? self::getConditionOptionsForProduct((int) $productId)
                                                 : [];
                                         })
+                                        // disabled jika opsi kondisi hanya satu
                                         ->disabled(function (Get $get): bool {
                                             $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
 
                                             return count($options) <= 1;
                                         })
-                                        ->required(fn (Get $get): bool => count(self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0))) > 1)
+                                        ->required(fn(Get $get): bool => count(self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0))) > 1)
+                                        // placeholder jika opsi kondisi hanya satu
                                         ->placeholder(function (Get $get): string {
                                             $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
 
@@ -140,6 +143,7 @@ class PosSaleResource extends Resource
 
                                             return 'Pilih kondisi (' . implode(' / ', $labels) . ')';
                                         })
+                                        // set harga jual berdasarkan kondisi
                                         ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
                                             $productId = (int) ($get('id_produk') ?? 0);
 
@@ -152,7 +156,7 @@ class PosSaleResource extends Resource
                                         ->reactive()
                                         ->nullable(),
                                 ])
-                                ->colStyles([
+                                ->colStyle([
                                     'id_produk' => 'width: 40%;',
                                     'qty' => 'width: 10%;',
                                     'harga_jual' => 'width: 30%;',
@@ -162,8 +166,9 @@ class PosSaleResource extends Resource
                     Step::make('Ringkasan & Pembayaran')
                         ->columns(2)
                         ->schema([
+                            // ringkasan transaksi 
                             LivewireComponent::make('pos-cart-summary')
-                                ->data(fn (Get $get): array => [
+                                ->data(fn(Get $get): array => [
                                     'items' => $get('items') ?? [],
                                     'discount' => (float) ($get('diskon_total') ?? 0),
                                 ])
@@ -196,8 +201,9 @@ class PosSaleResource extends Resource
                                         ->minValue(0)
                                         ->prefix('Rp')
                                         ->live()
+                                        // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
-                                            // clamp to total keranjang agar tidak minus
+
                                             [, $totalAmount] = self::summarizeCart($get('items'));
                                             $discount = max(0, (float) ($state ?? 0));
                                             $set('diskon_total', min($discount, $totalAmount));
@@ -241,11 +247,17 @@ class PosSaleResource extends Resource
         ];
     }
 
+    /**
+     * Menghitung total qty dan total amount
+     *
+     * @param ?array $items
+     * @return array
+     */
     public static function summarizeCart(?array $items): array
     {
         $collection = collect($items ?? []);
 
-        $totalQty = (int) $collection->sum(fn (array $item) => (int) ($item['qty'] ?? 0));
+        $totalQty = (int) $collection->sum(fn(array $item) => (int) ($item['qty'] ?? 0));
 
         $totalAmount = (float) $collection->sum(function (array $item) {
             $qty = (int) ($item['qty'] ?? 0);
@@ -258,6 +270,12 @@ class PosSaleResource extends Resource
         return [$totalQty, $totalAmount];
     }
 
+    /**
+     * Menghitung harga satuan
+     *
+     * @param array $item
+     * @return float
+     */
     protected static function resolveUnitPrice(array $item): float
     {
         $price = $item['harga_jual'] ?? null;
@@ -271,6 +289,14 @@ class PosSaleResource extends Resource
 
         return (float) (self::getDefaultPriceForProduct($productId, $condition) ?? 0);
     }
+
+    /**
+     * Mengambil harga satuan produk
+     *
+     * @param ?int $productId
+     * @param ?string $condition
+     * @return ?float
+     */
 
     protected static function getDefaultPriceForProduct(?int $productId, ?string $condition = null): ?float
     {
@@ -291,11 +317,17 @@ class PosSaleResource extends Resource
         return PembelianItem::query()
             ->where($productColumn, $productId)
             ->where($qtyColumn, '>', 0)
-            ->when($condition, fn ($query, $condition) => $query->where('kondisi', $condition))
+            ->when($condition, fn($query, $condition) => $query->where('kondisi', $condition))
             ->orderBy('id_pembelian_item')
             ->first();
     }
 
+    /**
+     * Mengambil opsi kondisi produk
+     *
+     * @param int $productId
+     * @return array
+     */
     protected static function getConditionOptionsForProduct(int $productId): array
     {
         if ($productId < 1) {
@@ -310,21 +342,33 @@ class PosSaleResource extends Resource
             ->where($qtyColumn, '>', 0)
             ->pluck('kondisi')
             ->unique()
-            ->map(fn (?string $condition) => $condition !== null ? trim($condition) : null)
-            ->filter(fn (?string $condition) => filled($condition))
+            ->map(fn(?string $condition) => $condition !== null ? trim($condition) : null)
+            ->filter(fn(?string $condition) => filled($condition))
             ->unique()
-            ->mapWithKeys(fn (string $condition) => [$condition => ucfirst(strtolower($condition))])
+            ->mapWithKeys(fn(string $condition) => [$condition => ucfirst(strtolower($condition))])
             ->toArray();
     }
 
+    /**
+     * Menentukan apakah resource ini harus terdaftar di navigasi.
+     *
+     * Fungsi ini memeriksa apakah panel yang sedang aktif adalah panel 'pos'.
+     * Jika ya, maka resource ini akan terdaftar di navigasi.
+     *
+     * @return bool True jika panel saat ini adalah 'pos', false jika tidak.
+     */
     public static function shouldRegisterNavigation(): bool
     {
         return Filament::getCurrentPanel()?->getId() === 'pos';
     }
 
+    /**
+     * Mengembalikan URL untuk halaman navigasi.
+     *
+     * @return string URL untuk halaman navigasi.
+     */
     public static function getNavigationUrl(): string
     {
         return static::getUrl('create');
     }
-
 }

@@ -41,7 +41,7 @@ class PembelianResource extends Resource
                                 TextInput::make('no_po')
                                     ->label('No. PO')
                                     ->required()
-                                    ->default(fn () => Pembelian::generatePO())
+                                    ->default(fn () => Pembelian::generatePO()) //generate no_po otomatis
                                     ->disabled()
                                     ->dehydrated(true)
                                     ->unique(ignoreRecord: true),
@@ -74,7 +74,7 @@ class PembelianResource extends Resource
                                     ->helperText('Dapat memilih lebih dari satu Request Order; catatan otomatis diisi tag nomor RO.')
                                     ->afterStateUpdated(function (callable $set, ?array $state): void {
                                         $set('catatan', self::formatRequestOrderReferences($state ?? []));
-                                    }),
+                                    }), // memperbarui catatan saat request order diubah
                                 Select::make('tipe_pembelian')
                                     ->label('Tipe Pembelian')
                                     ->options([
@@ -124,12 +124,14 @@ class PembelianResource extends Resource
                                             ->label('HPP')
                                             ->numeric()
                                             ->prefix('Rp ')
+                                            ->currencyMask(thousandSeparator: '.',decimalSeparator: ',',precision: 2) // format pemisah uang
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('harga_jual')
                                             ->label('Harga Jual')
                                             ->numeric()
                                             ->prefix('Rp ')
+                                            ->currencyMask(thousandSeparator: '.',decimalSeparator: ',',precision: 2) // format pemisah uang
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('qty')
@@ -152,7 +154,7 @@ class PembelianResource extends Resource
                                         'harga_jual' => 'width: 180px;',
                                         'qty' => 'width: 80px;',
                                         'kondisi' => 'width: 150px;',
-                                    ])
+                                    ]) // format kolom size dan alignment
                                     ->columns(5)
                                     ->cloneable()
                                     ->reorderable(false),
@@ -169,7 +171,6 @@ class PembelianResource extends Resource
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
-
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal')
@@ -184,7 +185,7 @@ class PembelianResource extends Resource
                     ->label('Request Order')
                     ->state(fn (Pembelian $record) => $record->requestOrders
                         ->map(fn ($ro) => '#'.$ro->no_ro)
-                        ->implode(', '))
+                        ->implode(', ')) // semua Request Order yang terkait → ambil no_ro → kasih # di depan → gabung jadi satu teks dipisah koma.
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
@@ -193,11 +194,11 @@ class PembelianResource extends Resource
                 TextColumn::make('tipe_pembelian')
                     ->label('Tipe')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null),
+                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null), // Ubah text ke format uppercase dan ganti underscore dengan spasi
                 TextColumn::make('jenis_pembayaran')
                     ->label('Pembayaran')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null) // Ubah text ke format uppercase dan ganti underscore dengan spasi
                     ->colors([
                         'success' => 'lunas',
                         'warning' => 'tempo',
@@ -237,6 +238,7 @@ class PembelianResource extends Resource
         ];
     }
 
+    // mengubah array id request order jadi teks tag seperti #RO123, #RO124
     protected static function formatRequestOrderReferences(array $requestOrderIds): ?string
     {
         $ids = collect($requestOrderIds)

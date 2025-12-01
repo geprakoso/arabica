@@ -34,7 +34,8 @@ class PenjualanReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['items', 'member', 'karyawan']))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'member', 'karyawan'])) // reager loading data relasi 
+            ->defaultSort('tanggal_penjualan', 'desc') // default sort
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
@@ -53,25 +54,25 @@ class PenjualanReportResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_qty')
                     ->label('Total Qty')
-                    ->state(fn (Penjualan $record) => $record->items->sum('qty'))
+                    ->state(fn(Penjualan $record) => $record->items->sum('qty'))
                     ->sortable(),
                 TextColumn::make('total_penjualan')
                     ->label('Total Penjualan')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
-                    ))
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                        $record->items->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
+                    )) // format currency
                     ->sortable(),
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
-                    ))
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                        $record->items->sum(fn($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
+                    )) // format currency
                     ->sortable(),
                 TextColumn::make('total_margin')
                     ->label('Margin')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => ((float) ($item->harga_jual ?? 0) - (float) ($item->hpp ?? 0)) * (int) ($item->qty ?? 0))
-                    ))
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                        $record->items->sum(fn($item) => ((float) ($item->harga_jual ?? 0) - (float) ($item->hpp ?? 0)) * (int) ($item->qty ?? 0))
+                    )) // format currency
                     ->sortable(),
             ])
             ->filters([
@@ -85,8 +86,8 @@ class PenjualanReportResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
-                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
+                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
+                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
                     }),
             ])
             ->headerActions([
@@ -110,7 +111,7 @@ class PenjualanReportResource extends Resource
             'index' => Pages\ListPenjualanReports::route('/'),
         ];
     }
-
+    // format currency 
     protected static function formatCurrency(float | int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');

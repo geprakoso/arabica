@@ -39,7 +39,7 @@ class PosActivityResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\Action::make('print')
                     ->label('Print')
-                    ->url(fn (Penjualan $record) => route('pos.receipt', $record))
+                    ->url(fn(Penjualan $record) => route('pos.receipt', $record))
                     ->icon('heroicon-o-printer')
                     ->openUrlInNewTab(),
             ])
@@ -58,17 +58,27 @@ class PosActivityResource extends Resource
         ];
     }
 
+    /**
+     * Menentukan apakah resource ini harus terdaftar di navigasi.
+     *
+     * Fungsi ini memeriksa apakah panel yang sedang aktif adalah panel 'pos'.
+     * Jika ya, maka resource ini akan terdaftar di navigasi.
+     *
+     * @return bool True jika panel saat ini adalah 'pos', false jika tidak.
+     */
     public static function shouldRegisterNavigation(): bool
     {
         return Filament::getCurrentPanel()?->getId() === 'pos';
     }
 
+    // mendapatkan widget yang akan di tampilkan di resource
     public static function getWidgets(): array
     {
         return [
             PosActivityStats::class,
         ];
     }
+
 
     public static function infolist(Infolist $infolist): Infolist
     {
@@ -79,9 +89,9 @@ class PosActivityResource extends Resource
                     TextEntry::make('no_nota')->label('Nota'),
                     TextEntry::make('tanggal_penjualan')->label('Tanggal'),
                     TextEntry::make('metode_bayar')->label('Metode Bayar')->placeholder('-'),
-                    TextEntry::make('grand_total')->label('Grand Total')->money('idr', true),
-                    TextEntry::make('tunai_diterima')->label('Tunai Diterima')->money('idr', true)->placeholder('-'),
-                    TextEntry::make('kembalian')->label('Kembalian')->money('idr', true)->placeholder('-'),
+                    TextEntry::make('grand_total')->label('Grand Total')->currency('IDR'),
+                    TextEntry::make('tunai_diterima')->label('Tunai Diterima')->currency('IDR')->placeholder('-'),
+                    TextEntry::make('kembalian')->label('Kembalian')->currency('IDR')->placeholder('-'),
                     TextEntry::make('member.nama_member')->label('Member')->placeholder('-'),
                     TextEntry::make('karyawan.nama_karyawan')->label('Kasir')->placeholder('-'),
                     TextEntry::make('catatan')->label('Catatan')->columnSpanFull()->placeholder('-'),
@@ -93,15 +103,15 @@ class PosActivityResource extends Resource
                             Grid::make(4)->schema([
                                 TextEntry::make('produk.nama_produk')->label('Produk')->columnSpan(2),
                                 TextEntry::make('qty')->label('Qty'),
-                                TextEntry::make('harga_jual')->label('Harga')->money('idr', true),
+                                TextEntry::make('harga_jual')->label('Harga')->currency('IDR'),
                             ]),
                             Grid::make(4)->schema([
                                 TextEntry::make('id_pembelian_item')->label('Batch'),
                                 TextEntry::make('kondisi')->label('Kondisi')->placeholder('-'),
                                 TextEntry::make('subtotal_display')
                                     ->label('Subtotal')
-                                    ->state(fn ($record) => ($record->qty ?? 0) * ($record->harga_jual ?? 0))
-                                    ->money('idr', true),
+                                    ->state(fn($record) => ($record->qty ?? 0) * ($record->harga_jual ?? 0) * 100)
+                                    ->currency('IDR'),
                             ]),
                         ])
                         ->columnSpanFull(),

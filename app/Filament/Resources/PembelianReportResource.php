@@ -36,7 +36,8 @@ class PembelianReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['supplier', 'karyawan', 'items']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
+            ->defaultSort('tanggal', 'desc')
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
@@ -55,17 +56,17 @@ class PembelianReportResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_items')
                     ->label('Total Qty')
-                    ->state(fn (Pembelian $record) => $record->items->sum('qty')),
+                    ->state(fn (Pembelian $record) => $record->items->sum('qty')), //menghitung total qty dari relasi items
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
                     ->state(fn (Pembelian $record) => self::formatCurrency(
                         $record->items->sum(fn ($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
-                    )),
+                    )), //menghitung total HPP dari relasi items
                 TextColumn::make('total_harga_jual')
                     ->label('Total Harga Jual')
                     ->state(fn (Pembelian $record) => self::formatCurrency(
                         $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
-                    )),
+                    )), //menghitung total harga jual dari relasi items
             ])
             ->filters([
                 Tables\Filters\Filter::make('periode')

@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\PosActivityResource\Widgets;
 
 use App\Models\Penjualan;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Card;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class PosActivityStats extends BaseWidget
 {

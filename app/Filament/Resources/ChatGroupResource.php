@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -45,7 +46,7 @@ class ChatGroupResource extends Resource
                             ->relationship('owner', 'name')
                             ->searchable()
                             ->preload()
-                            ->default(fn () => auth()->id())
+                            ->default(fn() => Auth::id())
                             ->required()
                             ->helperText('Owners get elevated permissions when editing groups.'), // Clarify why this matters.
                         Forms\Components\FileUpload::make('avatar')
