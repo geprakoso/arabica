@@ -26,9 +26,9 @@ class StockOpnameResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $navigationLabel = 'Stock Opname';
-
+    protected static ?string $navigationParentItem = 'Inventory & Stock';
     protected static ?string $navigationGroup = 'Inventory';
-    protected static ?string $navigationParentItem = 'Inventory';
+    // protected static ?string $navigationParentItem = 'Inventory';
 
     protected static ?int $navigationSort = 50;
 
