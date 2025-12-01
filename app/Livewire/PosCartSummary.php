@@ -19,7 +19,9 @@ class PosCartSummary extends StatsOverviewWidget
         $this->items = $items;
         $this->discount = (float) $discount;
     }
-
+    /**
+     * Reset cached stats on every request to ensure data freshness.
+     */
     public function hydrate(): void
     {
         $this->cachedStats = null;
@@ -31,6 +33,7 @@ class PosCartSummary extends StatsOverviewWidget
     }
 
     /**
+     * Calculate and return the stats for the cart summary.
      * @return array<Stat>
      */
     protected function getStats(): array
