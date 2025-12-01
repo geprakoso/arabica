@@ -20,6 +20,7 @@ use Filament\Forms\Components\Wizard\Step;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Validation\ValidationException;
 
 class PosSaleResource extends Resource
 {
@@ -47,7 +48,7 @@ class PosSaleResource extends Resource
                                 ->label('Member')
                                 ->options(Member::query()->pluck('nama_member', 'id'))
                                 ->searchable()
-                                ->nullable(),
+                                ->required(),
                             Forms\Components\Select::make('gudang_id')
                                 ->label('Gudang')
                                 ->options(Gudang::query()->pluck('nama_gudang', 'id'))
@@ -156,13 +157,16 @@ class PosSaleResource extends Resource
                                         ->reactive()
                                         ->nullable(),
                                 ])
-                                ->colStyle([
+                                ->colStyles([
                                     'id_produk' => 'width: 40%;',
                                     'qty' => 'width: 10%;',
                                     'harga_jual' => 'width: 30%;',
                                     'kondisi' => 'width: 15%;',
                                 ]),
-                        ]),
+                        ])
+                        ->afterValidation(function (Get $get): void {
+                            self::ensureStockIsAvailable($get('items'));
+                        }),
                     Step::make('Ringkasan & Pembayaran')
                         ->columns(2)
                         ->schema([
@@ -197,23 +201,52 @@ class PosSaleResource extends Resource
                                     Forms\Components\TextInput::make('diskon_total')
                                         ->label('Diskon Transaksi')
                                         ->numeric()
-                                        ->default(0)
-                                        ->minValue(0)
+                                        ->currencyMask(
+                                            thousandSeparator: '.',
+                                            decimalSeparator: ',',
+                                            precision: 2,
+                                        )
+
                                         ->prefix('Rp')
-                                        ->live()
+                                        ->live(onBlur: true)
+                                        ->reactive()
                                         // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
-
                                             [, $totalAmount] = self::summarizeCart($get('items'));
                                             $discount = max(0, (float) ($state ?? 0));
-                                            $set('diskon_total', min($discount, $totalAmount));
-                                        })
-                                        ->columnSpan(1),
+                                            $discount = min($discount, $totalAmount);
+                                            $set('diskon_total', $discount);
+
+                                            self::refreshChangeField($set, $get, null, $discount);
+                                        }),
                                     Forms\Components\TextInput::make('tunai_diterima')
                                         ->label('Tunai Diterima')
                                         ->numeric()
+                                        ->reactive()
+                                        ->required()
+                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
                                         ->prefix('Rp')
-                                        ->nullable(),
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(function (Set $set, $state, Get $get): void {
+                                            self::refreshChangeField($set, $get, $state);
+                                        })
+                                        // validasi tunai diterima tidak boleh kurang dari harga total
+                                        ->rule(function (Get $get) {
+                                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                [, $totalAmount] = self::summarizeCart($get('items'));
+                                                $discount = (float) ($get('diskon_total') ?? 0);
+                                                $grandTotal = max(0, $totalAmount - $discount);
+                                                if ($value < $grandTotal) {
+                                                    $fail("Tunai Kurang Dari Harga Total (Rp " . number_format($grandTotal, 0, ',', '.') . ")");
+                                                }
+                                            };
+                                        }),
+                                    Forms\Components\TextInput::make('kembalian')
+                                        ->label('Kembalian')
+                                        ->numeric()
+                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                                        ->prefix('Rp')
+                                        ->disabled(),
                                 ]),
                             Forms\Components\Placeholder::make('stock_protection_hint')
                                 ->label('Perlindungan Stok')
@@ -268,6 +301,120 @@ class PosSaleResource extends Resource
         });
 
         return [$totalQty, $totalAmount];
+    }
+
+    /**
+     * Memastikan stok tersedia untuk setiap item dalam keranjang 
+     * 
+     * @param ?array $items
+     * @throws ValidationException
+     */
+    protected static function ensureStockIsAvailable(?array $items): void
+    {
+        $items = $items ?? [];
+        $requests = [];
+
+        foreach ($items as $index => $item) {
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $qty = (int) ($item['qty'] ?? 0);
+
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+
+            $condition = $item['kondisi'] ?? null;
+            $key = $productId . '|' . ($condition ?? '*');
+
+            if (! isset($requests[$key])) {
+                $requests[$key] = [
+                    'product_id' => $productId,
+                    'condition' => $condition,
+                    'qty' => 0,
+                    'indexes' => [],
+                ];
+            }
+
+            $requests[$key]['qty'] += $qty;
+            $requests[$key]['indexes'][] = $index;
+        }
+
+        if (! $requests) {
+            return;
+        }
+
+        $errors = [];
+
+        foreach ($requests as $request) {
+            $available = self::getAvailableStockForProduct($request['product_id'], $request['condition']);
+
+            if ($request['qty'] <= $available) {
+                continue;
+            }
+
+            $message = 'Qty melebihi stok tersedia (' . $available . ').';
+
+            foreach ($request['indexes'] as $index) {
+                $errors["items.$index.qty"] = $message;
+            }
+        }
+
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    /**
+     * Mengambil total stok tersedia untuk produk tertentu dan kondisi tertentu
+     *
+     * @param int $productId
+     * @param ?string $condition
+     * @return int
+     */
+
+    protected static function getAvailableStockForProduct(int $productId, ?string $condition = null): int
+    {
+        if ($productId < 1) {
+            return 0;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        return (int) PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0)
+            ->when(
+                filled($condition),
+                fn($query) => $query->where('kondisi', $condition)
+            )
+            ->sum($qtyColumn);
+    }
+
+    /**
+     * Menghitung dan memperbarui field kembalian
+     *
+     * @param Set $set
+     * @param Get $get
+     * @param mixed $overrideCash
+     * @param ?float $overrideDiscount
+     * @return void
+     */
+
+    protected static function refreshChangeField(Set $set, Get $get, $overrideCash = null, ?float $overrideDiscount = null): void
+    {
+        $cashValue = $overrideCash ?? $get('tunai_diterima');
+
+        if ($cashValue === null || $cashValue === '') {
+            $set('kembalian', null);
+            return;
+        }
+
+        [, $totalAmount] = self::summarizeCart($get('items'));
+        $discount = $overrideDiscount ?? (float) ($get('diskon_total') ?? 0);
+        $discount = min(max($discount, 0), $totalAmount);
+
+        $grandTotal = max(0, $totalAmount - $discount);
+        $set('kembalian', max(0, (float) $cashValue - $grandTotal));
     }
 
     /**
