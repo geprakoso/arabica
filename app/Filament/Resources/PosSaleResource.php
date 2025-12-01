@@ -209,7 +209,6 @@ class PosSaleResource extends Resource
 
                                         ->prefix('Rp')
                                         ->live(onBlur: true)
-                                        ->reactive()
                                         // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
                                             [, $totalAmount] = self::summarizeCart($get('items'));
@@ -222,7 +221,6 @@ class PosSaleResource extends Resource
                                     Forms\Components\TextInput::make('tunai_diterima')
                                         ->label('Tunai Diterima')
                                         ->numeric()
-                                        ->reactive()
                                         ->required()
                                         ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
                                         ->prefix('Rp')
