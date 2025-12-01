@@ -156,7 +156,7 @@ class PosSaleResource extends Resource
                                         ->reactive()
                                         ->nullable(),
                                 ])
-                                ->colStyle([
+                                ->colStyles([
                                     'id_produk' => 'width: 40%;',
                                     'qty' => 'width: 10%;',
                                     'harga_jual' => 'width: 30%;',
