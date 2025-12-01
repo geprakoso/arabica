@@ -12,6 +12,9 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Grid;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -30,38 +33,91 @@ class LiburCutiResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(3) // Grid 3 kolom
             ->schema([
-                Select::make('user_id')
-                    ->label('Karyawan')
-                    ->options(
-                        Karyawan::query()
-                            ->whereNotNull('user_id')
-                            ->pluck('nama_karyawan', 'user_id')
-                    )
-                    ->searchable()
-                    ->default(fn () => auth()->id())
-                    ->required(),
 
-                ToggleButtons::make('keperluan')
-                    ->inline()
-                    ->options(Keperluan::class)
-                    ->required(),
+                // === KOLOM KIRI (DATA PENGAJUAN) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2])
+                    ->schema([
 
-                DatePicker::make('mulai_tanggal')
-                    ->label('Mulai')
-                    ->required(),
+                        // Section 1: Detail Identitas & Alasan
+                        Section::make('Informasi Pengajuan')
+                            ->description('Pilih karyawan dan jenis keperluan cuti.')
+                            ->icon('heroicon-m-user')
+                            ->schema([
+                                Select::make('user_id')
+                                    ->label('Nama Karyawan')
+                                    ->options(
+                                        Karyawan::query()
+                                            ->whereNotNull('user_id')
+                                            ->pluck('nama_karyawan', 'user_id')
+                                    )
+                                    ->searchable()
+                                    ->preload()
+                                    ->default(fn () => auth()->id())
+                                    ->required()
+                                    ->columnSpanFull(),
 
-                DatePicker::make('sampai_tanggal')
-                    ->label('Sampai')
-                    ->afterOrEqual('mulai_tanggal'),
+                                ToggleButtons::make('keperluan')
+                                    ->label('Jenis Keperluan')
+                                    ->options(Keperluan::class)
+                                    ->inline()
+                                    ->required()
+                                    ->columnSpanFull()
+                                    ->columns([
+                                        'default' => 2,
+                                        'sm' => 3,
+                                        'xl' => 4,
+                                    ]), // Agar tombol tertata rapi dalam grid
 
-                Select::make('status_pengajuan')
-                    ->options(StatusPengajuan::class)
-                    ->default(StatusPengajuan::Pending)
-                    ->required(),
+                                Textarea::make('keterangan')
+                                    ->label('Keterangan Tambahan')
+                                    ->placeholder('Contoh: Acara keluarga di luar kota...')
+                                    ->rows(3)
+                                    ->columnSpanFull(),
+                            ]),
 
-                Textarea::make('keterangan')
-                    ->columnSpanFull(),
+                        // Section 2: Jadwal
+                        Section::make('Durasi Cuti')
+                            ->icon('heroicon-m-calendar-days')
+                            ->columns(2)
+                            ->schema([
+                                DatePicker::make('mulai_tanggal')
+                                    ->label('Tanggal Mulai')
+                                    ->native(false)
+                                    ->displayFormat('d F Y')
+                                    ->required(),
+
+                                DatePicker::make('sampai_tanggal')
+                                    ->label('Sampai Tanggal')
+                                    ->native(false)
+                                    ->displayFormat('d F Y')
+                                    ->afterOrEqual('mulai_tanggal') // Validasi logis
+                                    ->required(),
+                            ]),
+                    ]),
+
+                // === KOLOM KANAN (STATUS) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+
+                        // Section 3: Validasi
+                        Section::make('Validasi')
+                            ->icon('heroicon-m-check-badge')
+                            ->description('Persetujuan pengajuan.')
+                            ->schema([
+                                Select::make('status_pengajuan')
+                                    ->label('Status')
+                                    ->options(StatusPengajuan::class)
+                                    ->default(StatusPengajuan::Pending)
+                                    ->native(false)
+                                    ->required()
+                                    // Tips: Beri warna badge pada status jika Enum support
+                                    ->selectablePlaceholder(false),
+                            ]),
+                    ]),
             ]);
     }
 

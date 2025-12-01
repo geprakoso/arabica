@@ -11,6 +11,8 @@ use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Forms\Get;
@@ -29,94 +31,112 @@ class JasaResource extends Resource
 {
     protected static ?string $model = Jasa::class;
 
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-tools';
-
     protected static ?string $navigationGroup = 'Master Data';
-
+    protected static ?string $navigationParentItem = 'Produk & Jasa';
     protected static ?string $pluralModelLabel = 'Jasa';
-
     protected static ?string $navigationLabel = 'Jasa';
-
     protected static ?int $navigationSort = 2;
-
+    
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(3) // Grid utama 3 kolom
             ->schema([
-                //
-                Split::make([
-                Section::make('Detail Jasa')
+                
+                // === KOLOM KIRI (Konten Utama) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2])
                     ->schema([
-                        Forms\Components\TextInput::make('nama_jasa')
-                            ->label('Nama Jasa')
-                            ->required(),
-                        Forms\Components\TextInput::make('sku')
-                            ->label('SKU Jasa')
-                            ->default(fn () => Jasa::generateSku())
-                            ->disabled()
-                            ->dehydrated()
-                            ->required()
-                            ->unique(ignoreRecord: true),
                         
-                    ]),
-                Section::make()
-                    ->schema([
-                        FileUpload::make('image_url')
-                            ->label('Gambar Jasa')
-                            ->image()
-                            ->disk('public')
-                            ->directory(fn () => 'jasas/' . now()->format('Y/m/d'))
-                            ->getUploadedFileNameForStorageUsing(function (LivewireTemporaryUploadedFile $file, Get $get): string {
-                                $datePrefix = now()->format('ymd');
-                                $slug = Str::slug($get('nama_jasa') ?? 'jasa');
-                                $extension = $file->getClientOriginalExtension();
-                                return "{$datePrefix}-{$slug}.{$extension}";
-                            })
-                            ->preserveFilenames()
-                            ->nullable(),
-                ]),
-                ])->from('lg')->columnSpanFull(),
+                        // Section 1: Informasi Dasar
+                        Section::make('Informasi Jasa')
+                            ->description('Detail lengkap mengenai layanan jasa yang ditawarkan.')
+                            ->icon('heroicon-m-wrench-screwdriver') // Icon pemanis
+                            ->schema([
+                                Forms\Components\TextInput::make('nama_jasa')
+                                    ->label('Nama Jasa')
+                                    ->required()
+                                    ->placeholder('Contoh: Service AC Split 1PK')
+                                    ->columnSpanFull(),
 
-                Section::make('Harga')
-                    ->schema([
-                        Forms\Components\TextInput::make('harga')
-                            ->label('Harga Jasa')
-                            ->numeric()
-                            ->placeholder(50000)
-                            ->prefix('Rp')
-                            ->live(onBlur: true) // keep mask stable
-                            ->mask(RawJs::make('$money($input, ".", ",", 0)'))
-                            ->dehydrateStateUsing(fn ($state) => (int) str_replace(['Rp', ' ', '.'], '', $state))
-                            ->afterStateHydrated(fn ($component, $state) => $component->state(number_format($state ?? 0, 0, ',', '.')))
-                            ->required(),
-                    ]),
+                                Forms\Components\RichEditor::make('deskripsi')
+                                    ->label('Deskripsi Lengkap')
+                                    ->toolbarButtons([
+                                        'bold', 'italic', 'bulletList', 'orderedList', 'h3', 'undo', 'redo'
+                                    ]) // Toolbar minimalis
+                                    ->columnSpanFull(),
+                            ]),
 
-                Section::make('Keterangan')
-                    ->columns(1)
-                    ->schema([
-                        TimePicker::make('estimasi_waktu_jam')
-                            ->label('Estimasi Waktu Penyelesaian')
-                            ->required()
-                            ->native(false)
-                            ->datalist([
-                                '01:00',
-                                '02:00',
-                                '03:00',
-                                '04:30',
-                                '24:00',
-                                '11:30',
-                                '12:00',
-                            ])
-                            ->seconds(false)
-                            ->prefix('Durasi')
-                            ->suffix('Jam')
-                            ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::parse($state)->hour : null)
-                            ->afterStateHydrated(fn (TimePicker $component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
-                        Forms\Components\RichEditor::make('deskripsi')
-                            ->label('Deskripsi Jasa')
-                            ->nullable(),
+                        // Section 2: Penawaran (Harga & Waktu)
+                        Section::make('Penawaran & Estimasi')
+                            ->icon('heroicon-m-currency-dollar')
+                            ->columns(2) // Grid 2 kolom agar Harga & Waktu berdampingan
+                            ->schema([
+                                Forms\Components\TextInput::make('harga')
+                                    ->label('Biaya Jasa')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->placeholder('0')
+                                    ->live(onBlur: true)
+                                    // Menggunakan mask format uang Indonesia
+                                    ->mask(RawJs::make('$money($input, ".", ",", 0)'))
+                                    ->dehydrateStateUsing(fn ($state) => (int) str_replace(['Rp', ' ', '.'], '', $state))
+                                    ->afterStateHydrated(fn ($component, $state) => $component->state(number_format($state ?? 0, 0, ',', '.')))
+                                    ->required(),
+
+                                Forms\Components\TimePicker::make('estimasi_waktu_jam')
+                                    ->label('Estimasi Durasi')
+                                    ->prefix('Jam') // UX: Memperjelas ini adalah durasi
+                                    ->seconds(false)
+                                    ->required()
+                                    // Logika custom kamu tetap saya pertahankan
+                                    ->datalist([
+                                        '01:00', '02:00', '03:00', '04:00', '05:00',
+                                    ])
+                                    ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::parse($state)->hour : null)
+                                    ->afterStateHydrated(fn ($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
+                            ]),
                     ]),
 
+                // === KOLOM KANAN (Sidebar) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+                        
+                        // Section 3: Gambar
+                        Section::make('Media')
+                            ->icon('heroicon-m-photo')
+                            ->schema([
+                                Forms\Components\FileUpload::make('image_url')
+                                    ->label('Foto Jasa')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->disk('public')
+                                    ->directory(fn () => 'jasas/' . now()->format('Y/m/d'))
+                                    ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
+                                        $datePrefix = now()->format('ymd');
+                                        $slug = Str::slug($get('nama_jasa') ?? 'jasa');
+                                        $extension = $file->getClientOriginalExtension();
+                                        return "{$datePrefix}-{$slug}.{$extension}";
+                                    })
+                                    ->preserveFilenames(),
+                            ]),
+
+                        // Section 4: Identitas Teknis
+                        Section::make('Identitas')
+                            ->schema([
+                                Forms\Components\TextInput::make('sku')
+                                    ->label('Kode SKU')
+                                    ->default(fn () => Jasa::generateSku())
+                                    ->disabled() // Tetap disabled
+                                    ->dehydrated() // Agar tetap tersimpan ke DB
+                                    ->required()
+                                    ->unique(ignoreRecord: true)
+                                    ->helperText('Kode unik digenerate otomatis sistem.'),
+                            ]),
+                    ]),
             ]);
     }
 

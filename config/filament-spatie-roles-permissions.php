@@ -11,7 +11,7 @@ return [
 
     'preload_permissions' => true,
 
-    'navigation_section_group' => 'Master Data', // Default uses language constant
+    'navigation_section_group' => '', // Default uses language constant
 
     'team_model' => null,
 

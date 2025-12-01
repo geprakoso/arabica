@@ -14,6 +14,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Get;
 // use Filament\Resources\Set;
 use Filament\Tables\Columns\IconColumn;
@@ -30,8 +32,10 @@ class KaryawanResource extends Resource
 {
     protected static ?string $model = Karyawan::class;
 
+    // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-ai-user';
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'User';
     protected static ?string $navigationLabel = 'Karyawan';
     protected static ?int $navigationSort = 11;
 
@@ -39,46 +43,69 @@ class KaryawanResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(3)
             ->schema([
-                //
-                Split::make([
-                    Tabs::make('Detail Karyawan')
-                        ->tabs([
-                            Tabs\Tab::make('Data Karyawan')
-                                ->schema([
-                                    TextInput::make('nama_karyawan')
-                                        ->label('Nama Karyawan')
-                                        ->required(),
-                                    TextInput::make('telepon')
-                                        ->label('No. HP')
-                                        ->required(),
-                                ]),
-                            Tabs\Tab::make('Alamat')
-                                ->schema([
-                                    TextInput::make('alamat')
-                                        ->label('Alamat')
-                                        ->nullable(),
-                                    TextInput::make('provinsi')
-                                        ->label('Provinsi')
-                                        ->nullable(),
-                                    TextInput::make('kota')
-                                        ->label('Kota')
-                                        ->nullable(),
-                                    TextInput::make('kecamatan')
-                                        ->label('Kecamatan')
-                                        ->nullable(),
-                                    TextInput::make('kelurahan')
-                                        ->label('Kelurahan')
-                                        ->nullable(),
-                                ]),
-                        ]),
-                        Section::make('Profile Picture')
+
+                // === KOLOM KIRI (DATA PERSONAL) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2])
+                    ->schema([
+
+                        // Section 1: Identitas
+                        Section::make('Informasi Personal')
+                            ->description('Data diri dan kontak karyawan.')
+                            ->icon('heroicon-m-user')
                             ->schema([
-                                FileUpload::make('image_url')
-                                    ->label('Gambar Karyawan')
+                                Forms\Components\TextInput::make('nama_karyawan')
+                                    ->label('Nama Lengkap')
+                                    ->required()
+                                    ->placeholder('Nama sesuai KTP')
+                                    ->columnSpanFull(),
+
+                                Forms\Components\TextInput::make('telepon')
+                                    ->label('No. Handphone / WA')
+                                    ->tel()
+                                    ->required()
+                                    ->placeholder('08xxxxxxxxxx'),
+                            ]),
+
+                        // Section 2: Alamat
+                        Section::make('Alamat Domisili')
+                            ->icon('heroicon-m-home')
+                            ->schema([
+                                Forms\Components\Textarea::make('alamat')
+                                    ->label('Alamat Lengkap')
+                                    ->rows(3)
+                                    ->placeholder('Jalan, RT/RW, Nomor Rumah...')
+                                    ->columnSpanFull(),
+
+                                Forms\Components\Grid::make(2) // Grid 2 kolom untuk wilayah
+                                    ->schema([
+                                        Forms\Components\TextInput::make('provinsi')->label('Provinsi'),
+                                        Forms\Components\TextInput::make('kota')->label('Kota/Kabupaten'),
+                                        Forms\Components\TextInput::make('kecamatan')->label('Kecamatan'),
+                                        Forms\Components\TextInput::make('kelurahan')->label('Kelurahan/Desa'),
+                                    ]),
+                            ]),
+                    ]),
+
+                // === KOLOM KANAN (AKUN & SISTEM) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+
+                        // Section 3: Media
+                        Section::make('Foto Profil')
+                            ->icon('heroicon-m-camera')
+                            ->schema([
+                                Forms\Components\FileUpload::make('image_url')
+                                    ->label('Foto Wajah')
                                     ->image()
+                                    ->avatar() // Mode bulat
+                                    ->imageEditor()
+                                    ->circleCropper()
                                     ->disk('public')
-                                    ->directory(fn () => 'karyawan/' . now()->format('Y/m/d'))
+                                    ->directory('karyawan/' . now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
                                         $datePrefix = now()->format('ymd');
                                         $slug = Str::slug($get('nama_karyawan') ?? 'karyawan');
@@ -86,45 +113,50 @@ class KaryawanResource extends Resource
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
                                     ->preserveFilenames(),
-                                ]),
-                    ])->from('lg')
-                        ->columnSpanFull(),
-                    
-                    Section::make('Status')
-                        ->schema([
-                            Toggle::make('is_active')
-                                ->label('Aktif')
-                                ->default(true)
-                                ->required(),
+                            ]),
 
-                        ]),
-                    Section::make('Akun login')
-                        ->schema([
-                            TextInput::make('login_email')
-                                ->label('Email')
-                                ->email()
-                                ->required()
-                                ->unique(User::class, 'email', ignoreRecord: true),
-                            TextInput::make('password')
-                                ->label('Password')
-                                ->password()
-                                ->revealable()
-                                ->required(fn ($livewire) => $livewire instanceof Pages\CreateKaryawan)
-                                ->dehydrated(fn ($state) => filled($state))
-                                ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
-                            TextInput::make('password_confirmation')
-                                ->label('Konfirmasi Password')
-                                ->password()
-                                ->revealable()
-                                ->same('password')
-                                ->required(fn ($livewire) => $livewire instanceof Pages\CreateKaryawan),
-                            Select::make('role_id')
-                                ->label('Role')
-                                ->relationship('role', 'name')
-                                ->required(),
-                        ])->columns(2),
-                ]);
-            
+                        // Section 4: Akses Sistem (Login)
+                        Section::make('Akses Sistem')
+                            ->icon('heroicon-m-key')
+                            ->description('Kredensial login aplikasi.')
+                            ->schema([
+                                Forms\Components\Toggle::make('is_active')
+                                    ->label('Status Aktif')
+                                    ->default(true)
+                                    ->onColor('success')
+                                    ->offColor('danger')
+                                    ->inline(false), // Label di atas toggle agar rapi
+
+                                Forms\Components\TextInput::make('login_email')
+                                    ->label('Email Login')
+                                    ->email()
+                                    ->required()
+                                    ->unique(User::class, 'email', ignoreRecord: true),
+
+                                Forms\Components\Select::make('role_id')
+                                    ->label('Role / Jabatan')
+                                    ->relationship('role', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('password')
+                                    ->label('Password')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                                    ->required(fn ($livewire) => $livewire instanceof Pages\CreateKaryawan),
+
+                                Forms\Components\TextInput::make('password_confirmation')
+                                    ->label('Ulangi Password')
+                                    ->password()
+                                    ->revealable()
+                                    ->same('password')
+                                    ->required(fn ($livewire) => $livewire instanceof Pages\CreateKaryawan),
+                            ]),
+                    ]),
+            ]);
     }
 
     public static function table(Table $table): Table
