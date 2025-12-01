@@ -80,193 +80,250 @@ class AdminPanelProvider extends PanelProvider
                     ->allowSubFolders()
                     
             )
-            // ->navigationGroups([
-            //     NavigationGroup::make('Master Data'),
-            //     NavigationGroup::make('Absensi'),
-            //     NavigationGroup::make('Inventory'),
-            //     NavigationGroup::make('Pengaturan'),
-            //     NavigationGroup::make('Content'),
+            ->navigationGroups([
+                NavigationGroup::make('Master Data'),
+                NavigationGroup::make('Absensi'),
+                NavigationGroup::make('Inventory'),
+                NavigationGroup::make('Pengaturan'),
+                NavigationGroup::make('Content'),
                 
-            // ])
+            ])
 
             ->renderHook(
                 'panels::head.end',
                 fn (): string => <<<HTML
                     <style>
-                    /* --- 0. SIDEBAR SETTINGS --- */
-                    :root {
-                        /* Default Filament: 16rem (256px). 
-                           Kita kecilkan ~20% menjadi 13rem (208px) */
-                        --sidebar-width: 13rem;
-                    }
+                        /* --- 0. SIDEBAR SETTINGS --- */
+                        :root {
+                            --sidebar-width: 13rem;
+                        }
 
-                    /* --- 1. SIDEBAR BACKGROUND & BORDER (Base) --- */
-                    /* Light Mode */
-                    .fi-sidebar {
-                        background-color: #f0f0f0 !important;
-                        border-right: 1px solid #e5e5e5 !important;
-                        /* border-top: 1px solid #e5e5e5 !important; */
-                        border-left: none !important;
-                        border-bottom: none !important;
-                    }
-                    .fi-sidebar-header {
-                        background-color: #f0f0f0 !important;
-                        border-bottom: none !important;
-                    }
+                        /* --- 1. SIDEBAR BACKGROUND & BORDER --- */
+                        .fi-sidebar {
+                            background-color: #f0f0f0 !important;
+                            border-right: 1px solid #e5e5e5 !important;
+                            border-left: none !important;
+                            border-bottom: none !important;
+                        }
+                        .fi-sidebar-header {
+                            background-color: #f0f0f0 !important;
+                            border-bottom: none !important;
+                        }
 
-                    /* Dark Mode */
-                    html.dark .fi-sidebar {
-                        background-color: #131313 !important;
-                        border-right: 1px solid #262626 !important;
-                        border-top: 1px solid #262626 !important;
-                        border-left: none !important;
-                        border-bottom: none !important;
-                    }
-                    html.dark .fi-sidebar-header {
-                        background-color: #131313 !important;
-                        border-bottom: none !important;
-                    }
+                        /* Dark Mode Background */
+                        html.dark .fi-sidebar {
+                            background-color: #131313 !important;
+                            border-right: 1px solid #262626 !important;
+                        }
+                        html.dark .fi-sidebar-header {
+                            background-color: #131313 !important;
+                        }
 
-                    /* --- 2. TYPOGRAPHY & COLORS (The Taste) --- */
-                    
-                    /* Reset Spacing */
-                    .fi-sidebar-nav { gap: 0px !important; }
-                    .fi-sidebar-group-items { gap: 1px !important; }
-                    .fi-sidebar-sub-group-items { gap: 0px !important; }
-                    .fi-sidebar-nav-groups.gap-y-7 { row-gap: 0px !important; }
+                        /* --- 2. TYPOGRAPHY & COLORS --- */
+                        .fi-sidebar-nav { gap: 0px !important; }
+                        .fi-sidebar-group-items { gap: 1px !important; }
+                        .fi-sidebar-sub-group-items { gap: 0px !important; }
+                        .fi-sidebar-nav-groups.gap-y-7 { row-gap: 0px !important; }
 
-                    /* A. ITEM MENU (Anak) */
-                    .fi-sidebar-item-button {
-                        padding-block: 5px !important;
-                        padding-inline: 10px !important;
-                        margin-inline: 8px !important;
-                        border-radius: 6px !important;
+                        /* A. ITEM MENU (Button Base) */
+                        .fi-sidebar-item-button {
+                            padding-block: 5px !important;
+                            padding-inline: 10px !important;
+                            margin-inline: 8px !important;
+                            border-radius: 6px !important;
+                            font-size: 0.825rem !important;
+                            font-weight: 500 !important;
+                            color: #525252 !important; /* Neutral-600 */
+                            transition: all 0.1s ease-in-out !important; /* Dipercepat agar :active terasa */
+                        }
+                        html.dark .fi-sidebar-item-button {
+                            color: #a3a3a3 !important; /* Neutral-400 */
+                        }
+
+                        /* B. ICON STYLE */
+                        .fi-sidebar-item-icon {
+                            width: 1.1rem !important;
+                            height: 1.1rem !important;
+                            opacity: 0.7 !important;
+                            color: currentColor !important;
+                            transition: opacity 0.2s ease;
+                        }
+
+                        /* C. HOVER STATE (General) */
+                        .fi-sidebar-item-button:hover {
+                            background-color: rgba(0, 0, 0, 0.04) !important;
+                            color: #171717 !important;
+                        }
+                        .fi-sidebar-item-button:hover .fi-sidebar-item-icon {
+                            opacity: 1 !important;
+                        }
+                        html.dark .fi-sidebar-item-button:hover {
+                            background-color: rgba(255, 255, 255, 0.05) !important;
+                            color: #f5f5f5 !important;
+                        }
+
+                        /* --- D. ACTIVE STATE (ACCENT & CLICK FEEDBACK) --- */
                         
-                        /* Font Settings */
-                        font-size: 0.825rem !important; /* ~13.2px */
-                        font-weight: 500 !important;
+                        /* D1. Background saat Aktif (Page) ATAU Diklik (:active) */
+                        .fi-sidebar-item.fi-active .fi-sidebar-item-button,
+                        .fi-sidebar-item-button:active {
+                            background-color: rgba(0, 0, 0, 0.06) !important;
+                        }
+                        html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-button,
+                        html.dark .fi-sidebar-item-button:active {
+                            background-color: rgba(255, 255, 255, 0.08) !important;
+                        }
+
+                        /* D2. Text Label & Icon Color saat Aktif (Page) ATAU Diklik (:active) */
+                        /* LIGHT MODE: Gunakan Primary-600 */
+                        .fi-sidebar-item.fi-active .fi-sidebar-item-label,
+                        .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+                        .fi-sidebar-item-button:active .fi-sidebar-item-label,
+                        .fi-sidebar-item-button:active .fi-sidebar-item-icon {
+                            color: rgb(var(--primary-600)) !important; 
+                            font-weight: 600 !important;
+                            opacity: 1 !important;
+                        }
+
+                        /* DARK MODE: Gunakan Primary-400 */
+                        html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-label,
+                        html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+                        html.dark .fi-sidebar-item-button:active .fi-sidebar-item-label,
+                        html.dark .fi-sidebar-item-button:active .fi-sidebar-item-icon {
+                            color: rgb(var(--primary-400)) !important;
+                            font-weight: 600 !important;
+                        }
+
+
+                        /* --- E. GROUP HEADER (Adjusted) --- */
+                        .fi-sidebar-group-button {
+                            padding-block: 6px !important;
+                            padding-inline: 10px !important;
+                            margin-inline: 8px !important;
+                            margin-top: 6px !important;
+                            border-radius: 6px !important;
+                        }
                         
-                        /* Color - Light Mode Default */
-                        color: #525252 !important; /* Neutral-600 (Abu tua elegan) */
+                        /* Hover & Active Group */
+                        .fi-sidebar-group-button:hover,
+                        .fi-sidebar-group-button:active {
+                            background-color: rgba(0, 0, 0, 0.04) !important;
+                        }
                         
-                        transition: all 0.15s ease-in-out !important;
-                    }
-                    
-                    /* Color - Dark Mode Default */
-                    html.dark .fi-sidebar-item-button {
-                        color: #a3a3a3 !important; /* Neutral-400 */
-                    }
+                        /* Dark Mode Group Hover/Active */
+                        html.dark .fi-sidebar-group-button:hover,
+                        html.dark .fi-sidebar-group-button:active {
+                            background-color: rgba(255, 255, 255, 0.05) !important;
+                        }
 
-                    /* B. ICON STYLE */
-                    .fi-sidebar-item-icon {
-                        width: 1.1rem !important;
-                        height: 1.1rem !important;
-                        opacity: 0.7 !important;
-                        color: currentColor !important;
-                        transition: opacity 0.2s ease;
-                    }
+                        /* Label Base */
+                        .fi-sidebar-group-label {
+                            padding: 0 !important;
+                            font-size: 0.7rem !important;
+                            text-transform: uppercase;
+                            letter-spacing: 0.08em;
+                            font-weight: 600;
+                            color: #737373 !important;
+                        }
+                        
+                        /* Group Label saat diklik (:active) */
+                        .fi-sidebar-group-button:active .fi-sidebar-group-label {
+                            color: rgb(var(--primary-600)) !important;
+                        }
+                        html.dark .fi-sidebar-group-button:active .fi-sidebar-group-label {
+                            color: rgb(var(--primary-400)) !important;
+                        }
 
-                    /* C. HOVER STATE */
-                    .fi-sidebar-item-button:hover {
-                        background-color: rgba(0, 0, 0, 0.04) !important;
-                        color: #171717 !important; /* Neutral-900 */
-                    }
-                    .fi-sidebar-item-button:hover .fi-sidebar-item-icon {
-                        opacity: 1 !important;
-                    }
-                    
-                    /* Dark Mode Hover */
-                    html.dark .fi-sidebar-item-button:hover {
-                        background-color: rgba(255, 255, 255, 0.05) !important;
-                        color: #f5f5f5 !important;
-                    }
+                        /* --- F. PARENT ACTIVE LOGIC (:has) - COMPLETE FIX --- */
+            
+                        /* =========================================
+                           CASE 1: GROUP HEADER (navigationGroup) 
+                           ========================================= */
+                        
+                        /* Background Group */
+                        .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-button {
+                            background-color: rgba(0, 0, 0, 0.04) !important;
+                        }
+                        html.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-button {
+                            background-color: rgba(255, 255, 255, 0.05) !important;
+                        }
 
-                    /* D. ACTIVE STATE */
-                    .fi-sidebar-item.fi-active .fi-sidebar-item-button {
-                        background-color: rgba(0, 0, 0, 0.08) !important;
-                        color: #000000 !important;
-                        font-weight: 600 !important;
-                    }
-                    html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-button {
-                        background-color: rgba(255, 255, 255, 0.1) !important;
-                        color: #ffffff !important;
-                    }
-                    /* Active Icon */
-                    .fi-sidebar-item.fi-active .fi-sidebar-item-icon {
-                        opacity: 1 !important;
-                    }
+                        /* Label & Icon Group (Accent) */
+                        .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label,
+                        .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-icon, 
+                        .fi-sidebar-group:has(.fi-sidebar-item.fi-active) button span { 
+                            color: rgb(var(--primary-600)) !important;
+                            font-weight: 600 !important;
+                            opacity: 1 !important;
+                        }
+                        /* Dark Mode */
+                        html.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label,
+                        html.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-icon,
+                        html.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) button span { 
+                            color: rgb(var(--primary-400)) !important;
+                            font-weight: 600 !important;
+                            opacity: 1 !important;
+                        }
 
-                    /* --- 3. GROUP HEADER (Induk) --- */
-                    .fi-sidebar-group-button {
-                        padding-block: 6px !important;
-                        padding-inline: 10px !important;
-                        margin-inline: 8px !important;
-                        margin-top: 6px !important;
-                        border-radius: 6px !important;
-                        transition: background-color 0.1s ease !important;
-                    }
-                    .fi-sidebar-group-button:hover {
-                        background-color: rgba(128, 128, 128, 0.05) !important;
-                    }
+                        /* =========================================
+                           CASE 2: PARENT ITEM (navigationParentItem)
+                           [INI YANG SEBELUMNYA HILANG/KURANG]
+                           ========================================= */
 
-                    /* Label Group */
-                    .fi-sidebar-group-label {
-                        padding: 0 !important;
-                        font-size: 0.7rem !important;
-                        text-transform: uppercase;
-                        letter-spacing: 0.08em;
-                        font-weight: 600;
-                        color: #737373 !important; /* Neutral-500 */
-                    }
-                    html.dark .fi-sidebar-group-label {
-                        color: #737373 !important;
-                    }
+                        /* 1. Background Parent Item saat Child Aktif */
+                        .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button {
+                            background-color: rgba(0, 0, 0, 0.04) !important;
+                        }
+                        html.dark .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button {
+                            background-color: rgba(255, 255, 255, 0.05) !important;
+                        }
 
-                    /* Parent Active Logic (:has selector) */
-                    .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-button {
-                        background-color: rgba(128, 128, 128, 0.05) !important;
-                    }
-                    .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label {
-                        color: #171717 !important; /* Hitam saat child aktif */
-                        opacity: 1 !important;
-                    }
-                    html.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label {
-                        color: #ffffff !important;
-                    }
+                        /* 2. Text Label & Icon Parent Item saat Child Aktif */
+                        .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button .fi-sidebar-item-label,
+                        .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button .fi-sidebar-item-icon {
+                            color: rgb(var(--primary-600)) !important;
+                            font-weight: 600 !important;
+                            opacity: 1 !important;
+                        }
 
-                    /* Mencari item sidebar yang memiliki anak dengan class .fi-active */
-                    .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button {
-                        background-color: rgba(128, 128, 128, 0.05) !important; 
-                        color: #171717 !important; 
-                        font-weight: 600 !important;
-                    }
+                        /* Dark Mode Fix */
+                        html.dark .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button .fi-sidebar-item-label,
+                        html.dark .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button .fi-sidebar-item-icon {
+                            color: rgb(var(--primary-400)) !important; /* Accent menyala di dark mode */
+                            font-weight: 600 !important;
+                            opacity: 1 !important;
+                        }
 
-                    /* Utilities */
-                    .fi-sidebar-group { border-top: none !important; }
-                    .gap-y-1 { row-gap: 1px !important; }
-                    .gap-y-2 { row-gap: 2px !important; }
+                        /* --- G. ICON BUTTONS (.fi-icon-btn) --- */
+                        .fi-sidebar .fi-icon-btn {
+                            transition: color 0.2s ease;
+                        }
+                        .fi-sidebar .fi-icon-btn:hover,
+                        .fi-sidebar .fi-icon-btn:focus,
+                        .fi-sidebar .fi-icon-btn:active {
+                            color: rgb(var(--primary-600)) !important;
+                            background-color: rgba(0,0,0,0.05);
+                        }
+                        html.dark .fi-sidebar .fi-icon-btn:hover,
+                        html.dark .fi-sidebar .fi-icon-btn:focus,
+                        html.dark .fi-sidebar .fi-icon-btn:active {
+                            color: rgb(var(--primary-400)) !important;
+                            background-color: rgba(255,255,255,0.05);
+                        }
 
-                    /* --- 4. SCROLLBAR (Invisible Overlay) --- */
-                    .fi-sidebar-nav {
-                        scrollbar-width: thin;
-                        scrollbar-color: transparent transparent;
-                        transition: scrollbar-color 0.3s ease;
-                    }
-                    .fi-sidebar-nav:hover {
-                        scrollbar-color: rgba(128, 128, 128, 0.2) transparent;
-                    }
-                    .fi-sidebar-nav::-webkit-scrollbar {
-                        width: 4px !important;
-                        height: 4px !important;
-                    }
-                    .fi-sidebar-nav::-webkit-scrollbar-track { background: transparent !important; }
-                    .fi-sidebar-nav::-webkit-scrollbar-thumb {
-                        background-color: transparent;
-                        border-radius: 10px;
-                    }
-                    .fi-sidebar-nav:hover::-webkit-scrollbar-thumb {
-                        background-color: rgba(128, 128, 128, 0.2) !important;
-                    }
+                        /* Utilities & Scrollbar */
+                        .fi-sidebar-group { border-top: none !important; }
+                        .gap-y-1 { row-gap: 1px !important; }
+                        .gap-y-2 { row-gap: 2px !important; }
+                        
+                        .fi-sidebar-nav {
+                            scrollbar-width: thin;
+                            scrollbar-color: transparent transparent;
+                            transition: scrollbar-color 0.3s ease;
+                        }
+                        .fi-sidebar-nav:hover {
+                            scrollbar-color: rgba(128, 128, 128, 0.2) transparent;
+                        }
                     </style>
                 HTML
             )
