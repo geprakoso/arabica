@@ -8,7 +8,7 @@ use Filament\Pages\Page;
 
 class StockInventory extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-squares-2x2'; // Ikon Menu
+    protected static ?string $navigationIcon = 'heroicon-o-archive-box'; // Ikon Menu
     protected static ?string $navigationLabel = 'Inventory & Stock'; // Label di Sidebar
     protected static ?string $title = 'Inventory & Stock'; // Judul Halaman
     protected static ?string $navigationGroup = 'Inventory';

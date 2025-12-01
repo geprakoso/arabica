@@ -8,7 +8,7 @@ use Filament\Pages\Page;
 
 class ProdukJasa extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-squares-2x2'; // Ikon Menu
+    protected static ?string $navigationIcon = 'hugeicons-package'; // Ikon Menu
     protected static ?string $navigationLabel = 'Produk & Jasa'; // Label di Sidebar
     protected static ?string $title = 'Produk & Jasa'; // Judul Halaman
     protected static ?string $navigationGroup = 'Master Data';

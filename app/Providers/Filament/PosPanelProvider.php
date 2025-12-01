@@ -18,6 +18,7 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use App\Filament\Pages\StockInventory;
 
 class PosPanelProvider extends PanelProvider
 {
@@ -40,6 +41,7 @@ class PosPanelProvider extends PanelProvider
             ])
             ->pages([
                 Pages\Dashboard::class,
+                StockInventory::class,
             ])
             ->middleware([
                 EncryptCookies::class,

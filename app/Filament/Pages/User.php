@@ -8,7 +8,7 @@ use Filament\Pages\Page;
 
 class User extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-squares-2x2'; // Ikon Menu
+    protected static ?string $navigationIcon = 'hugeicons-contact'; // Ikon Menu
     protected static ?string $navigationLabel = 'User'; // Label di Sidebar
     protected static ?string $title = 'User'; // Judul Halaman
     protected static ?string $navigationGroup = 'Master Data';
