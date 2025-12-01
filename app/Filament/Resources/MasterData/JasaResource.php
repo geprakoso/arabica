@@ -25,7 +25,16 @@ use Filament\Tables\Columns\TextColumn;
 // use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str; // Import Str
 // use Closure; // Import Closure for callable type hint
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile as LivewireTemporaryUploadedFile;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Support\Enums\FontFamily;
 
 class JasaResource extends Resource
 {
@@ -135,6 +144,97 @@ class JasaResource extends Resource
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->helperText('Kode unik digenerate otomatis sistem.'),
+                            ]),
+                    ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3) // Grid utama 3 kolom
+            ->schema([
+                
+                // === KOLOM KIRI (DATA UTAMA) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 2])
+                    ->schema([
+                        
+                        // Section 1: Informasi Dasar
+                        InfolistSection::make('Detail Layanan')
+                            ->icon('heroicon-m-wrench-screwdriver')
+                            ->schema([
+                                TextEntry::make('nama_jasa')
+                                    ->label('Nama Jasa')
+                                    ->weight('bold')
+                                    ->size(TextEntrySize::Large)
+                                    ->columnSpanFull(),
+
+                                TextEntry::make('deskripsi')
+                                    ->label('Deskripsi Lengkap')
+                                    ->html() // Merender HTML dari RichEditor
+                                    ->prose() // Memberikan styling tipografi yang rapi
+                                    ->columnSpanFull(),
+                            ]),
+
+                        // Section 2: Biaya & Waktu (Highlight Info)
+                        InfolistSection::make('Penawaran')
+                            ->icon('heroicon-m-currency-dollar')
+                            ->schema([
+                                InfolistGrid::make(2) // Grid 2 kolom agar seimbang
+                                    ->schema([
+                                        TextEntry::make('harga')
+                                            ->label('Biaya Jasa')
+                                            ->money('IDR') // Format Rupiah otomatis
+                                            ->color('success') // Warna hijau agar menarik
+                                            ->weight('bold')
+                                            ->size(TextEntrySize::Large),
+
+                                        TextEntry::make('estimasi_waktu_jam')
+                                            ->label('Estimasi Pengerjaan')
+                                            ->icon('heroicon-m-clock')
+                                            ->suffix(' Jam') // Memberikan konteks satuan
+                                            ->placeholder('Tidak ada estimasi'),
+                                    ]),
+                            ]),
+                ]),
+
+                // === KOLOM KANAN (SIDEBAR) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+                        
+                        // Section 3: Gambar
+                        InfolistSection::make('Visual')
+                            ->schema([
+                                ImageEntry::make('image_url')
+                                    ->label('') // Label dikosongkan agar gambar fokus
+                                    ->disk('public')
+                                    ->height(200)
+                                    ->extraImgAttributes([
+                                        'class' => 'object-cover rounded-lg shadow-sm w-full', 
+                                        'alt' => 'Foto Jasa',
+                                    ]),
+                            ]),
+
+                        // Section 4: Data Teknis
+                        InfolistSection::make('Identitas')
+                            ->icon('heroicon-m-finger-print')
+                            ->schema([
+                                TextEntry::make('sku')
+                                    ->label('Kode SKU')
+                                    ->copyable() // Memudahkan admin copy kode
+                                    ->fontFamily(FontFamily::Mono),
+
+                                IconEntry::make('is_active')
+                                    ->label('Status Aktif')
+                                    ->boolean(), // Menampilkan ceklis/silang
+                                    
+                                TextEntry::make('created_at')
+                                    ->label('Terdaftar Sejak')
+                                    ->dateTime('d M Y')
+                                    ->size(TextEntrySize::Small)
+                                    ->color('gray'),
                             ]),
                     ]),
             ]);
