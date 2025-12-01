@@ -13,6 +13,8 @@ use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Get;
 // use Filament\Resources\Set;
 use Filament\Resources\Resource;
@@ -27,6 +29,7 @@ use Closure; // Import Closure for callable type hint
 use Filament\Actions\Exports\Models\Export;
 use Filament\Tables\Actions\ExportAction;
 
+
 // use Laravel\SerializableClosure\Serializers\Native;
 
 class ProdukResource extends Resource
@@ -34,8 +37,8 @@ class ProdukResource extends Resource
     protected static ?string $model = Produk::class;
 
     protected static ?string $navigationIcon = 'hugeicons-package';
-    // protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'Master Data';
+    protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Produk & Jasa';
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationLabel = 'Produk';
     protected static ?string $pluralModelLabel = 'Produk';
@@ -44,99 +47,113 @@ class ProdukResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(3) // Membagi layar menjadi 3 bagian grid
             ->schema([
-                //
-                Split::make([
-                    Section::make('Data Produk')
-                        ->schema([
-                            Forms\Components\TextInput::make('nama_produk')
-                                ->label('Nama Produk')
-                                // ->rules(['regex:/^[A-Z0-9\s]+$/'])
-                                // ->validationMessages([
-                                //     'regex' => 'Nama produk harus UPPERCASE.',
-                                // ])
-                                ->required(),
-                            Forms\Components\Select::make('kategori_id')
-                                ->label('Kategori')
-                                ->relationship('kategori', 'nama_kategori')
-                                ->createoptionForm([
-                                    Forms\Components\TextInput::make('nama_kategori')
-                                        ->label('Nama Kategori')
-                                        ->required(),
-                                ])
-                                ->required()
-                                ->native(false),
-                            Forms\Components\Select::make('brand_id')
-                                ->label('Brand')
-                                ->relationship('brand', 'nama_brand')
-                                ->createoptionForm([
-                                    Forms\Components\TextInput::make('nama_brand')
-                                        ->label('Nama Brand')
-                                        ->required(),
-                                ])
-                                ->required()
-                                ->native(false),
-                            Forms\Components\TextInput::make('sku')
-                                ->label('SKU')
-                                ->default(fn () => Produk::generateSku())
-                                ->disabled()
-                                ->dehydrated()
-                                ->required()
-                                ->unique(ignoreRecord: true),
-                        ]),
-                        Section::make('Gambar Produk')
+                // === KOLOM KIRI (UTAMA - 2 Bagian) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2]) // Memakan 2 grid di layar besar
+                    ->schema([
+                        
+                        // Section 1: Informasi Dasar
+                        Section::make('Informasi Produk')
+                            ->description('Masukan nama dan deskripsi lengkap produk.')
+                            ->icon('heroicon-m-shopping-bag') // Icon pemanis
                             ->schema([
-                        FileUpload::make('image_url')
-                            ->label('Gambar Produk')
-                            ->image()
-                            ->disk('public')
-                            ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
-                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
-                                $datePrefix = now()->format('ymd');
-                                $slug = Str::slug($get('nama_produk') ?? 'produk');
-                                $extension = $file->getClientOriginalExtension();
-                                return "{$datePrefix}-{$slug}.{$extension}";
-                            })
-                            ->preserveFilenames()
-                            ->nullable(),
-                        ]),
-                    ])->from('lg')
-                        ->columnSpanFull(),
-                //
+                                Forms\Components\TextInput::make('nama_produk')
+                                    ->label('Nama Produk')
+                                    ->required()
+                                    ->live(onBlur: true) // Agar slug update realtime (opsional)
+                                    ->columnSpanFull(), // Full width agar rapi
 
-                Tabs::make('Spesifikasi Produk')
-                    ->columnSpanFull()
-                    ->tabs([
-                        Tab::make('Detail Produk')
+                                Forms\Components\RichEditor::make('deskripsi')
+                                    ->label('Deskripsi Lengkap')
+                                    ->toolbarButtons([
+                                        'bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3'
+                                    ]) // Toolbar minimalis agar clean
+                                    ->columnSpanFull(),
+                            ]),
+
+                        // Section 2: Dimensi & Pengiriman (Pindah kesini agar flow lebih enak)
+                        Section::make('Dimensi & Berat')
+                            ->icon('heroicon-m-truck')
+                            ->columns(2) // Grid 2 kolom di dalam section ini
                             ->schema([
                                 Forms\Components\TextInput::make('berat')
-                                    ->label('Berat (gr)')
+                                    ->label('Berat')
+                                    ->suffix('gram') // UX: Satuan langsung di input
                                     ->numeric()
-                                    ->minValue(0)
-                                    ->nullable(),
-                                Forms\Components\TextInput::make('panjang')
-                                    ->label('Panjang (cm)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->nullable(),
-                                Forms\Components\TextInput::make('lebar')
-                                    ->label('Lebar (cm)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->nullable(),
-                                Forms\Components\TextInput::make('tinggi')
-                                    ->label('Tinggi (cm)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->nullable(),
+                                    ->minValue(0),
+
+                                Forms\Components\Grid::make(3) // Grid 3 untuk P x L x T
+                                    ->schema([
+                                        Forms\Components\TextInput::make('panjang')
+                                            ->label('Panjang')
+                                            ->suffix('cm')
+                                            ->numeric(),
+                                        Forms\Components\TextInput::make('lebar')
+                                            ->label('Lebar')
+                                            ->suffix('cm')
+                                            ->numeric(),
+                                        Forms\Components\TextInput::make('tinggi')
+                                            ->label('Tinggi')
+                                            ->suffix('cm')
+                                            ->numeric(),
+                                    ])->columnSpan(1),
                             ]),
-                        Tab::make('Deskripsi Produk')
+                    ]),
+
+                // === KOLOM KANAN (SIDEBAR - 1 Bagian) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1]) // Memakan 1 grid sisa
+                    ->schema([
+                        
+                        // Section 3: Gambar (Di sidebar agar proporsional)
+                        Section::make('Media')
+                            ->icon('heroicon-m-photo')
                             ->schema([
-                                Forms\Components\RichEditor::make('deskripsi')
-                                    ->label('Deskripsi')
-                                    ->nullable(),
+                                Forms\Components\FileUpload::make('image_url')
+                                    ->label('Foto Produk')
+                                    ->image()
+                                    ->imageEditor() // Fitur crop bawaan filament
+                                    ->disk('public')
+                                    ->directory('produks/' . now()->format('Y/m/d'))
+                                    ->getUploadedFileNameForStorageUsing(fn (TemporaryUploadedFile $file, Get $get) => 
+                                        (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
+                                    )
+                                    ->openable()
+                                    ->downloadable(),
                             ]),
-                        ]),
+
+                        // Section 4: Organisasi & Identitas
+                        Section::make('Organisasi')
+                            ->schema([
+                                Forms\Components\TextInput::make('sku')
+                                    ->label('SKU (Kode Stok)')
+                                    ->default(fn () => Produk::generateSku())
+                                    ->dehydrated()
+                                    ->readOnly() // Lebih aman readonly daripada disabled jika masih mau disubmit
+                                    ->required()
+                                    ->unique(ignoreRecord: true),
+
+                                Forms\Components\Select::make('kategori_id')
+                                    ->relationship('kategori', 'nama_kategori')
+                                    ->searchable()
+                                    ->preload()
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('nama_kategori')->required(),
+                                    ])
+                                    ->required(),
+
+                                Forms\Components\Select::make('brand_id')
+                                    ->relationship('brand', 'nama_brand')
+                                    ->searchable()
+                                    ->preload()
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('nama_brand')->required(),
+                                    ])
+                                    ->required(),
+                            ]),
+                    ]),
             ]);
     }
 

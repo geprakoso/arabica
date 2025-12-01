@@ -25,10 +25,10 @@ class BrandResource extends Resource
     protected static ?string $model = Brand::class;
     // protected static ?string $cluster = MasterData::class;
     // protected static ?string $navigationIcon = 'hugeicons-label-important';
-    protected static ?string $navigationParentItem = 'Master Data';
-    // protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationParentItem = 'Produk & Jasa';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Brand';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

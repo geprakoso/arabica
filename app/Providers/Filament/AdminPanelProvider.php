@@ -52,7 +52,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
-                MasterDatas::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -233,6 +232,13 @@ class AdminPanelProvider extends PanelProvider
                     }
                     html.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label {
                         color: #ffffff !important;
+                    }
+
+                    /* Mencari item sidebar yang memiliki anak dengan class .fi-active */
+                    .fi-sidebar-item:has(.fi-sidebar-item.fi-active) > .fi-sidebar-item-button {
+                        background-color: rgba(128, 128, 128, 0.05) !important; 
+                        color: #171717 !important; 
+                        font-weight: 600 !important;
                     }
 
                     /* Utilities */

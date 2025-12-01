@@ -26,8 +26,8 @@ class GudangResource extends Resource
 
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-warehouse';
-    // protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'Master Data';
+    protected static ?string $navigationGroup = 'Master Data';
+    // protected static ?string $navigationParentItem = 'Master Data';
     protected static ?string $pluralModelLabel = 'Gudang';
     protected static ?string $navigationLabel = 'Gudang';
     protected static ?int $navigationSort = 7;

@@ -15,9 +15,13 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Grid;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -37,99 +41,169 @@ class LemburResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(3) // Grid utama 3 kolom
             ->schema([
-                //
-                Section::make('Detail Pengajuan')
+
+                // === KOLOM KIRI (DATA LEMBUR) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2])
                     ->schema([
-                        Select::make('user_id')
-                            ->relationship('user', 'name')
-                            ->label('Pilih karyawan')
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-                        Select::make('status')
-                            ->label('Status Pengajuan')
-                            ->options(StatusPengajuan::class)
-                            ->default(StatusPengajuan::Pending)
-                            ->live()
-                            ->required(),
-                        TextInput::make('keperluan')
-                            ->label('Keperluan')
-                            ->placeholder('Misal, lembur untuk mengerjakan rakitan user Ali')
-                            ->required(),
-                    ])->columnSpanFull(),
 
-                Section::make('Detail Waktu')
-                        ->schema([
-                            DatePicker::make('tanggal')
-                                ->label('Tanggal lembur')
-                                ->required()
-                                ->default('today'),
-                            TimePicker::make('jam_mulai')
-                                ->label('jam mulai')
-                                ->required()
-                                ->seconds(false)
-                                ->default('now'),
-                            TimePicker::make('jam_selesai')
-                                ->label('Jam selesai')
-                                ->seconds(false)
-                                ->nullable(),
-                        ]),
+                        // Section 1: Informasi Dasar
+                        Section::make('Informasi Pengajuan')
+                            ->description('Detail karyawan dan alasan lembur.')
+                            ->icon('heroicon-m-clipboard-document-list')
+                            ->schema([
+                                Forms\Components\Select::make('user_id')
+                                    ->label('Nama Karyawan')
+                                    ->relationship('user', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->columnSpanFull(),
 
-                Section::make('Catatan')
-                        ->schema([
-                            TextInput::make('catatan')
-                                ->label('Catatan')
-                                ->nullable()
-                        ])
-                        ->visible(fn (Get $get) => in_array($get('status'), [
-                            StatusPengajuan::Diterima->value,
-                            StatusPengajuan::Ditolak->value,
-                        ])),
+                                Forms\Components\Textarea::make('keperluan') // Ganti Textarea agar muat deskripsi panjang
+                                    ->label('Keperluan Lembur')
+                                    ->placeholder('Jelaskan detail pekerjaan yang dilakukan...')
+                                    ->required()
+                                    ->rows(3)
+                                    ->columnSpanFull(),
+                            ]),
+
+                        // Section 2: Waktu
+                        Section::make('Waktu Pelaksanaan')
+                            ->icon('heroicon-m-clock')
+                            ->columns(2) // Grid 2 kolom
+                            ->schema([
+                                Forms\Components\DatePicker::make('tanggal')
+                                    ->label('Tanggal Lembur')
+                                    ->native(false) // Tampilan kalender modern
+                                    ->displayFormat('d F Y')
+                                    ->default(now())
+                                    ->required()
+                                    ->columnSpanFull(), // Tanggal full width di atas jam
+
+                                Forms\Components\TimePicker::make('jam_mulai')
+                                    ->label('Jam Mulai')
+                                    ->seconds(false)
+                                    ->native(false)
+                                    ->default(now())
+                                    ->required(),
+
+                                Forms\Components\TimePicker::make('jam_selesai')
+                                    ->label('Jam Selesai')
+                                    ->seconds(false)
+                                    ->native(false)
+                                    ->nullable(),
+                            ]),
+                    ]),
+
+                // === KOLOM KANAN (VALIDASI) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+
+                        // Section 3: Status & Approval
+                        Section::make('Validasi')
+                            ->description('Status persetujuan pengajuan.')
+                            ->icon('heroicon-m-check-badge')
+                            ->schema([
+                                Forms\Components\Select::make('status')
+                                    ->label('Status Pengajuan')
+                                    ->options(StatusPengajuan::class)
+                                    ->default(StatusPengajuan::Pending)
+                                    ->native(false)
+                                    ->selectablePlaceholder(false)
+                                    ->live() // Agar field catatan di bawahnya reaktif
+                                    ->required(),
+
+                                Forms\Components\Textarea::make('catatan')
+                                    ->label('Catatan Supervisor')
+                                    ->placeholder('Alasan diterima/ditolak...')
+                                    ->rows(4)
+                                    ->visible(fn (Get $get) => in_array($get('status'), [
+                                        StatusPengajuan::Diterima->value,
+                                        StatusPengajuan::Ditolak->value,
+                                        // Pastikan value ini sesuai dengan Enum kamu (misal: 'diterima', 'ditolak' atau 1, 2)
+                                        // Jika enum kamu mengembalikan string langsung, hapus ->value
+                                    ])),
+                            ]),
+                    ]),
             ]);
     }
 
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
+            ->columns(3) // Grid utama 3 kolom
             ->schema([
-                InfolistSection::make('Detail Pengajuan')
+                
+                // === KOLOM KIRI (DATA UTAMA) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 2])
                     ->schema([
-                        TextEntry::make('user.name')
-                            ->label('Karyawan'),
-                        TextEntry::make('tanggal')
-                            ->label('Tanggal')
-                            ->date('d M Y'),
-                        TextEntry::make('jam_mulai')
-                            ->label('Mulai')
-                            ->dateTime('H:i'),
-                        TextEntry::make('jam_selesai')
-                            ->label('Selesai')
-                            ->dateTime('H:i')
-                            ->placeholder('-'),
-                        TextEntry::make('keperluan')
-                            ->columnSpanFull()
-                            ->label('Keperluan')
-                            ->placeholder('-'),
-                    ])
-                    ->columns(2),
+                        
+                        // Section 1: Informasi Karyawan & Keperluan
+                        InfolistSection::make('Informasi Pengajuan')
+                            ->icon('heroicon-m-document-text')
+                            ->schema([
+                                TextEntry::make('user.name') // Mengambil nama dari relasi user
+                                    ->label('Nama Karyawan')
+                                    ->icon('heroicon-m-user')
+                                    ->weight('bold'),
+                                    
+                                TextEntry::make('keperluan')
+                                    ->label('Keperluan Lembur')
+                                    ->columnSpanFull()
+                                    ->markdown(), // Agar teks panjang rapi
+                            ]),
 
-                InfolistSection::make('Status')
+                        // Section 2: Waktu
+                        InfolistSection::make('Waktu Pelaksanaan')
+                            ->icon('heroicon-m-clock')
+                            ->schema([
+                                InfolistGrid::make(3) // Membagi baris waktu jadi 3
+                                    ->schema([
+                                        TextEntry::make('tanggal')
+                                            ->label('Tanggal')
+                                            ->date('d F Y') // Format tanggal Indonesia friendly
+                                            ->icon('heroicon-m-calendar'),
+                                            
+                                        TextEntry::make('jam_mulai')
+                                            ->label('Mulai')
+                                            ->time('H:i')
+                                            ->icon('heroicon-m-play-circle')
+                                            ->color('success'), // Hijau untuk mulai
+                                            
+                                        TextEntry::make('jam_selesai')
+                                            ->label('Selesai')
+                                            ->time('H:i')
+                                            ->icon('heroicon-m-stop-circle')
+                                            ->placeholder('Belum selesai')
+                                            ->color('danger'), // Merah untuk selesai
+                                    ]),
+                            ]),
+                ]),
+
+                // === KOLOM KANAN (STATUS) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 1])
                     ->schema([
-                        TextEntry::make('status')
-                            ->badge()
-                            ->formatStateUsing(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
-                                ? $state->getLabel()
-                                : (filled($state) ? StatusPengajuan::from($state)->getLabel() : null))
-                            ->color(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
-                                ? $state->getColor()
-                                : (filled($state) ? StatusPengajuan::from($state)->getColor() : null)),
-                        TextEntry::make('catatan')
-                            ->label('Catatan')
-                            ->hidden(fn ($record) => blank($record->catatan))
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(1),
+                        
+                        // Section 3: Validasi
+                        InfolistSection::make('Status Validasi')
+                            ->icon('heroicon-m-check-badge')
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->label('Status Pengajuan')
+                                    ->badge(), // Otomatis ambil warna dari Enum
+
+                                TextEntry::make('catatan')
+                                    ->label('Catatan Supervisor')
+                                    ->placeholder('Tidak ada catatan.')
+                                    ->prose(), // Format teks paragraf
+                            ]),
+                    ]),
             ]);
     }
 
