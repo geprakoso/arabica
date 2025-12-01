@@ -28,6 +28,14 @@ use Illuminate\Support\Str; // Import Str
 use Closure; // Import Closure for callable type hint
 use Filament\Actions\Exports\Models\Export;
 use Filament\Tables\Actions\ExportAction;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Support\Enums\FontFamily;
 
 
 // use Laravel\SerializableClosure\Serializers\Native;
@@ -152,6 +160,125 @@ class ProdukResource extends Resource
                                         Forms\Components\TextInput::make('nama_brand')->required(),
                                     ])
                                     ->required(),
+                            ]),
+                    ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3) // Grid utama 3 kolom
+            ->schema([
+                
+                // === KOLOM KIRI (DATA UTAMA) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 2])
+                    ->schema([
+                        
+                        // Section 1: Informasi Dasar
+                        InfolistSection::make('Detail Produk')
+                            ->icon('heroicon-m-information-circle')
+                            ->schema([
+                                TextEntry::make('nama_produk')
+                                    ->label('Nama Produk')
+                                    ->weight('bold')
+                                    ->size(TextEntrySize::Large)
+                                    ->columnSpanFull(),
+
+                                TextEntry::make('deskripsi')
+                                    ->label('Deskripsi')
+                                    ->html() // Karena pakai RichEditor di form
+                                    ->prose() // Agar styling list/bold nya rapi
+                                    ->columnSpanFull(),
+                            ]),
+
+                        // Section 2: Fisik & Logistik (Disini kita hitung Volume)
+                        InfolistSection::make('Dimensi & Berat')
+                            ->icon('heroicon-m-cube')
+                            ->schema([
+                                InfolistGrid::make(3) // Baris 1: Berat Asli & Berat Volume
+                                    ->schema([
+                                        TextEntry::make('berat')
+                                            ->label('Berat Fisik')
+                                            ->suffix(' gram')
+                                            ->icon('heroicon-m-scale'),
+
+                                        // --- INI CARA HITUNGNYA ---
+                                        TextEntry::make('berat_volume')
+                                            ->label('Berat Volume')
+                                            ->state(function (Produk $record) {
+                                                // Rumus: (P x L x T) / 4000
+                                                // Asumsi input P,L,T dalam cm. Hasil biasanya dalam Kg atau Gram tergantung kurir.
+                                                // Umumnya rumus dibagi 4000/6000 menghasilkan Kg. 
+                                                // Mari kita anggap hasilnya Kg.
+                                                
+                                                $p = $record->panjang ?? 0;
+                                                $l = $record->lebar ?? 0;
+                                                $t = $record->tinggi ?? 0;
+                                                
+                                                if($p == 0 || $l == 0 || $t == 0) return '-';
+
+                                                $volumetric = ($p * $l * $t) / 4000;
+                                                
+                                                return number_format($volumetric, 2) . ' Kg';
+                                            })
+                                            ->icon('heroicon-m-calculator')
+                                            ->color('warning') // Pembeda visual bahwa ini hitungan sistem
+                                            ->helperText('(P x L x T) / 4000'),
+                                    ]),
+
+                                InfolistGrid::make(3) // Baris 2: Detail Dimensi
+                                    ->schema([
+                                        TextEntry::make('panjang')
+                                            ->label('Panjang')
+                                            ->suffix(' cm'),
+                                        TextEntry::make('lebar')
+                                            ->label('Lebar')
+                                            ->suffix(' cm'),
+                                        TextEntry::make('tinggi')
+                                            ->label('Tinggi')
+                                            ->suffix(' cm'),
+                                    ]),
+                            ]),
+                    ]),
+
+                // === KOLOM KANAN (SIDEBAR) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+                        
+                        // Section 3: Gambar
+                        InfolistSection::make('Visual')
+                            ->schema([
+                                ImageEntry::make('image_url')
+                                    ->label('')
+                                    ->disk('public')
+                                    ->height(200) // Batasi tinggi agar tidak terlalu besar
+                                    ->extraImgAttributes([
+                                        'class' => 'object-contain rounded-lg shadow-sm', // Tailwind classes
+                                        'alt' => 'Foto Produk',
+                                    ]),
+                            ]),
+
+                        // Section 4: Organisasi
+                        InfolistSection::make('Identitas')
+                            ->icon('heroicon-m-tag')
+                            ->schema([
+                                TextEntry::make('sku')
+                                    ->label('SKU')
+                                    ->copyable() // Fitur copy SKU berguna banget buat admin
+                                    ->fontFamily(FontFamily::Mono), // Font monospace ala kode
+
+                                TextEntry::make('kategori.nama_kategori')
+                                    ->label('Kategori')
+                                    ->badge() // Tampil sebagai badge warna
+                                    ->color('info'),
+
+                                TextEntry::make('brand.nama_brand')
+                                    ->label('Brand')
+                                    ->badge()
+                                    ->color('gray'),
                             ]),
                     ]),
             ]);
