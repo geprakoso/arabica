@@ -25,7 +25,7 @@ class BrandResource extends Resource
     protected static ?string $model = Brand::class;
     // protected static ?string $cluster = MasterData::class;
     // protected static ?string $navigationIcon = 'hugeicons-label-important';
-    protected static ?string $navigationParentItem = 'Produk & Jasa';
+    protected static ?string $navigationParentItem = 'Produk & Kategori';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Brand';
     protected static ?int $navigationSort = 4;

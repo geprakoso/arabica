@@ -46,7 +46,7 @@ class ProdukResource extends Resource
 
     protected static ?string $navigationIcon = 'hugeicons-package';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'Produk & Jasa';
+    protected static ?string $navigationParentItem = 'Produk & Kategori';
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationLabel = 'Produk';
     protected static ?string $pluralModelLabel = 'Produk';

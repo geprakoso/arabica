@@ -18,7 +18,6 @@ use Filament\Resources\Resource;
 use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Support\RawJs;
 use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Columns\TextColumn;
 // use Illuminate\Database\Eloquent\Builder;
@@ -43,7 +42,7 @@ class JasaResource extends Resource
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-tools';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'Produk & Jasa';
+    // protected static ?string $navigationParentItem = 'Produk & Jasa';
     protected static ?string $pluralModelLabel = 'Jasa';
     protected static ?string $navigationLabel = 'Jasa';
     protected static ?int $navigationSort = 2;
@@ -85,14 +84,9 @@ class JasaResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('harga')
                                     ->label('Biaya Jasa')
-                                    ->numeric()
                                     ->prefix('Rp')
                                     ->placeholder('0')
-                                    ->live(onBlur: true)
-                                    // Menggunakan mask format uang Indonesia
-                                    ->mask(RawJs::make('$money($input, ".", ",", 0)'))
-                                    ->dehydrateStateUsing(fn ($state) => (int) str_replace(['Rp', ' ', '.'], '', $state))
-                                    ->afterStateHydrated(fn ($component, $state) => $component->state(number_format($state ?? 0, 0, ',', '.')))
+                                    ->currencyMask(thousandSeparator: ',', decimalSeparator: '.', precision: 2)
                                     ->required(),
 
                                 Forms\Components\TimePicker::make('estimasi_waktu_jam')

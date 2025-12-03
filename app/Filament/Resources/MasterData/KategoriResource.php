@@ -24,7 +24,7 @@ class KategoriResource extends Resource
     // protected static ?string $cluster = MasterData::class;
     // protected static ?string $navigationIcon = 'hugeicons-tags';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'Produk & Jasa';
+    protected static ?string $navigationParentItem = 'Produk & Kategori';
     protected static ?string $pluralModelLabel = 'Kategori';
     protected static ?string $navigationLabel = 'Kategori';
 
