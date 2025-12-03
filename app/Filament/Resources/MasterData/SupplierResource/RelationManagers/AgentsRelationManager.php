@@ -16,14 +16,21 @@ class AgentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'agents';
 
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
                 TextInput::make('nama_agen')
+                    ->label('Nama Sales')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('no_hp_agen')
+                    ->label('WA Sales')
                     ->required()
                     ->maxLength(255),
                 Toggle::make('is_active')

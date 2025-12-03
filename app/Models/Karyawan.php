@@ -5,19 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Models\Role;
 use App\Models\User;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Karyawan extends Model
+class Karyawan extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
     protected $table = 'md_karyawan';
 
     protected $fillable = [
         'nama_karyawan',
+        'slug',
         'telepon',
         'alamat',
         'provinsi',
         'kota',
         'kecamatan',
         'kelurahan',
+        'dokumen_karyawan',
         'image_url',
         'user_id',
         'role_id',
@@ -26,6 +32,7 @@ class Karyawan extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'dokumen_karyawan' => 'array',
     ];
 
     public function user()
@@ -41,5 +48,10 @@ class Karyawan extends Model
     public function requestOrders()
     {
         return $this->hasMany(RequestOrder::class);
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }

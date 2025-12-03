@@ -15,12 +15,14 @@ return new class extends Migration
             $table->id();
             $table->timestamps();
             $table->string('nama_karyawan');
+            $table->string('slug')->unique();
             $table->string('telepon')->unique();
             $table->string('alamat')->nullable();
             $table->string('provinsi')->nullable();
             $table->string('kota')->nullable();
             $table->string('kecamatan')->nullable();
             $table->string('kelurahan')->nullable();
+            $table->json('dokumen_karyawan')->nullable();
             $table->string('image_url')->nullable();
             $table->foreignId('user_id')
                 ->constrained('users')
