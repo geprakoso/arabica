@@ -36,7 +36,7 @@ class PembelianReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
             ->defaultSort('tanggal', 'desc')
             ->columns([
                 TextColumn::make('no_po')
@@ -56,16 +56,16 @@ class PembelianReportResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_items')
                     ->label('Total Qty')
-                    ->state(fn (Pembelian $record) => $record->items->sum('qty')), //menghitung total qty dari relasi items
+                    ->state(fn(Pembelian $record) => $record->items->sum('qty')), //menghitung total qty dari relasi items
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
-                    ->state(fn (Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
+                    ->state(fn(Pembelian $record) => self::formatCurrency(
+                        $record->items->sum(fn($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
                     )), //menghitung total HPP dari relasi items
                 TextColumn::make('total_harga_jual')
                     ->label('Total Harga Jual')
-                    ->state(fn (Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
+                    ->state(fn(Pembelian $record) => self::formatCurrency(
+                        $record->items->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
                     )), //menghitung total harga jual dari relasi items
             ])
             ->filters([
@@ -79,8 +79,8 @@ class PembelianReportResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal', '>=', $date))
-                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal', '<=', $date));
+                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal', '>=', $date))
+                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal', '<=', $date));
                     }),
             ])
             ->headerActions([
@@ -90,14 +90,14 @@ class PembelianReportResource extends Resource
                     ->exporter(PembelianExporter::class),
             ])
             ->actions([])
-            ->bulkActions([]);
+            ->bulkActions([]); 
     }
 
     public static function getRelations(): array
     {
         return [];
     }
-    
+
     // public static function canViewAny(): bool
     // {
     //     return Auth::user()->can('view Laporan Pembelian');
@@ -111,9 +111,12 @@ class PembelianReportResource extends Resource
         ];
     }
 
+
+
+
     protected static function formatCurrency(int $value): string
     {
-        
-        return Money::IDR($value * 100)->formatWithoutZeroes() ;
+
+        return Money::IDR($value * 100)->formatWithoutZeroes();
     }
 }

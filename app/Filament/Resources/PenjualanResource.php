@@ -177,6 +177,7 @@ class PenjualanResource extends Resource
             return null;
         }
 
+        //membuat label batch untuk item pembelian
         $labelParts = [
             $item->pembelian?->no_po ? '#' . $item->pembelian->no_po : 'Batch ' . $item->getKey(),
             'Qty: ' . number_format((int) ($item->{$qtyColumn} ?? 0), 0, ',', '.'),

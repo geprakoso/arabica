@@ -2,20 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Tables;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Models\StockAdjustment;
+use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
 use App\Filament\Resources\StockAdjustmentResource\Pages;
 use App\Filament\Resources\StockAdjustmentResource\RelationManagers\ItemsRelationManager;
-use App\Models\StockAdjustment;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 
 class StockAdjustmentResource extends Resource
 {
@@ -37,7 +38,7 @@ class StockAdjustmentResource extends Resource
                     TextInput::make('kode')
                         ->label('Kode')
                         ->disabled()
-                        ->default(fn () => StockAdjustment::generateKode())
+                        ->default(fn() => StockAdjustment::generateKode())
                         ->dehydrated(),
                     DatePicker::make('tanggal')
                         ->label('Tanggal')
@@ -87,14 +88,14 @@ class StockAdjustmentResource extends Resource
             ->actions([
                 Action::make('post')
                     ->label('Posting')
-                    ->visible(fn (StockAdjustment $record) => ! $record->isPosted())
+                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted())
                     ->requiresConfirmation()
-                    ->action(fn (StockAdjustment $record) => $record->post(auth()->user()))
+                    ->action(fn(StockAdjustment $record) => $record->post(Auth::user()))
                     ->successNotificationTitle('Penyesuaian stok berhasil diposting.'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn (StockAdjustment $record) => ! $record->isPosted()),
+                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

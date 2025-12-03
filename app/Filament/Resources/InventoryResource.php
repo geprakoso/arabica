@@ -24,9 +24,6 @@ class InventoryResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'Inventory';
-    protected static ?string $navigationParentItem = 'Inventory & Stock';
-    protected static ?int $navigationSort = 2;
-
     public static function form(Form $form): Form
     {
         return $form->schema([]);
@@ -35,7 +32,7 @@ class InventoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => self::applyInventoryScopes($query)) // Terapkan scope inventory khusus
+            ->modifyQueryUsing(fn(Builder $query) => self::applyInventoryScopes($query)) // Terapkan scope inventory khusus
             ->defaultSort('nama_produk')
             ->columns([
                 TextColumn::make('nama_produk')
@@ -53,23 +50,23 @@ class InventoryResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_qty')
                     ->label('Qty')
-                    ->state(fn (Produk $record) => (int) ($record->total_qty ?? 0))
+                    ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.'))
+                    ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
                     ->sortable(),
-                    TextColumn::make('latest_batch.hpp')
+                TextColumn::make('latest_batch.hpp')
                     ->label('HPP Terbaru')
-                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
-                    ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
+                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
+                    ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
-                    TextColumn::make('latest_batch.harga_jual')
+                TextColumn::make('latest_batch.harga_jual')
                     ->label('Harga Jual Terbaru')
-                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
-                    ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
+                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
+                    ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
-                    TextColumn::make('batch_count')
+                TextColumn::make('batch_count')
                     ->label('Jumlah Batch Aktif')
-                    ->state(fn (Produk $record) => (int) ($record->batch_count ?? 0))
+                    ->state(fn(Produk $record) => (int) ($record->batch_count ?? 0))
                     ->badge()
                     ->color('success')
                     ->sortable(),
@@ -105,82 +102,70 @@ class InventoryResource extends Resource
 
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
-            InfolistSection::make('Detail Produk')
-                ->columns(2)
-                ->schema([
-                    TextEntry::make('nama_produk')
-                        ->label('Produk'),
-                    TextEntry::make('brand.nama_brand')
-                        ->label('Brand')
-                        ->placeholder('-'),
-                    TextEntry::make('kategori.nama_kategori')
-                        ->label('Kategori')
-                        ->placeholder('-'),
-                    TextEntry::make('qty_display')
-                        ->label('Qty')
-                        ->badge()
-                        ->state(fn (Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty'])),
-                    TextEntry::make('batch_count_display')
-                        ->label('Jumlah Batch Aktif')
-                        ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batch_count'])
-                        ->badge()
-                        ->color('success'),
-                ]),
-            InfolistSection::make('Batch Pembelian Aktif')
-                ->schema([
-                    ViewEntry::make('batch_cards')
-                        ->view('filament.infolists.components.inventory-batches')
-                        ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batches'])
-                        ->columnSpanFull(),
-                ]),
-        ]);
+        return $infolist
+            ->schema([
+                InfolistSection::make('Batch Pembelian Aktif')
+                    ->compact()
+                    ->icon('heroicon-o-archive-box')
+                    ->description('Batch pembelian aktif')
+                    ->schema([
+                        TextEntry::make('batch_cards')
+                            ->view('filament.infolists.components.inventory-batches')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batches']),
+                    ])
+                    ->columnSpan(2),
+
+                InfolistSection::make('Detail Produk')
+                    ->compact()
+                    ->icon('heroicon-o-archive-box')
+                    ->schema([
+                        TextEntry::make('nama_produk')
+                            ->label('Produk'),
+                        InfolistSection::make('')
+                            ->schema([
+                                TextEntry::make('brand.nama_brand')
+                                    ->label('Brand')
+                                    ->color('gray')
+                                    ->placeholder('-'),
+                                TextEntry::make('kategori.nama_kategori')
+                                    ->label('Kategori')
+                                    ->color('gray')
+                                    ->placeholder('-'),
+                                TextEntry::make('qty_display')
+                                    ->label('Qty')
+                                    ->badge()
+                                    ->state(fn(Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty'])),
+                                TextEntry::make('batch_count_display')
+                                    ->label('Jumlah Batch Aktif')
+                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batch_count'])
+                                    ->badge()
+                                    ->color('success'),
+                            ])
+                            ->columns(['lg' => 2]),
+                    ])->columnSpan(1),
+            ])
+            ->columns(3);
     }
 
-        /**
-     * Apply inventory-specific scopes to the Produk query.
-     *
-     * Scopes yang diterapkan:
-     * 1. Menampilkan hanya produk yang masih memiliki stok (> 0) 
-     *    berdasarkan relasi pembelianItems (kolom qty_sisa).
-     *
-     * 2. Melakukan eager loading pada relasi:
-     *    - brand
-     *    - kategori
-     *
-     * 3. Menambahkan agregasi:
-     *    - total_qty   → jumlah total qty_sisa dari semua batch aktif
-     *    - batch_count → jumlah batch pembelian dengan qty_sisa > 0
-     *
-     * Digunakan oleh InventoryResource agar tabel hanya menampilkan
-     * produk yang benar-benar masih tersedia di gudang sekaligus
-     * menampilkan ringkasan stok dan batch aktif.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
+    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif.
 
-    protected static function applyInventoryScopes(Builder $query): Builder
+     protected static function applyInventoryScopes(Builder $query): Builder
     {
         $produkTable = (new Produk())->getTable();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems', fn ($q) => $q->where($qtySisaColumn, '>', 0))
+            ->whereHas('pembelianItems')
             ->with(['brand', 'kategori'])
             ->withSum(['pembelianItems as total_qty' => fn ($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
             ->withCount(['pembelianItems as batch_count' => fn ($q) => $q->where($qtySisaColumn, '>', 0)]);
 
         return $query;
     }
-    
-    /**
-     * Cache untuk snapshot inventory per produk selama satu request.
-     */
-    
-    protected static array $inventorySnapshotCache = []; 
-    
+
+    protected static array $inventorySnapshotCache = [];
+
     /**
      * Mendapatkan snapshot inventory untuk produk tertentu.
      *
@@ -215,11 +200,11 @@ class InventoryResource extends Resource
             ->with('pembelian')
             ->get();
 
-        $totalQty = $items->sum(fn ($item) => (int) ($item->{$qtySisaColumn} ?? 0));
+        $totalQty = $items->sum(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0));
 
         $activeBatches = $items
-            ->filter(fn ($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
-            ->sortBy(fn ($item) => $item->pembelian?->tanggal ?? $item->created_at)
+            ->filter(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
+            ->sortBy(fn($item) => $item->pembelian?->tanggal ?? $item->created_at)
             ->values();
 
         $formattedBatches = $activeBatches->map(function ($item) use ($qtySisaColumn) {
@@ -310,7 +295,7 @@ class InventoryResource extends Resource
     {
         return number_format((int) ($value ?? 0), 0, ',', '.');
     }
-    
+
     // Helper untuk format mata uang IDR.
     protected static function formatCurrency($value): string
     {
@@ -318,5 +303,4 @@ class InventoryResource extends Resource
 
         return Money::IDR($amount, true)->formatWithoutZeroes();
     }
-
 }
