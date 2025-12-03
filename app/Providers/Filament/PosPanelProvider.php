@@ -39,6 +39,8 @@ class PosPanelProvider extends PanelProvider
                 \App\Filament\Resources\PosSaleResource::class,
                 \App\Filament\Resources\PosActivityResource::class,
                 \App\Filament\Resources\InventoryResource::class,
+                \App\Filament\Resources\StockAdjustmentResource::class,
+                \App\Filament\Resources\StockOpnameResource::class,
             ])
             ->pages([
                 Pages\Dashboard::class,

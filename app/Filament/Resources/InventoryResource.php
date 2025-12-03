@@ -24,9 +24,6 @@ class InventoryResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'Inventory';
-    protected static ?string $navigationParentItem = 'Inventory & Stock';
-    protected static ?int $navigationSort = 2;
-
     public static function form(Form $form): Form
     {
         return $form->schema([]);
