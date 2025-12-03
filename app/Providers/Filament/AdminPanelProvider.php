@@ -82,9 +82,11 @@ class AdminPanelProvider extends PanelProvider
             )
             ->navigationGroups([
                 NavigationGroup::make('Master Data'),
-                NavigationGroup::make('Absensi'),
                 NavigationGroup::make('Inventory'),
+                NavigationGroup::make('Absensi'),
+                NavigationGroup::make('Penjadwalan'),
                 NavigationGroup::make('Pengaturan'),
+                NavigationGroup::make('Reports'),
                 NavigationGroup::make('Content'),
                 
             ])

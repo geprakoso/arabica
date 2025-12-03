@@ -88,7 +88,7 @@ class PosPanelProvider extends PanelProvider
                     html.dark .fi-sidebar {
                         background-color: #131313 !important;
                         border-right: 1px solid #262626 !important;
-                        border-top: 1px solid #262626 !important;
+                        /* border-top: 1px solid #262626 !important; */
                         border-left: none !important;
                         border-bottom: none !important;
                     }
