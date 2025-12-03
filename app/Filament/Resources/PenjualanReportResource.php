@@ -54,12 +54,12 @@ class PenjualanReportResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_qty')
                     ->label('Total Qty')
-                    ->state(fn(Penjualan $record) => $record->items->sum('qty'))
+                    ->state(fn(Penjualan $record) => $record->items->sum('qty')) //menghitung total qty dari relasi items
                     ->sortable(),
                 TextColumn::make('total_penjualan')
                     ->label('Total Penjualan')
                     ->state(fn(Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
+                        $record->items->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0)) //menghitung total penjualan dari relasi items
                     )) // format currency
                     ->sortable(),
                 TextColumn::make('total_hpp')

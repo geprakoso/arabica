@@ -30,7 +30,9 @@ class PosPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Blue,
+                'secondary' => Color::Green,
+                'accent' => Color::Red,
             ])
             // Register resources khusus POS.
             ->resources([
@@ -56,10 +58,11 @@ class PosPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(FilamentShieldPlugin::make())
-            
+
+            //custom sidebar
             ->renderHook(
                 'panels::head.end',
-                fn (): string => <<<HTML
+                fn(): string => <<<HTML
                     <style>
                     /* --- 0. SIDEBAR SETTINGS --- */
                     :root {
@@ -234,14 +237,14 @@ class PosPanelProvider extends PanelProvider
 
             ->renderHook(
                 'panels::body.end',
-                fn () => view('filament.hooks.absensi-geolocation-script')
-            
+                fn() => view('filament.hooks.absensi-geolocation-script')
+
             )
-            
+
             // --- 5. DRAGGABLE SIDEBAR LOGIC (NEW) ---
             ->renderHook(
                 'panels::body.end',
-                fn (): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
+                fn(): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
                     <div id="sidebar-resizer" class="hidden md:block"></div>
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {

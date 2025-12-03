@@ -55,7 +55,7 @@ class PosSaleResource extends Resource
                                 ->searchable()
                                 ->nullable(),
                             Forms\Components\Textarea::make('catatan')
-                                ->columnSpanFull(),
+                                ->nullable(),
                         ]),
                     Step::make('Keranjang')
                         ->schema([
@@ -248,7 +248,6 @@ class PosSaleResource extends Resource
                                 ]),
                             Forms\Components\Placeholder::make('stock_protection_hint')
                                 ->label('Perlindungan Stok')
-                                ->content('Checkout akan berhenti otomatis bila qty keranjang melebihi stok batch aktif.')
                                 ->helperText('Jika qty yang diminta lebih besar daripada stok gabungan batch, sistem tidak akan menyimpan transaksi sampai qty disesuaikan.')
                                 ->columnSpanFull(),
                         ]),

@@ -2,12 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Chatify\ChatifyMessenger as VendorChatifyMessenger;
+use Filament\Tables\Table;
 use App\Support\ChatifyMessenger;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\ServiceProvider;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
-use Filament\Tables\Table;
+use Chatify\ChatifyMessenger as VendorChatifyMessenger;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Override Chatify messenger binding to gracefully handle push failures (e.g. offline Pusher).
         $this->app->bind(VendorChatifyMessenger::class, ChatifyMessenger::class);
-        $this->app->bind('ChatifyMessenger', fn () => app(ChatifyMessenger::class));
+        $this->app->bind('ChatifyMessenger', fn() => app(ChatifyMessenger::class));
     }
 
     /**
@@ -39,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
                         'pos' => 'heroicon-o-shopping-cart',
                     ])
                     ->simple()
-                    ->visible(fn () => auth()->check());
+                    ->visible(fn() => Auth::check());
             });
         }
 
@@ -49,8 +50,8 @@ class AppServiceProvider extends ServiceProvider
 
         Table::configureUsing(function (Table $table): void {
             $table
-            ->defaultPaginationPageOption(25)
-            ->striped();
+                ->defaultPaginationPageOption(25)
+                ->striped();
         });
     }
 }

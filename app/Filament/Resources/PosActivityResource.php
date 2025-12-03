@@ -82,40 +82,53 @@ class PosActivityResource extends Resource
 
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
-            Section::make('Info Transaksi')
-                ->columns(2)
-                ->schema([
-                    TextEntry::make('no_nota')->label('Nota'),
-                    TextEntry::make('tanggal_penjualan')->label('Tanggal'),
-                    TextEntry::make('metode_bayar')->label('Metode Bayar')->placeholder('-'),
-                    TextEntry::make('grand_total')->label('Grand Total')->currency('IDR'),
-                    TextEntry::make('tunai_diterima')->label('Tunai Diterima')->currency('IDR')->placeholder('-'),
-                    TextEntry::make('kembalian')->label('Kembalian')->currency('IDR')->placeholder('-'),
-                    TextEntry::make('member.nama_member')->label('Member')->placeholder('-'),
-                    TextEntry::make('karyawan.nama_karyawan')->label('Kasir')->placeholder('-'),
-                    TextEntry::make('catatan')->label('Catatan')->columnSpanFull()->placeholder('-'),
-                ]),
-            Section::make('Item')
-                ->schema([
-                    RepeatableEntry::make('items')
-                        ->schema([
-                            Grid::make(4)->schema([
-                                TextEntry::make('produk.nama_produk')->label('Produk')->columnSpan(2),
-                                TextEntry::make('qty')->label('Qty'),
-                                TextEntry::make('harga_jual')->label('Harga')->currency('IDR'),
-                            ]),
-                            Grid::make(4)->schema([
-                                TextEntry::make('id_pembelian_item')->label('Batch'),
-                                TextEntry::make('kondisi')->label('Kondisi')->placeholder('-'),
-                                TextEntry::make('subtotal_display')
-                                    ->label('Subtotal')
-                                    ->state(fn($record) => ($record->qty ?? 0) * ($record->harga_jual ?? 0) * 100)
-                                    ->currency('IDR'),
-                            ]),
-                        ])
-                        ->columnSpanFull(),
-                ]),
-        ]);
+        return $infolist
+            ->schema([
+                Section::make('Info Transaksi')
+                    ->columns(4)
+                    ->compact()
+                    ->description('Informasi Transaksi')
+                    ->icon('heroicon-o-flag')
+                    ->schema([
+                        TextEntry::make('no_nota')->label('Nota'),
+                        TextEntry::make('tanggal_penjualan')->label('Tanggal'),
+
+                        TextEntry::make('member.nama_member')->label('Member')->placeholder('-'),
+                        TextEntry::make('karyawan.nama_karyawan')->label('Kasir')->placeholder('-'),
+                        TextEntry::make('catatan')->label('Catatan')->columnSpanFull()->placeholder('-'),
+
+                        section::make('')
+
+                            ->schema([
+                                Grid::make(4)->schema([
+                                    TextEntry::make('metode_bayar')->label('Metode Bayar')->placeholder('-'),
+                                    TextEntry::make('grand_total')->label('Grand Total')->currency('IDR'),
+                                    TextEntry::make('tunai_diterima')->label('Tunai Diterima')->currency('IDR')->placeholder('-'),
+                                    TextEntry::make('kembalian')->label('Kembalian')->currency('IDR')->placeholder('-'),
+                                ]),
+                            ])
+
+                    ]),
+                Section::make('Item')
+                    ->schema([
+                        RepeatableEntry::make('items')
+                            ->schema([
+                                Grid::make(4)->schema([
+                                    TextEntry::make('produk.nama_produk')->label('Produk')->columnSpan(2),
+                                    TextEntry::make('qty')->label('Qty'),
+                                    TextEntry::make('harga_jual')->label('Harga')->currency('IDR'),
+                                ]),
+                                Grid::make(4)->schema([
+                                    TextEntry::make('id_pembelian_item')->label('Batch'),
+                                    TextEntry::make('kondisi')->label('Kondisi')->placeholder('-'),
+                                    TextEntry::make('subtotal_display')
+                                        ->label('Subtotal')
+                                        ->state(fn($record) => ($record->qty ?? 0) * ($record->harga_jual ?? 0) * 100)
+                                        ->currency('IDR'),
+                                ]),
+                            ])
+                            ->columnSpanFull(),
+                    ]),
+            ]);
     }
 }

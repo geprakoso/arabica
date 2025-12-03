@@ -131,9 +131,11 @@ class InventoryResource extends Resource
                             ->schema([
                                 TextEntry::make('brand.nama_brand')
                                     ->label('Brand')
+                                    ->color('gray')
                                     ->placeholder('-'),
                                 TextEntry::make('kategori.nama_kategori')
                                     ->label('Kategori')
+                                    ->color('gray')
                                     ->placeholder('-'),
                                 TextEntry::make('qty_display')
                                     ->label('Qty')
@@ -149,6 +151,23 @@ class InventoryResource extends Resource
                     ])->columnSpan(1),
             ])
             ->columns(3);
+    }
+
+    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif.
+
+     protected static function applyInventoryScopes(Builder $query): Builder
+    {
+        $produkTable = (new Produk())->getTable();
+        $qtySisaColumn = PembelianItem::qtySisaColumn();
+
+        $query
+            ->select("{$produkTable}.*")
+            ->whereHas('pembelianItems')
+            ->with(['brand', 'kategori'])
+            ->withSum(['pembelianItems as total_qty' => fn ($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
+            ->withCount(['pembelianItems as batch_count' => fn ($q) => $q->where($qtySisaColumn, '>', 0)]);
+
+        return $query;
     }
 
     protected static array $inventorySnapshotCache = [];
