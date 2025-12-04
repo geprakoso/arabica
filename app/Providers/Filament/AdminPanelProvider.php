@@ -26,6 +26,7 @@ use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugi
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Blade;
+use App\Filament\Widgets\WelcomeWeatherWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -90,7 +91,12 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Content'),
                 
             ])
-
+            ->widgets([
+                // Kita daftarkan widget kita di sini, pastikan ada di posisi pertama
+                WelcomeWeatherWidget::class, 
+                // \App\Filament\Widgets\AccountOverview::class, // Widget default Filament (jika ada)
+                // \App\Filament\Widgets\FilamentInfoWidget::class, // Widget default Filament (jika ada)
+            ])
             ->renderHook(
                 'panels::head.end',
                 fn (): string => <<<HTML
