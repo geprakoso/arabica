@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\ActiveMembersTable;
+use App\Filament\Widgets\LowStockProductsTable;
+use App\Filament\Widgets\MonthlyRevenueTrendChart;
+use App\Filament\Widgets\PosSalesStatsOverview;
+use App\Filament\Widgets\RecentPosTransactionsTable;
+use App\Filament\Widgets\TopSellingProductsTable;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -44,6 +50,14 @@ class PosPanelProvider extends PanelProvider
             ])
             ->pages([
                 Pages\Dashboard::class,
+            ])
+            ->widgets([
+                PosSalesStatsOverview::class,
+                MonthlyRevenueTrendChart::class,
+                ActiveMembersTable::class,
+                LowStockProductsTable::class,
+                TopSellingProductsTable::class,
+                RecentPosTransactionsTable::class,
             ])
             ->middleware([
                 EncryptCookies::class,

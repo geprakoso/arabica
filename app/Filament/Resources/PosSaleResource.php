@@ -47,6 +47,7 @@ class PosSaleResource extends Resource
                             Forms\Components\Select::make('id_member')
                                 ->label('Member')
                                 ->options(Member::query()->pluck('nama_member', 'id'))
+                                ->formatStateUsing(fn ($state) => $state ? (int) $state : null)
                                 ->searchable()
                                 ->required(),
                             Forms\Components\Select::make('gudang_id')
@@ -71,9 +72,11 @@ class PosSaleResource extends Resource
                                             $qtyColumn = PembelianItem::qtySisaColumn();
 
                                             return Produk::query()
-                                                ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
+                                                ->whereHas('pembelianItems', fn ($q) => $q->where($qtyColumn, '>', 0))
                                                 ->orderBy('nama_produk')
-                                                ->pluck('nama_produk', 'id');
+                                                ->pluck('nama_produk', 'id')
+                                                ->map(fn (string $name) => strtoupper($name))
+                                                ->toArray();
                                         })
                                         ->searchable()
                                         ->reactive()

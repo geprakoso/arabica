@@ -36,6 +36,7 @@ class InventoryResource extends Resource
             ->defaultSort('nama_produk')
             ->columns([
                 TextColumn::make('nama_produk')
+                    ->formatStateUsing(fn ($state) => strtoupper($state))
                     ->label('Produk')
                     ->searchable()
                     ->sortable()
@@ -120,7 +121,8 @@ class InventoryResource extends Resource
                     ->icon('heroicon-o-archive-box')
                     ->schema([
                         TextEntry::make('nama_produk')
-                            ->label('Produk'),
+                            ->label('Produk')
+                            ->formatStateUsing(fn ($state) => strtoupper($state)),
                         InfolistSection::make('')
                             ->schema([
                                 TextEntry::make('brand.nama_brand')

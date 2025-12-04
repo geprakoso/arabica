@@ -114,7 +114,9 @@ class PosActivityResource extends Resource
                         RepeatableEntry::make('items')
                             ->schema([
                                 Grid::make(4)->schema([
-                                    TextEntry::make('produk.nama_produk')->label('Produk')->columnSpan(2),
+                                    TextEntry::make('produk.nama_produk')->label('Produk')
+                                    ->columnSpan(2)
+                                    ->formatStateUsing(fn ($state) => strtoupper($state)),
                                     TextEntry::make('qty')->label('Qty'),
                                     TextEntry::make('harga_jual')->label('Harga')->currency('IDR'),
                                 ]),
