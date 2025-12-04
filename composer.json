@@ -14,6 +14,7 @@
         "bezhansalleh/filament-shield": "^3.9",
         "codeat3/blade-carbon-icons": "^2.37",
         "codeat3/blade-eos-icons": "^1.15",
+        "eightynine/filament-advanced-widgets": "^3.0",
         "emmanpbarrameda/filament-take-picture-field": "^1.1",
         "filament/filament": "3.3",
         "icetalker/filament-table-repeater": "^1.4",
@@ -22,6 +23,7 @@
         "mokhosh/filament-kanban": "^2.11",
         "monzer/filament-chatify-integration": "^1.0",
         "nuxtifyts/dash-stack-theme": "^1.3",
+        "oriondevelops/filament-greeter": "^0.2.2",
         "spatie/eloquent-sortable": "^4.5",
         "tomatophp/filament-media-manager": "^1.1"
     },
