@@ -62,7 +62,16 @@ class User extends Authenticatable
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole('Super Admin');
+        // Kode Lama
+        // return $this->hasRole('Super Admin');
+
+        // Opsi 1: Izinkan Super Admin ATAU role apapun yang tersimpan di database
+        // Asumsinya: jika user punya role apapun, dia boleh masuk dashboard.
+        // Nanti batasan menu diatur oleh Policy.
+        // return $this->roles()->count() > 0;
+
+        // Izinkan jika user punya role 'super_admin' ATAU role apapun yang dibuat via Shield
+        return $this->hasRole('super_admin') || $this->roles()->isNotEmpty();
     }
 
     public function chatGroups(): BelongsToMany

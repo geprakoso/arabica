@@ -5,9 +5,12 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\InventoryResource;
 use Illuminate\Http\RedirectResponse;
 use Filament\Pages\Page;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class StockInventory extends Page
 {
+    use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-archive-box'; // Ikon Menu
     protected static ?string $navigationLabel = 'Inventory & Stock'; // Label di Sidebar
     protected static ?string $title = 'Inventory & Stock'; // Judul Halaman

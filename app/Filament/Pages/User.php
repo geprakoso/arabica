@@ -5,9 +5,12 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\MasterData\MemberResource;
 use Illuminate\Http\RedirectResponse;
 use Filament\Pages\Page;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class User extends Page
 {
+    use HasPageShield;
+
     protected static ?string $navigationIcon = 'hugeicons-contact'; // Ikon Menu
     protected static ?string $navigationLabel = 'User'; // Label di Sidebar
     protected static ?string $title = 'User'; // Judul Halaman

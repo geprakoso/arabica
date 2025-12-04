@@ -23,6 +23,7 @@ class InventoryResource extends Resource
     protected static ?string $model = Produk::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
     public static function form(Form $form): Form
     {
