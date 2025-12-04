@@ -5,11 +5,9 @@ namespace App\Filament\Widgets;
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\Produk;
-use Carbon\Carbon;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -17,10 +15,15 @@ class TopSellingProductsTable extends AdvancedTableWidget
 {
     protected static ?string $pollingInterval = null;
 
+    protected static ?string $icon = 'heroicon-o-chevron-double-up';
+    protected static ?string $heading = 'Produk Terlaris Bulan Ini';
+    protected static ?string $iconColor = 'primary';
+    protected static ?string $description = 'Daftar produk dengan penjualan tertinggi pada bulan berjalan.';
+
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Produk Terlaris Bulan Ini')
+            ->heading('')
             ->query($this->getTableQuery())
             ->columns([
                 Tables\Columns\TextColumn::make('nama_produk')
@@ -41,15 +44,6 @@ class TopSellingProductsTable extends AdvancedTableWidget
                     ->date()
                     ->sortable(),
             ])
-            ->filters([
-                SelectFilter::make('period')
-                    ->label('Periode')
-                    ->options($this->getMonthOptions())
-                    ->default(now()->format('Y-m'))
-                    ->placeholder('Pilih bulan')
-                    ->reactive()
-                    ->query(fn (Builder $query, array $state) => $query),
-            ])
             ->defaultSort('total_qty', 'desc')
             ->paginated(5);
     }
@@ -59,7 +53,7 @@ class TopSellingProductsTable extends AdvancedTableWidget
         $itemsTable = (new PenjualanItem())->getTable();
         $salesTable = (new Penjualan())->getTable();
         $productsTable = (new Produk())->getTable();
-        [$start, $end] = $this->resolveSelectedPeriodRange();
+        [$start, $end] = $this->currentMonthRange();
 
         return Produk::query()
             ->select([
@@ -78,29 +72,13 @@ class TopSellingProductsTable extends AdvancedTableWidget
             ->orderByDesc('total_qty');
     }
 
-    protected function resolveSelectedPeriodRange(): array
+    /**
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     */
+    protected function currentMonthRange(): array
     {
-        $selected = $this->getTableFilterState('period') ?? now()->format('Y-m');
+        $now = now();
 
-        try {
-            $date = Carbon::createFromFormat('Y-m', $selected)->startOfMonth();
-        } catch (\Throwable $e) {
-            $date = now()->startOfMonth();
-        }
-
-        return [$date, $date->copy()->endOfMonth()];
+        return [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
     }
-
-    protected function getMonthOptions(): array
-    {
-        $options = [];
-
-        for ($i = 0; $i < 6; $i++) {
-            $date = now()->copy()->subMonths($i);
-            $options[$date->format('Y-m')] = $date->translatedFormat('F Y');
-        }
-
-        return $options;
-    }
-
 }

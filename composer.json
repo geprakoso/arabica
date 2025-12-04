@@ -24,6 +24,7 @@
         "mokhosh/filament-kanban": "^2.11",
         "monzer/filament-chatify-integration": "^1.0",
         "nuxtifyts/dash-stack-theme": "^1.3",
+        "oriondevelops/filament-greeter": "^0.2.2",
         "spatie/eloquent-sortable": "^4.5",
         "tomatophp/filament-media-manager": "^1.1"
     },

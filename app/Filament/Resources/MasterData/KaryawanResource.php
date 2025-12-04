@@ -27,6 +27,7 @@ use Filament\Forms\Components\Split;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rule;
 
 class KaryawanResource extends Resource
 {
@@ -131,7 +132,11 @@ class KaryawanResource extends Resource
                                     ->label('Email Login')
                                     ->email()
                                     ->required()
-                                    ->unique(User::class, 'email', ignoreRecord: true),
+                                    ->rules(function (Get $get, ?Karyawan $record) {
+                                        return [
+                                            Rule::unique('users', 'email')->ignore($record?->user_id),
+                                        ];
+                                    }),
 
                                 Forms\Components\Select::make('role_id')
                                     ->label('Role / Jabatan')

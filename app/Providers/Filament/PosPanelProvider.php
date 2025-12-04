@@ -8,22 +8,26 @@ use App\Filament\Widgets\MonthlyRevenueTrendChart;
 use App\Filament\Widgets\PosSalesStatsOverview;
 use App\Filament\Widgets\RecentPosTransactionsTable;
 use App\Filament\Widgets\TopSellingProductsTable;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use BezhanSalleh\PanelSwitch\PanelSwitch;
+use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\AuthenticateSession;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Http\Middleware\Authenticate;
-use BezhanSalleh\PanelSwitch\PanelSwitch;
-use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
-use Filament\Http\Middleware\AuthenticateSession;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Carbon;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Orion\FilamentGreeter\GreeterPlugin;
 
 class PosPanelProvider extends PanelProvider
 {
@@ -56,8 +60,8 @@ class PosPanelProvider extends PanelProvider
                 MonthlyRevenueTrendChart::class,
                 ActiveMembersTable::class,
                 LowStockProductsTable::class,
-                TopSellingProductsTable::class,
                 RecentPosTransactionsTable::class,
+                TopSellingProductsTable::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -74,6 +78,32 @@ class PosPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(FilamentShieldPlugin::make())
+
+            ->plugins([
+                GreeterPlugin::make()
+                    ->timeSensitive(morningStart: 6, afternoonStart: 12, eveningStart: 17, nightStart: 22)
+                    ->message(function (): string {
+                        $hour = now()->timezone(config('app.timezone'))->hour;
+
+                        $greeting = match (true) {
+                            $hour < 6 => 'Selamat Pagi',
+                            $hour < 12 => 'Selamat Siang',
+                            $hour < 17 => 'Selamat Sore',
+                            default => 'Selamat Malam',
+                        };
+
+                        return "{$greeting}, ";
+                    })
+                    ->title(text: 'Selamat datang di Point Of Sale Haen Komputer', enabled: true)
+                    ->avatar(
+                        size: 'w-16 h-16',
+                        url: fn () => optional(Auth::user()?->karyawan)?->image_url
+                            ? Storage::disk('public')->url(Auth::user()->karyawan->image_url)
+                            : null,
+                    )
+                    ->sort(-10)
+                    ->columnSpan('full'),
+            ])
 
             //custom sidebar
             ->renderHook(

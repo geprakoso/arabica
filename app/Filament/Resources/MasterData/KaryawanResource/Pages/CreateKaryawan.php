@@ -6,6 +6,7 @@ use App\Filament\Resources\MasterData\KaryawanResource;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Str;
 
 class CreateKaryawan extends CreateRecord
 {
@@ -14,7 +15,7 @@ class CreateKaryawan extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = User::create([
-            'name' => $data['nama_karyawan'],
+            'name' => Str::title($data['nama_karyawan']),
             'email' => $data['login_email'],
             'password' => $data['password'],
         ]);

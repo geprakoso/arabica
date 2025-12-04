@@ -11,11 +11,15 @@ use Illuminate\Database\Eloquent\Builder;
 class RecentPosTransactionsTable extends AdvancedTableWidget
 {
     protected static ?string $pollingInterval = '30s';
+    protected static ?string $icon = 'heroicon-o-wallet';
+    protected static ?string $heading = 'Transaksi Terbaru';
+    protected static ?string $iconColor = 'primary';
+    protected static ?string $description = 'Daftar transaksi terbaru pada sistem.';
 
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Transaksi Terbaru')
+            ->heading('')
             ->query($this->getTableQuery())
             ->columns([
                 Tables\Columns\TextColumn::make('no_nota')
