@@ -2,33 +2,35 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\ActiveMembersTable;
-use App\Filament\Widgets\LowStockProductsTable;
-use App\Filament\Widgets\MonthlyRevenueTrendChart;
-use App\Filament\Widgets\PosSalesStatsOverview;
-use App\Filament\Widgets\RecentPosTransactionsTable;
-use App\Filament\Widgets\TopSellingProductsTable;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use BezhanSalleh\PanelSwitch\PanelSwitch;
-use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Orion\FilamentGreeter\GreeterPlugin;
+use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Pages\StockInventory;
+use Illuminate\Support\Facades\Storage;
+use Orion\FilamentGreeter\GreeterPlugin;
+use Shanerbaner82\PanelRoles\PanelRoles;
+use BezhanSalleh\PanelSwitch\PanelSwitch;
+use Filament\Http\Middleware\Authenticate;
+use App\Filament\Widgets\ActiveMembersTable;
+use App\Filament\Widgets\LowStockProductsTable;
+use App\Filament\Widgets\PosSalesStatsOverview;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use App\Filament\Widgets\TopSellingProductsTable;
+use App\Filament\Widgets\OpenWeatherWidget;
+use Filament\Http\Middleware\AuthenticateSession;
+use App\Filament\Widgets\MonthlyRevenueTrendChart;
+use App\Filament\Widgets\RecentPosTransactionsTable;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 
 class PosPanelProvider extends PanelProvider
 {
@@ -57,6 +59,7 @@ class PosPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->widgets([
+                OpenWeatherWidget::class,
                 PosSalesStatsOverview::class,
                 MonthlyRevenueTrendChart::class,
                 ActiveMembersTable::class,
@@ -79,6 +82,12 @@ class PosPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(FilamentShieldPlugin::make())
+
+            ->plugin(
+                PanelRoles::make()
+                    ->roleToAssign('kasir')
+                    ->restrictedRoles(['kasir', 'super_admin']),
+            )
 
             ->plugins([
                 GreeterPlugin::make()
@@ -103,7 +112,7 @@ class PosPanelProvider extends PanelProvider
                             : null,
                     )
                     ->sort(-10)
-                    ->columnSpan('full'),
+                    ->columnSpan('half'),
             ])
 
             //custom sidebar

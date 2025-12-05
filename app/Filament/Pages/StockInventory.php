@@ -16,7 +16,7 @@ class StockInventory extends Page
     protected static ?string $title = 'Inventory & Stock'; // Judul Halaman
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?int $navigationSort = 1; // Urutan di sidebar
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false; // hide navigation parent item
     // Gunakan view default saja atau kustom
     protected static string $view = 'filament.pages.inventorystock';
 

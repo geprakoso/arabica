@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\MetodeBayar;
 use App\Filament\Resources\PosActivityResource\Pages;
 use App\Filament\Resources\PosActivityResource\Widgets\PosActivityStats;
 use App\Models\Penjualan;
@@ -32,7 +33,24 @@ class PosActivityResource extends Resource
                 Tables\Columns\TextColumn::make('no_nota')->label('Nota')->searchable(),
                 Tables\Columns\TextColumn::make('tanggal_penjualan')->date()->label('Tanggal'),
                 Tables\Columns\TextColumn::make('grand_total')->money('idr', true)->label('Grand Total'),
-                Tables\Columns\TextColumn::make('metode_bayar')->label('Metode Bayar'),
+                Tables\Columns\TextColumn::make('metode_bayar')
+                    ->label('Metode Bayar')
+                    ->badge()
+                    ->color(fn (MetodeBayar $state) => match ($state) {
+                        MetodeBayar::CASH => 'success',
+                        MetodeBayar::CARD => 'info',
+                        MetodeBayar::TRANSFER => 'gray',
+                        MetodeBayar::EWALLET => 'warning',
+                        default => 'secondary',
+                    })
+                    ->icon(fn (MetodeBayar $state) => match ($state) {
+                        MetodeBayar::CASH => 'heroicon-o-currency-dollar',
+                        MetodeBayar::CARD => 'heroicon-o-credit-card',
+                        MetodeBayar::TRANSFER => 'heroicon-o-banknotes',
+                        MetodeBayar::EWALLET => 'heroicon-o-wallet',
+                        default => 'heroicon-o-question-mark-circle',
+                    })
+                    ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label()),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
@@ -42,11 +60,7 @@ class PosActivityResource extends Resource
                     ->url(fn(Penjualan $record) => route('pos.receipt', $record))
                     ->icon('heroicon-o-printer')
                     ->openUrlInNewTab(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteAction::make(),
             ]);
     }
 
@@ -101,7 +115,10 @@ class PosActivityResource extends Resource
 
                             ->schema([
                                 Grid::make(4)->schema([
-                                    TextEntry::make('metode_bayar')->label('Metode Bayar')->placeholder('-'),
+                                    TextEntry::make('metode_bayar')
+                                        ->label('Metode Bayar')
+                                        ->state(fn (?MetodeBayar $state) => $state?->label())
+                                        ->placeholder('-'),
                                     TextEntry::make('grand_total')->label('Grand Total')->currency('IDR'),
                                     TextEntry::make('tunai_diterima')->label('Tunai Diterima')->currency('IDR')->placeholder('-'),
                                     TextEntry::make('kembalian')->label('Kembalian')->currency('IDR')->placeholder('-'),

@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'openweather' => [
+        'key' => env('OPENWEATHER_API_KEY'),
+        'city' => env('OPENWEATHER_CITY', 'Kudus,ID'),
+        'units' => env('OPENWEATHER_UNITS', 'metric'),
+        'cache' => env('OPENWEATHER_CACHE_MINUTES', 15),
+    ],
+
 ];

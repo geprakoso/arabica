@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources;
 
-use Akaunting\Money\Money;
+use Filament\Tables;
 use App\Models\Produk;
 use Filament\Forms\Form;
-use Filament\Tables;
+use Akaunting\Money\Money;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use App\Models\PembelianItem;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -14,16 +15,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\TextEntry;
-use App\Filament\Resources\InventoryResource\Pages;
-use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\ViewEntry;
+use App\Filament\Resources\InventoryResource\Pages;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Components\Section as InfolistSection;
 
 class InventoryResource extends Resource
 {
     protected static ?string $model = Produk::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Inventory';
-    protected static ?string $navigationParentItem = 'Inventory & Stock' ;
+    // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
     public static function form(Form $form): Form
     {
@@ -44,10 +46,12 @@ class InventoryResource extends Resource
                     ->wrap(),
                 TextColumn::make('brand.nama_brand')
                     ->label('Brand')
+                    ->formatStateUsing(fn ($state) => Str::title($state))
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('kategori.nama_kategori')
                     ->label('Kategori')
+                    ->formatStateUsing(fn ($state) => Str::title($state))
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('total_qty')
@@ -123,15 +127,18 @@ class InventoryResource extends Resource
                     ->schema([
                         TextEntry::make('nama_produk')
                             ->label('Produk')
-                            ->formatStateUsing(fn ($state) => strtoupper($state)),
+                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->size(TextEntrySize::Medium),
                         InfolistSection::make('')
                             ->schema([
                                 TextEntry::make('brand.nama_brand')
                                     ->label('Brand')
+                                    ->formatStateUsing(fn ($state) => Str::title($state))
                                     ->color('gray')
                                     ->placeholder('-'),
                                 TextEntry::make('kategori.nama_kategori')
                                     ->label('Kategori')
+                                    ->formatStateUsing(fn ($state) => Str::title($state))
                                     ->color('gray')
                                     ->placeholder('-'),
                                 TextEntry::make('qty_display')
@@ -216,6 +223,7 @@ class InventoryResource extends Resource
                 ? $purchase->tanggal->format('d M Y')
                 : '-';
             $rawHpp = $item->hpp;
+            
             $rawHargaJual = $item->harga_jual;
             $hpp = is_null($rawHpp) ? null : (float) $rawHpp;
             $hargaJual = is_null($rawHargaJual) ? null : (float) $rawHargaJual;

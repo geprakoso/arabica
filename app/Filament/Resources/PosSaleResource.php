@@ -2,25 +2,28 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PosSaleResource\Pages;
+use Filament\Forms;
+use Filament\Tables;
 use App\Models\Gudang;
 use App\Models\Member;
-use App\Models\PembelianItem;
-use App\Models\Penjualan;
 use App\Models\Produk;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Filament\Facades\Filament;
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Forms\Components\Livewire as LivewireComponent;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Wizard\Step;
-use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Forms\Form;
+use App\Models\Penjualan;
+use App\Enums\MetodeBayar;
 use Filament\Tables\Table;
+use App\Models\PembelianItem;
+use Filament\Facades\Filament;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Wizard\Step;
 use Illuminate\Validation\ValidationException;
+use App\Filament\Resources\PosSaleResource\Pages;
+use Filament\Forms\Components\Livewire as LivewireComponent;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class PosSaleResource extends Resource
 {
@@ -192,16 +195,11 @@ class PosSaleResource extends Resource
                             Forms\Components\Section::make('Pembayaran')
                                 ->columns(2)
                                 ->schema([
-                                    Forms\Components\Select::make('metode_bayar')
-                                        ->options([
-                                            'cash' => 'Cash',
-                                            'card' => 'Kartu',
-                                            'transfer' => 'Transfer',
-                                            'ewallet' => 'E-Wallet',
-                                        ])
+                                    Select::make('metode_bayar')
+                                        ->options(MetodeBayar::labels())
                                         ->label('Metode Bayar')
                                         ->required(),
-                                    Forms\Components\TextInput::make('diskon_total')
+                                    TextInput::make('diskon_total')
                                         ->label('Diskon Transaksi')
                                         ->numeric()
                                         ->currencyMask(
@@ -265,7 +263,9 @@ class PosSaleResource extends Resource
                 Tables\Columns\TextColumn::make('no_nota')->searchable(),
                 Tables\Columns\TextColumn::make('tanggal_penjualan')->date(),
                 Tables\Columns\TextColumn::make('grand_total')->money('idr', true),
-                Tables\Columns\TextColumn::make('metode_bayar'),
+                Tables\Columns\TextColumn::make('metode_bayar')
+                    ->icon('heroicon-o-credit-card')
+                    ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label()),
                 Tables\Columns\TextColumn::make('tunai_diterima')->money('idr', true)->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('kembalian')->money('idr', true)->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->toggleable(isToggledHiddenByDefault: true),

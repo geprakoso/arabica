@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\MetodeBayar;
 use App\Models\Penjualan;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
@@ -38,11 +39,12 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                 Tables\Columns\TextColumn::make('metode_bayar')
                     ->label('Bayar')
                     ->badge()
-                    ->color(fn (?string $state) => match ($state) {
-                        'cash' => 'success',
-                        'card' => 'info',
-                        'transfer' => 'gray',
-                        'ewallet' => 'warning',
+                    ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label())
+                    ->color(fn (?MetodeBayar $state) => match ($state) {
+                        MetodeBayar::CASH => 'success',
+                        MetodeBayar::CARD => 'info',
+                        MetodeBayar::TRANSFER => 'gray',
+                        MetodeBayar::EWALLET => 'warning',
                         default => 'secondary',
                     }),
             ])

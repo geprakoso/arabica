@@ -16,31 +16,43 @@
                 </div>
             </div>
 
-            <dl class="mt-3 flex flex-wrap gap-x-2 gap-y-3 text-sm">
-                <div class="space-y-1 min-w-[100px] flex-1">
+            <dl class="mt-3 flex flex-wrap gap-x-8 gap-y-3 text-sm justify-between">
+                <div class="space-y-1 min-w-[90px] flex-none">
                     <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Qty</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                         {{ number_format($batch['qty'] ?? 0, 0, ',', '.') }}
                     </dd>
                 </div>
-                <div class="space-y-1 min-w-[100px] flex-1">
+                <div class="space-y-1 min-w-[200px] flex-none">
                     <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">HPP</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                         {{ $batch['hpp_display'] ?? '-' }}
                     </dd>
                 </div>
-                <div class="space-y-1 min-w-[150px] flex-1">
+                <div class="space-y-1 min-w-[200px] flex-none">
                     <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Harga Jual</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                         {{ $batch['harga_jual_display'] ?? '-' }}
                     </dd>
                 </div>
-                <div class="space-y-1 min-w-[150px] flex-1">
+                <div class="space-y-1 min-w-[200px] flex-none">
                     <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Kondisi</dt>
                     <dd class="mt-1">
-                        <span class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary-600 dark:bg-primary-500/10 dark:text-primary-200">
-                            {{ $batch['kondisi'] ?? '-' }}
-                        </span>
+                        @php
+                            $condition = $batch['kondisi'] ?? null;
+                            $badgeMap = [
+                                'baru' => 'success',
+                                'new' => 'success',
+                                'bekas' => 'warning',
+                                'refurbished' => 'warning',
+                                'rusak' => 'danger',
+                            ];
+                            $badgeColor = $badgeMap[strtolower($condition ?? '')] ?? 'primary';
+                            $conditionLabel = $condition ? strtoupper($condition) : '-';
+                        @endphp
+                        <x-filament::badge color="{{ $badgeColor }}" size="md" class="font-normal uppercase px-3 py-1 whitespace-nowrap">
+                            {{ $conditionLabel }}
+                        </x-filament::badge>
                     </dd>
                 </div>
             </dl>
