@@ -16,29 +16,29 @@
                 </div>
             </div>
 
-            <dl class="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-                <div>
-                    <dt class="text-gray-500 dark:text-gray-400">Qty</dt>
-                    <dd class="font-semibold text-gray-900 dark:text-white">
+            <dl class="mt-3 flex flex-wrap gap-x-2 gap-y-3 text-sm">
+                <div class="space-y-1 min-w-[100px] flex-1">
+                    <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Qty</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                         {{ number_format($batch['qty'] ?? 0, 0, ',', '.') }}
                     </dd>
                 </div>
-                <div>
-                    <dt class="text-gray-500 dark:text-gray-400">HPP</dt>
-                    <dd class="font-semibold text-gray-900 dark:text-white">
+                <div class="space-y-1 min-w-[100px] flex-1">
+                    <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">HPP</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                         {{ $batch['hpp_display'] ?? '-' }}
                     </dd>
                 </div>
-                <div>
-                    <dt class="text-gray-500 dark:text-gray-400">Harga Jual</dt>
-                    <dd class="font-semibold text-gray-900 dark:text-white">
+                <div class="space-y-1 min-w-[150px] flex-1">
+                    <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Harga Jual</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                         {{ $batch['harga_jual_display'] ?? '-' }}
                     </dd>
                 </div>
-                <div>
-                    <dt class="text-gray-500 dark:text-gray-400">Kondisi</dt>
-                    <dd>
-                        <span class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-0.5 text-m font-semibold uppercase tracking-wide text-primary-600 dark:bg-primary-500/10 dark:text-primary-200">
+                <div class="space-y-1 min-w-[150px] flex-1">
+                    <dt class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Kondisi</dt>
+                    <dd class="mt-1">
+                        <span class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary-600 dark:bg-primary-500/10 dark:text-primary-200">
                             {{ $batch['kondisi'] ?? '-' }}
                         </span>
                     </dd>
