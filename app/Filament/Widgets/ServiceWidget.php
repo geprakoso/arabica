@@ -6,9 +6,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\PenjadwalanService;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 
 class ServiceWidget extends BaseWidget
 {
+    use HasWidgetShield;
     protected static ?string $heading = 'Service Terbaru';
     protected int|string|array $columnSpan = '1/2';
     protected static ?int $sort = 4;

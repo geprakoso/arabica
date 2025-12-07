@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use EightyNine\FilamentAdvancedWidget\AdvancedStatsOverviewWidget;
@@ -12,6 +13,7 @@ use Illuminate\Support\Collection;
 
 class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
 {
+    use HasWidgetShield;
     protected static ?string $pollingInterval = null;
 
     protected function getStats(): array

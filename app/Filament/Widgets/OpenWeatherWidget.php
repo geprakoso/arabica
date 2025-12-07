@@ -5,9 +5,11 @@ namespace App\Filament\Widgets;
 use App\Services\OpenWeatherService;
 use Filament\Facades\Filament;
 use Filament\Widgets\Widget;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 
 class OpenWeatherWidget extends Widget
 {
+    use HasWidgetShield;
     protected static string $view = 'filament.widgets.open-weather-widget';
 
     protected static ?string $heading = 'Cuaca Saat Ini';

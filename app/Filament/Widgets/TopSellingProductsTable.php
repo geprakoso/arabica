@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\Produk;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class TopSellingProductsTable extends AdvancedTableWidget
 {
+    use HasWidgetShield;
     protected static ?string $pollingInterval = null;
 
     protected static ?string $icon = 'heroicon-o-chevron-double-up';

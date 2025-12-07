@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Member;
 use App\Models\Penjualan;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class ActiveMembersTable extends AdvancedTableWidget
 {
+    use HasWidgetShield;
     protected static ?string $pollingInterval = null;
 
     public function table(Table $table): Table

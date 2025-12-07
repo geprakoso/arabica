@@ -8,9 +8,11 @@ use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\PenjadwalanTugas;
 use App\Enums\StatusTugas;
 use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 
 class TugasWidget extends BaseWidget
 {
+    use HasWidgetShield;
     protected static ?string $heading = 'Tugas Terbaru';
     protected int|string|array $columnSpan = '1/2';
     protected int|string|array $contentHeight = 'auto';

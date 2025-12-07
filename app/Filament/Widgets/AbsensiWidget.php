@@ -5,11 +5,13 @@ namespace App\Filament\Widgets;
 use App\Models\Absensi;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 
 class AbsensiWidget extends Widget
 {
+    use HasWidgetShield;
     protected static string $view = 'filament.widgets.absensi-widget';
     protected static ?int $sort = 2;
 

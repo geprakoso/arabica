@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 // [DOCS] Import class dasar widget dari plugin EightyNine (Advanced Widget)
 use EightyNine\FilamentAdvancedWidget\AdvancedStatsOverviewWidget as BaseWidget;
 use EightyNine\FilamentAdvancedWidget\AdvancedStatsOverviewWidget\Stat;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 
 // [DOCS] Import Model Eloquent kita (Database Tables)
 use App\Models\Penjualan;
@@ -16,6 +17,7 @@ use Carbon\CarbonPeriod;
 
 class AdvancedStatsOverviewWidget extends BaseWidget
 {
+    use HasWidgetShield;
     // Mengatur urutan tampilan widget di dashboard (urutan ke-3)
     protected static ?int $sort = 3;
 

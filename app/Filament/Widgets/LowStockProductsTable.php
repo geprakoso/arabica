@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\PembelianItem;
 use App\Models\Produk;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class LowStockProductsTable extends AdvancedTableWidget
 {
+    use HasWidgetShield;
     protected static ?string $pollingInterval = null;
 
     public function table(Table $table): Table

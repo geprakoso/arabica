@@ -3,12 +3,14 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\Widget;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Exception;
 
 class WelcomeWeatherWidget extends Widget
 {
+    use HasWidgetShield;
     // Mengatur view custom untuk widget ini
     protected static string $view = 'filament.widgets.welcome-weather-widget';
     protected static ?int $sort = 1;

@@ -5,11 +5,13 @@ namespace App\Filament\Widgets;
 use App\Models\Penjualan;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedChartWidget;
 use Illuminate\Support\Facades\DB;
 
 class MonthlyRevenueTrendChart extends AdvancedChartWidget
 {
+    use HasWidgetShield;
     protected static ?string $heading = 'Pendapatan 6 Bulan Terakhir';
 
     protected static ?string $description = 'Melihat tren kasir POS dari waktu ke waktu';
