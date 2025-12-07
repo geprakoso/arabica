@@ -27,6 +27,17 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+<<<<<<< HEAD
+=======
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Blade;
+use App\Filament\Widgets\WelcomeWeatherWidget;
+use App\Filament\Widgets\AbsensiWidget;
+use App\Filament\Widgets\AdvancedStatsOverviewWidget;
+use App\Models\Absensi;
+use Filament\Widgets\Widget;
+>>>>>>> dashboard
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -55,10 +66,17 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+<<<<<<< HEAD
             ->widgets([
                 Widgets\AccountWidget::class,
                 // Widgets\FilamentInfoWidget::class,
             ])
+=======
+            // ->widgets([
+            //     Widgets\AccountWidget::class,
+            //     Widgets\FilamentInfoWidget::class,
+            // ])
+>>>>>>> dashboard
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -97,7 +115,14 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Content'),
                 
             ])
-
+            ->widgets([
+                // Kita daftarkan widget kita di sini, pastikan ada di posisi pertama
+                WelcomeWeatherWidget::class, 
+                AdvancedStatsOverviewWidget::class,
+                // \App\Filament\Widgets\AccountOverview::class, // Widget default Filament (jika ada)
+                // \App\Filament\Widgets\FilamentInfoWidget::class, // Widget default Filament (jika ada)
+                AbsensiWidget::class,
+            ])
             ->renderHook(
                 'panels::head.end',
                 fn (): string => <<<HTML
