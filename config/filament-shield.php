@@ -36,6 +36,7 @@ return [
         'resource' => [
             'view',
             'view_any',
+            'view_limit',
             'create',
             'update',
             'restore',

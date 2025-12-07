@@ -22,6 +22,7 @@ use App\Models\PenjadwalanTugas;
 use App\Models\Penjualan;
 use App\Models\Produk;
 use App\Models\RequestOrder;
+use App\Models\User;
 use App\Models\StockAdjustment;
 use App\Models\StockOpname;
 use App\Models\Supplier;
@@ -48,6 +49,7 @@ use App\Policies\PenjualanPolicy;
 use App\Policies\ProdukPolicy;
 use App\Policies\RequestOrderPolicy;
 use App\Policies\RolePolicy;
+use App\Policies\UserPolicy;
 use App\Policies\StockAdjustmentPolicy;
 use App\Policies\StockOpnamePolicy;
 use App\Policies\SupplierPolicy;
@@ -82,6 +84,7 @@ class AuthServiceProvider extends ServiceProvider
         Produk::class => ProdukPolicy::class,
         RequestOrder::class => RequestOrderPolicy::class,
         Role::class => RolePolicy::class,
+        User::class => UserPolicy::class,
         StockAdjustment::class => StockAdjustmentPolicy::class,
         StockOpname::class => StockOpnamePolicy::class,
         Supplier::class => SupplierPolicy::class,
@@ -102,6 +105,13 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        Gate::before(fn ($user, $ability) => $user->hasRole(config('filament-spatie-roles-permissions.super_admin_role_name')) ? true : null);
+        // Align super admin bypass with Shield config (falls back to Filament Spatie config for safety).
+        Gate::before(function ($user, $ability) {
+            $superAdminRole = config('filament-shield.super_admin.name')
+                ?? config('filament-spatie-roles-permissions.super_admin_role_name')
+                ?? 'super_admin';
+
+            return $user->hasRole($superAdminRole) ? true : null;
+        });
     }
 }

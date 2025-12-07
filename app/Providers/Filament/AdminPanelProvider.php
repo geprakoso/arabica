@@ -77,9 +77,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ])
-            ->plugin(FilamentShieldPlugin::make())
+            ->plugin(ShieldPlugin::make())
             ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()

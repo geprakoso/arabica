@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Absensi;
 use App\Filament\Resources\Absensi\AbsensiResource\Pages;
 use App\Models\Absensi;
 use App\Models\Karyawan;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -29,6 +30,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\Action;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class AbsensiResource extends Resource
 {
@@ -37,6 +39,28 @@ class AbsensiResource extends Resource
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
     protected static ?string $navigationGroup = 'Absensi';
     protected static ?string $navigationLabel = 'Absen';
+
+    public static function canViewAny(): bool
+    {
+        $user = Filament::auth()->user();
+
+        return $user?->can('view_any_absensi::absensi')
+            || $user?->can('view_limit_absensi::absensi')
+            || false;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = Filament::auth()->user();
+
+        // When only view_limit is granted, restrict to own records.
+        if ($user?->can('view_limit_absensi::absensi') && ! $user->can('view_any_absensi::absensi')) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query;
+    }
 
     public static function form(Form $form): Form
     {
