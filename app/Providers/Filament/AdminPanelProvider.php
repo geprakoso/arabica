@@ -19,7 +19,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
 use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -89,7 +89,7 @@ class AdminPanelProvider extends PanelProvider
         ->plugin(
                 PanelRoles::make()
                     ->roleToAssign('super_admin')
-                    ->restrictedRoles(['super_admin','kasir']),
+                    ->restrictedRoles(['super_admin', 'kasir', 'petugas']),
             )
             ->navigationGroups([
                 NavigationGroup::make('Master Data'),

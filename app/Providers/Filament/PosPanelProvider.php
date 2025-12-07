@@ -86,7 +86,7 @@ class PosPanelProvider extends PanelProvider
             ->plugin(
                 PanelRoles::make()
                     ->roleToAssign('kasir')
-                    ->restrictedRoles(['kasir', 'super_admin']),
+                    ->restrictedRoles(['kasir', 'super_admin', 'petugas']),
             )
 
             ->plugins([
