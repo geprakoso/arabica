@@ -37,18 +37,12 @@ return [
 
     'openweather' => [
         'key' => env('OPENWEATHER_API_KEY'),
-<<<<<<< HEAD
-        'city' => env('OPENWEATHER_CITY', 'Kudus,ID'),
-        'units' => env('OPENWEATHER_UNITS', 'metric'),
-        'cache' => env('OPENWEATHER_CACHE_MINUTES', 15),
-=======
         'city' => env('OPENWEATHER_CITY', 'Kudus'),
     ],
 
     'absensi' => [
         'lat' => env('ABSENSI_DEFAULT_LAT', 0),
         'long' => env('ABSENSI_DEFAULT_LONG', 0),
->>>>>>> dashboard
     ],
 
 ];
