@@ -22,8 +22,7 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Blade;
 
@@ -71,9 +70,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ])
-            ->plugin(FilamentShieldPlugin::make())
+            ->plugin(ShieldPlugin::make())
             ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()

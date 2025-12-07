@@ -17,7 +17,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
 use App\Filament\Pages\StockInventory;
 
 class PosPanelProvider extends PanelProvider
@@ -61,7 +61,7 @@ class PosPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->plugin(FilamentShieldPlugin::make())
+            ->plugin(ShieldPlugin::make())
 
             //custom sidebar
             ->renderHook(
