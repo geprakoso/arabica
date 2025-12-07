@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'openweather' => [
+        'key' => env('OPENWEATHER_API_KEY'),
+        'city' => env('OPENWEATHER_CITY', 'Kudus'),
+    ],
+
+    'absensi' => [
+        'lat' => env('ABSENSI_DEFAULT_LAT', 0),
+        'long' => env('ABSENSI_DEFAULT_LONG', 0),
+    ],
+
 ];

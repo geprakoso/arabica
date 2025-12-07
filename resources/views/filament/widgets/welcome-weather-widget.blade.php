@@ -6,7 +6,7 @@
             {{-- Bagian Kiri: Welcome Message --}}
             <div class="space-y-1">
                 <h2 class="text-3xl font-extrabold tracking-tight text-gray-950 dark:text-white">
-                    Selamat datang, {{ $userName }}!
+                    Halo, {{ $userName }}!
                 </h2>
                 <p class="text-gray-500 dark:text-gray-400 text-lg">
                     Semoga hari Anda produktif!
