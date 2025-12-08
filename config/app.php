@@ -123,4 +123,23 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Application Service Providers
+    |--------------------------------------------------------------------------
+    |
+    | Register the application's own service providers (including Filament
+    | panel providers). We merge them with Laravel's default providers so
+    | package discovery continues to work as expected.
+    |
+    */
+
+    'providers' => Illuminate\Support\ServiceProvider::defaultProviders()->merge([
+        App\Providers\AppServiceProvider::class,
+        App\Providers\AuthServiceProvider::class,
+        App\Providers\Filament\AdminPanelProvider::class,
+        App\Providers\Filament\PosPanelProvider::class,
+        App\Providers\Filament\AkuntingPanelProvider::class,
+    ])->toArray(),
+
 ];

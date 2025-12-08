@@ -51,15 +51,21 @@ class AppServiceProvider extends ServiceProvider
                             return ['pos'];
                         }
 
+                        if ($user->hasRole('akunting')) {
+                            return ['akunting'];
+                        }
+
                         return ['admin'];
                     })
                     ->labels([
                         'admin' => 'Admin',
                         'pos' => 'POS',
+                        'akunting' => 'Keuangan'
                     ])
                     ->icons([
                         'admin' => 'heroicon-o-cog-6-tooth',
                         'pos' => 'heroicon-o-shopping-cart',
+                        'akunting' => 'heroicon-o-bank'
                     ])
                     ->simple()
                     ->visible(fn() => Auth::check());

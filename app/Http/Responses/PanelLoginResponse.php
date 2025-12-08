@@ -22,6 +22,10 @@ class PanelLoginResponse implements LoginResponseContract
             return redirect()->intended(route('filament.pos.pages.dashboard'));
         }
 
+        if ($user?->hasRole('akunting')) {
+            return redirect()->intended(route('filament.akunting.pages.dashboard'));
+        }
+
         if ($panelUrl = Filament::getCurrentPanel()?->getUrl()) {
             return redirect()->intended($panelUrl);
         }

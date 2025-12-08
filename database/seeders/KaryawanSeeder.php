@@ -8,6 +8,7 @@ use Filament\Facades\Filament;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class KaryawanSeeder extends Seeder
@@ -30,7 +31,7 @@ class KaryawanSeeder extends Seeder
             'guard_name' => $guardName,
         ]);
 
-        $kasirRole->syncPermissions([
+        $permissionNames = [
             // POS Penjualan & Aktivitas
             'view_any_pos::sale',
             'view_pos::sale',
@@ -49,7 +50,15 @@ class KaryawanSeeder extends Seeder
             'view_master::data::produk',
             // Stock & Inventory landing page
             'page_StockInventory',
-        ]);
+        ];
+
+        $permissions = collect($permissionNames)->map(function (string $name) use ($guardName) {
+            return Permission::firstOrCreate(
+                ['name' => $name, 'guard_name' => $guardName]
+            );
+        });
+
+        $kasirRole->syncPermissions($permissions);
 
         $rolesByKey = [
             'super_admin' => $superAdminRole,

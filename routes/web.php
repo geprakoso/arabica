@@ -18,6 +18,10 @@ Route::get('/', function () {
         return redirect()->route('filament.pos.pages.dashboard');
     }
 
+    if ($user->hasRole('akunting')) {
+        return redirect()->route('filament.akunting.pages.dashboard');
+    }
+
     return redirect()->route('filament.admin.pages.dashboard');
 })->name('home');
 
