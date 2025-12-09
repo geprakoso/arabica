@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Akunting;
 use App\Filament\Resources\Akunting\JenisAkunResource\Pages;
 use App\Models\JenisAkun;
 use App\Models\KodeAkun;
+use Filament\Facades\Filament;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -19,6 +20,11 @@ class JenisAkunResource extends Resource
     protected static ?string $model = JenisAkun::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'akunting';
+    }
 
     public static function form(Form $form): Form
     {

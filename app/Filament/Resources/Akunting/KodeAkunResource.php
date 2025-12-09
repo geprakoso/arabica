@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Akunting;
 use App\Enums\KategoriAkun; // Sesuaikan namespace Enum Anda
 use App\Filament\Resources\Akunting\KodeAkunResource\Pages;
 use App\Models\KodeAkun; // Sesuaikan namespace Model Anda
+use Filament\Facades\Filament;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -20,6 +21,11 @@ class KodeAkunResource extends Resource
     protected static ?string $navigationLabel = 'Kode Akun';
     protected static ?string $pluralLabel = 'Kode Akun';
     protected static ?string $navigationIcon = 'hugeicons-bar-code-02';
+    
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'akunting';
+    }
     
     public static function form(Form $form): Form
     {
