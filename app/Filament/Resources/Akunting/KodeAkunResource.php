@@ -24,7 +24,7 @@ class KodeAkunResource extends Resource
     
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'akunting';
+        return false;
     }
     
     public static function form(Form $form): Form

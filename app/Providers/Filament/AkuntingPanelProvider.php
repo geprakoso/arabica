@@ -51,9 +51,11 @@ class AkuntingPanelProvider extends PanelProvider
             ->resources([
                 \App\Filament\Resources\Akunting\JenisAkunResource::class,
                 \App\Filament\Resources\Akunting\KodeAkunResource::class,
+                \App\Filament\Resources\Akunting\InputTransaksiTokoResource::class,
             ])
             ->pages([
                 Pages\Dashboard::class,
+                \App\Filament\Pages\PengaturanAkunting::class,
             ])
             ->widgets([
                 OpenWeatherWidget::class,

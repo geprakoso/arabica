@@ -23,7 +23,7 @@ class JenisAkunResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'akunting';
+        return false;
     }
 
     public static function form(Form $form): Form
@@ -35,6 +35,7 @@ class JenisAkunResource extends Resource
                         Select::make('kode_akun_id')
                             ->label('Kode Akun (Prefix)')
                             ->relationship('kodeAkun', 'kode_akun')
+                            ->getOptionLabelFromRecordUsing(fn (KodeAkun $record) => "{$record->kode_akun} - {$record->nama_akun}")
                             ->searchable()
                             ->preload()
                             ->native(false)

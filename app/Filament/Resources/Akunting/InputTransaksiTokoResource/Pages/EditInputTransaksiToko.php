@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\InputTransaksiTokoResource\Pages;
+namespace App\Filament\Resources\Akunting\InputTransaksiTokoResource\Pages;
 
-use App\Filament\Resources\InputTransaksiTokoResource;
+use App\Filament\Resources\Akunting\InputTransaksiTokoResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
