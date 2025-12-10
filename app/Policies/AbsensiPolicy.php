@@ -11,11 +11,30 @@ class AbsensiPolicy
     use HandlesAuthorization;
 
     /**
+     * Helper: cek izin baik format baru (underscore) maupun format lama (::).
+     */
+    protected function hasAny(User $user, array $abilities): bool
+    {
+        foreach ($abilities as $ability) {
+            if ($user->can($ability)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_absensi::absensi');
+        return $this->hasAny($user, [
+            'view_any_absensi',
+            'view_any_absensi::absensi',
+            'view_limit_absensi',
+            'view_limit_absensi::absensi',
+        ]);
     }
 
     /**
@@ -23,7 +42,10 @@ class AbsensiPolicy
      */
     public function view(User $user, Absensi $absensi): bool
     {
-        return $user->can('view_absensi::absensi');
+        return $this->hasAny($user, [
+            'view_absensi',
+            'view_absensi::absensi',
+        ]);
     }
 
     /**
@@ -31,7 +53,10 @@ class AbsensiPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_absensi::absensi');
+        return $this->hasAny($user, [
+            'create_absensi',
+            'create_absensi::absensi',
+        ]);
     }
 
     /**
@@ -39,7 +64,10 @@ class AbsensiPolicy
      */
     public function update(User $user, Absensi $absensi): bool
     {
-        return $user->can('update_absensi::absensi');
+        return $this->hasAny($user, [
+            'update_absensi',
+            'update_absensi::absensi',
+        ]);
     }
 
     /**
@@ -47,7 +75,10 @@ class AbsensiPolicy
      */
     public function delete(User $user, Absensi $absensi): bool
     {
-        return $user->can('delete_absensi::absensi');
+        return $this->hasAny($user, [
+            'delete_absensi',
+            'delete_absensi::absensi',
+        ]);
     }
 
     /**
@@ -55,7 +86,10 @@ class AbsensiPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_absensi::absensi');
+        return $this->hasAny($user, [
+            'delete_any_absensi',
+            'delete_any_absensi::absensi',
+        ]);
     }
 
     /**
@@ -63,7 +97,10 @@ class AbsensiPolicy
      */
     public function forceDelete(User $user, Absensi $absensi): bool
     {
-        return $user->can('force_delete_absensi::absensi');
+        return $this->hasAny($user, [
+            'force_delete_absensi',
+            'force_delete_absensi::absensi',
+        ]);
     }
 
     /**
@@ -71,7 +108,10 @@ class AbsensiPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_absensi::absensi');
+        return $this->hasAny($user, [
+            'force_delete_any_absensi',
+            'force_delete_any_absensi::absensi',
+        ]);
     }
 
     /**
@@ -79,7 +119,10 @@ class AbsensiPolicy
      */
     public function restore(User $user, Absensi $absensi): bool
     {
-        return $user->can('restore_absensi::absensi');
+        return $this->hasAny($user, [
+            'restore_absensi',
+            'restore_absensi::absensi',
+        ]);
     }
 
     /**
@@ -87,7 +130,10 @@ class AbsensiPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_absensi::absensi');
+        return $this->hasAny($user, [
+            'restore_any_absensi',
+            'restore_any_absensi::absensi',
+        ]);
     }
 
     /**
@@ -95,7 +141,10 @@ class AbsensiPolicy
      */
     public function replicate(User $user, Absensi $absensi): bool
     {
-        return $user->can('replicate_absensi::absensi');
+        return $this->hasAny($user, [
+            'replicate_absensi',
+            'replicate_absensi::absensi',
+        ]);
     }
 
     /**
@@ -103,6 +152,9 @@ class AbsensiPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_absensi::absensi');
+        return $this->hasAny($user, [
+            'reorder_absensi',
+            'reorder_absensi::absensi',
+        ]);
     }
 }

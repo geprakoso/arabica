@@ -89,7 +89,8 @@ class AdminPanelProvider extends PanelProvider
         ->plugin(
                 PanelRoles::make()
                     ->roleToAssign('super_admin')
-                    ->restrictedRoles(['super_admin', 'kasir', 'petugas']),
+                    // Izinkan akses panel untuk role berikut.
+                    ->restrictedRoles(['super_admin', 'kasir', 'petugas', 'panel_user', 'karyawan']),
             )
             ->navigationGroups([
                 NavigationGroup::make('Master Data'),
