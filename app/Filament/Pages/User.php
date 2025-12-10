@@ -16,8 +16,7 @@ class User extends Page
     protected static ?string $title = 'User'; // Judul Halaman
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 3; // Urutan di sidebar
-    // Daftarkan ke sidebar agar bisa diklik (tetap redirect ke resource target).
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false; // navigation handled by UserResource
     // Gunakan view default saja atau kustom
     protected static string $view = 'filament.pages.user';
 

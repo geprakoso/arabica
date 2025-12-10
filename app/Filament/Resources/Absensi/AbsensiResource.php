@@ -44,10 +44,8 @@ class AbsensiResource extends Resource
     {
         $user = Filament::auth()->user();
 
-        return $user?->can('view_any_absensi')
-            || $user?->can('view_any_absensi::absensi') // format lama
-            || $user?->can('view_limit_absensi')
-            || $user?->can('view_limit_absensi::absensi') // format lama
+        return $user?->can('view_any_absensi::absensi')
+            || $user?->can('view_limit_absensi::absensi')
             || false;
     }
 
@@ -57,15 +55,7 @@ class AbsensiResource extends Resource
         $user = Filament::auth()->user();
 
         // When only view_limit is granted, restrict to own records.
-        if (
-            (
-                $user?->can('view_limit_absensi') ||
-                $user?->can('view_limit_absensi::absensi')
-            ) && ! (
-                $user?->can('view_any_absensi') ||
-                $user?->can('view_any_absensi::absensi')
-            )
-        ) {
+        if ($user?->can('view_limit_absensi::absensi') && ! $user->can('view_any_absensi::absensi')) {
             $query->where('user_id', $user->id);
         }
 

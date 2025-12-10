@@ -18,13 +18,7 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationLabel = 'User';
-
-    // Sembunyikan dari sidebar karena karyawan tidak perlu akses daftar user.
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
+    protected static ?string $navigationLabel = 'Users';
 
     public static function canViewAny(): bool
     {
@@ -112,7 +106,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            // Hilangkan halaman list & create; biarkan edit untuk akses langsung jika dibutuhkan.
+            'index' => Pages\ListUsers::route('/'),
+            'create' => Pages\CreateUser::route('/create'),
+            'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
