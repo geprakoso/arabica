@@ -20,7 +20,7 @@ class ListInputTransaksiTokos extends ListRecords
                 ->icon('hugeicons-plus-sign'),
             Actions\Action::make('pengaturan')
                 ->label('Pengaturan')
-                ->icon('heroicon-o-cog-6-tooth')
+                ->icon('hugeicons-settings-03')
                 ->color('gray')
                 ->url(fn () => PengaturanAkunting::getUrl(panel: Filament::getCurrentPanel()?->getId())),
         ];

@@ -39,7 +39,7 @@ class InputTransaksiTokoResource extends Resource
     protected static ?string $model = InputTransaksiToko::class;
     protected static ?string $navigationLabel = 'Input Transaksi Toko';
     protected static ?string $pluralLabel = 'Input Transaksi Toko';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-wallet-add-01';
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -180,8 +180,15 @@ class InputTransaksiTokoResource extends Resource
                                     ->money('IDR')
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntry\TextEntrySize::Large)
-                                    // Memberikan warna hijau/merah tergantung pemasukan/pengeluaran
-                                    ->color(fn ($state, $record) => $record->kategori_transaksi === KategoriAkun::PEMASUKAN ? 'success' : 'danger'),
+                                    // Warnai berdasarkan enum yang tersimpan; fallback ke abu-abu bila tidak dikenali.
+                                    ->color(function ($state, $record) {
+                                        /** @var KategoriAkun|null $kategori */
+                                        $kategori = $record->kategori_transaksi instanceof KategoriAkun
+                                            ? $record->kategori_transaksi
+                                            : KategoriAkun::tryFrom($record->kategori_transaksi);
+
+                                        return $kategori?->getColor() ?? 'gray';
+                                    }),
                             ]),
 
                         // Section 2: Detail Akun & Keterangan
@@ -215,7 +222,8 @@ class InputTransaksiTokoResource extends Resource
                     ->schema([
 
                         // Section 3: Bukti Transaksi
-                        Section::make('Bukti Transaksi')
+                        // Gunakan komponen InfolistSection (bukan Forms Section) agar container sesuai tipe.
+                        InfolistSection::make('Bukti Transaksi')
                             ->icon('heroicon-m-paper-clip')
                             ->schema([
                                 ImageEntry::make('bukti_transaksi')
@@ -224,20 +232,34 @@ class InputTransaksiTokoResource extends Resource
                                     ->disk('public')
                                     ->visibility('public')
                                     ->height(250)
+                                    // Hanya tampil jika ada file bukti.
+                                    ->visible(fn ($record) => filled($record->bukti_transaksi))
+                                    // Klik gambar buka versi penuh di tab baru (gunakan url bawaan komponen).
+                                    ->url(fn ($record) => filled($record->bukti_transaksi) ? Storage::disk('public')->url($record->bukti_transaksi) : null, true)
                                     ->extraImgAttributes([
                                         'class' => 'object-contain rounded-lg border border-gray-200 w-full bg-gray-50',
                                         'alt' => 'Bukti Transaksi',
-                                    ])
-                                    ->action(
-                                        \Filament\Infolists\Components\Actions\Action::make('download')
-                                            ->icon('heroicon-m-arrow-down-tray')
-                                            ->url(fn ($record) => \Illuminate\Support\Facades\Storage::url($record->bukti_transaksi))
-                                            ->openUrlInNewTab()
-                                    ),
+                                    ]),
+                                // Tombol aksi: lihat penuh & unduh.
+                                Actions::make([
+                                    Action::make('view_full')
+                                        ->label('Lihat')
+                                        ->icon('heroicon-m-arrows-pointing-out')
+                                        ->url(fn ($record) => filled($record->bukti_transaksi) ? Storage::disk('public')->url($record->bukti_transaksi) : null)
+                                        ->openUrlInNewTab(),
+                                    Action::make('download')
+                                        ->label('Unduh')
+                                        ->icon('heroicon-m-arrow-down-tray')
+                                        // Pakai atribut download agar browser memaksa unduh file.
+                                        ->url(fn ($record) => filled($record->bukti_transaksi) ? Storage::disk('public')->url($record->bukti_transaksi) : null)
+                                        ->extraAttributes([
+                                            'download' => true,
+                                        ]),
+                                ])->alignment('center'),
                             ]),
 
                         // Section 4: Metadata
-                        Section::make('Log Input')
+                        InfolistSection::make('Log Input')
                             ->schema([
                                 TextEntry::make('user.name') // Asumsi relasi user ada
                                     ->label('Dibuat Oleh')
