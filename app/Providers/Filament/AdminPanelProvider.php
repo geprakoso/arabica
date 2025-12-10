@@ -7,31 +7,24 @@ use Filament\Panel;
 use Filament\Widgets;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use App\Filament\Pages\MasterDatas;
-use App\Filament\Pages\ChatRoomPage;
-use Filament\Support\Enums\MaxWidth;
-use Illuminate\Support\Facades\Blade;
-use Filament\Navigation\NavigationGroup;
-use Shanerbaner82\PanelRoles\PanelRoles;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
+use App\Filament\Pages\ChatRoomPage;
+use App\Filament\Pages\MasterDatas;
+use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
 use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
-use App\Filament\Widgets\WelcomeWeatherWidget;
-use App\Filament\Widgets\AbsensiWidget;
-use App\Filament\Widgets\AdvancedStatsOverviewWidget;
-use App\Models\Absensi;
-use Filament\Widgets\Widget;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -60,10 +53,10 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            // ->widgets([
-            //     Widgets\AccountWidget::class,
-            //     Widgets\FilamentInfoWidget::class,
-            // ])
+            ->widgets([
+                Widgets\AccountWidget::class,
+                Widgets\FilamentInfoWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -85,12 +78,6 @@ class AdminPanelProvider extends PanelProvider
                     ->allowSubFolders()
                     
             )
-
-        ->plugin(
-                PanelRoles::make()
-                    ->roleToAssign('super_admin')
-                    ->restrictedRoles(['super_admin', 'kasir', 'petugas']),
-            )
             ->navigationGroups([
                 NavigationGroup::make('Master Data'),
                 NavigationGroup::make('Inventory'),
@@ -101,14 +88,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Content'),
                 
             ])
-            ->widgets([
-                // Kita daftarkan widget kita di sini, pastikan ada di posisi pertama
-                WelcomeWeatherWidget::class, 
-                AdvancedStatsOverviewWidget::class,
-                // \App\Filament\Widgets\AccountOverview::class, // Widget default Filament (jika ada)
-                // \App\Filament\Widgets\FilamentInfoWidget::class, // Widget default Filament (jika ada)
-                AbsensiWidget::class,
-            ])
+
             ->renderHook(
                 'panels::head.end',
                 fn (): string => <<<HTML

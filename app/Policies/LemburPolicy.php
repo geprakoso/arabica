@@ -11,11 +11,30 @@ class LemburPolicy
     use HandlesAuthorization;
 
     /**
+     * Helper: cek izin format baru (underscore) dan format lama (::).
+     */
+    protected function hasAny(User $user, array $abilities): bool
+    {
+        foreach ($abilities as $ability) {
+            if ($user->can($ability)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_absensi::lembur');
+        return $this->hasAny($user, [
+            'view_any_lembur',
+            'view_any_absensi::lembur',
+            'view_limit_lembur',
+            'view_limit_absensi::lembur',
+        ]);
     }
 
     /**
@@ -23,7 +42,10 @@ class LemburPolicy
      */
     public function view(User $user, Lembur $lembur): bool
     {
-        return $user->can('view_absensi::lembur');
+        return $this->hasAny($user, [
+            'view_lembur',
+            'view_absensi::lembur',
+        ]);
     }
 
     /**
@@ -31,7 +53,10 @@ class LemburPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_absensi::lembur');
+        return $this->hasAny($user, [
+            'create_lembur',
+            'create_absensi::lembur',
+        ]);
     }
 
     /**
@@ -39,7 +64,10 @@ class LemburPolicy
      */
     public function update(User $user, Lembur $lembur): bool
     {
-        return $user->can('update_absensi::lembur');
+        return $this->hasAny($user, [
+            'update_lembur',
+            'update_absensi::lembur',
+        ]);
     }
 
     /**
@@ -47,7 +75,10 @@ class LemburPolicy
      */
     public function delete(User $user, Lembur $lembur): bool
     {
-        return $user->can('delete_absensi::lembur');
+        return $this->hasAny($user, [
+            'delete_lembur',
+            'delete_absensi::lembur',
+        ]);
     }
 
     /**
@@ -55,7 +86,10 @@ class LemburPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_absensi::lembur');
+        return $this->hasAny($user, [
+            'delete_any_lembur',
+            'delete_any_absensi::lembur',
+        ]);
     }
 
     /**
@@ -63,7 +97,10 @@ class LemburPolicy
      */
     public function forceDelete(User $user, Lembur $lembur): bool
     {
-        return $user->can('force_delete_absensi::lembur');
+        return $this->hasAny($user, [
+            'force_delete_lembur',
+            'force_delete_absensi::lembur',
+        ]);
     }
 
     /**
@@ -71,7 +108,10 @@ class LemburPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_absensi::lembur');
+        return $this->hasAny($user, [
+            'force_delete_any_lembur',
+            'force_delete_any_absensi::lembur',
+        ]);
     }
 
     /**
@@ -79,7 +119,10 @@ class LemburPolicy
      */
     public function restore(User $user, Lembur $lembur): bool
     {
-        return $user->can('restore_absensi::lembur');
+        return $this->hasAny($user, [
+            'restore_lembur',
+            'restore_absensi::lembur',
+        ]);
     }
 
     /**
@@ -87,7 +130,10 @@ class LemburPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_absensi::lembur');
+        return $this->hasAny($user, [
+            'restore_any_lembur',
+            'restore_any_absensi::lembur',
+        ]);
     }
 
     /**
@@ -95,7 +141,10 @@ class LemburPolicy
      */
     public function replicate(User $user, Lembur $lembur): bool
     {
-        return $user->can('replicate_absensi::lembur');
+        return $this->hasAny($user, [
+            'replicate_lembur',
+            'replicate_absensi::lembur',
+        ]);
     }
 
     /**
@@ -103,6 +152,9 @@ class LemburPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_absensi::lembur');
+        return $this->hasAny($user, [
+            'reorder_lembur',
+            'reorder_absensi::lembur',
+        ]);
     }
 }

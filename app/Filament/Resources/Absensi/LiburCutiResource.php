@@ -30,6 +30,38 @@ class LiburCutiResource extends Resource
     protected static ?string $navigationIcon = 'hugeicons-sailboat-offshore';
     protected static ?string $navigationGroup = 'Absensi';
 
+    public static function canViewAny(): bool
+    {
+        $user = \Filament\Facades\Filament::auth()->user();
+
+        return $user?->can('view_any_libur_cuti')
+            || $user?->can('view_any_absensi::libur::cuti') // format lama
+            || $user?->can('view_limit_libur_cuti')
+            || $user?->can('view_limit_absensi::libur::cuti') // format lama
+            || false;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = \Filament\Facades\Filament::auth()->user();
+
+        // Jika hanya punya izin view_limit, batasi ke data milik sendiri.
+        if (
+            (
+                $user?->can('view_limit_libur_cuti') ||
+                $user?->can('view_limit_absensi::libur::cuti')
+            ) && ! (
+                $user?->can('view_any_libur_cuti') ||
+                $user?->can('view_any_absensi::libur::cuti')
+            )
+        ) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
