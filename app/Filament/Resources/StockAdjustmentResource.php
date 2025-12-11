@@ -22,10 +22,10 @@ class StockAdjustmentResource extends Resource
 {
     protected static ?string $model = StockAdjustment::class;
 
-    // protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
+    protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
     protected static ?string $navigationLabel = 'Penyesuaian Stok';
-    protected static ?string $navigationParentItem = 'Inventory & Stock';
+    // protected static ?string $navigationParentItem = 'Inventory & Stock';
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory';
     protected static ?int $navigationSort = 51;

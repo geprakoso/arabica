@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MetodeBayar;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,7 @@ class Penjualan extends Model
 
     protected $casts = [
         'tanggal_penjualan' => 'date',
+        'metode_bayar' => MetodeBayar::class,
     ];
 
     protected static function booted(): void

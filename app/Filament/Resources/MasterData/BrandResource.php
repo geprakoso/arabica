@@ -39,9 +39,11 @@ class BrandResource extends Resource
                         ->schema([
                             Forms\Components\TextInput::make('nama_brand')
                                 ->label('Nama Brand')
+                                ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                 ->required(),
                             Forms\Components\TextInput::make('slug')
                                 ->label('Slug')
+                                ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                 ->unique(ignoreRecord: true),
                             Toggle::make('is_active')
                                 ->label('Aktifkan Brand')
@@ -77,6 +79,7 @@ class BrandResource extends Resource
                 //
                 TextColumn::make('nama_brand')
                     ->label('Nama Brand')
+                    ->formatStateUsing(fn (Brand $record) => Str::upper($record->nama_brand))
                     ->searchable()
                     ->sortable(),
                 // TextColumn::make('is_active')

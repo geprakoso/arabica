@@ -27,7 +27,7 @@
         <div>No Nota: {{ $penjualan->no_nota }}</div>
         <div>Tanggal: {{ $penjualan->tanggal_penjualan }}</div>
         <div>Kasir: {{ $penjualan->karyawan->nama_karyawan ?? '-' }}</div>
-        <div>Metode Bayar: {{ $penjualan->metode_bayar ?? '-' }}</div>
+        <div>Metode Bayar: {{ $penjualan->metode_bayar?->label() ?? '-' }}</div>
     </div>
 
     <table>

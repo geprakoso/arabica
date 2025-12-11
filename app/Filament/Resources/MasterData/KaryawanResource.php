@@ -2,42 +2,39 @@
 
 namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\MasterData\KaryawanResource\Pages;
-use App\Models\Karyawan;
-use App\Models\User;
 use Dom\Text;
 use Filament\Forms;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Grid;
+use App\Models\User;
+use Filament\Tables;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use App\Models\Karyawan;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Support\Str; // Import Str
-use Illuminate\Support\Facades\Hash; // Import Hash
-use Filament\Forms\Components\Split;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use TomatoPHP\FilamentMediaManager\Form\MediaManagerInput;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\Grid as InfolistGrid;
+use Illuminate\Support\Facades\Hash; // Import Hash
 use Illuminate\Support\Facades\Storage;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use App\Filament\Resources\MasterData\KaryawanResource\Pages;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Infolists\Components\RepeatableEntry;
+use Illuminate\Validation\Rule;
 
 class KaryawanResource extends Resource
 {
@@ -47,7 +44,7 @@ class KaryawanResource extends Resource
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-ai-user';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'User';
+    protected static ?string $navigationParentItem = 'User & Supplier';
     protected static ?string $navigationLabel = 'Karyawan';
     protected static ?int $navigationSort = 11;
 
@@ -189,8 +186,11 @@ class KaryawanResource extends Resource
                                     ->label('Email Login')
                                     ->email()
                                     ->required()
-                                    ->unique(User::class, 'email', ignoreRecord: true)
-                                    ->afterStateHydrated(fn ($component, $record) => $component->state($record?->user?->email)),
+                                    ->rules(function (Get $get, ?Karyawan $record) {
+                                        return [
+                                            Rule::unique('users', 'email')->ignore($record?->user_id),
+                                        ];
+                                    }),
 
                                 Forms\Components\Select::make('role_id')
                                     ->label('Role / Jabatan')

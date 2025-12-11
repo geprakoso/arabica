@@ -5,9 +5,12 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\MasterData\ProdukResource;
 use Illuminate\Http\RedirectResponse;
 use Filament\Pages\Page;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class ProdukJasa extends Page
 {
+    use HasPageShield;
+
     protected static ?string $navigationIcon = 'hugeicons-package'; // Ikon Menu
     protected static ?string $navigationLabel = 'Produk & Kategori'; // Label di Sidebar
     protected static ?string $title = 'Produk & Kategori'; // Judul Halaman

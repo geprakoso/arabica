@@ -2,18 +2,19 @@
 
 namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\MasterData\KategoriResource\Pages;
-// use App\Filament\Resources\MasterData\KategoriResource\RelationManagers;
-use App\Models\Kategori;
-use Filament\Tables\Columns\TextColumn;
-// use Dom\Text;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+// use App\Filament\Resources\MasterData\KategoriResource\RelationManagers;
 use Filament\Tables;
+use App\Models\Kategori;
+// use Dom\Text;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use App\Filament\Resources\MasterData\KategoriResource\Pages;
 // use Illuminate\Database\Eloquent\Builder;
 // use Illuminate\Database\Eloquent\SoftDeletingScope;
 // use Ramsey\Uuid\Guid\Fields;
@@ -39,6 +40,7 @@ class KategoriResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('nama_kategori')
                             ->label('Nama Kategori')
+                            ->dehydrateStateUsing(fn ($state) => Str::title($state))
                             ->required(),
                         Forms\Components\TextInput::make('slug')
                             ->label('Slug')
@@ -63,6 +65,7 @@ class KategoriResource extends Resource
                 //
                 TextColumn::make('nama_kategori')
                     ->label('Nama Kategori')
+                    ->formatStateUsing(fn (Kategori $record) => Str::title($record->nama_kategori))
                     ->searchable()
                     ->sortable(),
                 // TextColumn::make('is_active')

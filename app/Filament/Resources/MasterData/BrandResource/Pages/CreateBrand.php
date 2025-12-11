@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateBrand extends CreateRecord
 {
     protected static string $resource = BrandResource::class;
+
+    protected function afterCreate(): void
+    {
+        session()->flash('success', 'Brand berhasil dibuat.');
+    }
 }

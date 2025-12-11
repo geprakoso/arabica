@@ -6,9 +6,12 @@ use Chatify\Facades\ChatifyMessenger;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class ChatRoomPage extends Page
 {
+    use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-oval-left';
 
     protected static ?string $slug = "chat";

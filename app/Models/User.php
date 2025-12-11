@@ -62,7 +62,13 @@ class User extends Authenticatable
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole('Super Admin');
+        $superAdminRole = config('filament-shield.super_admin.name', 'super_admin');
+        $panelUserRole = config('filament-shield.panel_user.name', 'panel_user');
+
+        // Izinkan akses jika punya salah satu role yang diizinkan (super_admin, panel_user, kasir, petugas)
+        // atau punya role lain apa pun (fallback lama).
+        return $this->hasAnyRole([$superAdminRole, $panelUserRole, 'kasir', 'petugas'])
+            || $this->roles()->exists();
     }
 
     public function chatGroups(): BelongsToMany
