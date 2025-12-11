@@ -29,7 +29,7 @@ class MemberResource extends Resource
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-contact';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'User';
+    protected static ?string $navigationParentItem = 'User & Supplier';
     protected static ?string $navigationLabel = 'Member';
     protected static ?int $navigationSort = 5;
 

@@ -44,7 +44,7 @@ class KaryawanResource extends Resource
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-ai-user';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationParentItem = 'User';
+    protected static ?string $navigationParentItem = 'User & Supplier';
     protected static ?string $navigationLabel = 'Karyawan';
     protected static ?int $navigationSort = 11;
 

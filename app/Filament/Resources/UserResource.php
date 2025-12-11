@@ -20,6 +20,11 @@ class UserResource extends Resource
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Users';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function canViewAny(): bool
     {
         $user = Filament::auth()->user();
