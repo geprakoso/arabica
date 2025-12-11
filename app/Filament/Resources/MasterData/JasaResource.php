@@ -67,6 +67,10 @@ class JasaResource extends Resource
                                     ->label('Nama Jasa')
                                     ->required()
                                     ->placeholder('Contoh: Service AC Split 1PK')
+                                    ->unique(ignoreRecord: true)
+                                    ->validationMessages([
+                                        'unique' => 'Nama jasa sudah terdaftar.',
+                                    ])
                                     ->columnSpanFull(),
 
                                 Forms\Components\RichEditor::make('deskripsi')

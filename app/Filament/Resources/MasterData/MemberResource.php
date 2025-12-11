@@ -6,7 +6,7 @@ use App\Filament\Resources\MasterData\MemberResource\Pages;
 use App\Models\Member;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Group;;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
@@ -21,6 +21,14 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Support\Enums\FontWeight;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 
 class MemberResource extends Resource
 {
@@ -118,6 +126,117 @@ class MemberResource extends Resource
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
                                     ->preserveFilenames(),
+                            ]),
+                    ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3) // Layout Grid 3 Kolom
+            ->schema([
+
+                // === KOLOM KIRI (DATA UTAMA) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 2])
+                    ->schema([
+
+                        // Section 1: Header Profil
+                        InfolistSection::make('Identitas Member')
+                            ->icon('heroicon-m-user-circle')
+                            ->schema([
+                                
+                                // Baris 1: Nama Besar
+                                TextEntry::make('nama_member')
+                                    ->label('Nama Lengkap')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->columnSpanFull(),
+
+                                // Baris 2: Kontak (Grid)
+                                InfolistGrid::make(2)
+                                    ->schema([
+                                        TextEntry::make('email')
+                                            ->label('Email')
+                                            ->icon('heroicon-m-envelope')
+                                            ->copyable() // Fitur copy
+                                            ->url(fn ($record) => "mailto:{$record->email}") // Klik untuk kirim email
+                                            ->color('info')
+                                            ->placeholder('-'),
+
+                                        TextEntry::make('no_hp')
+                                            ->label('WhatsApp / Telepon')
+                                            ->icon('heroicon-m-device-phone-mobile')
+                                            ->url(fn ($record) => "tel:{$record->no_hp}") // Klik untuk telepon
+                                            ->color('success'),
+                                    ]),
+                            ]),
+
+                        // Section 2: Lokasi / Alamat
+                        InfolistSection::make('Alamat Domisili')
+                            ->icon('heroicon-m-map-pin')
+                            ->schema([
+                                TextEntry::make('alamat')
+                                    ->label('Alamat Lengkap')
+                                    ->markdown() // Agar teks panjang/multiline rapi
+                                    ->columnSpanFull(),
+
+                                // Grid untuk detail wilayah agar rapi sejajar
+                                InfolistGrid::make(3) 
+                                    ->schema([
+                                        TextEntry::make('provinsi')
+                                            ->label('Provinsi')
+                                            ->icon('heroicon-m-map'),
+                                            
+                                        TextEntry::make('kota')
+                                            ->label('Kota/Kab')
+                                            ->icon('heroicon-m-building-office-2'),
+
+                                        TextEntry::make('kecamatan')
+                                            ->label('Kecamatan')
+                                            ->icon('heroicon-m-building-library'),
+                                    ]),
+                            ]),
+                    ]),
+
+                // === KOLOM KANAN (SIDEBAR - FOTO) ===
+                InfolistGroup::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+
+                        // Section 3: Visual
+                        InfolistSection::make('Foto Profil')
+                            ->schema([
+                                ImageEntry::make('image_url')
+                                    ->label('') // Label di-hidden agar clean
+                                    ->hiddenLabel()
+                                    ->disk('public')
+                                    ->circular() // Tampil bulat (avatar style)
+                                    ->height(200) // Ukuran konsisten
+                                    ->extraImgAttributes([
+                                        'class' => 'mx-auto shadow-lg border-4 border-white', // Styling tambahan (Tailwind)
+                                        'alt' => 'Foto Member',
+                                    ])
+                                    ->defaultImageUrl(url('/images/placeholder-avatar.png')), // Opsional: Placeholder
+                            ]),
+
+                        // Section 4: Metadata Sistem
+                        InfolistSection::make('Info Sistem')
+                            ->icon('heroicon-m-cpu-chip')
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Bergabung Sejak')
+                                    ->dateTime('d F Y')
+                                    ->size(TextEntrySize::Small)
+                                    ->icon('heroicon-m-calendar')
+                                    ->color('gray'),
+
+                                TextEntry::make('updated_at')
+                                    ->label('Terakhir Update')
+                                    ->dateTime('d M Y, H:i')
+                                    ->size(TextEntrySize::Small)
+                                    ->color('gray'),
                             ]),
                     ]),
             ]);

@@ -35,13 +35,13 @@ class Jasa extends Model
     protected static function booted(): void
     {
         static::creating(function (Jasa $jasa) {
-            $jasa->slug ??= Str::slug($jasa->nama_jasa ?? Str::random(8));
+            $jasa->slug ??= self::generateUniqueSlug($jasa->nama_jasa ?? Str::random(8));
             $jasa->sku ??= self::generateSku();
         });
 
         static::updating(function (Jasa $jasa) {
             if ($jasa->isDirty('nama_jasa')) {
-                $jasa->slug = Str::slug($jasa->nama_jasa);
+                $jasa->slug = self::generateUniqueSlug($jasa->nama_jasa, $jasa->id);
             }
         });
     }
@@ -61,11 +61,32 @@ class Jasa extends Model
     }
 
     public function getHargaFormattedAttribute(): string
-        {
-            if ($this->harga === null) {
+    {
+        if ($this->harga === null) {
             return '-';
         }
 
         return 'Rp ' . number_format((float) $this->harga, 0, ',', '.');
+    }
+
+    /**
+     * Generate a slug and keep it unique by appending a counter when needed.
+     */
+    public static function generateUniqueSlug(string $namaJasa, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($namaJasa) ?: Str::random(8);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (
+            self::where('slug', $slug)
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
     }
 }

@@ -14,4 +14,9 @@ class CreateBrand extends CreateRecord
     {
         session()->flash('success', 'Brand berhasil dibuat.');
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

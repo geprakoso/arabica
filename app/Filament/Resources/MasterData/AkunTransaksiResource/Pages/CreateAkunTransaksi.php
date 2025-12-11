@@ -79,4 +79,9 @@ class CreateAkunTransaksi extends CreateRecord
 
         return $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

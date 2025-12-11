@@ -172,9 +172,10 @@ class KaryawanResource extends Resource
 
                         // Section 5: Akun Login
                         Section::make('Akses Sistem')
-                            ->icon('heroicon-m-lock-closed') // Icon gembok
+                            ->icon('heroicon-m-lock-closed')
                             ->description('Pengaturan akun login.')
                             ->schema([
+                                // 1. Toggle Status Akun (Tetap sama)
                                 Forms\Components\Toggle::make('is_active')
                                     ->label('Status Akun Aktif')
                                     ->default(true)
@@ -182,37 +183,73 @@ class KaryawanResource extends Resource
                                     ->offColor('danger')
                                     ->inline(false),
 
+                                // 2. Toggle Pemicu "Ubah Login" (Hanya muncul saat Mode Edit)
+                                Forms\Components\Toggle::make('ubah_akses_login')
+                                    ->label('Ubah Email & Password?')
+                                    ->onColor('warning')
+                                    ->offColor('gray')
+                                    ->helperText('Aktifkan ini jika ingin mengubah email atau password user.')
+                                    ->live() // PENTING: Agar form langsung bereaksi saat diklik
+                                    ->dehydrated(false) // PENTING: Field ini tidak akan disimpan ke database
+                                    ->visible(fn (string $operation) => $operation === 'edit') // Hanya muncul pas Edit
+                                    ->default(false),
+
+                                // 3. Email Login
                                 Forms\Components\TextInput::make('login_email')
                                     ->label('Email Login')
                                     ->email()
                                     ->required()
-                                    ->rules(function (Get $get, ?Karyawan $record) {
+                                    // Logic: Disable jika sedang Edit DAN Toggle belum dinyalakan
+                                    ->disabled(fn (Get $get, string $operation) => 
+                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                    )
+                                    // Validasi Unique yang Diperbaiki
+                                    ->rules(function ($record) {
+                                        $userId = $record?->user_id; // Ambil user_id dari relasi karyawan
                                         return [
-                                            Rule::unique('users', 'email')->ignore($record?->user_id),
+                                            Rule::unique('users', 'email')->ignore($userId),
                                         ];
                                     }),
 
+                                // 4. Role Selection
                                 Forms\Components\Select::make('role_id')
                                     ->label('Role / Jabatan')
                                     ->relationship('role', 'name')
                                     ->searchable()
                                     ->preload()
-                                    ->required(),
+                                    ->required()
+                                    // Kita bisa kunci juga Role-nya jika mau
+                                    ->disabled(fn (Get $get, string $operation) => 
+                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                    ),
 
+                                // 5. Password
                                 Forms\Components\TextInput::make('password')
                                     ->label('Password')
                                     ->password()
                                     ->revealable()
+                                    // Logic Disable sama seperti Email
+                                    ->disabled(fn (Get $get, string $operation) => 
+                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                    )
+                                    // Hanya required saat Create (Saat edit boleh kosong jika tidak ingin ubah password)
+                                    ->required(fn (string $operation) => $operation === 'create')
+                                    // Simpan hanya jika ada isinya
                                     ->dehydrated(fn ($state) => filled($state))
-                                    ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-                                    ->required(fn ($livewire) => $livewire instanceof Pages\CreateKaryawan),
+                                    ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
 
+                                // 6. Password Confirmation
                                 Forms\Components\TextInput::make('password_confirmation')
                                     ->label('Ulangi Password')
                                     ->password()
                                     ->revealable()
                                     ->same('password')
-                                    ->required(fn ($livewire) => $livewire instanceof Pages\CreateKaryawan),
+                                    // Logic Disable sama
+                                    ->disabled(fn (Get $get, string $operation) => 
+                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                    )
+                                    // Wajib jika password utama diisi
+                                    ->required(fn (Get $get) => filled($get('password'))),
                             ]),
                     ]),
             ]);
