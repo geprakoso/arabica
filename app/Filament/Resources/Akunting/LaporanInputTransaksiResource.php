@@ -6,8 +6,10 @@ use App\Enums\KategoriAkun;
 use App\Filament\Resources\Akunting\LaporanInputTransaksiResource\Pages;
 use App\Models\InputTransaksiToko;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Grid as FormsGrid;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Get;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\ImageEntry;
@@ -96,14 +98,31 @@ class LaporanInputTransaksiResource extends Resource
             ->filters([
                 Filter::make('filters')
                     ->form([
-                        DatePicker::make('dari_tanggal')
-                            ->label('Mulai')
-                            ->default(now()->startOfMonth())
-                            ->native(false),
-                        DatePicker::make('sampai_tanggal')
-                            ->label('Sampai')
-                            ->default(now())
-                            ->native(false),
+                        FormsGrid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    '1m' => '1 Bulan',
+                                    '3m' => '3 Bulan',
+                                    '6m' => '6 Bulan',
+                                    '1y' => '1 Tahun',
+                                    'custom' => 'Custom',
+                                ])
+                                ->default('1m')
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('dari_tanggal')
+                                ->label('Mulai')
+                                ->default(now()->startOfMonth())
+                                ->native(false)
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('sampai_tanggal')
+                                ->label('Sampai')
+                                ->default(now())
+                                ->native(false)
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
                         Select::make('kategori_transaksi')
                             ->label('Kategori')
                             ->options(KategoriAkun::class)
@@ -111,13 +130,30 @@ class LaporanInputTransaksiResource extends Resource
                             ->native(false)
                     ])->columns(2)
                     ->query(function (Builder $query, array $data): Builder {
+                        $range = $data['range'] ?? '1m';
+
+                        $startDate = null;
+                        $endDate = now();
+
+                        if ($range !== 'custom') {
+                            $startDate = match ($range) {
+                                '3m' => now()->copy()->subMonthsNoOverflow(3),
+                                '6m' => now()->copy()->subMonthsNoOverflow(6),
+                                '1y' => now()->copy()->subYear(),
+                                default => now()->copy()->subMonth(),
+                            };
+                        } else {
+                            $startDate = $data['dari_tanggal'] ?? null;
+                            $endDate = $data['sampai_tanggal'] ?? $endDate;
+                        }
+
                         return $query
                             ->when(
-                                $data['dari_tanggal'],
+                                $startDate,
                                 fn (Builder $query, $date): Builder => $query->whereDate('tanggal_transaksi', '>=', $date),
                             )
                             ->when(
-                                $data['sampai_tanggal'],
+                                $endDate,
                                 fn (Builder $query, $date): Builder => $query->whereDate('tanggal_transaksi', '<=', $date),
                             )
                             ->when(
@@ -145,6 +181,9 @@ class LaporanInputTransaksiResource extends Resource
                     ->formatStates([
                         'nominal_transaksi' => fn (InputTransaksiToko $record) => (float) $record->nominal_transaksi,
                     ])
+                    ->columnFormats([
+                        'nominal_transaksi' => '[$Rp-421] #,##0.00',
+                    ])
                     ->disableAdditionalColumns()
                     ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
             ])
@@ -164,6 +203,9 @@ class LaporanInputTransaksiResource extends Resource
                         ->withHiddenColumns()
                         ->formatStates([
                             'nominal_transaksi' => fn (InputTransaksiToko $record) => (float) $record->nominal_transaksi,
+                        ])
+                        ->columnFormats([
+                            'nominal_transaksi' => '[$Rp-421] #,##0.00',
                         ])
                         ->disableAdditionalColumns()
                         ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),

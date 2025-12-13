@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Akunting\LaporanInputTransaksiResource\Pages;
 
 use App\Filament\Resources\Akunting\LaporanInputTransaksiResource;
+use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewLaporanInputTransaksi extends ViewRecord
@@ -11,7 +12,14 @@ class ViewLaporanInputTransaksi extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        // Read-only view; no edit/delete actions needed.
-        return [];
+        return [
+            Actions\Action::make('print')
+                ->label('Print')
+                ->icon('heroicon-m-printer')
+                ->color('gray')
+                ->extraAttributes([
+                    'onclick' => 'window.print(); return false;',
+                ]),
+        ];
     }
 }
