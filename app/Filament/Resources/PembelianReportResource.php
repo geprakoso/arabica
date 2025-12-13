@@ -90,7 +90,7 @@ class PembelianReportResource extends Resource
                     ->exporter(PembelianExporter::class),
             ])
             ->actions([])
-            ->bulkActions([]); 
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array
