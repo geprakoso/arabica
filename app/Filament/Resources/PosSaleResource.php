@@ -50,7 +50,7 @@ class PosSaleResource extends Resource
                             Forms\Components\Select::make('id_member')
                                 ->label('Member')
                                 ->options(Member::query()->pluck('nama_member', 'id'))
-                                ->formatStateUsing(fn ($state) => $state ? (int) $state : null)
+                                ->formatStateUsing(fn($state) => $state ? (int) $state : null)
                                 ->searchable()
                                 ->required(),
                             Forms\Components\Select::make('gudang_id')
@@ -75,10 +75,10 @@ class PosSaleResource extends Resource
                                             $qtyColumn = PembelianItem::qtySisaColumn();
 
                                             return Produk::query()
-                                                ->whereHas('pembelianItems', fn ($q) => $q->where($qtyColumn, '>', 0))
+                                                ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
                                                 ->orderBy('nama_produk')
                                                 ->pluck('nama_produk', 'id')
-                                                ->map(fn (string $name) => strtoupper($name))
+                                                ->map(fn(string $name) => strtoupper($name))
                                                 ->toArray();
                                         })
                                         ->searchable()
@@ -114,10 +114,16 @@ class PosSaleResource extends Resource
                                     Forms\Components\TextInput::make('harga_jual')
                                         ->label('Harga')
                                         ->numeric()
+                                        ->currencyMask(
+                                            thousandSeparator: '.',
+                                            decimalSeparator: ',',
+                                            precision: 0,
+                                        )
                                         ->prefix('Rp')
                                         ->helperText('Kosongkan untuk pakai harga default batch lama.')
                                         ->nullable(),
                                     Forms\Components\Select::make('kondisi')
+                                        ->native(false)
                                         ->label('Kondisi')
                                         // Mengambil opsi kondisi produk. Perhatikan bahwa jika produk tidak ditemukan atau tidak memiliki kondisi, daftar opsi akan kosong.
                                         ->options(function (Get $get): array {
@@ -196,6 +202,7 @@ class PosSaleResource extends Resource
                                 ->columns(2)
                                 ->schema([
                                     Select::make('metode_bayar')
+                                        ->native(false)
                                         ->options(MetodeBayar::labels())
                                         ->label('Metode Bayar')
                                         ->required(),
@@ -205,7 +212,7 @@ class PosSaleResource extends Resource
                                         ->currencyMask(
                                             thousandSeparator: '.',
                                             decimalSeparator: ',',
-                                            precision: 2,
+                                            precision: 0,
                                         )
 
                                         ->prefix('Rp')
@@ -223,7 +230,7 @@ class PosSaleResource extends Resource
                                         ->label('Tunai Diterima')
                                         ->numeric()
                                         ->required()
-                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                         ->prefix('Rp')
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
@@ -243,7 +250,7 @@ class PosSaleResource extends Resource
                                     Forms\Components\TextInput::make('kembalian')
                                         ->label('Kembalian')
                                         ->numeric()
-                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                                        ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                         ->prefix('Rp')
                                         ->disabled(),
                                 ]),
@@ -265,7 +272,7 @@ class PosSaleResource extends Resource
                 Tables\Columns\TextColumn::make('grand_total')->money('idr', true),
                 Tables\Columns\TextColumn::make('metode_bayar')
                     ->icon('heroicon-o-credit-card')
-                    ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label()),
+                    ->formatStateUsing(fn(?MetodeBayar $state) => $state?->label()),
                 Tables\Columns\TextColumn::make('tunai_diterima')->money('idr', true)->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('kembalian')->money('idr', true)->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->toggleable(isToggledHiddenByDefault: true),

@@ -88,6 +88,8 @@ class StockAdjustmentResource extends Resource
             ->actions([
                 Action::make('post')
                     ->label('Posting')
+                    // ->badge()
+                    ->button()
                     ->visible(fn(StockAdjustment $record) => ! $record->isPosted())
                     ->requiresConfirmation()
                     ->action(fn(StockAdjustment $record) => $record->post(Auth::user()))

@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Auth;
 
 class LiburCutiResource extends Resource
 {
@@ -65,12 +67,12 @@ class LiburCutiResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(3) // Grid 3 kolom
+            ->columns(2) // Grid 2 kolom
             ->schema([
 
                 // === KOLOM KIRI (DATA PENGAJUAN) ===
                 Group::make()
-                    ->columnSpan(['lg' => 2])
+                    ->columnSpanFull()
                     ->schema([
 
                         // Section 1: Detail Identitas & Alasan
@@ -80,14 +82,22 @@ class LiburCutiResource extends Resource
                             ->schema([
                                 Select::make('user_id')
                                     ->label('Nama Karyawan')
-                                    ->options(
-                                        Karyawan::query()
-                                            ->whereNotNull('user_id')
-                                            ->pluck('nama_karyawan', 'user_id')
-                                    )
+                                    ->options(function () {
+                                        $query = Karyawan::query()
+                                            ->whereNotNull('user_id');
+
+                                        $user = Auth::user();
+
+                                        if ($user && $user->hasRole('karyawan')) {
+                                            $query->where('user_id', $user->id);
+                                        }
+
+                                        return $query->pluck('nama_karyawan', 'user_id');
+                                    })
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn () => auth()->id())
+                                    ->default(fn() => auth()->id())
+                                    ->disabled(fn() => Auth::user()?->hasRole('karyawan'))
                                     ->required()
                                     ->columnSpanFull(),
 
@@ -129,27 +139,6 @@ class LiburCutiResource extends Resource
                                     ->required(),
                             ]),
                     ]),
-
-                // === KOLOM KANAN (STATUS) ===
-                Group::make()
-                    ->columnSpan(['lg' => 1])
-                    ->schema([
-
-                        // Section 3: Validasi
-                        Section::make('Validasi')
-                            ->icon('heroicon-m-check-badge')
-                            ->description('Persetujuan pengajuan.')
-                            ->schema([
-                                Select::make('status_pengajuan')
-                                    ->label('Status')
-                                    ->options(StatusPengajuan::class)
-                                    ->default(StatusPengajuan::Pending)
-                                    ->native(false)
-                                    ->required()
-                                    // Tips: Beri warna badge pada status jika Enum support
-                                    ->selectablePlaceholder(false),
-                            ]),
-                    ]),
             ]);
     }
 
@@ -163,10 +152,10 @@ class LiburCutiResource extends Resource
                     ->sortable(),
                 TextColumn::make('keperluan')
                     ->badge()
-                    ->formatStateUsing(fn (Keperluan|string|null $state) => $state instanceof Keperluan
+                    ->formatStateUsing(fn(Keperluan|string|null $state) => $state instanceof Keperluan
                         ? $state->getLabel()
                         : (filled($state) ? Keperluan::from($state)->getLabel() : null))
-                    ->color(fn (Keperluan|string|null $state) => $state instanceof Keperluan
+                    ->color(fn(Keperluan|string|null $state) => $state instanceof Keperluan
                         ? $state->getColor()
                         : (filled($state) ? Keperluan::from($state)->getColor() : null))
                     ->sortable(),
@@ -182,10 +171,10 @@ class LiburCutiResource extends Resource
                     ->sortable(),
                 TextColumn::make('status_pengajuan')
                     ->badge()
-                    ->formatStateUsing(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->formatStateUsing(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getLabel()
                         : (filled($state) ? StatusPengajuan::from($state)->getLabel() : null))
-                    ->color(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->color(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getColor()
                         : (filled($state) ? StatusPengajuan::from($state)->getColor() : null))
                     ->sortable(),
@@ -199,13 +188,13 @@ class LiburCutiResource extends Resource
                 SelectFilter::make('keperluan')
                     ->options(
                         collect(Keperluan::cases())
-                            ->mapWithKeys(fn (Keperluan $case) => [$case->value => $case->getLabel()])
+                            ->mapWithKeys(fn(Keperluan $case) => [$case->value => $case->getLabel()])
                             ->all()
                     ),
                 SelectFilter::make('status_pengajuan')
                     ->options(
                         collect(StatusPengajuan::cases())
-                            ->mapWithKeys(fn (StatusPengajuan $case) => [$case->value => $case->getLabel()])
+                            ->mapWithKeys(fn(StatusPengajuan $case) => [$case->value => $case->getLabel()])
                             ->all()
                     ),
                 Filter::make('periode')
@@ -215,8 +204,8 @@ class LiburCutiResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data) {
                         return $query
-                            ->when($data['mulai'] ?? null, fn ($q, $date) => $q->whereDate('mulai_tanggal', '>=', $date))
-                            ->when($data['sampai'] ?? null, fn ($q, $date) => $q->whereDate('mulai_tanggal', '<=', $date));
+                            ->when($data['mulai'] ?? null, fn($q, $date) => $q->whereDate('mulai_tanggal', '>=', $date))
+                            ->when($data['sampai'] ?? null, fn($q, $date) => $q->whereDate('mulai_tanggal', '<=', $date));
                     }),
             ])
             ->actions([
@@ -227,6 +216,19 @@ class LiburCutiResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('karyawan')) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query;
     }
 
     public static function getRelations(): array
