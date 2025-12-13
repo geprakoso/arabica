@@ -139,7 +139,6 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\Filament\AdminPanelProvider::class,
         App\Providers\Filament\PosPanelProvider::class,
-        App\Providers\Filament\AkuntingPanelProvider::class,
     ])->toArray(),
 
 ];

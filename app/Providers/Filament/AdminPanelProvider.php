@@ -83,6 +83,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Inventory'),
                 NavigationGroup::make('Absensi'),
                 NavigationGroup::make('Penjadwalan'),
+                NavigationGroup::make('Keuangan'),
                 NavigationGroup::make('Pengaturan'),
                 NavigationGroup::make('Reports'),
                 NavigationGroup::make('Content'),

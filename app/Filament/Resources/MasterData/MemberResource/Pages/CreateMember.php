@@ -29,7 +29,7 @@ class CreateMember extends CreateRecord
         if ($admins->isNotEmpty()) {
             Notification::make()
                 ->title('Member Baru Bergabung')
-                ->icon('hugeicons-user-add')
+                ->icon('heroicon-m-user-plus')
                 ->body("**{$member->nama_member}** baru saja ditambahkan.")
                 ->actions([
                     Action::make('Lihat')

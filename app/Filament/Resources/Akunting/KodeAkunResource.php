@@ -21,9 +21,11 @@ class KodeAkunResource extends Resource
     protected static ?string $navigationLabel = 'Kode Akun';
     protected static ?string $pluralLabel = 'Kode Akun';
     protected static ?string $navigationIcon = 'hugeicons-bar-code-02';
+    protected static ?string $navigationGroup = 'Keuangan';
     
     public static function shouldRegisterNavigation(): bool
     {
+        // return Filament::getCurrentPanel()?->getId() === 'admin';
         return false;
     }
     

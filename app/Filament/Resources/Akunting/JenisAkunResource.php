@@ -20,9 +20,11 @@ class JenisAkunResource extends Resource
     protected static ?string $model = JenisAkun::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Keuangan';
 
     public static function shouldRegisterNavigation(): bool
     {
+        // return Filament::getCurrentPanel()?->getId() === 'admin';
         return false;
     }
 

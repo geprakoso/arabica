@@ -64,6 +64,7 @@ class DatabaseSeeder extends Seeder
             LiburCutiSeeder::class,
             LemburSeeder::class,
             ChatGroupSeeder::class,
+            InputTransaksiTokoSeeder::class,
         ]);
     }
 }

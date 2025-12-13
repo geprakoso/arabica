@@ -9,6 +9,7 @@
         "php": "^8.2",
         "afatmustafa/blade-hugeicons": "^1.0",
         "akaunting/money": "^6.0",
+        "alperenersoy/filament-export": "^3.0",
         "ariaieboy/filament-currency": "^1.13",
         "bezhansalleh/filament-panel-switch": "^1.1",
         "bezhansalleh/filament-shield": "^3.9",

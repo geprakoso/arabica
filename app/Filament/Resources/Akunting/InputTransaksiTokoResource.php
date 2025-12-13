@@ -40,10 +40,11 @@ class InputTransaksiTokoResource extends Resource
     protected static ?string $navigationLabel = 'Input Transaksi Toko';
     protected static ?string $pluralLabel = 'Input Transaksi Toko';
     protected static ?string $navigationIcon = 'hugeicons-wallet-add-01';
+    protected static ?string $navigationGroup = 'Keuangan';
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'akunting';
+        return Filament::getCurrentPanel()?->getId() === 'admin';
     }
 
     public static function form(Form $form): Form

@@ -52,6 +52,7 @@ class AkuntingPanelProvider extends PanelProvider
                 \App\Filament\Resources\Akunting\JenisAkunResource::class,
                 \App\Filament\Resources\Akunting\KodeAkunResource::class,
                 \App\Filament\Resources\Akunting\InputTransaksiTokoResource::class,
+                \App\Filament\Resources\Akunting\LaporanInputTransaksiResource::class,
             ])
             ->pages([
                 Pages\Dashboard::class,
