@@ -90,6 +90,7 @@ class StockOpnameResource extends Resource
             ->actions([
                 Action::make('post')
                     ->label('Posting')
+                    ->button()
                     ->requiresConfirmation()
                     ->visible(fn (StockOpname $record) => ! $record->isPosted())
                     ->action(fn (StockOpname $record) => $record->post(Auth::user()))
