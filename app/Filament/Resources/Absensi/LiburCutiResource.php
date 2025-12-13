@@ -48,6 +48,14 @@ class LiburCutiResource extends Resource
         $query = parent::getEloquentQuery();
         $user = \Filament\Facades\Filament::auth()->user();
 
+        if (! $user) {
+            return $query;
+        }
+
+        if ($user->hasRole('karyawan')) {
+            return $query->where('user_id', $user->id);
+        }
+
         // Jika hanya punya izin view_limit, batasi ke data milik sendiri.
         if (
             (
@@ -216,19 +224,6 @@ class LiburCutiResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-
-        $user = auth()->user();
-
-        if ($user && $user->hasRole('karyawan')) {
-            $query->where('user_id', $user->id);
-        }
-
-        return $query;
     }
 
     public static function getRelations(): array
