@@ -6,6 +6,7 @@ use App\Enums\KategoriAkun;
 use App\Filament\Resources\Akunting\LaporanInputTransaksiResource\Pages;
 use App\Models\InputTransaksiToko;
 use Filament\Facades\Filament;
+use Filament\Actions\StaticAction;
 use Filament\Forms\Components\Grid as FormsGrid;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -175,6 +176,23 @@ class LaporanInputTransaksiResource extends Resource
                     ->color('gray')
                     ->modalSubmitAction(fn ($action) => $action->color('gray'))
                     ->modalCancelAction(fn ($action) => $action->color('gray'))
+                    ->modalFooterActions(function (FilamentExportHeaderAction $action): array {
+                        $footerActions = $action->getExportModalActions();
+
+                        $printColor = collect($footerActions)
+                            ->first(fn (StaticAction $footerAction) => $footerAction->getName() === 'print')
+                            ?->getColor() ?? 'gray';
+
+                        return collect($footerActions)
+                            ->map(function (StaticAction $footerAction) use ($printColor) {
+                                if (in_array($footerAction->getName(), ['preview', 'submit', 'cancel'])) {
+                                    $footerAction->color($printColor);
+                                }
+
+                                return $footerAction;
+                            })
+                            ->all();
+                    })
                     ->fileName('laporan-transaksi-toko')
                     ->defaultFormat('xlsx')
                     ->withHiddenColumns()

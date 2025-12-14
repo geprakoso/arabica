@@ -1,0 +1,20 @@
+<?php
+
+namespace AlperenErsoy\FilamentExport\Concerns;
+
+trait HasColumnFormats
+{
+    protected array $columnFormats = [];
+
+    public function columnFormats(array $formats = []): static
+    {
+        $this->columnFormats = $formats;
+
+        return $this;
+    }
+
+    public function getColumnFormats(): array
+    {
+        return $this->columnFormats;
+    }
+}
