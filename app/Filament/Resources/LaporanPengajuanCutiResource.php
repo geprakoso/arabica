@@ -7,9 +7,12 @@ use App\Enums\StatusPengajuan;
 use App\Filament\Resources\Absensi\LiburCutiResource;
 use App\Filament\Resources\LaporanPengajuanCutiResource\Pages;
 use App\Models\LaporanPengajuanCuti;
+use Filament\Actions\StaticAction;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -27,6 +30,8 @@ class LaporanPengajuanCutiResource extends Resource
 
     protected static ?string $navigationGroup = 'Reports';
 
+    protected static ?string $navigationLabel = 'Laporan Pengajuan Cuti';
+
     protected static ?string $modelLabel = 'Pengajuan Cuti';
 
     protected static ?string $pluralModelLabel = 'Pengajuan Cuti';
@@ -40,6 +45,7 @@ class LaporanPengajuanCutiResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
+            ->recordAction('detail')
             ->columns([
                 TextColumn::make('liburCuti.user.name')
                     ->label('Karyawan')
@@ -87,6 +93,34 @@ class LaporanPengajuanCutiResource extends Resource
                     ),
             ])
             ->actions([
+                Action::make('detail')
+                    ->slideOver()
+                    ->modalWidth('4xl')
+                    ->extraAttributes(['class' => 'hidden'])
+                    ->modalHeading('Detail Pengajuan Cuti')
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
+                    ->extraModalFooterActions(fn(LaporanPengajuanCuti $record) => [
+                        Action::make('approve-from-detail')
+                            ->label('Setujui')
+                            ->color('success')
+                            ->icon('heroicon-o-check-circle')
+                            ->visible(fn() => $record->status_pengajuan === StatusPengajuan::Pending)
+                            ->action(function (LaporanPengajuanCuti $record): void {
+                                $record->approveSubmission();
+                            })
+                            ->cancelParentActions(),
+                        Action::make('reject-from-detail')
+                            ->label('Tolak')
+                            ->color('danger')
+                            ->icon('heroicon-o-x-circle')
+                            ->visible(fn() => $record->status_pengajuan === StatusPengajuan::Pending)
+                            ->action(function (LaporanPengajuanCuti $record): void {
+                                $record->rejectSubmission();
+                            })
+                            ->cancelParentActions(),
+                    ])
+                    ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
                 Action::make('approve')
                     ->button()
                     ->label('Setujui')
@@ -122,43 +156,59 @@ class LaporanPengajuanCutiResource extends Resource
 
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
-            Section::make('Informasi Pengajuan')
+        return $infolist
+            ->schema([
+            infolistGrid::make(4)
                 ->schema([
-                    Grid::make(2)->schema([
-                        TextEntry::make('liburCuti.user.name')->label('Karyawan'),
-                        TextEntry::make('liburCuti.keperluan')
-                            ->label('Keperluan')
-                            ->formatStateUsing(fn(Keperluan|string|null $state) => $state instanceof Keperluan
-                                ? $state->getLabel()
-                                : (filled($state) ? Keperluan::from($state)->getLabel() : '-'))
-                            ->badge()
-                            ->color(fn(Keperluan|string|null $state) => $state instanceof Keperluan
-                                ? $state->getColor()
-                                : (filled($state) ? Keperluan::from($state)->getColor() : null)),
-                        TextEntry::make('liburCuti.mulai_tanggal')
-                            ->label('Mulai')
-                            ->date('d F Y'),
-                        TextEntry::make('liburCuti.sampai_tanggal')
-                            ->label('Sampai')
-                            ->date('d F Y')
-                            ->placeholder('-'),
-                    ]),
-                    TextEntry::make('liburCuti.keterangan')
-                        ->label('Keterangan')
-                        ->columnSpanFull()
-                        ->placeholder('-'),
-                ]),
-            Section::make('Status')
-                ->schema([
-                    Grid::make(2)->schema([
-                        TextEntry::make('status_pengajuan')
-                            ->label('Status Akhir')
-                            ->badge()
-                            ->formatStateUsing(fn(?StatusPengajuan $state) => $state?->getLabel())
-                            ->color(fn(?StatusPengajuan $state) => $state?->getColor()),
-                    ]),
-                ]),
+                    InfolistGroup::make()
+                        ->schema([
+                            InfolistSection::make('Informasi Pengajuan')
+                                ->icon('heroicon-m-document-text')
+                                ->schema([
+                                Grid::make()
+                                ->schema([
+                                    TextEntry ::make('liburCuti.user.name')
+                                        ->label('Karyawan'),
+                                    TextEntry::make('liburCuti.keperluan')
+                                        ->label('Keperluan')
+                                        ->formatStateUsing(fn(Keperluan|string|null $state) => $state instanceof Keperluan
+                                            ? $state->getLabel()
+                                            : (filled($state) ? Keperluan::from($state)->getLabel() : '-'))
+                                        ->badge()
+                                        ->color(fn(Keperluan|string|null $state) => $state instanceof Keperluan
+                                            ? $state->getColor()
+                                            : (filled($state) ? Keperluan::from($state)->getColor() : null)),
+                                    TextEntry::make('liburCuti.mulai_tanggal')
+                                        ->label('Mulai')
+                                        ->date('d F Y'),
+                                    TextEntry::make('liburCuti.sampai_tanggal')
+                                        ->label('Sampai')
+                                        ->date('d F Y')
+                                        ->placeholder('-'),
+                                ])
+                            ]),
+                            infolistSection::make('keterangan')
+                                ->icon('heroicon-m-calendar')
+                                ->schema([
+                                    TextEntry::make('liburCuti.keterangan')
+                                        ->label('')
+                                        ->placeholder('-'),
+                                ])
+                            ])
+                            ->columnSpan(3),
+                    InfolistGroup::make()
+                        ->schema([
+                            infolistSection::make('Informasi Akhir')
+                            ->schema([
+                                TextEntry::make('status_pengajuan')
+                                    ->label('Status Akhir')
+                                    ->badge()
+                                    ->formatStateUsing(fn(?StatusPengajuan $state) => $state?->getLabel())
+                                    ->color(fn(?StatusPengajuan $state) => $state?->getColor()),
+                            ])
+                        ])
+                        ->columnSpan(1),
+            ])
         ]);
     }
 
