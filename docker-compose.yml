@@ -1,0 +1,52 @@
+services:
+  # Service Aplikasi (PHP)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arabica-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - arabica-network
+
+  # Service Web Server (Nginx)
+  web:
+    image: nginx:alpine
+    container_name: arabica-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80" # Kita expose port 8080 agar tidak bentrok dengan aaPanel
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - arabica-network
+    depends_on:
+      - app
+
+  # Service Database
+  db:
+    image: mysql:8.0
+    container_name: arabica-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - arabica-network
+
+networks:
+  arabica-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
