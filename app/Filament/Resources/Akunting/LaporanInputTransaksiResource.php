@@ -29,9 +29,13 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
+use Filament\Infolists\Components\Actions as InfolistActions;
+use Filament\Infolists\Components\Actions\Action as InfolistAction;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Support\Htmlable;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+use Illuminate\Support\Facades\Storage;
 
 class LaporanInputTransaksiResource extends Resource
 {
@@ -174,6 +178,7 @@ class LaporanInputTransaksiResource extends Resource
                     ->label('Export')
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('gray')
+                    ->extraAttributes(['class' => 'hidden'])
                     ->modalSubmitAction(fn ($action) => $action->color('gray'))
                     ->modalCancelAction(fn ($action) => $action->color('gray'))
                     ->modalFooterActions(function (FilamentExportHeaderAction $action): array {
@@ -311,9 +316,29 @@ class LaporanInputTransaksiResource extends Resource
                                         'alt' => 'Bukti Transaksi',
                                     ])
                                     ->placeholder('Tidak ada bukti yang diunggah.'),
+                                InfolistActions::make([
+                                    InfolistAction::make('view_full')
+                                        ->label('Lihat')
+                                        ->icon('heroicon-m-arrows-pointing-out')
+                                        ->visible(fn ($record): bool => filled($record->bukti_transaksi))
+                                        ->url(fn ($record): ?string => self::buktiUrl($record), true),
+                                    InfolistAction::make('download')
+                                        ->label('Unduh')
+                                        ->icon('heroicon-m-arrow-down-tray')
+                                        ->visible(fn ($record): bool => filled($record->bukti_transaksi))
+                                        ->url(fn ($record): ?string => self::buktiUrl($record))
+                                        ->extraAttributes(['download' => true]),
+                                ])->alignment('center'),
                             ]),
                     ]),
             ]);
+    }
+
+    protected static function buktiUrl(InputTransaksiToko $record): ?string
+    {
+        return filled($record->bukti_transaksi)
+            ? Storage::disk('public')->url($record->bukti_transaksi)
+            : null;
     }
 
     public static function getPages(): array
