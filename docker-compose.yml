@@ -38,6 +38,8 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    ports:
+      - "127.0.0.1:3306:3306"  # <-- TAMBAHKAN INI
     volumes:
       - dbdata:/var/lib/mysql
     networks:
