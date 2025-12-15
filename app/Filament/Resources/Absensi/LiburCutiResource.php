@@ -31,6 +31,7 @@ class LiburCutiResource extends Resource
 
     protected static ?string $navigationIcon = 'hugeicons-sailboat-offshore';
     protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $plurellabel  = 'Libur Cuti';
 
     public static function form(Form $form): Form
     {
@@ -64,7 +65,7 @@ class LiburCutiResource extends Resource
                                     })
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn() => auth()->id())
+                                    ->default(fn() => Auth::id())
                                     ->disabled(fn() => Auth::user()?->hasRole('karyawan'))
                                     ->required()
                                     ->columnSpanFull(),
@@ -190,7 +191,7 @@ class LiburCutiResource extends Resource
     {
         $query = parent::getEloquentQuery();
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user && $user->hasRole('karyawan')) {
             $query->where('user_id', $user->id);

@@ -29,6 +29,7 @@ class InventoryResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
+    protected static ?string $pluralLabel = 'Inventory'; 
     public static function form(Form $form): Form
     {
         return $form->schema([]);

@@ -30,6 +30,8 @@ class StockOpnameResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory';
 
+    protected static ?string $pluralLabel = 'Stock Opname';
+
     protected static ?int $navigationSort = 50;
 
     public static function form(Form $form): Form

@@ -24,6 +24,8 @@ class PembelianReportResource extends Resource
 
     protected static ?string $navigationLabel = 'Laporan Pembelian';
 
+    protected static ?string $pluralLabel = 'Laporan Pembelian';
+
     protected static ?string $navigationGroup = 'Reports';
 
     protected static ?int $navigationSort = 2;

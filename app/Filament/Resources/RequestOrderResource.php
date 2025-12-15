@@ -23,7 +23,9 @@ class RequestOrderResource extends Resource
 
     protected static ?string $navigationGroup = 'Inventory';
 
-    protected static ?string $navigationLabel = 'Request Order';
+    protected static ?string $recordTitleAttribute = 'no_ro';
+
+    protected static ?string $pluralLabel = 'Request Order';
 
     protected static ?int $navigationSort = 3;
 
