@@ -46,7 +46,7 @@ class LiburCutiResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = \Filament\Facades\Filament::auth()->user();
+        $user = Auth::user();
 
         if (! $user) {
             return $query;
@@ -104,7 +104,7 @@ class LiburCutiResource extends Resource
                                     })
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn() => auth()->id())
+                                    ->default(fn() => Auth::id())
                                     ->disabled(fn() => Auth::user()?->hasRole('karyawan'))
                                     ->required()
                                     ->columnSpanFull(),
@@ -225,6 +225,8 @@ class LiburCutiResource extends Resource
                 ]),
             ]);
     }
+
+
 
     public static function getRelations(): array
     {

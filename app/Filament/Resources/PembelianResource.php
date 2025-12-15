@@ -26,6 +26,8 @@ class PembelianResource extends Resource
 
     protected static ?string $navigationLabel = 'Pembelian';
 
+    protected static ?string $pluralLabel = 'Pembelian';
+    
     protected static ?string $navigationGroup = 'Inventory';
 
     protected static ?int $navigationSort = 2;

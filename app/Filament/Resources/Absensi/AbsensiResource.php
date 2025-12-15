@@ -2,32 +2,33 @@
 
 namespace App\Filament\Resources\Absensi;
 
-use App\Filament\Resources\Absensi\AbsensiResource\Pages;
+use Filament\Forms;
+use Filament\Tables;
 use App\Models\Absensi;
+use Filament\Forms\Get;
 use App\Models\Karyawan;
 use Filament\Facades\Filament;
-use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
-use Filament\Forms\Components\Wizard;
+use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\Filter;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\Grid;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use App\Filament\Resources\Absensi\AbsensiResource\Pages;
+use Filament\Infolists\Components\Section as InfolistSection;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,6 +39,7 @@ class AbsensiResource extends Resource
 
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
     protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $plurelLabel = 'Absensi';
     protected static ?string $navigationLabel = 'Absen';
 
     public static function canViewAny(): bool
@@ -129,7 +131,7 @@ class AbsensiResource extends Resource
 
                             // --- HIDDEN FIELDS (System Data) ---
                             // Kita sembunyikan (Hidden) agar UI bersih, tapi data tetap terkirim
-                            Hidden::make('user_id')->default(auth()->id()),
+                            Hidden::make('user_id')->default(Auth::id()),
                             Hidden::make('tanggal')->default(now()),
                             Hidden::make('jam_masuk')->default(now()->format('H:i')),
                             
