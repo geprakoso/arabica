@@ -39,8 +39,15 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                 Tables\Columns\TextColumn::make('metode_bayar')
                     ->label('Bayar')
                     ->badge()
-                    ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label())
-                    ->color(fn (?MetodeBayar $state) => match ($state) {
+                    ->icon(fn(MetodeBayar $state) => match ($state) {
+                        MetodeBayar::CASH => 'heroicon-o-currency-dollar',
+                        MetodeBayar::CARD => 'heroicon-o-credit-card',
+                        MetodeBayar::TRANSFER => 'heroicon-o-banknotes',
+                        MetodeBayar::EWALLET => 'heroicon-o-wallet',
+                        default => 'heroicon-o-question-mark-circle ',
+                    })
+                    ->formatStateUsing(fn(?MetodeBayar $state) => $state?->label())
+                    ->color(fn(?MetodeBayar $state) => match ($state) {
                         MetodeBayar::CASH => 'success',
                         MetodeBayar::CARD => 'info',
                         MetodeBayar::TRANSFER => 'gray',
@@ -52,7 +59,7 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                 Tables\Actions\Action::make('lihat')
                     ->label('Detail')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Penjualan $record) => route('filament.pos.resources.pos-activities.view', $record))
+                    ->url(fn(Penjualan $record) => route('filament.pos.resources.pos-activities.view', $record))
                     ->openUrlInNewTab(),
             ])
             ->defaultSort('tanggal_penjualan', 'desc')

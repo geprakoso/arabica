@@ -212,6 +212,7 @@ class LiburCutiResource extends Resource
             'index' => Pages\ListLiburCutis::route('/'),
             'create' => Pages\CreateLiburCuti::route('/create'),
             'edit' => Pages\EditLiburCuti::route('/{record}/edit'),
+            'view' => Pages\ViewLiburCuti::route('/{record}'),
         ];
     }
 }
