@@ -4,6 +4,7 @@ namespace App\Filament\Resources\LaporanPengajuanCutiResource\Pages;
 
 use App\Filament\Resources\LaporanPengajuanCutiResource;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Tables\Table;
 
 class ListLaporanPengajuanCutis extends ListRecords
 {
@@ -12,5 +13,12 @@ class ListLaporanPengajuanCutis extends ListRecords
     protected function getHeaderActions(): array
     {
         return [];
+    }
+
+    protected function makeTable(): Table
+    {
+        return parent::makeTable()
+            ->recordAction('detail')
+            ->recordUrl(null);
     }
 }
