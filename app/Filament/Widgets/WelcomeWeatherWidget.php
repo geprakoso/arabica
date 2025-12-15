@@ -13,7 +13,7 @@ class WelcomeWeatherWidget extends Widget
     use HasWidgetShield;
     // Mengatur view custom untuk widget ini
     protected static string $view = 'filament.widgets.welcome-weather-widget';
-    protected static ?int $sort = 1;
+    protected static ?int $sort = -8;
 
     // Mengatur ukuran kolom untuk widget (opsional, bisa 1/2, 1/3, atau full)
     // Kita buat dia mengambil 2 kolom dari total 3 kolom agar terlihat menonjol

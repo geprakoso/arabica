@@ -15,6 +15,7 @@ class LowStockProductsTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
     protected static ?string $pollingInterval = null;
+    protected static ?int $sort = 6;
 
     public function table(Table $table): Table
     {

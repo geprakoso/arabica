@@ -13,7 +13,7 @@ class ServiceWidget extends BaseWidget
     use HasWidgetShield;
     protected static ?string $heading = 'Service Terbaru';
     protected int|string|array $columnSpan = '1/2';
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 8;
     protected int|string|array $contentHeight = 'auto';
     protected int|string|array $recordCount = 5;
 

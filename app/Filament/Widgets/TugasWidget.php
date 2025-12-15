@@ -17,7 +17,7 @@ class TugasWidget extends BaseWidget
     protected int|string|array $columnSpan = '1/2';
     protected int|string|array $contentHeight = 'auto';
     protected int|string|array $recordCount = 5;
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 9;
 
     public function table(Table $table): Table
     {

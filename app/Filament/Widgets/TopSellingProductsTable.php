@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 class TopSellingProductsTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
+    protected static ?int $sort = 5;
     protected static ?string $pollingInterval = null;
 
     protected static ?string $icon = 'heroicon-o-chevron-double-up';

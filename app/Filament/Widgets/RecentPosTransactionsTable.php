@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 class RecentPosTransactionsTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
+    protected static ?int $sort = 7;
     protected static ?string $pollingInterval = '30s';
     protected static ?string $icon = 'heroicon-o-wallet';
     protected static ?string $heading = 'Transaksi Terbaru';

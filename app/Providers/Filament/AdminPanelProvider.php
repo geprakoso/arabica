@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->databaseNotificationsPolling('10s')
             ->login()
+            ->globalSearch(false)
             ->colors([
                 'primary' => Color::Blue,
                 'secondary' => Color::Green,
@@ -54,8 +55,18 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                // Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+                \App\Filament\Widgets\OpenWeatherWidget::class,
+                \App\Filament\Widgets\WelcomeWeatherWidget::class,
+                \App\Filament\Widgets\AbsensiWidget::class,
+                \App\Filament\Widgets\ActiveMembersTable::class,
+                \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
+                \App\Filament\Widgets\LowStockProductsTable::class,
+                \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
+                \App\Filament\Widgets\PosSalesStatsOverview::class,
+                \App\Filament\Widgets\RecentPosTransactionsTable::class,
+                \App\Filament\Widgets\ServiceWidget::class,
+                \App\Filament\Widgets\TopSellingProductsTable::class,
+                \App\Filament\Widgets\TugasWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

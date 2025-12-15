@@ -15,6 +15,7 @@ class ActiveMembersTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
     protected static ?string $pollingInterval = null;
+    protected static ?int $sort = 4;
 
     public function table(Table $table): Table
     {
