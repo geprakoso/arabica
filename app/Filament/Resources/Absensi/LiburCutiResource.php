@@ -30,7 +30,10 @@ class LiburCutiResource extends Resource
     protected static ?string $model = LiburCuti::class;
 
     protected static ?string $navigationIcon = 'hugeicons-sailboat-offshore';
+
     protected static ?string $navigationGroup = 'Absensi';
+
+    protected static ?string $navigationLabel = 'Libur & Cuti';
 
     public static function canViewAny(): bool
     {
@@ -218,6 +221,10 @@ class LiburCutiResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                ->label('Detail')
+                ->icon('heroicon-m-eye'),
+                
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

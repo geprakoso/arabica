@@ -42,6 +42,7 @@ class PembelianResource extends Resource
                             ->schema([
                                 TextInput::make('no_po')
                                     ->label('No. PO')
+                                    ->prefixIcon('heroicon-s-tag')
                                     ->required()
                                     ->default(fn () => Pembelian::generatePO()) //generate no_po otomatis
                                     ->disabled()
@@ -50,6 +51,10 @@ class PembelianResource extends Resource
                                 DatePicker::make('tanggal')
                                     ->label('Tanggal Pembelian')
                                     ->required()
+                                    ->default(now())
+                                    ->displayFormat('d F Y')
+                                    ->placeholder('default: hari ini')
+                                    ->prefixIcon('heroicon-s-calendar')
                                     ->native(false),
                                 Select::make('id_karyawan')
                                     ->label('Karyawan')
@@ -211,7 +216,9 @@ class PembelianResource extends Resource
                     ->sortable(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Pembelian')
+                    ->icon('heroicon-s-plus'),
             ])
             ->filters([])
             ->actions([

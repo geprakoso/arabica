@@ -142,6 +142,7 @@ class InventoryResource extends Resource
                     ->schema([
                         TextEntry::make('nama_produk')
                             ->label('Produk')
+                            ->extraAttributes(['class' => 'font-bold'])
                             ->formatStateUsing(fn($state) => Str::title($state))
                             ->size(TextEntrySize::Medium),
                         InfolistSection::make('')
@@ -172,7 +173,7 @@ class InventoryResource extends Resource
             ->columns(3);
     }
 
-    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif.
+    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif
 
     protected static function applyInventoryScopes(Builder $query): Builder
     {
