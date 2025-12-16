@@ -46,6 +46,7 @@ class KaryawanResource extends Resource
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationParentItem = 'User & Supplier';
     protected static ?string $navigationLabel = 'Karyawan';
+    protected static ?string $pluralModelLabel = 'Karyawan';
     protected static ?int $navigationSort = 11;
 
 
