@@ -43,10 +43,14 @@ class PenjualanResource extends Resource
                             ->label('No. Nota')
                             ->default(fn() => Penjualan::generateNoNota())
                             ->disabled()
+                            ->prefixIcon('heroicon-s-tag')
                             ->unique(ignoreRecord: true)
                             ->required(),
                         DatePicker::make('tanggal_penjualan')
                             ->label('Tanggal Penjualan')
+                            ->default(now())
+                            ->prefixIcon('heroicon-s-calendar')
+                            ->displayFormat('d F Y')
                             ->required()
                             ->native(false),
                         Select::make('id_karyawan')

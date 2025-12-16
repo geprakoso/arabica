@@ -8,4 +8,5 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewPembelian extends ViewRecord
 {
     protected static string $resource = PembelianResource::class;
+    protected static ?String $title = 'Detail Pembelian';
 }
