@@ -62,7 +62,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
                 \App\Filament\Widgets\LowStockProductsTable::class,
                 \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
-                \App\Filament\Widgets\PosSalesStatsOverview::class,
+                // \App\Filament\Widgets\PosSalesStatsOverview::class,
                 \App\Filament\Widgets\RecentPosTransactionsTable::class,
                 \App\Filament\Widgets\ServiceWidget::class,
                 \App\Filament\Widgets\TopSellingProductsTable::class,

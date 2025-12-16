@@ -1,5 +1,9 @@
 @php
     $isDisabled = $field->isDisabled();
+    $urlPrefix = rtrim(
+        \Illuminate\Support\Facades\Storage::disk($getDisk())->url('/'),
+        '/'
+    ) . '/';
 @endphp
 
 <x-dynamic-component
@@ -20,7 +24,7 @@
             imageQuality: {{ $getImageQuality() }},
             mirroredView: true,
             isDisabled: {{ json_encode($isDisabled) }},
-            urlPrefix: '{{ $getImageUrlPrefix() }}',
+            urlPrefix: '{{ $urlPrefix }}',
             isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
             currentFacingMode: 'environment',
             
@@ -30,7 +34,8 @@
 
                 //prepend the URL prefix if it's a path
                 if (!path.startsWith('http://') && !path.startsWith('https://')) {
-                    return this.urlPrefix + path;
+                    const cleanPath = path.replace(/^\/+/, '');
+                    return this.urlPrefix + cleanPath;
                 }
                 return path;
             },

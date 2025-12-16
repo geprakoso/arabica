@@ -2,7 +2,7 @@
 
 <x-filament-widgets::widget>
     <div @class([
-        'fi-w-absensi-widget rounded-xl bg-white shadow-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6',
+        'fi-w-absensi-widget rounded-xl bg-white ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6',
         'bg-yellow-50/70 ring-yellow-200 dark:bg-yellow-900/20 dark:ring-yellow-500/30' => strtolower($currentAbsensi?->status ?? '') === 'izin',
         'bg-red-50/70 ring-red-200 dark:bg-red-900/20 dark:ring-red-500/30' => strtolower($currentAbsensi?->status ?? '') === 'sakit',
     ])>
