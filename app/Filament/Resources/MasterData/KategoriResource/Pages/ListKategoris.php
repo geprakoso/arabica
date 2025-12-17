@@ -13,7 +13,9 @@ class ListKategoris extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Kategori')
+                ->icon('heroicon-m-plus'),
         ];
     }
 }

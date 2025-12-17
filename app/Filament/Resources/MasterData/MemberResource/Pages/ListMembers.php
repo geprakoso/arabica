@@ -13,7 +13,9 @@ class ListMembers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Member')
+                ->icon('heroicon-m-plus'),
         ];
     }
 }

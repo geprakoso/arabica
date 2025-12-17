@@ -13,7 +13,9 @@ class ListAkunTransaksis extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Akun Transaksi')
+                ->icon('heroicon-m-plus'),
         ];
     }
 }

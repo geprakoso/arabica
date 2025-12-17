@@ -2,14 +2,14 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Exports\PenjualanExporter;
+// use App\Filament\Exports\PenjualanExporter;
 use App\Filament\Resources\PenjualanReportResource\Pages;
 use App\Models\Penjualan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\ExportAction;
+// use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,12 +92,12 @@ class PenjualanReportResource extends Resource
                             ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
                     }),
             ])
-            ->headerActions([
-                ExportAction::make('export_penjualan')
-                    ->label('Download CSV')
-                    ->color('primary')
-                    ->exporter(PenjualanExporter::class),
-            ])
+            // ->headerActions([
+            //     ExportAction::make('export_penjualan')
+            //         ->label('Download CSV')
+            //         ->color('primary')
+            //         ->exporter(PenjualanExporter::class),
+            // ])
             ->actions([])
             ->bulkActions([]);
     }

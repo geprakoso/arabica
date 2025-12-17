@@ -13,7 +13,9 @@ class ListJasas extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Jasa')
+                ->icon('heroicon-m-plus'),
         ];
     }
 }

@@ -13,7 +13,9 @@ class ListStockOpnames extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Stock Opname')
+                ->icon('heroicon-s-plus'),
         ];
     }
 }
