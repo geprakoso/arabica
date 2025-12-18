@@ -13,7 +13,9 @@ class ListRequestOrders extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Tambah RO')
+                ->icon('heroicon-o-plus'),
         ];
     }
 }
