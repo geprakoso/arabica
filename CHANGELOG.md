@@ -2,6 +2,13 @@
 
 All notable changes to this project, reconstructed from git history. Versioning now follows CalVer (`YYYY.MM.DD`) while the app is pre-1.0. Entries are chronological with the latest changes first.
 
+## 2025.12.18
+- Improved mobile UX for infolist tables (horizontal scroll) and table-style layouts for Pembelian, Penjualan, and Request Order item lists.
+- Added Penjualan infolist with computed totals; totals now auto-recalculate from items on create/update/delete.
+- Added inline “Tambah Member” creation modal from the Penjualan member select.
+- Refined Request Order form repeater (kategori → produk dependent select, placeholders, and auto-filled HPP/harga jual display from latest batch pricing).
+- Fixed several Filament-related 500s (import conflicts, invalid enums/classes) and moved Pembelian create/edit actions to the page header.
+
 ## 2025.12.16
 - Added Pembelian infolist for purchase records.
 - Fixed filament-export column formatting compatibility.
