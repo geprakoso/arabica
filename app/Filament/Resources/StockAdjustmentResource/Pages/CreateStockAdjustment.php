@@ -25,5 +25,18 @@ class CreateStockAdjustment extends CreateRecord
             ->sendToDatabase(Auth::user());
     }
 
-    
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->getCreateFormAction()->formId('form'),
+            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
 }
