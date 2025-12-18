@@ -10,6 +10,7 @@ use Filament\Support\Colors\Color;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use App\Filament\Pages\ChatRoomPage;
 use App\Filament\Pages\MasterDatas;
+use App\Filament\Pages\AppDashboard;
 use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
@@ -51,23 +52,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                AppDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                \App\Filament\Widgets\OpenWeatherWidget::class,
-                \App\Filament\Widgets\WelcomeWeatherWidget::class,
-                \App\Filament\Widgets\AbsensiWidget::class,
-                \App\Filament\Widgets\ActiveMembersTable::class,
-                \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
-                \App\Filament\Widgets\LowStockProductsTable::class,
-                \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
-                // \App\Filament\Widgets\PosSalesStatsOverview::class,
-                \App\Filament\Widgets\RecentPosTransactionsTable::class,
-                \App\Filament\Widgets\ServiceWidget::class,
-                \App\Filament\Widgets\TopSellingProductsTable::class,
-                \App\Filament\Widgets\TugasWidget::class,
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
