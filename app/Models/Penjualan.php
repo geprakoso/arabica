@@ -82,4 +82,19 @@ class Penjualan extends Model
     {
         return $this->hasMany(PenjualanItem::class, 'id_penjualan', 'id_penjualan');
     }
+
+    public function recalculateTotals(): void
+    {
+        $total = (float) ($this->items()
+            ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
+            ->value('total') ?? 0);
+
+        $discount = (float) ($this->diskon_total ?? 0);
+        $grandTotal = max(0, $total - $discount);
+
+        $this->forceFill([
+            'total' => $total,
+            'grand_total' => $grandTotal,
+        ])->saveQuietly();
+    }
 }

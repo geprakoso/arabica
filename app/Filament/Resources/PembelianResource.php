@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\Pembelian;
+use App\Models\PembelianItem;
 use App\Models\RequestOrder;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -26,7 +27,7 @@ use App\Filament\Resources\PembelianResource\Pages;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Grid as InfoGrid;
@@ -37,15 +38,10 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 class PembelianResource extends Resource
 {
     protected static ?string $model = Pembelian::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-receipt-refund';
-
     protected static ?string $navigationLabel = 'Pembelian';
-
     protected static ?string $pluralLabel = 'Pembelian';
-    
     protected static ?string $navigationGroup = 'Inventory';
-
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
@@ -92,6 +88,7 @@ class PembelianResource extends Resource
                                     ->relationship('karyawan', 'nama_karyawan')
                                     ->searchable()
                                     ->preload()
+                                    ->default(fn () => auth()->user()->karyawan?->id)
                                     ->prefixIcon('heroicon-m-user')
                                     ->required()
                                     ->native(false),
@@ -144,6 +141,10 @@ class PembelianResource extends Resource
                                     ->preload()
                                     ->required()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems() // Mencegah duplikasi produk
+                                    ->afterStateUpdated(function (Set $set): void {
+                                        $set('hpp', null);
+                                        $set('harga_jual', null);
+                                    })
                                     ->columnSpan([
                                         'md' => 4, // Lebar sedang
                                         'xl' => 4,
@@ -179,7 +180,24 @@ class PembelianResource extends Resource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required()
+                                    ->placeholder(function (Get $get): ?string {
+                                        $pricing = self::getLastRecordedPricingForProduct((int) $get('id_produk'));
+                                        $value = $pricing['hpp'];
+
+                                        if (is_null($value)) {
+                                            return null;
+                                        }
+
+                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
+                                    })
+                                    ->dehydrateStateUsing(function ($state, Get $get) {
+                                        if (filled($state)) {
+                                            return $state;
+                                        }
+
+                                        return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp'];
+                                    })
+                                    ->required(fn (Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp']))
                                     ->columnSpan([
                                         'md' => 2,
                                         'xl' => 2,
@@ -190,7 +208,24 @@ class PembelianResource extends Resource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required()
+                                    ->placeholder(function (Get $get): ?string {
+                                        $pricing = self::getLastRecordedPricingForProduct((int) $get('id_produk'));
+                                        $value = $pricing['harga_jual'];
+
+                                        if (is_null($value)) {
+                                            return null;
+                                        }
+
+                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
+                                    })
+                                    ->dehydrateStateUsing(function ($state, Get $get) {
+                                        if (filled($state)) {
+                                            return $state;
+                                        }
+
+                                        return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual'];
+                                    })
+                                    ->required(fn (Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
                                     ->columnSpan([
                                         'md' => 3, // Sisa kolom
                                         'xl' => 3,
@@ -295,67 +330,12 @@ class PembelianResource extends Resource
 
                 // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
                 InfoSection::make('Daftar Barang')
-                    ->compact() // Mengurangi padding agar lebih rapat
+                    // ->compact() // Mengurangi padding agar lebih rapat
                     ->schema([
-                        // 1. HEADER TABEL (Manual Grid)
-                        InfoGrid::make(12)
-                            ->extraAttributes(['class' => 'pb-2 border-b border-gray-200 dark:border-gray-700 font-bold text-sm text-gray-500'])
-                            ->schema([
-                                TextEntry::make('h_prod')->default('PRODUK')->label('')->columnSpan(5),
-                                TextEntry::make('h_cond')->default('KONDISI')->label('')->columnSpan(2)->alignCenter(),
-                                TextEntry::make('h_qty')->default('QTY')->label('')->columnSpan(1)->alignCenter(),
-                                TextEntry::make('h_hpp')->default('HARGA BELI')->label('')->columnSpan(2)->alignRight(),
-                                TextEntry::make('h_sell')->default('HARGA JUAL')->label('')->columnSpan(2)->alignRight(),
-                            ]),
-
-                        // 2. ISI TABEL (Repeatable Entry)
-                        RepeatableEntry::make('items')
-                            ->label('')
-                            ->contained(false) // KUNCI AGAR TIDAK KOTAK-KOTAK
-                            ->schema([
-                                InfoGrid::make(12)
-                                    ->extraAttributes(['class' => 'py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition']) 
-                                    ->schema([
-                                        
-                                        // Produk
-                                        InfoGroup::make([
-                                            TextEntry::make('produk.nama_produk')
-                                                ->hiddenLabel()
-                                                ->weight(FontWeight::SemiBold),
-                                        ])->columnSpan(5),
-
-                                        // Kondisi
-                                        TextEntry::make('kondisi')
-                                            ->hiddenLabel()
-                                            ->badge()
-                                            ->alignCenter()
-                                            ->color(fn (string $state): string => $state === 'baru' ? 'success' : 'warning')
-                                            ->columnSpan(2),
-
-                                        // Qty
-                                        TextEntry::make('qty')
-                                            ->hiddenLabel()
-                                            ->alignCenter()
-                                            ->columnSpan(1),
-
-                                        // HPP
-                                        TextEntry::make('hpp')
-                                            ->hiddenLabel()
-                                            ->money('IDR')
-                                            ->alignRight()
-                                            ->color('gray')
-                                            ->columnSpan(2),
-
-                                        // Harga Jual
-                                        TextEntry::make('harga_jual')
-                                            ->hiddenLabel()
-                                            ->money('IDR')
-                                            ->alignRight()
-                                            ->color('primary')
-                                            ->weight(FontWeight::Medium)
-                                            ->columnSpan(2),
-                                    ]),
-                            ]),
+                        ViewEntry::make('items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.pembelian-items-table')
+                            ->state(fn (Pembelian $record) => $record->items()->with('produk')->get()),
                     ]),
 
                 // === BAGIAN BAWAH: FOOTER & CATATAN ===
@@ -498,6 +478,31 @@ class PembelianResource extends Resource
             ->toArray();
 
         return empty($tags) ? null : implode(', ', $tags);
+    }
+
+    /**
+     * Return last recorded pricing (hpp & harga_jual) from PembelianItem for a product.
+     *
+     * @return array{hpp: float|int|null, harga_jual: float|int|null}
+     */
+    protected static function getLastRecordedPricingForProduct(?int $productId): array
+    {
+        if (! $productId) {
+            return ['hpp' => null, 'harga_jual' => null];
+        }
+
+        $productColumn = PembelianItem::productForeignKey();
+        $primaryKeyColumn = PembelianItem::primaryKeyColumn();
+
+        $latest = PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->orderByDesc($primaryKeyColumn)
+            ->first(['hpp', 'harga_jual']);
+
+        return [
+            'hpp' => $latest?->hpp,
+            'harga_jual' => $latest?->harga_jual,
+        ];
     }
 
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class RequestOrder extends Model
 {
@@ -21,13 +22,26 @@ class RequestOrder extends Model
     protected $casts = [
         'tanggal' => 'date',
     ];
+
     public static function generateRO(): string
     {
-        $lastNumber = self::where('no_ro', 'like', 'MD%')
-            ->selectRaw('MAX(CAST(SUBSTRING(no_ro, 4) AS UNSIGNED)) as max_num')
-            ->value('max_num') ?? 0;
+        return DB::transaction(function (): string {
+            $prefix = 'RO-';
 
-        return 'RO-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            $latest = self::query()
+                ->where('no_ro', 'like', $prefix . '%')
+                ->orderBy('no_ro', 'desc')
+                ->lockForUpdate()
+                ->first();
+
+            $next = 1;
+
+            if ($latest && preg_match('/^' . preg_quote($prefix, '/') . '(\\d+)$/', (string) $latest->no_ro, $matches)) {
+                $next = ((int) $matches[1]) + 1;
+            }
+
+            return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        });
     }
 
     public function items()

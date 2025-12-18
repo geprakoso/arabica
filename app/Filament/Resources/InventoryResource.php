@@ -21,6 +21,11 @@ use Filament\Infolists\Components\ViewEntry;
 use App\Filament\Resources\InventoryResource\Pages;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\Grid;
+use Filament\Support\Enums\FontFamily;
+use Filament\Support\Enums\FontWeight;
 
 class InventoryResource extends Resource
 {
@@ -121,56 +126,90 @@ class InventoryResource extends Resource
         return self::applyInventoryScopes(parent::getEloquentQuery());
     }
 
+
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
+            ->columns(3) // Layout utama 3 kolom
             ->schema([
-                InfolistSection::make('Batch Pembelian Aktif')
-                    ->compact()
-                    ->icon('heroicon-o-archive-box')
-                    ->description('Batch pembelian aktif')
-                    ->schema([
-                        TextEntry::make('batch_cards')
-                            ->view('filament.infolists.components.inventory-batches')
-                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batches']),
-                    ])
-                    ->columnSpan(2),
 
-                InfolistSection::make('Detail Produk')
-                    ->compact()
-                    ->icon('heroicon-o-archive-box')
+                // === KOLOM KIRI: DAFTAR BATCH (Main Content) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2])
                     ->schema([
-                        TextEntry::make('nama_produk')
-                            ->label('Produk')
-                            ->extraAttributes(['class' => 'font-bold'])
-                            ->formatStateUsing(fn($state) => Str::title($state))
-                            ->size(TextEntrySize::Medium),
-                        InfolistSection::make('')
+                        Section::make('Batch Pembelian Aktif')
+                            ->description('Daftar batch stok yang masih tersedia.')
+                            ->icon('heroicon-m-clipboard-document-list')
                             ->schema([
-                                TextEntry::make('brand.nama_brand')
-                                    ->label('Brand')
-                                    ->formatStateUsing(fn($state) => Str::title($state))
-                                    ->color('gray')
-                                    ->placeholder('-'),
-                                TextEntry::make('kategori.nama_kategori')
-                                    ->label('Kategori')
-                                    ->formatStateUsing(fn($state) => Str::title($state))
-                                    ->color('gray')
-                                    ->placeholder('-'),
-                                TextEntry::make('qty_display')
-                                    ->label('Qty')
-                                    ->badge()
-                                    ->state(fn(Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty'])),
-                                TextEntry::make('batch_count_display')
-                                    ->label(' Batch Aktif')
-                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batch_count'])
-                                    ->badge()
-                                    ->color('success'),
+                                // Menggunakan view custom Anda, pastikan view-nya sudah handle loop batch dengan cantik
+                                TextEntry::make('batch_cards')
+                                    ->hiddenLabel()
+                                    ->view('filament.infolists.components.inventory-batches')
+                                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batches']),
                             ])
-                            ->columns(['lg' => 2]),
-                    ])->columnSpan(1),
-            ])
-            ->columns(3);
+                            ->compact(), // Compact agar tidak terlalu banyak whitespace
+                    ]),
+
+                // === KOLOM KANAN: RINGKASAN PRODUK (Sidebar) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+
+                        // Section 1: Identitas & Total Stok
+                        Section::make('Inventory Summary')
+                            ->icon('heroicon-m-cube')
+                            ->schema([
+                                TextEntry::make('nama_produk')
+                                    ->label('Nama Produk')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->formatStateUsing(fn ($state) => Str::title($state))
+                                    ->icon('heroicon-m-tag'),
+
+                                // Grid untuk Brand & Kategori
+                                Grid::make(2)
+                                    ->schema([
+                                        TextEntry::make('brand.nama_brand')
+                                            ->label('Brand')
+                                            ->icon('heroicon-m-star')
+                                            ->placeholder('-'),
+
+                                        TextEntry::make('kategori.nama_kategori')
+                                            ->label('Kategori')
+                                            ->badge()
+                                            ->color('gray')
+                                            ->placeholder('-'),
+                                    ]),
+
+                                // Highlight Total Qty
+                                TextEntry::make('qty_display')
+                                    ->label('Total Stok Tersedia')
+                                    ->state(fn (Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty']))
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('primary')
+                                    ->icon('heroicon-m-circle-stack'), // Tumpukan koin/barang
+
+                                // Highlight Batch Count
+                                TextEntry::make('batch_count_display')
+                                    ->label('Jumlah Batch Aktif')
+                                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batch_count'])
+                                    ->badge()
+                                    ->color('success')
+                                    ->formatStateUsing(fn ($state) => $state . ' Batch'),
+                            ]),
+                        
+                        // Opsional: Section Info Tambahan (jika ada)
+                        Section::make('Metadata')
+                            ->compact()
+                            ->schema([
+                                TextEntry::make('sku') // Asumsi ada SKU
+                                    ->label('Kode SKU')
+                                    ->fontFamily(FontFamily::Mono)
+                                    ->copyable(),
+                            ]),
+                    ]),
+            ]);
     }
 
     // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif
