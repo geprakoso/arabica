@@ -11,6 +11,20 @@ class CreatePembelian extends CreateRecord
 {
     protected static string $resource = PembelianResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->getCreateFormAction()->formId('form'),
+            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
     protected function getCreatedNotificationTitle(): ?string
     {
         return 'Pembelian berhasil dibuat. Silakan tambah produk melalui tabel di bawah.';
@@ -36,5 +50,4 @@ class CreatePembelian extends CreateRecord
         return $data;
     }
 }
-
 

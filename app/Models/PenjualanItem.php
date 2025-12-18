@@ -43,6 +43,7 @@ class PenjualanItem extends Model
 
         static::created(function (PenjualanItem $item): void {
             self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
+            self::recalculatePenjualanTotals($item);
         });
 
         static::updated(function (PenjualanItem $item): void {
@@ -54,6 +55,7 @@ class PenjualanItem extends Model
             }
 
             self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
+            self::recalculatePenjualanTotals($item);
         });
 
         static::deleted(function (PenjualanItem $item): void {
@@ -61,6 +63,7 @@ class PenjualanItem extends Model
             $originalQty = (int) $item->getOriginal('qty');
 
             self::applyStockMutation($originalBatchId, $originalQty);
+            self::recalculatePenjualanTotals($item);
         });
     }
 
@@ -156,5 +159,22 @@ class PenjualanItem extends Model
         if (! $item->kondisi) {
             $item->kondisi = $batch->kondisi;
         }
+    }
+
+    protected static function recalculatePenjualanTotals(PenjualanItem $item): void
+    {
+        $penjualanId = (int) ($item->id_penjualan ?? 0);
+
+        if (! $penjualanId) {
+            return;
+        }
+
+        $penjualan = Penjualan::query()->find($penjualanId);
+
+        if (! $penjualan) {
+            return;
+        }
+
+        $penjualan->recalculateTotals();
     }
 }

@@ -80,12 +80,16 @@ class ItemsRelationManager extends RelationManager
                 ->label('HPP')
                 ->disabled()
                 ->numeric()
+                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                ->stripCharacters([',', '.', 'Rp', ' '])
                 ->minValue(0)
                 ->helperText('Otomatis mengikuti batch terpilih.')
                 ->required(),
             TextInput::make('harga_jual')
                 ->label('Harga Jual')
                 ->numeric()
+                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                ->stripCharacters([',', '.', 'Rp', ' '])
                 ->minValue(0)
                 ->required(),
             Select::make('kondisi')
