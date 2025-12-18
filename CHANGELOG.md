@@ -1,131 +1,132 @@
-# Changelog
+# Catatan Perubahan (Changelog)
 
-All notable changes to this project, reconstructed from git history. Versioning now follows CalVer (`YYYY.MM.DD`) while the app is pre-1.0. Entries are chronological with the latest changes first.
+Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
 ## 2025.12.18
-- Improved mobile UX for infolist tables (horizontal scroll) and table-style layouts for Pembelian, Penjualan, and Request Order item lists.
-- Added Penjualan infolist with computed totals; totals now auto-recalculate from items on create/update/delete.
-- Added inline “Tambah Member” creation modal from the Penjualan member select.
-- Refined Request Order form repeater (kategori → produk dependent select, placeholders, and auto-filled HPP/harga jual display from latest batch pricing).
-- Fixed several Filament-related 500s (import conflicts, invalid enums/classes) and moved Pembelian create/edit actions to the page header.
+- Meningkatkan **UX mobile** untuk tabel `infolist` (scroll horizontal) dan tata letak bergaya tabel untuk daftar item **Pembelian**, **Penjualan**, dan **Request Order**.
+- Menambahkan `infolist` **Penjualan** dengan total yang dikalkulasi (*computed totals*); total sekarang dihitung ulang otomatis berdasarkan item saat `create`, `update`, atau `delete`.
+- Menambahkan modal pembuatan "Tambah Member" secara *inline* dari menu select member di **Penjualan**.
+- Menyempurnakan `repeater` form **Request Order** (dependensi kategori → produk, *placeholders*, dan tampilan HPP/harga jual yang terisi otomatis dari harga *batch* terbaru).
+- Memperbaiki beberapa error `500` terkait Filament (konflik import, enum/class yang tidak valid) dan memindahkan aksi `create/edit` **Pembelian** ke header halaman.
+- Memindahkan aksi `create` & `edit` **Stock Adjustment** / **Stock Opname** ke header halaman (menghapus tombol aksi di bawah form) dan meningkatkan alur `create` Stock Adjustment agar redirect ke halaman edit untuk penambahan item.
 
 ## 2025.12.16
-- Added Pembelian infolist for purchase records.
-- Fixed filament-export column formatting compatibility.
-- Corrected plural labels and add-button text; repaired absensi widgets and miscellaneous bugs.
+- Menambahkan `infolist` **Pembelian** untuk catatan pembelian (*purchase records*).
+- Memperbaiki kompatibilitas pemformatan kolom `filament-export`.
+- Memperbaiki label jamak (*plural labels*) dan teks tombol tambah; memperbaiki widget absensi dan bug minor lainnya.
 
 ## 2025.12.15
-- Added Docker configuration and MySQL port adjustments.
-- Introduced modal helper view support.
-- Fixed widgets (including stock adjustment), infolist downloads, export buttons, plural labels, and panel provider wiring.
-- Merged ongoing keuangan and Laporan-Cuti branches.
+- Menambahkan konfigurasi **Docker** dan penyesuaian port **MySQL**.
+- Memperkenalkan dukungan `view helper` untuk modal.
+- Memperbaiki widget (termasuk stock adjustment), unduhan `infolist`, tombol ekspor, label jamak, dan *wiring* panel provider.
+- Menggabungkan (*merge*) branch **Keuangan** dan **Laporan-Cuti** yang sedang berjalan.
 
 ## 2025.12.14
-- Fixed accounting export formatting and merged keuangan updates.
+- Memperbaiki pemformatan ekspor akuntansi dan *merge* pembaruan keuangan.
 
 ## 2025.12.13
-- Updated financial navigation.
-- Added pengajuan cuti (leave request) flow and export fixes; merged Laporan-Cuti changes.
+- Memperbarui navigasi **Finansial**.
+- Menambahkan alur pengajuan cuti dan perbaikan ekspor; *merge* perubahan **Laporan-Cuti**.
 
 ## 2025.12.11
-- Minor fixes before switching to brand master data; refined master data return handling.
-- Continued work on laporan keuangan (financial reports).
+- Perbaikan minor sebelum beralih ke master data **Brand**; menyempurnakan penanganan *return* pada master data.
+- Melanjutkan pengerjaan laporan keuangan.
 
 ## 2025.12.10
-- Fixed tabs in pengaturan keuangan and infolist issues.
-- Addressed navigation for users and role-access (403) errors; stabilized role handling after revert.
+- Memperbaiki tab pada pengaturan keuangan dan masalah pada `infolist`.
+- Menangani navigasi untuk *user* dan error akses role (`403`); menstabilkan penanganan role setelah *revert*.
 
 ## 2025.12.09
-- Added jenis akun and kode akun (account types/codes) to keuangan.
-- Marked keuangan module as functionally complete pending breadcrumb fixes.
+- Menambahkan **Jenis Akun** dan **Kode Akun** ke modul keuangan.
+- Menandai modul keuangan sebagai selesai secara fungsional, menunggu perbaikan *breadcrumb*.
 
 ## 2025.12.08
-- Continued work on jenis akun/kode akun for financial settings.
+- Melanjutkan pengerjaan jenis akun/kode akun untuk pengaturan keuangan.
 
 ## 2025.12.07
-- Built dashboard views and prepared for role policy changes.
-- Enforced view policy for active attendance records; fixed role handling in main and related widgets.
+- Membangun tampilan **Dashboard** dan persiapan perubahan kebijakan role (*policy*).
+- Menerapkan `view policy` untuk catatan absensi aktif; memperbaiki penanganan role di widget utama dan widget terkait.
 
 ## 2025.12.05
-- UI adjustments and polish.
+- Penyesuaian dan pemolesan UI (*Polish*).
 
 ## 2025.12.04
-- Fixed Filament Shield roles; refined POS dashboard and karyawan widgets.
-- Added weather widget; merged reporting branch.
+- Memperbaiki role **Filament Shield**; menyempurnakan dashboard POS dan widget karyawan.
+- Menambahkan widget cuaca; *merge* branch reporting.
 
 ## 2025.12.03
-- Set updated UI look and feel; aligned master data navigation.
-- Merged main branch changes.
+- Menetapkan tampilan dan nuansa UI baru; menyelaraskan navigasi master data.
+- *Merge* perubahan dari branch `main`.
 
 ## 2025.12.01
-- Added documentation and layout tweaks (navigation, layout adjustments through lembur).
-- Updated column styles; refined POS return handling and totals.
-- Improved navigation bar (including draggable sidebar), modernized navigation, icons, and minor infolist/product fixes.
-- Merged POS and pengaturan-navigasi branches.
+- Menambahkan dokumentasi dan penyesuaian tata letak (navigasi, layout adjustments hingga lembur).
+- Memperbarui gaya kolom; menyempurnakan penanganan *return* dan total pada **POS**.
+- Meningkatkan **Navigation Bar** (termasuk sidebar yang dapat digeser/*draggable*), memodernisasi navigasi, ikon, dan perbaikan minor `infolist`/produk.
+- *Merge* branch **POS** dan **Pengaturan-Navigasi**.
 
 ## 2025.11.30
-- Updated navigation bar with draggable sidebar navigation.
+- Memperbarui *navigation bar* dengan sidebar navigasi yang dapat digeser.
 
 ## 2025.11.29
-- Improved absensi wizard and check-in logic.
+- Meningkatkan *wizard* **Absensi** dan logika *check-in*.
 
 ## 2025.11.28
-- Added service scheduling, shipping enhancements, and multi-app POS improvements.
-- Merged POS branch back to main.
+- Menambahkan penjadwalan servis, peningkatan pengiriman, dan peningkatan **POS** multi-aplikasi.
+- *Merge* branch **POS** kembali ke `main`.
 
 ## 2025.11.27
-- Prep commits before branching for task scheduling; final push for existing work.
+- Commit persiapan sebelum *branching* untuk penjadwalan tugas (*task scheduling*); push terakhir untuk pekerjaan yang ada.
 
 ## 2025.11.26
-- Removed committed npm cache.
-- Added lembur (overtime) handling.
-- Merged inventory, sales, and purchasing workstreams with absensi updates.
+- Menghapus cache `npm` yang ikut terkomit.
+- Menambahkan penanganan **Lembur** (*Overtime*).
+- *Merge* alur kerja inventaris, penjualan, dan pembelian dengan pembaruan absensi.
 
 ## 2025.11.24
-- Added absensi-libur-cuti features and reordered leave/holiday reasons.
-- Improved desktop sidebar collapse behaviour.
+- Menambahkan fitur **Absensi-Libur-Cuti** dan mengurutkan ulang alasan cuti/libur.
+- Meningkatkan perilaku *collapse* sidebar pada desktop.
 
 ## 2025.11.23
-- Added photo capture for attendance and attendance infolist view.
+- Menambahkan pengambilan foto (*photo capture*) untuk absensi dan tampilan `infolist` absensi.
 
 ## 2025.11.22
-- Upgraded to Filament Shield for roles/permissions.
-- Merged Absensi branch; adjusted stock opname; auto-marked alpha for late attendance.
+- Upgrade ke **Filament Shield** untuk *roles/permissions*.
+- *Merge* branch **Absensi**; penyesuaian stock opname; otomatis menandai alpha untuk absensi terlambat.
 
 ## 2025.11.21
-- Added currency plugin and company profile page.
-- Auto-selected logged-in employee, time, and date with UTC+7 handling.
+- Menambahkan plugin mata uang (*currency*) dan halaman **Company Profile**.
+- Otomatis memilih karyawan yang sedang login, waktu, dan tanggal dengan penanganan UTC+7.
 
 ## 2025.11.20
-- Renamed POS module; merged POS branch to main.
-- Added sales and purchase reports; auto-fetch longitude/latitude.
+- Rename modul **POS**; *merge* branch **POS** ke `main`.
+- Menambahkan laporan penjualan dan pembelian; *auto-fetch* longitude/latitude.
 
 ## 2025.11.19
-- Added penjualan (sales) creation and flow.
-- Enhanced Chatify group chat with member list and avatars; installed media manager prepping for POS.
+- Menambahkan pembuatan **Penjualan** dan alurnya.
+- Meningkatkan obrolan grup **Chatify** dengan daftar anggota dan avatar; menginstal media manager sebagai persiapan POS.
 
 ## 2025.11.18
-- Added pembelian and inventory features; adjusted akun transaksi and master data alignment.
-- Continued inventory improvements and introduced chat room (Chatify) prototype.
+- Menambahkan fitur **Pembelian** dan **Inventaris**; menyesuaikan akun transaksi dan penyelarasan master data.
+- Melanjutkan perbaikan inventaris dan memperkenalkan prototipe ruang obrolan (**Chatify**).
 
 ## 2025.11.16
-- Implemented akun transaksi processing.
+- Mengimplementasikan pemrosesan **Akun Transaksi**.
 
 ## 2025.11.15
-- Added roles & permissions setup, user registration, and karyawan login/role selection page.
-- Introduced request order flow.
-- Merged master-data and inventory branches.
+- Menambahkan pengaturan *roles & permissions*, pendaftaran pengguna, dan halaman login/pemilihan role untuk karyawan.
+- Memperkenalkan alur **Request Order**.
+- *Merge* branch **Master-Data** dan **Inventaris**.
 
 ## 2025.11.14
-- Added member, supplier, and agent relationship management.
-- Added gudang (warehouse) master data and unified table layouts with profile pictures.
-- Introduced role/permission/authentication foundation.
+- Menambahkan manajemen hubungan member, supplier, dan agen.
+- Menambahkan master data **Gudang** dan menyatukan tata letak tabel dengan foto profil.
+- Memperkenalkan fondasi *role/permission/authentication*.
 
 ## 2025.11.13
-- Completed core master data for brand, jasa, kategori, and produk.
+- Menyelesaikan master data inti untuk **Brand**, **Jasa**, **Kategori**, dan **Produk**.
 
 ## 2025.11.12
-- Added initial master data scaffolding.
+- Menambahkan kerangka dasar (*scaffolding*) master data awal.
 
 ## 2025.11.11
-- Created migrations for produk, jasa, brand, and kategori tables (project start).
+- Membuat migrasi (*migrations*) untuk tabel produk, jasa, brand, dan kategori (awal proyek).
