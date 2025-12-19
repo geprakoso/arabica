@@ -2,32 +2,38 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
+use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
 use App\Models\PenjadwalanTugas;
 use App\Enums\StatusTugas;
-use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
+use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
+use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Table;
 
-class TugasWidget extends BaseWidget
+class TugasWidget extends AdvancedTableWidget
 {
     use HasWidgetShield;
-    protected static ?string $heading = 'Tugas Terbaru';
+    protected ?string $placeholderHeight = '18rem';
     protected int|string|array $columnSpan = '1/2';
     protected int|string|array $contentHeight = 'auto';
     protected int|string|array $recordCount = 5;
     protected static ?int $sort = 9;
 
+    protected static ?string $icon = 'hugeicons-sticky-note-02';
+    protected static ?string $heading = 'Tugas Terbaru';
+    protected static ?string $iconColor = 'primary';
+    protected static ?string $description = 'Daftar tugas terbaru yang sedang berjalan.';
+
     public function table(Table $table): Table
     {
         return $table
+            ->heading('')
             ->query(
                 PenjadwalanTugas::query()
                     ->latest('deadline')
             )
             ->paginated(false)
-            ->recordUrl(fn ($record) => PenjadwalanTugasResource::getUrl('view', ['record' => $record]))
             ->columns([
                 Tables\Columns\TextColumn::make('judul')
                     ->label('Judul')
@@ -51,6 +57,16 @@ class TugasWidget extends BaseWidget
                     ->label('Deadline')
                     ->date('d M Y')
                     ->sortable(),
+            ])
+            ->recordAction('view')
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label(false)
+                    ->icon(null)
+                    ->slideOver()
+                    ->modalHeading(fn (PenjadwalanTugas $record) => $record->judul)
+                    ->modalWidth('6xl')
+                    ->infolist(fn (Infolist $infolist) => PenjadwalanTugasResource::infolist($infolist)),
             ]);
     }
 }

@@ -14,6 +14,8 @@ class OpenWeatherWidget extends Widget
 
     protected static ?string $heading = 'Cuaca Saat Ini';
 
+    protected ?string $placeholderHeight = '14rem';
+
     protected int|string|array $columnSpan = [
         'default' => 1,
         'md' => 1,

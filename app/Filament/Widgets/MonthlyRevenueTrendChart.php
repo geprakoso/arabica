@@ -14,6 +14,7 @@ class MonthlyRevenueTrendChart extends AdvancedChartWidget
     use HasWidgetShield;
     protected static ?int $sort = 3;
     protected static ?string $heading = 'Pendapatan 6 Bulan Terakhir';
+    protected ?string $placeholderHeight = '22rem';
 
     protected static ?string $description = 'Melihat tren kasir POS dari waktu ke waktu';
 

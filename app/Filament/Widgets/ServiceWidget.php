@@ -2,24 +2,29 @@
 
 namespace App\Filament\Widgets;
 
+use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
+use App\Filament\Resources\Penjadwalan\PenjadwalanServiceResource;
 use App\Models\PenjadwalanService;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 
-class ServiceWidget extends BaseWidget
+class ServiceWidget extends AdvancedTableWidget
 {
     use HasWidgetShield;
-    protected static ?string $heading = 'Service Terbaru';
-    protected int|string|array $columnSpan = '1/2';
+    protected ?string $placeholderHeight = '16rem';
     protected static ?int $sort = 8;
-    protected int|string|array $contentHeight = 'auto';
-    protected int|string|array $recordCount = 5;
+
+    protected static ?string $icon = 'hugeicons-wrench-01';
+    protected static ?string $heading = 'Service Pending';
+    protected static ?string $iconColor = 'warning';
+    protected static ?string $description = 'Daftar service yang sedang menunggu proses.';
 
     public function table(Table $table): Table
     {
         return $table
+            ->heading('')
             ->query(
                 PenjadwalanService::query()
                     ->latest('created_at')
@@ -32,30 +37,30 @@ class ServiceWidget extends BaseWidget
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('member.nama_member')
-                    ->label('Pelanggan')
-                    ->searchable(),
+                    ->label('Pelanggan'),
                 Tables\Columns\TextColumn::make('nama_perangkat')
                     ->label('Perangkat')
-                    ->limit(25)
-                    ->searchable(),
+                    ->limit(25),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn (?string $state): string => match ($state ?? 'unknown') {
                         'pending' => 'Antrian',
                         'diagnosa' => 'Diagnosa',
                         'waiting_part' => 'Wait Part',
                         'progress' => 'Proses',
                         'done' => 'Selesai',
                         'cancel' => 'Batal',
-                        default => $state,
+                        'unknown' => 'Tidak diketahui',
+                        default => (string) $state,
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state ?? 'unknown') {
                         'pending' => 'gray',
                         'diagnosa' => 'info',
                         'waiting_part' => 'warning',
                         'progress' => 'info',
                         'done' => 'success',
                         'cancel' => 'danger',
+                        'unknown' => 'gray',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('technician.name')
@@ -66,6 +71,16 @@ class ServiceWidget extends BaseWidget
                     ->label('Estimasi')
                     ->date('d M')
                     ->sortable(),
+            ])
+            ->recordAction('view')
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label(false)
+                    ->icon(null)
+                    ->slideOver()
+                    ->modalHeading(fn (PenjadwalanService $record) => $record->no_resi)
+                    ->modalWidth('6xl')
+                    ->infolist(fn (Infolist $infolist) => PenjadwalanServiceResource::infolist($infolist)),
             ]);
     }
 }

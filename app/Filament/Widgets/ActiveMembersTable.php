@@ -6,28 +6,34 @@ use App\Models\Member;
 use App\Models\Penjualan;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use App\Filament\Resources\MasterData\MemberResource;
 
 class ActiveMembersTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
     protected static ?string $pollingInterval = null;
     protected static ?int $sort = 4;
+    protected ?string $placeholderHeight = '16rem';
+
+    protected static ?string $icon = 'hugeicons-ai-user';
+    protected static ?string $heading = 'Member Aktif';
+    protected static ?string $iconColor = 'primary';
+    protected static ?string $description = 'Daftar member yang paling aktif belanja bulan ini.';
 
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Member Belanja Bulan Ini')
+            ->heading('')
             ->query($this->getTableQuery())
             ->columns([
                 Tables\Columns\TextColumn::make('nama_member')
                     ->label('Member')
-                    ->searchable()
-                    ->wrap()
-                    ->description(fn($record) => $record->no_hp ? 'Telp: ' . $record->no_hp : null),
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('orders_count')
                     ->label('Transaksi')
                     ->badge()
@@ -42,7 +48,17 @@ class ActiveMembersTable extends AdvancedTableWidget
                     ->date()
                     ->sortable(),
             ])
-            ->paginated(10);
+            ->recordAction('view')
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label(false)
+                    ->icon(null)
+                    ->slideOver()
+                    ->modalHeading(fn (Member $record) => $record->nama_member)
+                    ->modalWidth('6xl')
+                    ->infolist(fn (Infolist $infolist) => MemberResource::infolist($infolist)),
+            ])
+            ->paginated(false);
     }
 
     protected function getTableQuery(): Builder

@@ -20,6 +20,7 @@ class AdvancedStatsOverviewWidget extends BaseWidget
     use HasWidgetShield;
     // Mengatur urutan tampilan widget di dashboard (urutan ke-3)
     protected static ?int $sort = 1;
+    protected ?string $placeholderHeight = '12rem';
 
     // [FUNGSI UTAMA] Ini fungsi yang dipanggil Filament untuk merender statistik
     protected function getStats(): array
