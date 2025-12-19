@@ -40,7 +40,7 @@ class AbsensiResource extends Resource
 
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
     protected static ?string $navigationGroup = 'Absensi';
-    protected static ?string $plurelLabel = 'Absensi';
+    protected static ?string $pluralLabel = 'Absensi';
     protected static ?string $navigationLabel = 'Absen';
 
     public static function canViewAny(): bool
