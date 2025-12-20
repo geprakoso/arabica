@@ -8,14 +8,18 @@ use App\Models\Produk;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
+use Filament\Infolists\Infolist;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use App\Filament\Resources\InventoryResource;
 
 class TopSellingProductsTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
+    protected static ?int $sort = 5;
     protected static ?string $pollingInterval = null;
+    protected ?string $placeholderHeight = '16rem';
 
     protected static ?string $icon = 'heroicon-o-chevron-double-up';
     protected static ?string $heading = 'Produk Terlaris Bulan Ini';
@@ -26,12 +30,13 @@ class TopSellingProductsTable extends AdvancedTableWidget
     {
         return $table
             ->heading('')
-            ->query($this->getTableQuery())
+            ->query($this->getTableQuery()
+                ->limit(5)
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('nama_produk')
                     ->label('Produk')
-                    ->wrap()
-                    ->description(fn (Produk $record) => $record->sku ? 'SKU: ' . $record->sku : null),
+                    ->limit(35),
                 Tables\Columns\TextColumn::make('total_qty')
                     ->label('Qty')
                     ->badge()
@@ -47,7 +52,17 @@ class TopSellingProductsTable extends AdvancedTableWidget
                     ->sortable(),
             ])
             ->defaultSort('total_qty', 'desc')
-            ->paginated(5);
+            ->recordAction('view')
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label(false)
+                    ->icon(null)
+                    ->slideOver()
+                    ->modalHeading(fn (Produk $record) => $record->nama_produk)
+                    ->modalWidth('6xl')
+                    ->infolist(fn (Infolist $infolist) => InventoryResource::infolist($infolist)),
+            ])
+            ->paginated(false);
     }
 
     protected function getTableQuery(): Builder

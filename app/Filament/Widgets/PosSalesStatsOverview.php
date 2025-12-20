@@ -14,7 +14,9 @@ use Illuminate\Support\Collection;
 class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
 {
     use HasWidgetShield;
+    protected static ?int $sort = 2;
     protected static ?string $pollingInterval = null;
+    protected ?string $placeholderHeight = '12rem';
 
     protected function getStats(): array
     {

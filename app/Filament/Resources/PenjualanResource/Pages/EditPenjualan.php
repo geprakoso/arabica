@@ -17,4 +17,16 @@ class EditPenjualan extends EditRecord
             return parent::handleRecordUpdate($record, $data);
         });
     }
+        protected function getHeaderActions(): array
+    {
+        return [
+            $this->getSaveFormAction()->formId('form'),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
 }

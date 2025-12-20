@@ -44,9 +44,9 @@ class LaporanInputTransaksiResource extends Resource
 
     // Konfigurasi Navigasi & Label
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
-    protected static ?string $navigationLabel = 'Laporan Keuangan';
-    protected static ?string $pluralModelLabel = 'Laporan Keuangan';
-    protected static ?string $slug = 'laporan-keuangan';
+    protected static ?string $navigationLabel = 'Laporan Input Transaksi';
+    protected static ?string $pluralModelLabel = 'Laporan Input Transaksi';
+    protected static ?string $slug = 'laporan-input-transaksi';
     protected static ?int $navigationSort = 2;
     protected static ?string $navigationGroup = 'Reports';
 
@@ -202,10 +202,7 @@ class LaporanInputTransaksiResource extends Resource
                     ->defaultFormat('xlsx')
                     ->withHiddenColumns()
                     ->formatStates([
-                        'nominal_transaksi' => fn (InputTransaksiToko $record) => (float) $record->nominal_transaksi,
-                    ])
-                    ->columnFormats([
-                        'nominal_transaksi' => '[$Rp-421] #,##0.00',
+                        'nominal_transaksi' => fn (InputTransaksiToko $record) => 'Rp ' . number_format((float) $record->nominal_transaksi, 2, ',', '.'),
                     ])
                     ->disableAdditionalColumns()
                     ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
@@ -225,10 +222,7 @@ class LaporanInputTransaksiResource extends Resource
                         ->defaultFormat('xlsx')
                         ->withHiddenColumns()
                         ->formatStates([
-                            'nominal_transaksi' => fn (InputTransaksiToko $record) => (float) $record->nominal_transaksi,
-                        ])
-                        ->columnFormats([
-                            'nominal_transaksi' => '[$Rp-421] #,##0.00',
+                            'nominal_transaksi' => fn (InputTransaksiToko $record) => 'Rp ' . number_format((float) $record->nominal_transaksi, 2, ',', '.'),
                         ])
                         ->disableAdditionalColumns()
                         ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),

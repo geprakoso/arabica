@@ -30,6 +30,8 @@ class StockOpnameResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory';
 
+    protected static ?string $pluralLabel = 'Stock Opname';
+
     protected static ?int $navigationSort = 50;
 
     public static function form(Form $form): Form
@@ -90,6 +92,7 @@ class StockOpnameResource extends Resource
             ->actions([
                 Action::make('post')
                     ->label('Posting')
+                    ->button()
                     ->requiresConfirmation()
                     ->visible(fn (StockOpname $record) => ! $record->isPosted())
                     ->action(fn (StockOpname $record) => $record->post(Auth::user()))

@@ -24,6 +24,8 @@ class PenjualanReportResource extends Resource
 
     protected static ?string $navigationLabel = 'Laporan Penjualan';
 
+    protected static ?string $pluralLabel = 'Laporan Penjualan';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form

@@ -4,6 +4,8 @@ namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\MemberResource\Pages;
 use App\Models\Member;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Group;
@@ -38,6 +40,7 @@ class MemberResource extends Resource
     protected static ?string $navigationIcon = 'hugeicons-contact';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationParentItem = 'User & Supplier';
+    protected static ?string $pluralLabel = 'Member';
     protected static ?string $navigationLabel = 'Member';
     protected static ?int $navigationSort = 5;
 
@@ -263,12 +266,33 @@ class MemberResource extends Resource
             ->filters([
                 //
             ])
+            ->headerActions([
+                FilamentExportHeaderAction::make('export')
+                    ->label('Export')
+                    ->hidden(true)
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('gray')
+                    ->fileName('member')
+                    ->defaultFormat('xlsx')
+                    ->withHiddenColumns()
+                    ->disableAdditionalColumns()
+                    ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    FilamentExportBulkAction::make('export_selected')
+                        ->label('Export (Pilih Baris)')
+                        ->icon('heroicon-m-arrow-down-tray')
+                        ->color('gray')
+                        ->fileName('member-terpilih')
+                        ->defaultFormat('xlsx')
+                        ->withHiddenColumns()
+                        ->disableAdditionalColumns()
+                        ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

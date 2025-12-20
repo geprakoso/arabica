@@ -30,6 +30,8 @@ class StockAdjustmentResource extends Resource
     // protected static ?string $navigationParentItem = 'Inventory';
     protected static ?int $navigationSort = 51;
 
+    protected static ?string $pluralLabel = 'Penyesuaian Stok';
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -88,6 +90,8 @@ class StockAdjustmentResource extends Resource
             ->actions([
                 Action::make('post')
                     ->label('Posting')
+                    // ->badge()
+                    ->button()
                     ->visible(fn(StockAdjustment $record) => ! $record->isPosted())
                     ->requiresConfirmation()
                     ->action(fn(StockAdjustment $record) => $record->post(Auth::user()))

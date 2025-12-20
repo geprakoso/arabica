@@ -13,7 +13,9 @@ class ListSuppliers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Tambah Supplier')
+                ->icon('heroicon-m-plus'),
         ];
     }
 }

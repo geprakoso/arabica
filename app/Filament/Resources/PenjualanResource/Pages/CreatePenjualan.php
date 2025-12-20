@@ -44,4 +44,19 @@ class CreatePenjualan extends CreateRecord
             return parent::handleRecordCreation($data);
         });
     }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->getCreateFormAction()->formId('form'),
+            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
 }

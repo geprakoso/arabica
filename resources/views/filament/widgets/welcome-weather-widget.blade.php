@@ -1,6 +1,6 @@
 <x-filament-widgets::widget>
     {{-- Card luar untuk widget --}}
-    <div class="fi-w-welcome-weather-widget rounded-xl bg-white shadow-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6">
+    <div class="fi-w-welcome-weather-widget rounded-xl bg-white ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6 min-h-[220px] h-full">
         
         <div class="flex items-center justify-between space-x-4">
             {{-- Bagian Kiri: Welcome Message --}}

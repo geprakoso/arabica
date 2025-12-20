@@ -38,6 +38,7 @@ class SupplierResource extends Resource
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationParentItem = 'User & Supplier';
     protected static ?string $navigationLabel = 'Supplier';
+    protected static ?string $pluralLabel = 'Supplier';
     protected static ?int $navigationSort = 6;
 
     public static function form(Form $form): Form

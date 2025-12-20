@@ -13,7 +13,8 @@ class AbsensiWidget extends Widget
 {
     use HasWidgetShield;
     protected static string $view = 'filament.widgets.absensi-widget';
-    protected static ?int $sort = 2;
+    protected static ?int $sort = -7;
+    protected ?string $placeholderHeight = '16rem';
 
     protected int | string | array $columnSpan = '1/2';
     

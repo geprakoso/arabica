@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Filament\Pages\AppDashboard;
 
 Route::get('/', function () {
     if (! Auth::check()) {
@@ -11,18 +12,18 @@ Route::get('/', function () {
     $user = Auth::user();
 
     if ($user->hasRole('super_admin')) {
-        return redirect()->route('filament.admin.pages.dashboard');
+        return redirect()->route(AppDashboard::getRouteName('admin'));
     }
 
     if ($user->hasRole('kasir')) {
-        return redirect()->route('filament.pos.pages.dashboard');
+        return redirect()->route(AppDashboard::getRouteName('pos'));
     }
 
     if ($user->hasRole('akunting')) {
-        return redirect()->route('filament.akunting.pages.dashboard');
+        return redirect()->route(AppDashboard::getRouteName('akunting'));
     }
 
-    return redirect()->route('filament.admin.pages.dashboard');
+    return redirect()->route(AppDashboard::getRouteName('admin'));
 })->name('home');
 
 // POS receipt preview/print

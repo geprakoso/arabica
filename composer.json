@@ -17,6 +17,7 @@
         "codeat3/blade-eos-icons": "^1.15",
         "eightynine/filament-advanced-widgets": "^3.0",
         "eightynine/filament-reports": "^3.1",
+        "eightynine/filament-excel-import": "^3.1",
         "emmanpbarrameda/filament-take-picture-field": "^1.1",
         "filament/filament": "3.3",
         "icetalker/filament-table-repeater": "^1.4",
@@ -31,6 +32,7 @@
         "tomatophp/filament-media-manager": "^1.1"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^3.16",
         "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",

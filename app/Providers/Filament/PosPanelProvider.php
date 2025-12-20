@@ -5,20 +5,33 @@ namespace App\Providers\Filament;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Illuminate\Support\Carbon;
 use Filament\Support\Colors\Color;
-use Filament\Http\Middleware\Authenticate;
+use Illuminate\Support\Facades\Auth;
+use App\Filament\Pages\AppDashboard;
+use App\Filament\Pages\StockInventory;
+use Illuminate\Support\Facades\Storage;
+use Orion\FilamentGreeter\GreeterPlugin;
+use Shanerbaner82\PanelRoles\PanelRoles;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Filament\Http\Middleware\Authenticate;
+use App\Filament\Widgets\ActiveMembersTable;
+use App\Filament\Widgets\LowStockProductsTable;
+use App\Filament\Widgets\PosSalesStatsOverview;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use App\Filament\Widgets\TopSellingProductsTable;
+use App\Filament\Widgets\OpenWeatherWidget;
 use Filament\Http\Middleware\AuthenticateSession;
+use App\Filament\Widgets\MonthlyRevenueTrendChart;
+use App\Filament\Widgets\RecentPosTransactionsTable;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
-use App\Filament\Pages\StockInventory;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 
 class PosPanelProvider extends PanelProvider
 {
@@ -44,9 +57,9 @@ class PosPanelProvider extends PanelProvider
                 \App\Filament\Resources\StockOpnameResource::class,
             ])
             ->pages([
-                Pages\Dashboard::class,
-                StockInventory::class,
+                AppDashboard::class,
             ])
+            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -61,7 +74,39 @@ class PosPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->plugin(ShieldPlugin::make())
+            ->plugin(FilamentShieldPlugin::make())
+
+            ->plugin(
+                PanelRoles::make()
+                    ->roleToAssign('kasir')
+                    ->restrictedRoles(['kasir', 'super_admin']),
+            )
+
+            ->plugins([
+                GreeterPlugin::make()
+                    ->timeSensitive(morningStart: 6, afternoonStart: 12, eveningStart: 17, nightStart: 22)
+                    ->message(function (): string {
+                        $hour = now()->timezone(config('app.timezone'))->hour;
+
+                        $greeting = match (true) {
+                            $hour < 6 => 'Selamat Pagi',
+                            $hour < 12 => 'Selamat Siang',
+                            $hour < 17 => 'Selamat Sore',
+                            default => 'Selamat Malam',
+                        };
+
+                        return "{$greeting}, ";
+                    })
+                    ->title(text: 'Selamat datang di Point Of Sale Haen Komputer', enabled: true)
+                    ->avatar(
+                        size: 'w-16 h-16',
+                        url: fn () => optional(Auth::user()?->karyawan)?->image_url
+                            ? Storage::disk('public')->url(Auth::user()->karyawan->image_url)
+                            : null,
+                    )
+                    ->sort(-10)
+                    ->columnSpan('half'),
+            ])
 
             //custom sidebar
             ->renderHook(

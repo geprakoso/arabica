@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 use App\Models\PembelianItem;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Actions\StaticAction;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +21,11 @@ use Filament\Infolists\Components\ViewEntry;
 use App\Filament\Resources\InventoryResource\Pages;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\Grid;
+use Filament\Support\Enums\FontFamily;
+use Filament\Support\Enums\FontWeight;
 
 class InventoryResource extends Resource
 {
@@ -27,6 +34,7 @@ class InventoryResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
+    protected static ?string $pluralLabel = 'Inventory'; 
     public static function form(Form $form): Form
     {
         return $form->schema([]);
@@ -35,23 +43,22 @@ class InventoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => self::applyInventoryScopes($query)) // Terapkan scope inventory khusus
             ->defaultSort('nama_produk')
             ->columns([
                 TextColumn::make('nama_produk')
-                    ->formatStateUsing(fn ($state) => strtoupper($state))
+                    ->formatStateUsing(fn($state) => strtoupper($state))
                     ->label('Produk')
                     ->searchable()
                     ->sortable()
                     ->wrap(),
                 TextColumn::make('brand.nama_brand')
                     ->label('Brand')
-                    ->formatStateUsing(fn ($state) => Str::title($state))
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('kategori.nama_kategori')
                     ->label('Kategori')
-                    ->formatStateUsing(fn ($state) => Str::title($state))
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('total_qty')
@@ -71,7 +78,7 @@ class InventoryResource extends Resource
                     ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
                     ->sortable(),
                 TextColumn::make('batch_count')
-                    ->label('Jumlah Batch Aktif')
+                    ->label(' Batch Aktif')
                     ->state(fn(Produk $record) => (int) ($record->batch_count ?? 0))
                     ->badge()
                     ->color('success')
@@ -88,7 +95,15 @@ class InventoryResource extends Resource
                     ->searchable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                 Action::make('detail')
+                    ->slideOver()
+                    ->icon('heroicon-o-eye')
+                    ->size('sm')
+                    ->modalWidth('6xl')
+                    ->modalHeading('Detail Inventory')
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
+                    ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
             ])
             ->bulkActions([]);
     }
@@ -106,60 +121,100 @@ class InventoryResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return self::applyInventoryScopes(parent::getEloquentQuery());
+    }
+
+
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
+            ->columns(3) // Layout utama 3 kolom
             ->schema([
-                InfolistSection::make('Batch Pembelian Aktif')
-                    ->compact()
-                    ->icon('heroicon-o-archive-box')
-                    ->description('Batch pembelian aktif')
-                    ->schema([
-                        TextEntry::make('batch_cards')
-                            ->view('filament.infolists.components.inventory-batches')
-                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batches']),
-                    ])
-                    ->columnSpan(2),
 
-                InfolistSection::make('Detail Produk')
-                    ->compact()
-                    ->icon('heroicon-o-archive-box')
+                // === KOLOM KIRI: DAFTAR BATCH (Main Content) ===
+                Group::make()
+                    ->columnSpan(['lg' => 2])
                     ->schema([
-                        TextEntry::make('nama_produk')
-                            ->label('Produk')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
-                            ->size(TextEntrySize::Medium),
-                        InfolistSection::make('')
+                        Section::make('Batch Pembelian Aktif')
+                            ->description('Daftar batch stok yang masih tersedia.')
+                            ->icon('heroicon-m-clipboard-document-list')
                             ->schema([
-                                TextEntry::make('brand.nama_brand')
-                                    ->label('Brand')
+                                // Menggunakan view custom Anda, pastikan view-nya sudah handle loop batch dengan cantik
+                                TextEntry::make('batch_cards')
+                                    ->hiddenLabel()
+                                    ->view('filament.infolists.components.inventory-batches')
+                                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batches']),
+                            ])
+                            ->compact(), // Compact agar tidak terlalu banyak whitespace
+                    ]),
+
+                // === KOLOM KANAN: RINGKASAN PRODUK (Sidebar) ===
+                Group::make()
+                    ->columnSpan(['lg' => 1])
+                    ->schema([
+
+                        // Section 1: Identitas & Total Stok
+                        Section::make('Inventory Summary')
+                            ->icon('heroicon-m-cube')
+                            ->schema([
+                                TextEntry::make('nama_produk')
+                                    ->label('Nama Produk')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
                                     ->formatStateUsing(fn ($state) => Str::title($state))
-                                    ->color('gray')
-                                    ->placeholder('-'),
-                                TextEntry::make('kategori.nama_kategori')
-                                    ->label('Kategori')
-                                    ->formatStateUsing(fn ($state) => Str::title($state))
-                                    ->color('gray')
-                                    ->placeholder('-'),
+                                    ->icon('heroicon-m-tag'),
+
+                                // Grid untuk Brand & Kategori
+                                Grid::make(2)
+                                    ->schema([
+                                        TextEntry::make('brand.nama_brand')
+                                            ->label('Brand')
+                                            ->icon('heroicon-m-star')
+                                            ->placeholder('-'),
+
+                                        TextEntry::make('kategori.nama_kategori')
+                                            ->label('Kategori')
+                                            ->badge()
+                                            ->color('gray')
+                                            ->placeholder('-'),
+                                    ]),
+
+                                // Highlight Total Qty
                                 TextEntry::make('qty_display')
-                                    ->label('Qty')
-                                    ->badge()
-                                    ->state(fn(Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty'])),
+                                    ->label('Total Stok Tersedia')
+                                    ->state(fn (Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty']))
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('primary')
+                                    ->icon('heroicon-m-circle-stack'), // Tumpukan koin/barang
+
+                                // Highlight Batch Count
                                 TextEntry::make('batch_count_display')
                                     ->label('Jumlah Batch Aktif')
-                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batch_count'])
+                                    ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batch_count'])
                                     ->badge()
-                                    ->color('success'),
-                            ])
-                            ->columns(['lg' => 2]),
-                    ])->columnSpan(1),
-            ])
-            ->columns(3);
+                                    ->color('success')
+                                    ->formatStateUsing(fn ($state) => $state . ' Batch'),
+                            ]),
+                        
+                        // Opsional: Section Info Tambahan (jika ada)
+                        Section::make('Metadata')
+                            ->compact()
+                            ->schema([
+                                TextEntry::make('sku') // Asumsi ada SKU
+                                    ->label('Kode SKU')
+                                    ->fontFamily(FontFamily::Mono)
+                                    ->copyable(),
+                            ]),
+                    ]),
+            ]);
     }
 
-    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif.
+    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif
 
-     protected static function applyInventoryScopes(Builder $query): Builder
+    protected static function applyInventoryScopes(Builder $query): Builder
     {
         $produkTable = (new Produk())->getTable();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
@@ -167,9 +222,13 @@ class InventoryResource extends Resource
         $query
             ->select("{$produkTable}.*")
             ->whereHas('pembelianItems')
-            ->with(['brand', 'kategori'])
-            ->withSum(['pembelianItems as total_qty' => fn ($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
-            ->withCount(['pembelianItems as batch_count' => fn ($q) => $q->where($qtySisaColumn, '>', 0)]);
+            ->with([
+                'brand',
+                'kategori',
+                'pembelianItems' => fn($q) => $q->with('pembelian'),
+            ])
+            ->withSum(['pembelianItems as total_qty' => fn($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
+            ->withCount(['pembelianItems as batch_count' => fn($q) => $q->where($qtySisaColumn, '>', 0)]);
 
         return $query;
     }
@@ -206,9 +265,14 @@ class InventoryResource extends Resource
 
         $qtySisaColumn = PembelianItem::qtySisaColumn();
 
-        $items = $record->pembelianItems()
-            ->with('pembelian')
-            ->get();
+        if ($record->relationLoaded('pembelianItems')) {
+            $items = $record->pembelianItems;
+            $items->loadMissing('pembelian');
+        } else {
+            $items = $record->pembelianItems()
+                ->with('pembelian')
+                ->get();
+        }
 
         $totalQty = $items->sum(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0));
 
@@ -223,7 +287,7 @@ class InventoryResource extends Resource
                 ? $purchase->tanggal->format('d M Y')
                 : '-';
             $rawHpp = $item->hpp;
-            
+
             $rawHargaJual = $item->harga_jual;
             $hpp = is_null($rawHpp) ? null : (float) $rawHpp;
             $hargaJual = is_null($rawHargaJual) ? null : (float) $rawHargaJual;
