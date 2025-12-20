@@ -7,7 +7,6 @@ use Awcodes\FilamentBadgeableColumn\Components\BadgeableColumn;
 use App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages;
 use App\Models\Absensi;
 use Carbon\Carbon;
-use Dotenv\Util\Str;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -30,21 +29,6 @@ class LaporanAbsensiResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-
-    // public static function canCreate(): bool
-    // {
-    //     return false;
-    // }
-
-    // public static function canEdit($record): bool
-    // {
-    //     return false;
-    // }
-
-    // public static function canDelete($record): bool
-    // {
-    //     return false;
-    // }
 
     public static function table(Tables\Table $table): Tables\Table
     {
@@ -94,7 +78,8 @@ class LaporanAbsensiResource extends Resource
                     ->numeric()
                     ->visible(fn (HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
                 TextColumn::make('total_absen')
-                    ->label('Total')
+                    ->label('Total Absen')
+                    ->badge()
                     ->numeric()
                     ->sortable()
                     ->visible(fn (HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
@@ -114,6 +99,10 @@ class LaporanAbsensiResource extends Resource
                     ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire))
                     ->date('H:i')
                     ->formatStateUsing(fn (?string $state): string => $state ? Carbon::createFromFormat('H:i:s', $state)->format('H:i') : '-'),
+                TextColumn::make('jam_kerja')
+                    ->label('Jam Kerja')
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire))
+                    ->state(fn (Model $record): string => self::formatJamKerjaLabel($record->jam_masuk, $record->jam_keluar)),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -128,13 +117,13 @@ class LaporanAbsensiResource extends Resource
                 TextColumn::make('keterangan')
                     ->label('Keterangan')
                     ->limit(40)
-                    ->toggleable()
                     ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire)),
             ])
             ->filters([
                 SelectFilter::make('bulan')
                     ->label('Bulan')
                     ->options(self::monthOptions())
+                    ->native(false)
                     ->default(Carbon::now()->format('Y-m'))
                     ->query(function (Builder $query, array $data): Builder {
                         $value = $data['value'] ?? null;
@@ -149,8 +138,12 @@ class LaporanAbsensiResource extends Resource
                             ->whereYear('tanggal', (int) $year)
                             ->whereMonth('tanggal', (int) $month);
                     }),
+                SelectFilter::make('user_id')
+                    ->label('Karyawan')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload(),
             ])
-            ->actions([])
             ->bulkActions([]);
     } 
 
@@ -170,7 +163,6 @@ class LaporanAbsensiResource extends Resource
     {
         $default = [
             'display' => '-',
-            // 'color' => 'white',
             'lateMinutes' => null,
         ];
 
@@ -185,7 +177,6 @@ class LaporanAbsensiResource extends Resource
         if ($masuk->lte($batas)) {
             return [
                 'display' => $display,
-                // 'color' => 'success',
                 'lateMinutes' => null,
             ];
         }
@@ -194,7 +185,6 @@ class LaporanAbsensiResource extends Resource
 
         return [
             'display' => $display,
-            // 'color' => $telatMenit <= 30 ? 'warning' : 'danger',
             'lateMinutes' => $telatMenit,
         ];
     }
@@ -207,14 +197,67 @@ class LaporanAbsensiResource extends Resource
             return [];
         }
 
-        $telatMenit = $meta['lateMinutes'];
+        $telatMenit = (int) $meta['lateMinutes'];
 
         return [
             Badge::make('telat-menit')
-                ->label("Telat {$telatMenit}m")
+                ->label(self::formatTelatLabel($telatMenit))
                 ->color($telatMenit <= 30 ? 'warning' : 'danger'),
         ];
     }
+
+    protected static function formatTelatLabel(int $telatMenit): string
+    {
+        if ($telatMenit < 60) {
+            return "Telat {$telatMenit} menit";
+        }
+
+        $hours = intdiv($telatMenit, 60);
+        $minutes = $telatMenit % 60;
+
+        if ($minutes === 0) {
+            return "Telat {$hours} jam";
+        }
+
+        return "Telat {$hours} jam {$minutes} menit";
+    }
+
+    protected static function formatJamKerjaLabel(?string $jamMasuk, ?string $jamKeluar): string
+    {
+        if (blank($jamMasuk) || blank($jamKeluar)) {
+            return '-';
+        }
+
+        try {
+            $masuk = Carbon::createFromFormat('H:i:s', $jamMasuk);
+            $keluar = Carbon::createFromFormat('H:i:s', $jamKeluar);
+        } catch (\Exception) {
+            return '-';
+        }
+
+        if ($keluar->lt($masuk)) {
+            $keluar->addDay();
+        }
+
+        $totalMinutes = $masuk->diffInMinutes($keluar);
+        $hours = intdiv($totalMinutes, 60);
+        $minutes = $totalMinutes % 60;
+
+        if ($hours === 0 && $minutes === 0) {
+            return '0 menit';
+        }
+
+        if ($minutes === 0) {
+            return "{$hours} jam";
+        }
+
+        if ($hours === 0) {
+            return "{$minutes} menit";
+        }
+
+        return "{$hours} jam {$minutes} menit";
+    }
+
 
     protected static function monthOptions(): array
     {

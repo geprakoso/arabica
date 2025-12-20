@@ -11,14 +11,17 @@ use Filament\Facades\Filament;
 use Livewire\Attributes\Title;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use function Laravel\Prompts\text;
 use Filament\Infolists\Components\Grid;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\RepeatableEntry;
+use Carbon\CarbonInterface;
+
 use App\Filament\Resources\PosActivityResource\Pages;
 use App\Filament\Resources\PosActivityResource\Widgets\PosActivityStats;
-
-use function Laravel\Prompts\text;
 
 class PosActivityResource extends Resource
 {
@@ -33,6 +36,7 @@ class PosActivityResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->posOnly())
             ->columns([
                 Tables\Columns\TextColumn::make('no_nota')->label('Nota')->searchable(),
                 Tables\Columns\TextColumn::make('tanggal_penjualan')->date()->label('Tanggal'),
@@ -66,6 +70,29 @@ class PosActivityResource extends Resource
                     ->url(fn(Penjualan $record) => route('pos.receipt', $record))
                     ->icon('heroicon-o-printer')
                     ->openUrlInNewTab(),
+            ])
+            ->filters([
+                Tables\Filters\Filter::make('tanggal')
+                    ->label('Tanggal')
+                    ->form([
+                        DatePicker::make('tanggal')
+                            ->native(false)
+                            ->label('Pilih tanggal')
+                            ->placeholder('Pilih tanggal (opsional)'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $tanggal = $data['tanggal'] ?? null;
+
+                        if ($tanggal instanceof CarbonInterface) {
+                            $tanggal = $tanggal->toDateString();
+                        }
+
+                        if (! $tanggal) {
+                            return $query;
+                        }
+
+                        return $query->whereDate('tanggal_penjualan', $tanggal);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -205,8 +232,7 @@ class PosActivityResource extends Resource
                                                     ->label('Qty')
                                                     ->badge()
                                                     ->color('primary')
-                                                    ->columnSpan(1)
-                                                    ->formatStateUsing(fn ($state) => number_format((int) ($state ?? 0), 0, ',', '.')),
+                                                    ->columnSpan(1),
                                                 TextEntry::make('harga_jual')
                                                     ->label('Harga')
                                                     ->size('md')

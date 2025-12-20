@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MetodeBayar;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,7 @@ class Penjualan extends Model
         'tunai_diterima',
         'kembalian',
         'gudang_id',
+        'sumber_transaksi',
     ];
 
     protected $casts = [
@@ -39,20 +41,24 @@ class Penjualan extends Model
     {
         static::deleting(function (Penjualan $penjualan): void {
             $penjualan->items()->get()->each->delete();
+            $penjualan->jasaItems()->get()->each->delete();
         });
 
         static::creating(function ($model) {
+            $model->sumber_transaksi = $model->sumber_transaksi ?? 'manual';
+
             if (empty($model->no_nota)) {
-                $model->no_nota = static::generateNoNota();
+                $prefix = $model->sumber_transaksi === 'pos' ? 'POS' : 'PJ';
+                $model->no_nota = static::generateNoNota($prefix);
             }
         });
     }
 
-    public static function generateNoNota(): string
+    public static function generateNoNota(string $prefixCode = 'PJ'): string
     {
-        return DB::transaction(function () {
+        return DB::transaction(function () use ($prefixCode) {
             $date = now()->format('Ymd');
-            $prefix = 'PJ-' . $date . '-';
+            $prefix = $prefixCode . '-' . $date . '-';
             
             $latest = static::where('no_nota', 'like', $prefix . '%')
                 ->orderBy('no_nota', 'desc')
@@ -81,5 +87,19 @@ class Penjualan extends Model
     public function items()
     {
         return $this->hasMany(PenjualanItem::class, 'id_penjualan', 'id_penjualan');
+    }
+
+    public function jasaItems()
+    {
+        return $this->hasMany(PenjualanJasa::class, 'id_penjualan', 'id_penjualan');
+    }
+
+    public function scopePosOnly(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where('sumber_transaksi', 'pos')
+                ->orWhereNull('sumber_transaksi');
+        });
     }
 }

@@ -9,6 +9,7 @@ use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Facades\Filament;
 
 class RecentPosTransactionsTable extends AdvancedTableWidget
 {
@@ -32,13 +33,27 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                     ->copyable()
                     ->copyMessage('Nota tersalin')
                     ->copyMessageDuration(1500),
-                Tables\Columns\TextColumn::make('tanggal_penjualan')
+                Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('sumber_transaksi')
+                    ->label('Sumber')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => strtoupper($state ?? 'POS'))
+                    ->color(fn (?string $state) => $state === 'manual' ? 'gray' : 'primary')
+                    ->tooltip(fn (?string $state) => $state === 'manual' ? 'Input melalui Penjualan' : 'Input melalui POS'),
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
-                    ->money('idr', true),
+                    ->formatStateUsing(function ($state, Penjualan $record) {
+                        $produkTotal = $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+                        $jasaTotal = $record->jasaItems->sum(fn ($service) => (float) ($service->harga ?? 0));
+                        $diskon = (float) ($record->diskon_total ?? 0);
+                        $computed = max(0, ($produkTotal + $jasaTotal) - $diskon);
+                        $total = ($state ?? 0) > 0 ? $state : $computed;
+
+                        return money($total * 100, 'IDR')->formatWithoutZeroes();
+                    }),
                 Tables\Columns\TextColumn::make('metode_bayar')
                     ->label('Bayar')
                     ->badge()
@@ -65,14 +80,18 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                     ->url(fn(Penjualan $record) => route('filament.pos.resources.pos-activities.view', $record))
                     ->openUrlInNewTab(),
             ])
-            ->defaultSort('tanggal_penjualan', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->paginated(5);
     }
 
     protected function getTableQuery(): Builder
     {
-        return Penjualan::query()
-            ->with(['member'])
-            ->latest('tanggal_penjualan');
+        $query = Penjualan::query()
+            ->with(['member', 'items', 'jasaItems'])
+            ->latest('created_at');
+
+        return Filament::getCurrentPanel()?->getId() === 'pos'
+            ? $query->posOnly()
+            : $query;
     }
 }

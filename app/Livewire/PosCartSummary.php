@@ -10,13 +10,16 @@ class PosCartSummary extends StatsOverviewWidget
 {
     public array $items = [];
 
+    public array $services = [];
+
     public float $discount = 0.0;
 
     protected int | string | array $columnSpan = 'full';
 
-    public function mount(array $items = [], float | int $discount = 0): void
+    public function mount(array $items = [], array $services = [], float | int $discount = 0): void
     {
         $this->items = $items;
+        $this->services = $services;
         $this->discount = (float) $discount;
     }
     /**
@@ -38,7 +41,7 @@ class PosCartSummary extends StatsOverviewWidget
      */
     protected function getStats(): array
     {
-        [, $subtotal] = PosSaleResource::summarizeCart($this->items);
+        [, $subtotal] = PosSaleResource::summarizeCart($this->items, $this->services);
 
         $discount = min(max($this->discount, 0), $subtotal);
         $grandTotal = max(0, $subtotal - $discount);
