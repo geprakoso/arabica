@@ -2,6 +2,14 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2025.12.19
+- Menyelaraskan ikon widget tabel ke **Hugeicons** dan memperbaiki nama ikon yang salah.
+- Mengaktifkan tampilan ikon/deskripsi pada **ServiceWidget** dengan Advanced Table Widget.
+- Menambahkan dukungan `infolist` untuk aksi `view` pada widget **Service** dan **Tugas** (termasuk impor class yang dibutuhkan).
+- Membuat widget dashboard lebih interaktif (dapat diklik) untuk navigasi ke detail pada berbagai widget statistik, tabel, cuaca, stok, dan tugas.
+- Menyegarkan gaya tema admin serta komponen tabel/loader untuk mendukung widget interaktif.
+- Menyesuaikan konfigurasi Tailwind dan stylesheet aplikasi/Filament agar tampilan widget konsisten.
+
 ## 2025.12.18
 - Meningkatkan **UX mobile** untuk tabel `infolist` (scroll horizontal) dan tata letak bergaya tabel untuk daftar item **Pembelian**, **Penjualan**, dan **Request Order**.
 - Menambahkan `infolist` **Penjualan** dengan total yang dikalkulasi (*computed totals*); total sekarang dihitung ulang otomatis berdasarkan item saat `create`, `update`, atau `delete`.
@@ -129,4 +137,5 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - Menambahkan kerangka dasar (*scaffolding*) master data awal.
 
 ## 2025.11.11
+- Project dimulai
 - Membuat migrasi (*migrations*) untuk tabel produk, jasa, brand, dan kategori (awal proyek).

@@ -7,6 +7,7 @@ use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContrac
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Features\SupportRedirects\Redirector;
+use App\Filament\Pages\AppDashboard;
 
 class PanelLoginResponse implements LoginResponseContract
 {
@@ -15,15 +16,15 @@ class PanelLoginResponse implements LoginResponseContract
         $user = Auth::user();
 
         if ($user?->hasRole('super_admin')) {
-            return redirect()->intended(route('filament.admin.pages.dashboard'));
+            return redirect()->intended(route(AppDashboard::getRouteName('admin')));
         }
 
         if ($user?->hasRole('kasir')) {
-            return redirect()->intended(route('filament.pos.pages.dashboard'));
+            return redirect()->intended(route(AppDashboard::getRouteName('pos')));
         }
 
         if ($user?->hasRole('akunting')) {
-            return redirect()->intended(route('filament.akunting.pages.dashboard'));
+            return redirect()->intended(route(AppDashboard::getRouteName('akunting')));
         }
 
         if ($panelUrl = Filament::getCurrentPanel()?->getUrl()) {
