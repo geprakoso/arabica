@@ -63,6 +63,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
     protected function sumRevenueBetween(Carbon $start, Carbon $end): float
     {
         return (float) Penjualan::query()
+            ->posOnly()
             ->whereBetween('tanggal_penjualan', [$start, $end])
             ->sum('grand_total');
     }
@@ -74,6 +75,11 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
 
         return (int) PenjualanItem::query()
             ->join($salesTable, "{$salesTable}.id_penjualan", '=', "{$itemsTable}.id_penjualan")
+            ->where(function ($query) use ($salesTable): void {
+                $query
+                    ->where("{$salesTable}.sumber_transaksi", 'pos')
+                    ->orWhereNull("{$salesTable}.sumber_transaksi");
+            })
             ->whereBetween("{$salesTable}.tanggal_penjualan", [$start, $end])
             ->sum("{$itemsTable}.qty");
     }
@@ -81,6 +87,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
     protected function countMembersBetween(Carbon $start, Carbon $end): int
     {
         return (int) Penjualan::query()
+            ->posOnly()
             ->whereBetween('tanggal_penjualan', [$start, $end])
             ->whereNotNull('id_member')
             ->distinct('id_member')
@@ -91,6 +98,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
     {
         $data = Penjualan::query()
             ->selectRaw('DATE(tanggal_penjualan) as day, SUM(grand_total) as total')
+            ->posOnly()
             ->whereBetween('tanggal_penjualan', [$start, $end])
             ->groupBy('day')
             ->orderBy('day')
@@ -107,6 +115,11 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
         $data = PenjualanItem::query()
             ->join($salesTable, "{$salesTable}.id_penjualan", '=', "{$itemsTable}.id_penjualan")
             ->selectRaw("DATE({$salesTable}.tanggal_penjualan) as day, SUM({$itemsTable}.qty) as total")
+            ->where(function ($query) use ($salesTable): void {
+                $query
+                    ->where("{$salesTable}.sumber_transaksi", 'pos')
+                    ->orWhereNull("{$salesTable}.sumber_transaksi");
+            })
             ->whereBetween("{$salesTable}.tanggal_penjualan", [$start, $end])
             ->groupBy('day')
             ->orderBy('day')
@@ -119,6 +132,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
     {
         $data = Penjualan::query()
             ->selectRaw('DATE(tanggal_penjualan) as day, COUNT(DISTINCT id_member) as total')
+            ->posOnly()
             ->whereBetween('tanggal_penjualan', [$start, $end])
             ->whereNotNull('id_member')
             ->groupBy('day')
