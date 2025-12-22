@@ -2,6 +2,16 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2025.12.21
+- Tidak ada perubahan terkomit di git pada tanggal ini.
+
+## 2025.12.20
+- Menambahkan modul laporan laba rugi (resource Filament, halaman list/view, model, dan migrasi tabel).
+- Menambahkan aset CSS/JS laporan (filament-reports) beserta dependensi pendukungnya.
+- Menambahkan dokumen **PLUGIN.md** untuk daftar plugin pihak ketiga.
+- Menyesuaikan alur redirect login/halaman utama agar memakai route **AppDashboard** per panel.
+- *Merge* dengan branch `main`.
+
 ## 2025.12.19
 - Menyelaraskan ikon widget tabel ke **Hugeicons** dan memperbaiki nama ikon yang salah.
 - Mengaktifkan tampilan ikon/deskripsi pada **ServiceWidget** dengan Advanced Table Widget.

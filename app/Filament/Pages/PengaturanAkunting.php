@@ -8,7 +8,7 @@ use App\Filament\Resources\Akunting\InputTransaksiTokoResource;
 use App\Models\JenisAkun;
 use App\Models\KodeAkun;
 use Filament\Facades\Filament;
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\AppDashboard;
 use Filament\Pages\Page;
 
 class PengaturanAkunting extends Page
@@ -55,7 +55,7 @@ class PengaturanAkunting extends Page
 
         return [
             // Langkah 1: Dashboard.
-            Dashboard::getUrl(panel: $panelId) => Dashboard::getNavigationLabel(),
+            AppDashboard::getUrl(panel: $panelId) => AppDashboard::getNavigationLabel(),
             // Langkah 2: Menu utama resource Input Transaksi Toko.
             InputTransaksiTokoResource::getUrl(panel: $panelId) => InputTransaksiTokoResource::getNavigationLabel(),
             // Langkah 3: Halaman ini.

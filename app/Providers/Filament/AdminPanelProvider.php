@@ -166,19 +166,19 @@ class AdminPanelProvider extends PanelProvider
                         /* --- D. ACTIVE STATE (ACCENT & CLICK FEEDBACK) --- */
                         
                         /* D1. Background saat Aktif (Page) ATAU Diklik (:active) */
-                        .fi-sidebar-item.fi-active .fi-sidebar-item-button,
+                        .fi-sidebar-item.fi-active > .fi-sidebar-item-button,
                         .fi-sidebar-item-button:active {
                             background-color: rgba(0, 0, 0, 0.06) !important;
                         }
-                        html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-button,
+                        html.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-button,
                         html.dark .fi-sidebar-item-button:active {
                             background-color: rgba(255, 255, 255, 0.08) !important;
                         }
 
                         /* D2. Text Label & Icon Color saat Aktif (Page) ATAU Diklik (:active) */
                         /* LIGHT MODE: Gunakan Primary-600 */
-                        .fi-sidebar-item.fi-active .fi-sidebar-item-label,
-                        .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+                        .fi-sidebar-item.fi-active > .fi-sidebar-item-button .fi-sidebar-item-label,
+                        .fi-sidebar-item.fi-active > .fi-sidebar-item-button .fi-sidebar-item-icon,
                         .fi-sidebar-item-button:active .fi-sidebar-item-label,
                         .fi-sidebar-item-button:active .fi-sidebar-item-icon {
                             color: rgb(var(--primary-600)) !important; 
@@ -187,8 +187,8 @@ class AdminPanelProvider extends PanelProvider
                         }
 
                         /* DARK MODE: Gunakan Primary-400 */
-                        html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-label,
-                        html.dark .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+                        html.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-button .fi-sidebar-item-label,
+                        html.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-button .fi-sidebar-item-icon,
                         html.dark .fi-sidebar-item-button:active .fi-sidebar-item-label,
                         html.dark .fi-sidebar-item-button:active .fi-sidebar-item-icon {
                             color: rgb(var(--primary-400)) !important;
@@ -310,6 +310,22 @@ class AdminPanelProvider extends PanelProvider
                         html.dark .fi-sidebar .fi-icon-btn:active {
                             color: rgb(var(--primary-400)) !important;
                             background-color: rgba(255,255,255,0.05);
+                        }
+
+                        /* --- H. LABA RUGI TABLE ROW BORDER (DARK MODE) --- */
+                        html.dark .lr-row {
+                            /* border-bottom-color: rgb(55 65 81) !important; */
+                            border-bottom-color: rgba(var(--gray-800), 1) !important;
+                        }
+
+                        html.dark .lr-table tbody > tr + tr {
+                            /* border-top-color: rgb(55 65 81) !important; gray-700 */
+                            border-top-color: rgba(var(--gray-800), 1) !important;
+                        }
+
+                        html.dark .lr-table thead th {
+                            /* border-bottom-color: rgb(55 65 81) !important; gray-700 */
+                            border-bottom-color: rgba(var(--gray-800), 1) !important;
                         }
 
                         /* Utilities & Scrollbar */

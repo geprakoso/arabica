@@ -18,11 +18,11 @@ class ListInputTransaksiTokos extends ListRecords
             Actions\CreateAction::make()
                 ->label('Transaksi')
                 ->icon('hugeicons-plus-sign'),
-            Actions\Action::make('pengaturan')
-                ->label('Pengaturan')
-                ->icon('hugeicons-settings-03')
-                ->color('gray')
-                ->url(fn () => PengaturanAkunting::getUrl(panel: Filament::getCurrentPanel()?->getId())),
+            // Actions\Action::make('pengaturan')
+            //     ->label('Pengaturan')
+            //     ->icon('hugeicons-settings-03')
+            //     ->color('gray')
+            //     ->url(fn () => PengaturanAkunting::getUrl(panel: Filament::getCurrentPanel()?->getId())),
         ];
     }
 }

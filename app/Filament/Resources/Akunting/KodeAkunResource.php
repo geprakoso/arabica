@@ -21,12 +21,12 @@ class KodeAkunResource extends Resource
     protected static ?string $navigationLabel = 'Kode Akun';
     protected static ?string $pluralLabel = 'Kode Akun';
     protected static ?string $navigationIcon = 'hugeicons-bar-code-02';
+    protected static ?string $navigationParentItem = 'Input Transaksi Toko';
     protected static ?string $navigationGroup = 'Keuangan';
     
     public static function shouldRegisterNavigation(): bool
     {
-        // return Filament::getCurrentPanel()?->getId() === 'admin';
-        return false;
+        return Filament::getCurrentPanel()?->getId() === 'admin';
     }
     
     public static function form(Form $form): Form
@@ -86,8 +86,18 @@ class KodeAkunResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (KodeAkun $record) => static::getUrl(
+                        'view',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
+                Tables\Actions\EditAction::make()
+                    ->url(fn (KodeAkun $record) => static::getUrl(
+                        'edit',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

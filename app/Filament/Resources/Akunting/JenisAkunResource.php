@@ -20,12 +20,11 @@ class JenisAkunResource extends Resource
     protected static ?string $model = JenisAkun::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationParentItem = 'Input Transaksi Toko';
     protected static ?string $navigationGroup = 'Keuangan';
-
     public static function shouldRegisterNavigation(): bool
     {
-        // return Filament::getCurrentPanel()?->getId() === 'admin';
-        return false;
+        return Filament::getCurrentPanel()?->getId() === 'admin';
     }
 
     public static function form(Form $form): Form
@@ -84,8 +83,18 @@ class JenisAkunResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (JenisAkun $record) => static::getUrl(
+                        'view',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
+                Tables\Actions\EditAction::make()
+                    ->url(fn (JenisAkun $record) => static::getUrl(
+                        'edit',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -33,6 +33,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use App\Models\JenisAkun;
 
 class InputTransaksiTokoResource extends Resource
 {
@@ -75,8 +76,9 @@ class InputTransaksiTokoResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->prefixIcon('hugeicons-tag-01')
-                                    ->reactive()
-                                    ->afterStateUpdated(fn (Set $set) => $set('kode_jenis_akun_id', null)),
+                                    ->helperText('Kategori diisi otomatis dari kode akun.')
+                                    ->disabled()
+                                    ->dehydrated(),
                             ]),
 
                         // --- BARIS 2: Detail Akun ---
@@ -97,8 +99,21 @@ class InputTransaksiTokoResource extends Resource
                                     ->native(false)
                                     ->prefixIcon('hugeicons-credit-card')
                                     ->placeholder('Pilih jenis akun')
-                                    ->disabled(fn (Get $get) => blank($get('kategori_transaksi')))
-                                    ->reactive(),
+                                    ->reactive()
+                                    ->afterStateUpdated(function (Set $set, ?string $state) {
+                                        if (blank($state)) {
+                                            $set('kategori_transaksi', null);
+                                            return;
+                                        }
+
+                                        $kategori = JenisAkun::query()
+                                            ->with('kodeAkun')
+                                            ->find($state)
+                                            ?->kodeAkun
+                                            ?->kategori_akun;
+
+                                        $set('kategori_transaksi', $kategori);
+                                    }),
 
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi (Opsional)')
@@ -310,8 +325,18 @@ class InputTransaksiTokoResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (InputTransaksiToko $record) => static::getUrl(
+                        'view',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
+                Tables\Actions\EditAction::make()
+                    ->url(fn (InputTransaksiToko $record) => static::getUrl(
+                        'edit',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

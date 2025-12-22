@@ -208,7 +208,12 @@ class LaporanInputTransaksiResource extends Resource
                     ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (InputTransaksiToko $record) => static::getUrl(
+                        'view',
+                        ['record' => $record],
+                        panel: Filament::getCurrentPanel()?->getId(),
+                    )),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
