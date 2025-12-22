@@ -9,6 +9,8 @@ use App\Models\InputTransaksiToko;
 use App\Models\LaporanLabaRugi;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
+use App\Models\Penjualan;
+use App\Models\PenjualanItem;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -17,17 +19,20 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Tabs;
+use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class LaporanLabaRugiResource extends Resource
 {
     protected static ?string $model = LaporanLabaRugi::class;
-
+    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationLabel = 'Laporan Laba Rugi';
+    protected static ?string $pluralLabel = 'Laporan Laba Rugi';
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
@@ -96,31 +101,31 @@ class LaporanLabaRugiResource extends Resource
                     ->columns(2),
                 Section::make('Detail Beban')
                     ->schema([
-                        RepeatableEntry::make('beban_items')
-                            ->label('')
-                            ->state(fn ($record) => self::bebanDetailsForMonth($record->month_key))
-                            ->schema([
-                                TextEntry::make('tanggal_transaksi')
-                                    ->label('Tanggal')
-                                    ->state(fn (InputTransaksiToko $record) => $record->tanggal_transaksi)
-                                    ->date('d M Y'),
-                                TextEntry::make('jenisAkun.nama_jenis_akun')
-                                    ->label('Jenis Akun')
-                                    ->state(fn (InputTransaksiToko $record) => $record->jenisAkun?->nama_jenis_akun)
-                                    ->placeholder('-'),
-                                TextEntry::make('keterangan_transaksi')
-                                    ->label('Keterangan')
-                                    ->state(fn (InputTransaksiToko $record) => $record->keterangan_transaksi ?: '-')
-                                    ->url(fn (InputTransaksiToko $record) => InputTransaksiTokoResource::getUrl('view', ['record' => $record]))
-                                    ->openUrlInNewTab(),
-                                TextEntry::make('nominal_transaksi')
-                                    ->label('Nominal')
-                                    ->state(fn (InputTransaksiToko $record) => $record->nominal_transaksi)
-                                    ->money('idr', true),
-                            ])
-                            ->contained(false)
-                            ->placeholder('Tidak ada data beban untuk bulan ini.')
-                            ->columns(4),
+                        Tabs::make('Detail Laporan')
+                            ->activeTab(1)
+                            ->tabs([
+                                Tab::make('Detail Beban')
+                                    ->icon('heroicon-o-banknotes')
+                                    ->schema([
+                                        ViewEntry::make('beban_table')
+                                            ->label('')
+                                            ->view('filament.infolists.laba-rugi-beban-tab'),
+                                    ]),
+                                Tab::make('Produk Pembelian')
+                                    ->icon('heroicon-o-cube')
+                                    ->schema([
+                                        ViewEntry::make('pembelian_table')
+                                            ->label('')
+                                            ->view('filament.infolists.laba-rugi-pembelian-tab'),
+                                    ]),
+                                Tab::make('Produk Terjual')
+                                    ->icon('heroicon-o-shopping-bag')
+                                    ->schema([
+                                        ViewEntry::make('penjualan_table')
+                                            ->label('')
+                                            ->view('filament.infolists.laba-rugi-penjualan-tab'),
+                                    ]),
+                            ]),
                     ])
                     ->columnSpanFull(),
             ]);
@@ -146,6 +151,8 @@ class LaporanLabaRugiResource extends Resource
         $pembelianTable = (new Pembelian())->getTable();
         $itemsTable = (new PembelianItem())->getTable();
         $transaksiTable = (new InputTransaksiToko())->getTable();
+        $penjualanTable = (new Penjualan())->getTable();
+        $penjualanItemsTable = (new PenjualanItem())->getTable();
         $reportTable = (new LaporanLabaRugi())->getTable();
 
         $hppSub = Pembelian::query()
@@ -162,22 +169,34 @@ class LaporanLabaRugiResource extends Resource
             ->where("{$transaksiTable}.kategori_transaksi", KategoriAkun::Beban->value)
             ->groupBy('month_start', 'month_key');
 
+        $penjualanSub = Penjualan::query()
+            ->selectRaw("DATE_FORMAT({$penjualanTable}.tanggal_penjualan, '%Y-%m-01') as month_start")
+            ->selectRaw("DATE_FORMAT({$penjualanTable}.tanggal_penjualan, '%Y-%m') as month_key")
+            ->selectRaw("SUM({$penjualanItemsTable}.harga_jual * {$penjualanItemsTable}.qty) as total_penjualan")
+            ->join($penjualanItemsTable, "{$penjualanItemsTable}.id_penjualan", '=', "{$penjualanTable}.id_penjualan")
+            ->groupBy('month_start', 'month_key');
+
         $monthsSub = DB::query()->fromSub($hppSub, 'hpp')
             ->select('month_start', 'month_key')
             ->union(
                 DB::query()->fromSub($bebanSub, 'beban')->select('month_start', 'month_key')
+            )
+            ->union(
+                DB::query()->fromSub($penjualanSub, 'penjualan')->select('month_start', 'month_key')
             );
 
         return LaporanLabaRugi::query()
             ->fromSub($monthsSub, $reportTable)
             ->leftJoinSub($hppSub, 'hpp', 'hpp.month_key', '=', "{$reportTable}.month_key")
             ->leftJoinSub($bebanSub, 'beban', 'beban.month_key', '=', "{$reportTable}.month_key")
+            ->leftJoinSub($penjualanSub, 'penjualan', 'penjualan.month_key', '=', "{$reportTable}.month_key")
             ->select([
                 "{$reportTable}.month_key",
                 "{$reportTable}.month_start",
                 DB::raw('COALESCE(hpp.total_hpp, 0) as total_hpp'),
                 DB::raw('COALESCE(beban.total_beban, 0) as total_beban'),
-                DB::raw('(COALESCE(hpp.total_hpp, 0) - COALESCE(beban.total_beban, 0)) as laba_rugi'),
+                DB::raw('COALESCE(penjualan.total_penjualan, 0) as total_penjualan'),
+                DB::raw('(COALESCE(penjualan.total_penjualan, 0) - (COALESCE(hpp.total_hpp, 0) + COALESCE(beban.total_beban, 0))) as laba_rugi'),
             ])
             ->orderByDesc("{$reportTable}.month_start");
     }
@@ -246,21 +265,5 @@ class LaporanLabaRugiResource extends Resource
         return $years->mapWithKeys(fn ($year) => [(string) $year => (string) $year])->all();
     }
 
-    protected static function bebanDetailsForMonth(?string $monthKey): Collection
-    {
-        if (blank($monthKey)) {
-            return collect();
-        }
-
-        $date = Carbon::createFromFormat('Y-m', $monthKey);
-        $start = $date->copy()->startOfMonth();
-        $end = $date->copy()->endOfMonth();
-
-        return InputTransaksiToko::query()
-            ->with('jenisAkun')
-            ->where('kategori_transaksi', KategoriAkun::Beban->value)
-            ->whereBetween('tanggal_transaksi', [$start, $end])
-            ->orderBy('tanggal_transaksi')
-            ->get();
-    }
+    
 }

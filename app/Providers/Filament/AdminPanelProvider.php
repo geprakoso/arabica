@@ -88,7 +88,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Content'),
                 
             ])
-
+            ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class,])
+            
             ->renderHook(
                 'panels::head.end',
                 fn (): string => <<<HTML
