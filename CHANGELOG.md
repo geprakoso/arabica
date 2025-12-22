@@ -2,6 +2,14 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2025.12.22
+- Mengotomatisasi kategori transaksi di **Input Transaksi Toko** berdasarkan Kode/Jenis Akun agar konsisten dengan klasifikasi akun.
+- Menjadikan **Kode Akun** dan **Jenis Akun** sebagai submenu dari **Input Transaksi Toko**, termasuk perbaikan breadcrumb/heading di halaman list.
+- Memperbaiki aksi `view/edit` pada beberapa resource akunting agar navigasi tidak lagi memicu error `GET livewire/update`.
+- Menyesuaikan breadcrumb **Pengaturan Akunting** agar mengarah ke **AppDashboard**.
+- Menyempurnakan tampilan dark mode untuk infolist **Detail Beban**, **Produk Pembelian**, dan **Produk Terjual** (hover, border/divider, header), plus penegasan garis pemisah via override CSS.
+- Meningkatkan keterbacaan label total pada dark mode di tab laba rugi.
+
 ## 2025.12.21
 - Tidak ada perubahan terkomit di git pada tanggal ini.
 
