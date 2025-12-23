@@ -87,7 +87,7 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
                     ->allowSubFolders()
-                    
+
             )
             ->navigationGroups([
                 NavigationGroup::make('Master Data'),
@@ -99,12 +99,12 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Laporan'),
                 NavigationGroup::make('Reports'),
                 NavigationGroup::make('Content'),
-                
+
             ])
 
             ->renderHook(
                 'panels::head.end',
-                fn (): string => <<<HTML
+                fn(): string => Blade::render("@laravelPWA") . <<<HTML
                     <style>
                         /* --- 0. SIDEBAR SETTINGS --- */
                         :root {
@@ -343,14 +343,14 @@ class AdminPanelProvider extends PanelProvider
 
             ->renderHook(
                 'panels::body.end',
-                fn () => view('filament.hooks.absensi-geolocation-script')
-            
+                fn() => view('filament.hooks.absensi-geolocation-script')
+
             )
-            
+
             // --- 5. DRAGGABLE SIDEBAR LOGIC (NEW) ---
             ->renderHook(
                 'panels::body.end',
-                fn (): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
+                fn(): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
                     <div id="sidebar-resizer" class="hidden md:block"></div>
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {
@@ -418,7 +418,5 @@ class AdminPanelProvider extends PanelProvider
                     </style>
                 HTML)
             );
-            
-            
     }
 }
