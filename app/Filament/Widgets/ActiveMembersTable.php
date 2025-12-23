@@ -35,11 +35,11 @@ class ActiveMembersTable extends AdvancedTableWidget
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_spent')
                     ->label('Total Belanja')
-                    ->money('idr', true)
+                    ->formatStateUsing(fn($state) => money($state * 100, 'IDR')->formatWithoutZeroes())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('last_purchase')
                     ->label('Terakhir')
-                    ->date()
+                    ->dateTime('d M Y')
                     ->sortable(),
             ])
             ->paginated(10);

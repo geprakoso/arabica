@@ -29,7 +29,7 @@ class InventoryResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
-    protected static ?string $pluralLabel = 'Inventory'; 
+    protected static ?string $pluralLabel = 'Inventory';
     public static function form(Form $form): Form
     {
         return $form->schema([]);
@@ -44,56 +44,74 @@ class InventoryResource extends Resource
                     ->formatStateUsing(fn($state) => strtoupper($state))
                     ->label('Produk')
                     ->searchable()
+                    ->weight('bold')
+                    ->icon('heroicon-o-cube')
+                    ->description(fn(Produk $record) => $record->sku ?? '-')
                     ->sortable()
                     ->wrap(),
                 TextColumn::make('brand.nama_brand')
                     ->label('Brand')
                     ->formatStateUsing(fn($state) => Str::title($state))
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-o-tag')
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('kategori.nama_kategori')
                     ->label('Kategori')
                     ->formatStateUsing(fn($state) => Str::title($state))
+                    ->badge()
+                    ->color('warning')
+                    ->icon('heroicon-o-rectangle-stack')
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('total_qty')
-                    ->label('Qty')
+                    ->label('Total Stok')
                     ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0))
                     ->badge()
+                    ->color(fn($state) => $state > 10 ? 'success' : ($state > 0 ? 'warning' : 'danger'))
+                    ->icon('heroicon-o-archive-box')
                     ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
                     ->sortable(),
                 TextColumn::make('latest_batch.hpp')
-                    ->label('HPP Terbaru')
+                    ->label('HPP Terkini')
                     ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
                     ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
-                    ->sortable(),
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('gray'),
                 TextColumn::make('latest_batch.harga_jual')
-                    ->label('Harga Jual Terbaru')
+                    ->label('Harga Jual Terkini')
                     ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
                     ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
-                    ->sortable(),
+                    ->weight('bold')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success'),
                 TextColumn::make('batch_count')
-                    ->label(' Batch Aktif')
+                    ->label('Batch')
                     ->state(fn(Produk $record) => (int) ($record->batch_count ?? 0))
                     ->badge()
-                    ->color('success')
-                    ->sortable(),
+                    ->icon('heroicon-o-clipboard-document-list')
+                    ->color('primary')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('brand_id')
                     ->label('Brand')
                     ->relationship('brand', 'nama_brand')
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('kategori_id')
                     ->label('Kategori')
                     ->relationship('kategori', 'nama_kategori')
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
-                 Action::make('detail')
+                Action::make('detail')
+                    ->label('Lihat Detail')
                     ->slideOver()
                     ->icon('heroicon-o-eye')
-                    ->size('sm')
+                    ->color('gray')
                     ->modalWidth('6xl')
                     ->modalHeading('Detail Inventory')
                     ->modalSubmitAction(false)
@@ -182,7 +200,7 @@ class InventoryResource extends Resource
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems')
+            ->whereHas('pembelianItems', fn($q) => $q->where($qtySisaColumn, '>', 0))
             ->with([
                 'brand',
                 'kategori',

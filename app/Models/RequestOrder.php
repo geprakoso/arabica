@@ -23,7 +23,7 @@ class RequestOrder extends Model
     ];
     public static function generateRO(): string
     {
-        $lastNumber = self::where('no_ro', 'like', 'MD%')
+        $lastNumber = self::where('no_ro', 'like', 'RO%')
             ->selectRaw('MAX(CAST(SUBSTRING(no_ro, 4) AS UNSIGNED)) as max_num')
             ->value('max_num') ?? 0;
 

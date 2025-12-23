@@ -37,25 +37,36 @@ class StockOpnameResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Section::make('Detail Opname')
+            Section::make('Informasi Utama')
+                ->description('Detail pelaksanaan stock opname gudang')
+                ->icon('heroicon-o-clipboard-document-list')
                 ->schema([
                     TextInput::make('kode')
-                        ->label('Kode')
+                        ->label('Kode Referensi')
+                        ->prefixIcon('heroicon-o-tag')
                         ->disabled()
-                        ->default(fn () => StockOpname::generateKode())
-                        ->dehydrated(),
+                        ->default(fn() => StockOpname::generateKode())
+                        ->dehydrated()
+                        ->helperText('Kode akan digenerate otomatis oleh sistem'),
                     DatePicker::make('tanggal')
-                        ->label('Tanggal')
+                        ->default(now())
+                        ->prefixIcon('heroicon-o-calendar-days')
+                        ->displayFormat('d F Y')
+                        ->label('Tanggal Opname')
                         ->required()
                         ->native(false),
                     Select::make('gudang_id')
-                        ->label('Gudang')
+                        ->label('Lokasi Gudang')
                         ->relationship('gudang', 'nama_gudang')
                         ->searchable()
                         ->preload()
-                        ->native(false),
+                        ->native(false)
+                        ->prefixIcon('heroicon-o-building-storefront')
+                        ->placeholder('Pilih Gudang'),
                     Textarea::make('catatan')
-                        ->label('Catatan')
+                        ->label('Catatan Tambahan')
+                        ->placeholder('Tuliskan catatan jika diperlukan...')
+                        ->rows(3)
                         ->columnSpanFull(),
                 ])
                 ->columns(2),
@@ -69,38 +80,62 @@ class StockOpnameResource extends Resource
                 TextColumn::make('kode')
                     ->label('Kode')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold')
+                    ->extraAttributes([
+                        'class' => 'italic',
+                    ])
+                    ->color('primary')
+                    ->icon('heroicon-o-tag')
+                    ->copyable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
-                    ->date()
-                    ->sortable(),
+                    ->date('d M Y')
+                    ->sortable()
+                    ->icon('heroicon-o-calendar-days')
+                    ->color('gray'),
                 TextColumn::make('gudang.nama_gudang')
                     ->label('Gudang')
+                    ->weight('medium')
+                    ->icon('heroicon-o-building-storefront')
                     ->placeholder('-'),
+                TextColumn::make('items_count')
+                    ->counts('items')
+                    ->badge()
+                    ->color('info')
+                    ->label('Jml Item'),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
+                    ->icon(fn(string $state): string => match ($state) {
+                        'draft' => 'heroicon-o-pencil-square',
+                        'posted' => 'heroicon-o-check-circle',
+                        default => 'heroicon-o-question-mark-circle',
+                    })
                     ->colors([
                         'warning' => 'draft',
                         'success' => 'posted',
                     ]),
-                TextColumn::make('items_count')
-                    ->counts('items')
-                    ->label('Jumlah Item'),
             ])
             ->filters([])
             ->actions([
-                Action::make('post')
-                    ->label('Posting')
-                    ->button()
-                    ->requiresConfirmation()
-                    ->visible(fn (StockOpname $record) => ! $record->isPosted())
-                    ->action(fn (StockOpname $record) => $record->post(Auth::user()))
-                    ->successNotificationTitle('Stock opname berhasil diposting.'),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->visible(fn (StockOpname $record) => ! $record->isPosted()),
+                Tables\Actions\ActionGroup::make([
+                    Action::make('post')
+                        ->label('Posting')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->requiresConfirmation()
+                        ->visible(fn(StockOpname $record) => ! $record->isPosted())
+                        ->action(fn(StockOpname $record) => $record->post(Auth::user()))
+                        ->successNotificationTitle('Stock opname berhasil diposting.')
+                        ->color('success'),
+                    Tables\Actions\EditAction::make()
+                        ->color('warning'),
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn(StockOpname $record) => ! $record->isPosted()),
+                ])
+                    ->link()
+                    ->label('Aksi')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
