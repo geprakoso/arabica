@@ -2,23 +2,29 @@
 
 namespace App\Filament\Resources\Absensi\AbsensiResource\Pages;
 
-use App\Filament\Resources\Absensi\AbsensiResource;
 use App\Models\Absensi;
 use App\Models\ProfilePerusahaan;
+use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Absensi\AbsensiResource;
 
 class CreateAbsensi extends CreateRecord
 {
     protected static string $resource = AbsensiResource::class;
     protected ?string $heading = '';
 
+    protected function getCreatedNotificationTitle(): ?string
+    {
+        return null;
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Batasi 1 absensi per user per hari
         $sudahAbsen = Absensi::query()
-            ->where('user_id', $data['user_id'] ?? auth()->id())
-            ->whereDate('tanggal', $data['tanggal'] ?? now())
+            ->where('user_id', $data['user_id'] ?? Auth::user()->id())
+            ->whereDate('tanggal', $data['tanggal'] ?? now()->toDateString())
             ->exists();
 
         if ($sudahAbsen) {
@@ -32,6 +38,18 @@ class CreateAbsensi extends CreateRecord
         }
 
         $status = $data['status'] ?? null;
+
+        // Pulang sebaiknya UPDATE absensi yang sudah ada (bukan bikin record baru)
+        // supaya tetap "1 absensi per user per hari".
+        if ($status === 'pulang') {
+            Notification::make()
+                ->title('Pulang tidak bisa dibuat sebagai record baru')
+                ->body('Gunakan tombol/aksi "Pulang" pada absensi hari ini (update jam pulang).')
+                ->warning()
+                ->send();
+
+            $this->halt();
+        }
 
         // Izin atau sakit tidak perlu validasi lokasi
         if (in_array($status, ['izin', 'sakit'], true)) {
@@ -112,5 +130,49 @@ class CreateAbsensi extends CreateRecord
             cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
 
         return round($angle * $earthRadius);
+    }
+
+    protected function afterCreate(): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        // Notifikasi berbeda berdasarkan status
+        $status = $this->record->status;
+
+        if ($status === 'hadir') {
+            $notification =Notification::make()
+                ->title('Berhasil absen masuk')
+                ->body("Anda telah absen masuk pada {$this->record->tanggal->format('d-m-Y')} pukul {$this->record->jam_masuk}.")
+                ->icon('heroicon-o-check-circle')
+                ->success();
+            
+            $notification->send();
+            $notification->sendToDatabase($user);
+
+            return;
+        }
+
+        if (in_array($status, ['izin', 'sakit'], true)) {
+            $notification = Notification::make()
+                ->title('Pengajuan absensi tersimpan')
+                ->body("Status: {$status} pada {$this->record->tanggal -> format('d-m-Y')}.")
+                ->icon('heroicon-o-document-check');
+
+            $notification->sendToDatabase($user);
+
+            return;
+        }
+
+        // Fallback
+        $notification = Notification::make()
+            ->title('Absensi baru dibuat')
+            ->body("Status: {$status} pada {$this->record->tanggal}.")
+            ->icon('heroicon-o-check-circle');
+
+        $notification->sendToDatabase($user);
     }
 }

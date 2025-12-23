@@ -426,14 +426,11 @@ class PembelianResource extends Resource
                     ->counts('items')
                     ->sortable(),
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label('Pembelian')
-                    ->icon('heroicon-s-plus'),
-            ])
             ->filters([])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                ->icon('heroicon-s-eye')
+                ->label('Detail'),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

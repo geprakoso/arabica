@@ -2,17 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Exports\PenjualanExporter;
-use App\Filament\Resources\PenjualanReportResource\Pages;
-use App\Models\Penjualan;
+// use App\Filament\Exports\PenjualanExporter;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\ExportAction;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Form;
+use App\Models\Penjualan;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+// use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\PenjualanReportResource\Pages;
 
 class PenjualanReportResource extends Resource
 {
@@ -36,7 +37,7 @@ class PenjualanReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'member', 'karyawan'])) // reager loading data relasi 
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'jasaItems', 'member', 'karyawan'])) // eager loading data relasi 
             ->defaultSort('tanggal_penjualan', 'desc') // default sort
             ->columns([
                 TextColumn::make('no_nota')
@@ -58,32 +59,43 @@ class PenjualanReportResource extends Resource
                     ->label('Total Qty')
                     ->state(fn(Penjualan $record) => $record->items->sum('qty')) //menghitung total qty dari relasi items
                     ->sortable(),
+                TextColumn::make('total_jasa')
+                    ->label('Total Jasa')
+                    ->state(fn (Penjualan $record) => self::formatCurrency(
+                        self::calculateServiceTotal($record)
+                    ))
+                    ->toggleable()
+                    ->sortable(),
                 TextColumn::make('total_penjualan')
                     ->label('Total Penjualan')
                     ->state(fn(Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0)) //menghitung total penjualan dari relasi items
+                        self::calculateProductTotal($record) + self::calculateServiceTotal($record)
                     )) // format currency
                     ->sortable(),
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
                     ->state(fn(Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
+                        self::calculateHppTotal($record)
                     )) // format currency
                     ->sortable(),
                 TextColumn::make('total_margin')
                     ->label('Margin')
                     ->state(fn(Penjualan $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => ((float) ($item->harga_jual ?? 0) - (float) ($item->hpp ?? 0)) * (int) ($item->qty ?? 0))
+                        (self::calculateProductTotal($record) - self::calculateHppTotal($record)) + self::calculateServiceTotal($record)
                     )) // format currency
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\Filter::make('periode')
+                                 Tables\Filters\Filter::make('periode')
                     ->label('Periode')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
+                        DatePicker::make('from')
+                            ->native(false)
+                            ->default(now()->subMonth())
                             ->label('Dari'),
-                        Forms\Components\DatePicker::make('until')
+                        DatePicker::make('until')
+                            ->native(false)
+                            ->default(now())
                             ->label('Sampai'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -91,13 +103,21 @@ class PenjualanReportResource extends Resource
                             ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
                             ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
                     }),
+                Tables\Filters\SelectFilter::make('sumber_transaksi')
+                    ->label('Sumber Transaksi')
+                    ->options([
+                        'pos' => 'POS',
+                        'manual' => 'Manual',
+                    ])
+                    ->native(false)
+                    ->placeholder('Semua'),
             ])
-            ->headerActions([
-                ExportAction::make('export_penjualan')
-                    ->label('Download CSV')
-                    ->color('primary')
-                    ->exporter(PenjualanExporter::class),
-            ])
+            // ->headerActions([
+            //     ExportAction::make('export_penjualan')
+            //         ->label('Download CSV')
+            //         ->color('primary')
+            //         ->exporter(PenjualanExporter::class),
+            // ])
             ->actions([])
             ->bulkActions([]);
     }
@@ -117,5 +137,35 @@ class PenjualanReportResource extends Resource
     protected static function formatCurrency(float | int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
+    }
+
+    protected static function calculateProductTotal(Penjualan $record): float
+    {
+        return (float) $record->items->sum(function ($item): float {
+            $qty = (int) ($item->qty ?? 0);
+            $harga = (float) ($item->harga_jual ?? 0);
+
+            return $harga * $qty;
+        });
+    }
+
+    protected static function calculateHppTotal(Penjualan $record): float
+    {
+        return (float) $record->items->sum(function ($item): float {
+            $qty = (int) ($item->qty ?? 0);
+            $hpp = (float) ($item->hpp ?? 0);
+
+            return $hpp * $qty;
+        });
+    }
+
+    protected static function calculateServiceTotal(Penjualan $record): float
+    {
+        return (float) $record->jasaItems->sum(function ($service): float {
+            $qty = max(1, (int) ($service->qty ?? 1));
+            $harga = (float) ($service->harga ?? 0);
+
+            return $harga * $qty;
+        });
     }
 }

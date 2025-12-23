@@ -14,7 +14,7 @@ class ListPenjualans extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Penjualan')
+                ->label('Tambah Penjualan')
                 ->icon('hugeicons-plus-sign'),
         ];
     }

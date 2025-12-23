@@ -27,7 +27,9 @@ class ListAbsensis extends ListRecords
 
         return [
             Actions\CreateAction::make()
-                ->visible(fn () => $absensiHariIni === null),
+                ->visible(fn () => $absensiHariIni === null)
+                ->label('Absen Masuk')
+                ->icon('heroicon-o-arrow-right-on-rectangle'),
             Actions\Action::make('pulang')
                 ->label('Pulang')
                 ->icon('heroicon-o-arrow-right-end-on-rectangle')
@@ -56,14 +58,23 @@ class ListAbsensis extends ListRecords
                         return;
                     }
 
+                    $jamPulang = now();
+
                     $absensiHariIni->update([
-                        'jam_keluar' => now()->format('H:i:s'),
+                        'jam_keluar' => $jamPulang->format('H:i:s'),
                     ]);
 
-                    Notification::make()
-                        ->title('Jam pulang berhasil disimpan')
-                        ->success()
-                        ->send();
+                    $user = Auth::user();
+                    $notification = Notification::make()
+                        ->title('Berhasil absen pulang')
+                        ->body('Jam pulang tercatat pada ' . $jamPulang->format('H:i'))
+                        ->success();
+
+                    $notification->send();
+
+                    if ($user) {
+                        $notification->sendToDatabase($user);
+                    }
                 }),
         ];
     }

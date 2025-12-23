@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Gudang;
+use App\Models\Jasa;
 use App\Models\Member;
 use App\Models\Produk;
 use Filament\Forms\Get;
@@ -14,6 +15,7 @@ use App\Models\Penjualan;
 use App\Enums\MetodeBayar;
 use Filament\Tables\Table;
 use App\Models\PembelianItem;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
@@ -24,6 +26,7 @@ use Illuminate\Validation\ValidationException;
 use App\Filament\Resources\PosSaleResource\Pages;
 use Filament\Forms\Components\Livewire as LivewireComponent;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Filament\Support\Enums\Alignment;
 
 class PosSaleResource extends Resource
 {
@@ -64,8 +67,10 @@ class PosSaleResource extends Resource
                     Step::make('Keranjang')
                         ->schema([
                             TableRepeater::make('items')
-                                ->label('Item')
-                                ->minItems(1)
+                                ->createItemButtonLabel('Tambah Produk')
+                                ->addAction(fn (Action $action) => $action->color('primary'))
+                                ->label('Produk')
+                                ->minItems(0)
                                 ->columnSpanFull()
                                 ->helperText('Batch akan dipilih otomatis berdasarkan stok tertua (FIFO).')
                                 ->childComponents([
@@ -145,7 +150,7 @@ class PosSaleResource extends Resource
                                             $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
 
                                             if (empty($options)) {
-                                                return 'Kondisi mengikuti batch';
+                                                return 'Pilih Kondisi';
                                             }
 
                                             $labels = array_values($options);
@@ -175,9 +180,49 @@ class PosSaleResource extends Resource
                                     'harga_jual' => 'width: 30%;',
                                     'kondisi' => 'width: 15%;',
                                 ]),
+                            TableRepeater::make('services')
+                                ->label('Jasa')
+                                ->minItems(0)
+                                ->columnSpanFull()
+                                ->addAction(fn (Action $action) => $action->color('primary'))
+                                ->createItemButtonLabel('Tambah Jasa')
+                                ->helperText('Setiap entri dianggap satu layanan, tanpa kolom qty terpisah.')
+                                ->childComponents([
+                                    Forms\Components\Select::make('jasa_id')
+                                        ->label('Jasa')
+                                        ->options(fn () => self::getAvailableServiceOptions())
+                                        ->searchable()
+                                        ->preload()
+                                        ->required()
+                                        ->native(false)
+                                        ->reactive()
+                                        ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                            $set('harga', $state ? self::getDefaultServicePrice($state) : null);
+                                        }),
+                                    Forms\Components\TextInput::make('harga')
+                                        ->label('Harga Jasa')
+                                        ->numeric()
+                                        ->currencyMask(
+                                            thousandSeparator: '.',
+                                            decimalSeparator: ',',
+                                            precision: 0,
+                                        )
+                                        ->prefix('Rp')
+                                        ->nullable(),
+                                    Forms\Components\Textarea::make('catatan')
+                                        ->label('Catatan')
+                                        ->maxLength(255)
+                                        ->nullable(),
+                                ])
+                                ->colStyles([
+                                    'jasa_id' => 'width: 40%;',
+                                    'harga' => 'width: 30%;',
+                                    'catatan' => 'width: 30%;',
+                                ]),
                         ])
                         ->afterValidation(function (Get $get): void {
                             self::ensureStockIsAvailable($get('items'));
+                            self::ensureCartIsNotEmpty($get('items'), $get('services'));
                         }),
                     Step::make('Ringkasan & Pembayaran')
                         ->columns(2)
@@ -186,11 +231,13 @@ class PosSaleResource extends Resource
                             LivewireComponent::make('pos-cart-summary')
                                 ->data(fn(Get $get): array => [
                                     'items' => $get('items') ?? [],
+                                    'services' => $get('services') ?? [],
                                     'discount' => (float) ($get('diskon_total') ?? 0),
                                 ])
                                 ->key(function (Get $get): string {
                                     $payload = [
                                         'items' => $get('items') ?? [],
+                                        'services' => $get('services') ?? [],
                                         'discount' => (float) ($get('diskon_total') ?? 0),
                                     ];
 
@@ -219,7 +266,7 @@ class PosSaleResource extends Resource
                                         ->live(onBlur: true)
                                         // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
-                                            [, $totalAmount] = self::summarizeCart($get('items'));
+                                            [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
                                             $discount = max(0, (float) ($state ?? 0));
                                             $discount = min($discount, $totalAmount);
                                             $set('diskon_total', $discount);
@@ -239,7 +286,7 @@ class PosSaleResource extends Resource
                                         // validasi tunai diterima tidak boleh kurang dari harga total
                                         ->rule(function (Get $get) {
                                             return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                                [, $totalAmount] = self::summarizeCart($get('items'));
+                                                [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
                                                 $discount = (float) ($get('diskon_total') ?? 0);
                                                 $grandTotal = max(0, $totalAmount - $discount);
                                                 if ($value < $grandTotal) {
@@ -288,18 +335,16 @@ class PosSaleResource extends Resource
     }
 
     /**
-     * Menghitung total qty dan total amount
-     *
-     * @param ?array $items
-     * @return array
+     * Menghitung total qty produk dan total nominal (produk + jasa)
      */
-    public static function summarizeCart(?array $items): array
+    public static function summarizeCart(?array $items, ?array $services = null): array
     {
-        $collection = collect($items ?? []);
+        $productItems = collect($items ?? []);
+        $serviceItems = collect($services ?? []);
 
-        $totalQty = (int) $collection->sum(fn(array $item) => (int) ($item['qty'] ?? 0));
+        $totalQty = (int) $productItems->sum(fn (array $item) => (int) ($item['qty'] ?? 0));
 
-        $totalAmount = (float) $collection->sum(function (array $item) {
+        $productsTotal = (float) $productItems->sum(function (array $item) {
             $qty = (int) ($item['qty'] ?? 0);
             $price = self::resolveUnitPrice($item);
             $discount = (float) ($item['diskon'] ?? 0);
@@ -307,7 +352,13 @@ class PosSaleResource extends Resource
             return max(0, ($price * $qty) - $discount);
         });
 
-        return [$totalQty, $totalAmount];
+        $servicesTotal = (float) $serviceItems->sum(function (array $service) {
+            $price = (float) ($service['harga'] ?? 0);
+
+            return max(0, $price);
+        });
+
+        return [$totalQty, $productsTotal + $servicesTotal];
     }
 
     /**
@@ -370,6 +421,15 @@ class PosSaleResource extends Resource
         }
     }
 
+    protected static function ensureCartIsNotEmpty(?array $items, ?array $services): void
+    {
+        if (blank($items) && blank($services)) {
+            throw ValidationException::withMessages([
+                'items' => 'Tambahkan minimal satu produk atau jasa.',
+            ]);
+        }
+    }
+
     /**
      * Mengambil total stok tersedia untuk produk tertentu dan kondisi tertentu
      *
@@ -416,7 +476,7 @@ class PosSaleResource extends Resource
             return;
         }
 
-        [, $totalAmount] = self::summarizeCart($get('items'));
+        [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
         $discount = $overrideDiscount ?? (float) ($get('diskon_total') ?? 0);
         $discount = min(max($discount, 0), $totalAmount);
 
@@ -501,6 +561,24 @@ class PosSaleResource extends Resource
             ->unique()
             ->mapWithKeys(fn(string $condition) => [$condition => ucfirst(strtolower($condition))])
             ->toArray();
+    }
+
+    public static function getAvailableServiceOptions(): array
+    {
+        return Jasa::query()
+            ->where('is_active', true)
+            ->orderBy('nama_jasa')
+            ->pluck('nama_jasa', 'id')
+            ->all();
+    }
+
+    protected static function getDefaultServicePrice(?int $serviceId): ?float
+    {
+        if (! $serviceId) {
+            return null;
+        }
+
+        return Jasa::query()->whereKey($serviceId)->value('harga');
     }
 
     /**

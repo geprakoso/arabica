@@ -7,11 +7,13 @@ use Filament\Tables;
 use App\Models\Absensi;
 use Filament\Forms\Get;
 use App\Models\Karyawan;
-use Filament\Facades\Filament;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
+use Illuminate\Support\Carbon;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Actions\StaticAction;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
@@ -24,14 +26,13 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ImageEntry;
 use App\Filament\Resources\Absensi\AbsensiResource\Pages;
 use Filament\Infolists\Components\Section as InfolistSection;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
-use Illuminate\Support\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 
 class AbsensiResource extends Resource
 {
@@ -39,7 +40,7 @@ class AbsensiResource extends Resource
 
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
     protected static ?string $navigationGroup = 'Absensi';
-    protected static ?string $plurelLabel = 'Absensi';
+    protected static ?string $pluralLabel = 'Absensi';
     protected static ?string $navigationLabel = 'Absen';
 
     public static function canViewAny(): bool
@@ -132,7 +133,7 @@ class AbsensiResource extends Resource
                             // --- HIDDEN FIELDS (System Data) ---
                             // Kita sembunyikan (Hidden) agar UI bersih, tapi data tetap terkirim
                             Hidden::make('user_id')->default(Auth::id()),
-                            Hidden::make('tanggal')->default(now()),
+                            Hidden::make('tanggal')->default(fn () => now()->toDateString()),
                             Hidden::make('jam_masuk')->default(now()->format('H:i')),
                             
                             // Field ini tetap visible tapi readonly agar user tau lokasi terdeteksi
@@ -246,6 +247,16 @@ class AbsensiResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Action::make('detail')
+                    ->label('Detail')
+                    ->icon('heroicon-o-eye')
+                    ->color('primary')
+                    ->modalHeading('Detail Absensi')
+                    ->modalWidth('4xl')
+                    ->modalSubmitAction(false)
+                    ->slideOver()
+                    ->infolist(fn(Infolist $infolist) => static::infolist($infolist))
+                  ,
                 // Action::make('pulang')
                 //     ->label('Pulang')
                 //     ->icon('heroicon-o-arrow-right-end-on-rectangle')

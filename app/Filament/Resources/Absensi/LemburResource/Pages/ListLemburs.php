@@ -13,7 +13,9 @@ class ListLemburs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Lembur')
+                ->icon('heroicon-s-plus'),
         ];
     }
 }

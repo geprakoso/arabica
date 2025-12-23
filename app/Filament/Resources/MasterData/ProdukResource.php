@@ -296,10 +296,12 @@ class ProdukResource extends Resource
                     ->sortable(),
                 TextColumn::make('kategori.nama_kategori')
                     ->label('Kategori')
+                    ->formatStateUsing(fn ($state) => ucfirst(strtolower($state)))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('brand.nama_brand')
                     ->label('Brand')
+                    ->formatStateUsing(fn ($state) => ucfirst(strtolower($state)))                  
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('sku')

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PenjualanResource\Pages;
 use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
+use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
 use App\Models\PembelianItem;
 use App\Models\Member;
 use App\Models\Penjualan;
@@ -54,10 +55,14 @@ class PenjualanResource extends Resource
                             ->label('No. Nota')
                             ->default(fn() => Penjualan::generateNoNota())
                             ->disabled()
+                            ->prefixIcon('heroicon-s-tag')
                             ->unique(ignoreRecord: true)
                             ->required(),
                         DatePicker::make('tanggal_penjualan')
                             ->label('Tanggal Penjualan')
+                            ->default(now())
+                            ->prefixIcon('heroicon-s-calendar')
+                            ->displayFormat('d F Y')
                             ->required()
                             ->default(now())
                             ->native(false),
@@ -118,7 +123,7 @@ class PenjualanResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items'])->withCount('items'))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'jasaItems'])->withCount('items'))
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
@@ -140,12 +145,45 @@ class PenjualanResource extends Resource
                 TextColumn::make('items_count')
                     ->label('Jumlah Item')
                     ->sortable(),
-                TextColumn::make('total_qty')
-                    ->label('Total Qty')
-                    ->state(fn(Penjualan $record) => $record->items->sum('qty'))
-                    ->sortable(),
+                TextColumn::make('grand_total_display')
+                    ->label('Grand Total')
+                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
             ])
-            ->filters([])
+            ->filters([
+                 Tables\Filters\Filter::make('periode')
+                    ->label('Periode')
+                    ->form([
+                        DatePicker::make('from')
+                            ->native(false)
+                            ->default(now()->subMonth())
+                            ->label('Dari'),
+                        DatePicker::make('until')
+                            ->native(false)
+                            ->default(now())
+                            ->label('Sampai'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
+                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
+                    }),
+                Tables\Filters\SelectFilter::make('sumber_transaksi')
+                    ->label('Sumber Transaksi')
+                    ->options([
+                        'pos' => 'POS',
+                        'manual' => 'Manual',
+                    ])
+                    ->native(false)
+                    ->placeholder('Semua'),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -309,6 +347,7 @@ class PenjualanResource extends Resource
     {
         return [
             ItemsRelationManager::class,
+            JasaRelationManager::class,
         ];
     }
 
@@ -398,5 +437,21 @@ class PenjualanResource extends Resource
             ->orderBy('nama_produk')
             ->pluck('nama_produk', 'id')
             ->all();
+    }
+
+    /**
+     * Hitung grand total gabungan dari produk dan jasa.
+     */
+    protected static function calculateGrandTotal(Penjualan $record): float
+    {
+        $totalProduk = $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+        $totalJasa = $record->jasaItems->sum(fn ($jasa) => (float) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
+
+        return $totalProduk + $totalJasa;
+    }
+
+    protected static function formatCurrency(float $value): string
+    {
+        return 'Rp ' . number_format($value, 0, ',', '.');
     }
 }
