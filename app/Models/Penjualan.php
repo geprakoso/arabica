@@ -102,7 +102,8 @@ class Penjualan extends Model
             'total' => $total,
             'grand_total' => $grandTotal,
         ])->saveQuietly();
-        
+    }
+
     public function jasaItems()
     {
         return $this->hasMany(PenjualanJasa::class, 'id_penjualan', 'id_penjualan');
