@@ -1,10 +1,16 @@
 @php
     $rows = $rows ?? (isset($getState) ? $getState() : []);
-    $totalHpp = collect($rows)->sum(fn ($row) => (float) ($row->hpp ?? 0) * (int) ($row->qty ?? 0));
+    $resolvedRows = $rows;
 
-    if ($rows instanceof \Illuminate\Support\Collection) {
-        $rows = $rows->all();
+    if ($resolvedRows instanceof \Illuminate\Pagination\Paginator || $resolvedRows instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+        $resolvedRows = $resolvedRows->items();
     }
+
+    if ($resolvedRows instanceof \Illuminate\Support\Collection) {
+        $resolvedRows = $resolvedRows->all();
+    }
+
+    $totalHpp = $totalHpp ?? collect($resolvedRows)->sum(fn ($row) => (float) ($row->hpp ?? 0) * (int) ($row->qty ?? 0));
 @endphp
 
 <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
@@ -26,7 +32,7 @@
                         : null;
                 @endphp
                 <tr
-                    class="{{ $url ? 'lr-row cursor-pointer border-b border-gray-200 transition bg-white dark:border-gray-700 dark:bg-transparent hover:bg-gray-50/70 dark:hover:bg-white/5' : 'lr-row border-b border-gray-200 dark:border-gray-800' }}"
+                    class="{{ $url ? 'lr-row group cursor-pointer border-b border-gray-200 transition bg-white dark:border-gray-700 dark:bg-transparent hover:bg-gray-100 hover:[&>td]:bg-gray-100' : 'lr-row border-b border-gray-200 dark:border-gray-800' }}"
                     @if ($url)
                         role="link"
                         tabindex="0"
@@ -34,16 +40,16 @@
                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.open('{{ $url }}', '_blank', 'noopener'); }"
                     @endif
                 >
-                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100">
+                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100 dark:group-hover:!bg-gray-800/70">
                         {{ $row->produk?->nama_produk ?? '-' }}
                     </td>
-                    <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-100">
+                    <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-100 dark:group-hover:!bg-gray-800/70">
                         {{ (int) ($row->qty ?? 0) }}
                     </td>
-                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100">
+                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100 dark:group-hover:!bg-gray-800/70">
                         {{ $pembelian?->supplier?->nama_supplier ?? '-' }}
                     </td>
-                    <td class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
+                    <td class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100 dark:group-hover:!bg-gray-800/70">
                         Rp {{ number_format((float) ($row->hpp ?? 0), 0, ',', '.') }}
                     </td>
                 </tr>
@@ -60,4 +66,9 @@
         <span class="text-gray-600 dark:text-gray-200">Total Pembelian</span>
         <span class="font-semibold text-gray-900 dark:text-gray-50">Rp {{ number_format($totalHpp, 0, ',', '.') }}</span>
     </div>
+    @if ($rows instanceof \Illuminate\Pagination\LengthAwarePaginator && $rows->hasPages())
+        <div class="border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+            {{ $rows->onEachSide(1)->links() }}
+        </div>
+    @endif
 </div>

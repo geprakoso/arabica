@@ -262,11 +262,14 @@ class PenjualanResource extends Resource
                                     ->label('Grand Total')
                                     ->money('IDR')
                                     ->state(function (Penjualan $record): float {
-                                        $subtotal = (float) ($record->items()
+                                        $subtotalProduk = (float) ($record->items()
                                             ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
                                             ->value('total') ?? 0);
+                                        $subtotalJasa = (float) ($record->jasaItems()
+                                            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                                            ->value('total') ?? 0);
 
-                                        return max(0, $subtotal - (float) ($record->diskon_total ?? 0));
+                                        return max(0, ($subtotalProduk + $subtotalJasa) - (float) ($record->diskon_total ?? 0));
                                     })
                                     ->extraAttributes([
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
@@ -288,6 +291,14 @@ class PenjualanResource extends Resource
                             ->state(fn (Penjualan $record) => $record->items()->with(['produk', 'pembelianItem.pembelian'])->get()),
                     ]),
 
+                InfoSection::make('Daftar Jasa')
+                    ->schema([
+                        ViewEntry::make('jasa_items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.penjualan-jasa-table')
+                            ->state(fn (Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
+                    ]),
+
                 // === BAGIAN BAWAH: CATATAN & RINGKASAN ===
                 InfoSection::make()
                     ->schema([
@@ -304,9 +315,16 @@ class PenjualanResource extends Resource
                                 TextEntry::make('total')
                                     ->label('Subtotal')
                                     ->money('IDR')
-                                    ->state(fn (Penjualan $record): float => (float) ($record->items()
-                                        ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
-                                        ->value('total') ?? 0))
+                                    ->state(function (Penjualan $record): float {
+                                        $subtotalProduk = (float) ($record->items()
+                                            ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
+                                            ->value('total') ?? 0);
+                                        $subtotalJasa = (float) ($record->jasaItems()
+                                            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                                            ->value('total') ?? 0);
+
+                                        return $subtotalProduk + $subtotalJasa;
+                                    })
                                     ->extraAttributes([
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
                                     ])

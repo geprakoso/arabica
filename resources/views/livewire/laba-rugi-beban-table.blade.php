@@ -9,6 +9,9 @@
         Memuat detail beban...
     </div>
     <div wire:loading.remove>
-        @include('filament.infolists.beban-table', ['rows' => $this->rows])
+        @include('filament.infolists.beban-table', [
+            'rows' => $this->rows,
+            'totalNominal' => $this->totalNominal,
+        ])
     </div>
 </div>

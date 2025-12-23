@@ -9,6 +9,9 @@
         Memuat daftar pembelian...
     </div>
     <div wire:loading.remove>
-        @include('filament.infolists.pembelian-items-table', ['rows' => $this->rows])
+        @include('filament.infolists.pembelian-items-table', [
+            'rows' => $this->rows,
+            'totalHpp' => $this->totalHpp,
+        ])
     </div>
 </div>

@@ -322,7 +322,64 @@ class InputTransaksiTokoResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\Filter::make('filters')
+                    ->form([
+                        FormsGrid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    '1m' => '1 Bulan',
+                                    '3m' => '3 Bulan',
+                                    '6m' => '6 Bulan',
+                                    '1y' => '1 Tahun',
+                                    'custom' => 'Custom',
+                                ])
+                                ->default('1m')
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('hugeicons-calendar-01')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('hugeicons-calendar-01')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $range = $data['range'] ?? '1m';
+
+                        $startDate = null;
+                        $endDate = now();
+
+                        if ($range !== 'custom') {
+                            $startDate = match ($range) {
+                                '3m' => now()->copy()->subMonthsNoOverflow(3),
+                                '6m' => now()->copy()->subMonthsNoOverflow(6),
+                                '1y' => now()->copy()->subYear(),
+                                default => now()->copy()->subMonth(),
+                            };
+                        } else {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? $endDate;
+                        }
+
+                        return $query
+                            ->when(
+                                $startDate,
+                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal_transaksi', '>=', $date),
+                            )
+                            ->when(
+                                $endDate,
+                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal_transaksi', '<=', $date),
+                            );
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()

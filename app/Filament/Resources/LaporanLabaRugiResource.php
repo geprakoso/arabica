@@ -6,11 +6,14 @@ use App\Enums\KategoriAkun;
 use App\Filament\Resources\Akunting\InputTransaksiTokoResource;
 use App\Filament\Resources\LaporanLabaRugiResource\Pages;
 use App\Models\InputTransaksiToko;
+use App\Models\JenisAkun;
+use App\Models\KodeAkun;
 use App\Models\LaporanLabaRugi;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
+use App\Models\PenjualanJasa;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -31,7 +34,7 @@ class LaporanLabaRugiResource extends Resource
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'Laporan Laba Rugi';
     protected static ?string $pluralLabel = 'Laporan Laba Rugi';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-pie-chart';
 
     public static function form(Form $form): Form
     {
@@ -48,15 +51,18 @@ class LaporanLabaRugiResource extends Resource
                 TextColumn::make('month_start')
                     ->label('Bulan')
                     ->formatStateUsing(fn(?string $state) => self::formatMonthLabel($state)),
+                TextColumn::make('total_penjualan')
+                    ->label('Pendapatan')
+                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                 TextColumn::make('total_hpp')
-                    ->label('Total HPP')
-                    ->money('idr', true),
+                    ->label('Beban Pokok Penjualan')
+                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                 TextColumn::make('total_beban')
-                    ->label('Total Beban')
-                    ->money('idr', true),
+                    ->label('Beban Usaha')
+                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                 TextColumn::make('laba_rugi')
-                    ->label('Laba / Rugi')
-                    ->money('idr', true),
+                    ->label('Laba')
+                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
             ])
             ->defaultSort('month_start', 'desc')
             ->filters([
@@ -86,18 +92,24 @@ class LaporanLabaRugiResource extends Resource
                         TextEntry::make('month_start')
                             ->label('Bulan')
                             ->formatStateUsing(fn(?string $state) => self::formatMonthLabel($state)),
+                        TextEntry::make('total_penjualan')
+                            ->label('Pendapatan')
+                            ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                         TextEntry::make('total_hpp')
-                            ->label('Total HPP')
-                            ->money('idr', true),
+                            ->label('Beban Pokok Penjualan')
+                            ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
+                        TextEntry::make('laba_kotor')
+                            ->label('Laba Kotor')
+                            ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                         TextEntry::make('total_beban')
-                            ->label('Total Beban')
-                            ->money('idr', true),
+                            ->label('Beban Usaha')
+                            ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                         TextEntry::make('laba_rugi')
                             ->label('Laba / Rugi')
-                            ->money('idr', true),
+                            ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                     ])
                     ->columns(2),
-                Section::make('Produk Terjual')
+                Section::make('Daftar Penjualan')
                     ->schema([
                         ViewEntry::make('penjualan_table')
                             ->label('')
@@ -107,7 +119,7 @@ class LaporanLabaRugiResource extends Resource
                     ->collapsible()
                     ->collapsed()
                     ->columnSpanFull(),
-                Section::make('Detail Beban')
+                Section::make('Daftar Beban')
                     ->schema([
                         ViewEntry::make('beban_table')
                             ->label('')
@@ -116,7 +128,7 @@ class LaporanLabaRugiResource extends Resource
                     ->columnSpanFull()
                     ->collapsible()
                     ->collapsed(),
-                Section::make('Produk Pembelian')
+                Section::make('Daftar Pembelian')
                     ->schema([
                         ViewEntry::make('pembelian_table')
                             ->label('')
@@ -148,8 +160,11 @@ class LaporanLabaRugiResource extends Resource
         $pembelianTable = (new Pembelian())->getTable();
         $itemsTable = (new PembelianItem())->getTable();
         $transaksiTable = (new InputTransaksiToko())->getTable();
+        $jenisAkunTable = (new JenisAkun())->getTable();
+        $kodeAkunTable = (new KodeAkun())->getTable();
         $penjualanTable = (new Penjualan())->getTable();
         $penjualanItemsTable = (new PenjualanItem())->getTable();
+        $penjualanJasaTable = (new PenjualanJasa())->getTable();
         $reportTable = (new LaporanLabaRugi())->getTable();
 
         $hppSub = Pembelian::query()
@@ -163,7 +178,12 @@ class LaporanLabaRugiResource extends Resource
             ->selectRaw("DATE_FORMAT({$transaksiTable}.tanggal_transaksi, '%Y-%m-01') as month_start")
             ->selectRaw("DATE_FORMAT({$transaksiTable}.tanggal_transaksi, '%Y-%m') as month_key")
             ->selectRaw("SUM({$transaksiTable}.nominal_transaksi) as total_beban")
-            ->where("{$transaksiTable}.kategori_transaksi", KategoriAkun::Beban->value)
+            ->leftJoin($jenisAkunTable, "{$jenisAkunTable}.id", '=', "{$transaksiTable}.kode_jenis_akun_id")
+            ->leftJoin($kodeAkunTable, "{$kodeAkunTable}.id", '=', "{$jenisAkunTable}.kode_akun_id")
+            ->whereRaw(
+                "LOWER(COALESCE({$transaksiTable}.kategori_transaksi, {$kodeAkunTable}.kategori_akun)) = ?",
+                [KategoriAkun::Beban->value]
+            )
             ->groupBy('month_start', 'month_key');
 
         $penjualanSub = Penjualan::query()
@@ -173,6 +193,13 @@ class LaporanLabaRugiResource extends Resource
             ->join($penjualanItemsTable, "{$penjualanItemsTable}.id_penjualan", '=', "{$penjualanTable}.id_penjualan")
             ->groupBy('month_start', 'month_key');
 
+        $penjualanJasaSub = Penjualan::query()
+            ->selectRaw("DATE_FORMAT({$penjualanTable}.tanggal_penjualan, '%Y-%m-01') as month_start")
+            ->selectRaw("DATE_FORMAT({$penjualanTable}.tanggal_penjualan, '%Y-%m') as month_key")
+            ->selectRaw("SUM({$penjualanJasaTable}.harga * IFNULL(NULLIF({$penjualanJasaTable}.qty, 0), 1)) as total_penjualan_jasa")
+            ->join($penjualanJasaTable, "{$penjualanJasaTable}.id_penjualan", '=', "{$penjualanTable}.id_penjualan")
+            ->groupBy('month_start', 'month_key');
+
         $monthsSub = DB::query()->fromSub($hppSub, 'hpp')
             ->select('month_start', 'month_key')
             ->union(
@@ -180,6 +207,9 @@ class LaporanLabaRugiResource extends Resource
             )
             ->union(
                 DB::query()->fromSub($penjualanSub, 'penjualan')->select('month_start', 'month_key')
+            )
+            ->union(
+                DB::query()->fromSub($penjualanJasaSub, 'penjualan_jasa')->select('month_start', 'month_key')
             );
 
         return LaporanLabaRugi::query()
@@ -187,13 +217,15 @@ class LaporanLabaRugiResource extends Resource
             ->leftJoinSub($hppSub, 'hpp', 'hpp.month_key', '=', "{$reportTable}.month_key")
             ->leftJoinSub($bebanSub, 'beban', 'beban.month_key', '=', "{$reportTable}.month_key")
             ->leftJoinSub($penjualanSub, 'penjualan', 'penjualan.month_key', '=', "{$reportTable}.month_key")
+            ->leftJoinSub($penjualanJasaSub, 'penjualan_jasa', 'penjualan_jasa.month_key', '=', "{$reportTable}.month_key")
             ->select([
                 "{$reportTable}.month_key",
                 "{$reportTable}.month_start",
                 DB::raw('COALESCE(hpp.total_hpp, 0) as total_hpp'),
                 DB::raw('COALESCE(beban.total_beban, 0) as total_beban'),
-                DB::raw('COALESCE(penjualan.total_penjualan, 0) as total_penjualan'),
-                DB::raw('(COALESCE(penjualan.total_penjualan, 0) - (COALESCE(hpp.total_hpp, 0) + COALESCE(beban.total_beban, 0))) as laba_rugi'),
+                DB::raw('(COALESCE(penjualan.total_penjualan, 0) + COALESCE(penjualan_jasa.total_penjualan_jasa, 0)) as total_penjualan'),
+                DB::raw('((COALESCE(penjualan.total_penjualan, 0) + COALESCE(penjualan_jasa.total_penjualan_jasa, 0)) - COALESCE(hpp.total_hpp, 0)) as laba_kotor'),
+                DB::raw('((COALESCE(penjualan.total_penjualan, 0) + COALESCE(penjualan_jasa.total_penjualan_jasa, 0)) - (COALESCE(hpp.total_hpp, 0) + COALESCE(beban.total_beban, 0))) as laba_rugi'),
             ])
             ->orderByDesc("{$reportTable}.month_start");
     }
@@ -207,7 +239,7 @@ class LaporanLabaRugiResource extends Resource
             ->first();
     }
 
-    protected static function formatMonthLabel(?string $monthStart): string
+    public static function formatMonthLabel(?string $monthStart): string
     {
         if (blank($monthStart)) {
             return '-';
@@ -241,6 +273,7 @@ class LaporanLabaRugiResource extends Resource
     {
         $pembelianTable = (new Pembelian())->getTable();
         $transaksiTable = (new InputTransaksiToko())->getTable();
+        $penjualanTable = (new Penjualan())->getTable();
 
         $pembelianYears = Pembelian::query()
             ->selectRaw("YEAR({$pembelianTable}.tanggal) as tahun")
@@ -252,8 +285,14 @@ class LaporanLabaRugiResource extends Resource
             ->distinct()
             ->pluck('tahun');
 
+        $penjualanYears = Penjualan::query()
+            ->selectRaw("YEAR({$penjualanTable}.tanggal_penjualan) as tahun")
+            ->distinct()
+            ->pluck('tahun');
+
         $years = $pembelianYears
             ->merge($transaksiYears)
+            ->merge($penjualanYears)
             ->filter()
             ->unique()
             ->sortDesc()

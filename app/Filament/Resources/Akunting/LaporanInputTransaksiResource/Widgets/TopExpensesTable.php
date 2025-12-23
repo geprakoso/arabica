@@ -13,6 +13,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class TopExpensesTable extends AdvancedTableWidget
 {
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     protected static ?string $heading = 'Pengeluaran Terbesar (Bulan Ini)';
 
     protected static ?string $description = 'Pantau beban terbesar dan lengkapi bukti sebelum closing.';
