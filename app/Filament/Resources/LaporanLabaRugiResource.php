@@ -19,8 +19,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Tabs;
-use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Illuminate\Database\Eloquent\Builder;
@@ -49,7 +47,7 @@ class LaporanLabaRugiResource extends Resource
             ->columns([
                 TextColumn::make('month_start')
                     ->label('Bulan')
-                    ->formatStateUsing(fn (?string $state) => self::formatMonthLabel($state)),
+                    ->formatStateUsing(fn(?string $state) => self::formatMonthLabel($state)),
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
                     ->money('idr', true),
@@ -87,7 +85,7 @@ class LaporanLabaRugiResource extends Resource
                     ->schema([
                         TextEntry::make('month_start')
                             ->label('Bulan')
-                            ->formatStateUsing(fn (?string $state) => self::formatMonthLabel($state)),
+                            ->formatStateUsing(fn(?string $state) => self::formatMonthLabel($state)),
                         TextEntry::make('total_hpp')
                             ->label('Total HPP')
                             ->money('idr', true),
@@ -99,35 +97,34 @@ class LaporanLabaRugiResource extends Resource
                             ->money('idr', true),
                     ])
                     ->columns(2),
+                Section::make('Produk Terjual')
+                    ->schema([
+                        ViewEntry::make('penjualan_table')
+                            ->label('')
+                            ->view('filament.infolists.laba-rugi-penjualan-tab'),
+                    ])
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->collapsed()
+                    ->columnSpanFull(),
                 Section::make('Detail Beban')
                     ->schema([
-                        Tabs::make('Detail Laporan')
-                            ->activeTab(1)
-                            ->tabs([
-                                Tab::make('Detail Beban')
-                                    ->icon('heroicon-o-banknotes')
-                                    ->schema([
-                                        ViewEntry::make('beban_table')
-                                            ->label('')
-                                            ->view('filament.infolists.laba-rugi-beban-tab'),
-                                    ]),
-                                Tab::make('Produk Pembelian')
-                                    ->icon('heroicon-o-cube')
-                                    ->schema([
-                                        ViewEntry::make('pembelian_table')
-                                            ->label('')
-                                            ->view('filament.infolists.laba-rugi-pembelian-tab'),
-                                    ]),
-                                Tab::make('Produk Terjual')
-                                    ->icon('heroicon-o-shopping-bag')
-                                    ->schema([
-                                        ViewEntry::make('penjualan_table')
-                                            ->label('')
-                                            ->view('filament.infolists.laba-rugi-penjualan-tab'),
-                                    ]),
-                            ]),
+                        ViewEntry::make('beban_table')
+                            ->label('')
+                            ->view('filament.infolists.laba-rugi-beban-tab'),
                     ])
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->collapsed(),
+                Section::make('Produk Pembelian')
+                    ->schema([
+                        ViewEntry::make('pembelian_table')
+                            ->label('')
+                            ->view('filament.infolists.laba-rugi-pembelian-tab'),
+                    ])
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 
@@ -262,8 +259,6 @@ class LaporanLabaRugiResource extends Resource
             ->sortDesc()
             ->values();
 
-        return $years->mapWithKeys(fn ($year) => [(string) $year => (string) $year])->all();
+        return $years->mapWithKeys(fn($year) => [(string) $year => (string) $year])->all();
     }
-
-    
 }
