@@ -82,9 +82,6 @@ class StockOpnameResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
-                    ->extraAttributes([
-                        'class' => 'italic',
-                    ])
                     ->color('primary')
                     ->icon('heroicon-o-tag')
                     ->copyable(),
@@ -124,18 +121,20 @@ class StockOpnameResource extends Resource
                         ->label('Posting')
                         ->icon('heroicon-o-paper-airplane')
                         ->requiresConfirmation()
-                        ->visible(fn(StockOpname $record) => ! $record->isPosted())
+                        // ->visible(fn(StockOpname $record) => ! $record->isPosted())
                         ->action(fn(StockOpname $record) => $record->post(Auth::user()))
                         ->successNotificationTitle('Stock opname berhasil diposting.')
                         ->color('success'),
                     Tables\Actions\EditAction::make()
                         ->color('warning'),
                     Tables\Actions\ViewAction::make(),
-                    Tables\Actions\DeleteAction::make()
-                        ->visible(fn(StockOpname $record) => ! $record->isPosted()),
+                    Tables\Actions\DeleteAction::make(),
+                    // ->visible(fn(StockOpname $record) => ! $record->isPosted()),
                 ])
-                    ->link()
                     ->label('Aksi')
+                    ->visible(fn(StockOpname $record) => ! $record->isPosted())
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->tooltip('Menu Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
