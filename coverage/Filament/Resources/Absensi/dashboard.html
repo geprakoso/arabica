@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /Applications/MAMP/htdocs/arabica/app/Filament/Resources/Absensi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../../_css/bootstrap.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/nv.d3.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/style.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="../../../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../../../index.html">/Applications/MAMP/htdocs/arabica/app</a></li>
+         <li class="breadcrumb-item"><a href="../../index.html">Filament</a></li>
+         <li class="breadcrumb-item"><a href="../index.html">Resources</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Absensi</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#12">App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/EditAbsensi.php.html#9">App\Filament\Resources\Absensi\AbsensiResource\Pages\EditAbsensi</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ListAbsensis.php.html#13">App\Filament\Resources\Absensi\AbsensiResource\Pages\ListAbsensis</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ViewAbsensi.php.html#9">App\Filament\Resources\Absensi\AbsensiResource\Pages\ViewAbsensi</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource/Pages/ListLaporanAbsensis.php.html#11">App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages\ListLaporanAbsensis</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource/Pages/EditLembur.php.html#9">App\Filament\Resources\Absensi\LemburResource\Pages\EditLembur</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource/Pages/ListLemburs.php.html#9">App\Filament\Resources\Absensi\LemburResource\Pages\ListLemburs</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource/Pages/ViewLembur.php.html#9">App\Filament\Resources\Absensi\LemburResource\Pages\ViewLembur</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Pages/EditLiburCuti.php.html#9">App\Filament\Resources\Absensi\LiburCutiResource\Pages\EditLiburCuti</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Pages/ListLiburCutis.php.html#10">App\Filament\Resources\Absensi\LiburCutiResource\Pages\ListLiburCutis</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#15">App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#41">App\Filament\Resources\Absensi\AbsensiResource</a></td><td class="text-right">2%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#18">App\Filament\Resources\Absensi\LaporanAbsensiResource</a></td><td class="text-right">2%</td></tr>
+       <tr><td><a href="LemburResource.php.html#35">App\Filament\Resources\Absensi\LemburResource</a></td><td class="text-right">4%</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#28">App\Filament\Resources\Absensi\LiburCutiResource</a></td><td class="text-right">5%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AbsensiResource.php.html#41">App\Filament\Resources\Absensi\AbsensiResource</a></td><td class="text-right">1187</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#18">App\Filament\Resources\Absensi\LaporanAbsensiResource</a></td><td class="text-right">994</td></tr>
+       <tr><td><a href="LemburResource.php.html#35">App\Filament\Resources\Absensi\LemburResource</a></td><td class="text-right">618</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#28">App\Filament\Resources\Absensi\LiburCutiResource</a></td><td class="text-right">597</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#12">App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi</a></td><td class="text-right">342</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#15">App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats</a></td><td class="text-right">240</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ListAbsensis.php.html#13">App\Filament\Resources\Absensi\AbsensiResource\Pages\ListAbsensis</a></td><td class="text-right">56</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AbsensiResource.php.html#50"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::canViewAny">canViewAny</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#59"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::getEloquentQuery">getEloquentQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#72"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::form">form</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#182"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::infolist">infolist</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#283"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::table">table</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#17"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::getCreatedNotificationTitle">getCreatedNotificationTitle</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#22"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::mutateFormDataBeforeCreate">mutateFormDataBeforeCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#111"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::getFormActions">getFormActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#117"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::hitungJarak">hitungJarak</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#135"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::afterCreate">afterCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/EditAbsensi.php.html#13"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\EditAbsensi::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ListAbsensis.php.html#17"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\ListAbsensis::makeTable">makeTable</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ListAbsensis.php.html#24"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\ListAbsensis::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ViewAbsensi.php.html#13"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\ViewAbsensi::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#33"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::table">table</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#190"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::getJamMasukMeta">getJamMasukMeta</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#220"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::getTelatBadges">getTelatBadges</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#237"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::formatTelatLabel">formatTelatLabel</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#253"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::formatJamKerjaLabel">formatJamKerjaLabel</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#290"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::monthOptions">monthOptions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#305"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::isDetailTabActive">isDetailTabActive</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource/Pages/ListLaporanAbsensis.php.html#15"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages\ListLaporanAbsensis::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource/Pages/ListLaporanAbsensis.php.html#28"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages\ListLaporanAbsensis::getTabs">getTabs</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LaporanAbsensiResource/Pages/ListLaporanAbsensis.php.html#38"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages\ListLaporanAbsensis::updatedActiveTab">updatedActiveTab</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource.php.html#43"><abbr title="App\Filament\Resources\Absensi\LemburResource::canViewAny">canViewAny</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource.php.html#54"><abbr title="App\Filament\Resources\Absensi\LemburResource::getEloquentQuery">getEloquentQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource.php.html#75"><abbr title="App\Filament\Resources\Absensi\LemburResource::form">form</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource.php.html#169"><abbr title="App\Filament\Resources\Absensi\LemburResource::infolist">infolist</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource.php.html#244"><abbr title="App\Filament\Resources\Absensi\LemburResource::table">table</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource/Pages/EditLembur.php.html#13"><abbr title="App\Filament\Resources\Absensi\LemburResource\Pages\EditLembur::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource/Pages/ListLemburs.php.html#13"><abbr title="App\Filament\Resources\Absensi\LemburResource\Pages\ListLemburs::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LemburResource/Pages/ViewLembur.php.html#13"><abbr title="App\Filament\Resources\Absensi\LemburResource\Pages\ViewLembur::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#38"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::canViewAny">canViewAny</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#49"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::getEloquentQuery">getEloquentQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#78"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::form">form</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#156"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::table">table</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Pages/EditLiburCuti.php.html#13"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Pages\EditLiburCuti::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Pages/ListLiburCutis.php.html#14"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Pages\ListLiburCutis::getHeaderWidgets">getHeaderWidgets</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Pages/ListLiburCutis.php.html#21"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Pages\ListLiburCutis::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#19"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::getStats">getStats</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#64"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::countApproved">countApproved</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#71"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::getActiveYear">getActiveYear</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#76"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::findNextApprovedLeave">findNextApprovedLeave</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#89"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::formatPeriod">formatPeriod</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#107"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::baseApprovedQuery">baseApprovedQuery</abbr></a></td><td class="text-right">0%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="AbsensiResource.php.html#283"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::table">table</abbr></a></td><td class="text-right">306</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#22"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::mutateFormDataBeforeCreate">mutateFormDataBeforeCreate</abbr></a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#33"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::table">table</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="LemburResource.php.html#244"><abbr title="App\Filament\Resources\Absensi\LemburResource::table">table</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#182"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::infolist">infolist</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#253"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::formatJamKerjaLabel">formatJamKerjaLabel</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#156"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::table">table</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#49"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::getEloquentQuery">getEloquentQuery</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#19"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::getStats">getStats</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/ListAbsensis.php.html#24"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\ListAbsensis::getHeaderActions">getHeaderActions</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="LemburResource.php.html#43"><abbr title="App\Filament\Resources\Absensi\LemburResource::canViewAny">canViewAny</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="LemburResource.php.html#54"><abbr title="App\Filament\Resources\Absensi\LemburResource::getEloquentQuery">getEloquentQuery</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#38"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::canViewAny">canViewAny</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="AbsensiResource/Pages/CreateAbsensi.php.html#135"><abbr title="App\Filament\Resources\Absensi\AbsensiResource\Pages\CreateAbsensi::afterCreate">afterCreate</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="LiburCutiResource/Widgets/LiburCutiStats.php.html#89"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource\Widgets\LiburCutiStats::formatPeriod">formatPeriod</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#50"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::canViewAny">canViewAny</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="AbsensiResource.php.html#59"><abbr title="App\Filament\Resources\Absensi\AbsensiResource::getEloquentQuery">getEloquentQuery</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#190"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::getJamMasukMeta">getJamMasukMeta</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#220"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::getTelatBadges">getTelatBadges</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="LaporanAbsensiResource.php.html#237"><abbr title="App\Filament\Resources\Absensi\LaporanAbsensiResource::formatTelatLabel">formatTelatLabel</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="LiburCutiResource.php.html#78"><abbr title="App\Filament\Resources\Absensi\LiburCutiResource::form">form</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="LemburResource.php.html#75"><abbr title="App\Filament\Resources\Absensi\LemburResource::form">form</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="LemburResource.php.html#169"><abbr title="App\Filament\Resources\Absensi\LemburResource::infolist">infolist</abbr></a></td><td class="text-right">6</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.12</a> using <a href="https://www.php.net/" target="_top">PHP 8.3.14</a> and <a href="https://phpunit.de/">PHPUnit 11.5.33</a> at Thu Dec 25 16:21:07 WIB 2025.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../../../_js/jquery.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="../../../_js/nv.d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([11,4,0,0,0,0,0,0,0,0,0,3], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([45,0,0,0,0,0,0,0,0,0,0,8], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[2.0202020202020203,35,"<a href=\"AbsensiResource.php.html#41\">App\\Filament\\Resources\\Absensi\\AbsensiResource<\/a>"],[0,18,"<a href=\"AbsensiResource\/Pages\/CreateAbsensi.php.html#12\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\CreateAbsensi<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/EditAbsensi.php.html#9\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\EditAbsensi<\/a>"],[0,7,"<a href=\"AbsensiResource\/Pages\/ListAbsensis.php.html#13\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\ListAbsensis<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/ViewAbsensi.php.html#9\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\ViewAbsensi<\/a>"],[2.0408163265306123,32,"<a href=\"LaporanAbsensiResource.php.html#18\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource<\/a>"],[0,3,"<a href=\"LaporanAbsensiResource\/Pages\/ListLaporanAbsensis.php.html#11\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource\\Pages\\ListLaporanAbsensis<\/a>"],[4.30622009569378,26,"<a href=\"LemburResource.php.html#35\">App\\Filament\\Resources\\Absensi\\LemburResource<\/a>"],[100,0,"<a href=\"LemburResource\/Pages\/CreateLembur.php.html#9\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\CreateLembur<\/a>"],[0,1,"<a href=\"LemburResource\/Pages\/EditLembur.php.html#9\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\EditLembur<\/a>"],[0,1,"<a href=\"LemburResource\/Pages\/ListLemburs.php.html#9\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\ListLemburs<\/a>"],[0,1,"<a href=\"LemburResource\/Pages\/ViewLembur.php.html#9\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\ViewLembur<\/a>"],[5.454545454545454,26,"<a href=\"LiburCutiResource.php.html#28\">App\\Filament\\Resources\\Absensi\\LiburCutiResource<\/a>"],[100,0,"<a href=\"LiburCutiResource\/Pages\/CreateLiburCuti.php.html#9\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\CreateLiburCuti<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Pages\/EditLiburCuti.php.html#9\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\EditLiburCuti<\/a>"],[0,2,"<a href=\"LiburCutiResource\/Pages\/ListLiburCutis.php.html#10\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\ListLiburCutis<\/a>"],[100,0,"<a href=\"LiburCutiResource\/Pages\/ViewLiburCuti.php.html#8\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\ViewLiburCuti<\/a>"],[0,15,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#15\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,3,"<a href=\"AbsensiResource.php.html#50\">App\\Filament\\Resources\\Absensi\\AbsensiResource::canViewAny<\/a>"],[0,3,"<a href=\"AbsensiResource.php.html#59\">App\\Filament\\Resources\\Absensi\\AbsensiResource::getEloquentQuery<\/a>"],[0,1,"<a href=\"AbsensiResource.php.html#72\">App\\Filament\\Resources\\Absensi\\AbsensiResource::form<\/a>"],[0,9,"<a href=\"AbsensiResource.php.html#182\">App\\Filament\\Resources\\Absensi\\AbsensiResource::infolist<\/a>"],[0,17,"<a href=\"AbsensiResource.php.html#283\">App\\Filament\\Resources\\Absensi\\AbsensiResource::table<\/a>"],[100,1,"<a href=\"AbsensiResource.php.html#387\">App\\Filament\\Resources\\Absensi\\AbsensiResource::getRelations<\/a>"],[100,1,"<a href=\"AbsensiResource.php.html#392\">App\\Filament\\Resources\\Absensi\\AbsensiResource::getPages<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/CreateAbsensi.php.html#17\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\CreateAbsensi::getCreatedNotificationTitle<\/a>"],[0,11,"<a href=\"AbsensiResource\/Pages\/CreateAbsensi.php.html#22\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\CreateAbsensi::mutateFormDataBeforeCreate<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/CreateAbsensi.php.html#111\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\CreateAbsensi::getFormActions<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/CreateAbsensi.php.html#117\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\CreateAbsensi::hitungJarak<\/a>"],[0,4,"<a href=\"AbsensiResource\/Pages\/CreateAbsensi.php.html#135\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\CreateAbsensi::afterCreate<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/EditAbsensi.php.html#13\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\EditAbsensi::getHeaderActions<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/ListAbsensis.php.html#17\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\ListAbsensis::makeTable<\/a>"],[0,6,"<a href=\"AbsensiResource\/Pages\/ListAbsensis.php.html#24\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\ListAbsensis::getHeaderActions<\/a>"],[0,1,"<a href=\"AbsensiResource\/Pages\/ViewAbsensi.php.html#13\">App\\Filament\\Resources\\Absensi\\AbsensiResource\\Pages\\ViewAbsensi::getHeaderActions<\/a>"],[0,10,"<a href=\"LaporanAbsensiResource.php.html#33\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::table<\/a>"],[100,1,"<a href=\"LaporanAbsensiResource.php.html#178\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::getRelations<\/a>"],[100,1,"<a href=\"LaporanAbsensiResource.php.html#183\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::getPages<\/a>"],[0,3,"<a href=\"LaporanAbsensiResource.php.html#190\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::getJamMasukMeta<\/a>"],[0,3,"<a href=\"LaporanAbsensiResource.php.html#220\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::getTelatBadges<\/a>"],[0,3,"<a href=\"LaporanAbsensiResource.php.html#237\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::formatTelatLabel<\/a>"],[0,9,"<a href=\"LaporanAbsensiResource.php.html#253\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::formatJamKerjaLabel<\/a>"],[0,1,"<a href=\"LaporanAbsensiResource.php.html#290\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::monthOptions<\/a>"],[0,1,"<a href=\"LaporanAbsensiResource.php.html#305\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource::isDetailTabActive<\/a>"],[0,1,"<a href=\"LaporanAbsensiResource\/Pages\/ListLaporanAbsensis.php.html#15\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource\\Pages\\ListLaporanAbsensis::getHeaderActions<\/a>"],[0,1,"<a href=\"LaporanAbsensiResource\/Pages\/ListLaporanAbsensis.php.html#28\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource\\Pages\\ListLaporanAbsensis::getTabs<\/a>"],[0,1,"<a href=\"LaporanAbsensiResource\/Pages\/ListLaporanAbsensis.php.html#38\">App\\Filament\\Resources\\Absensi\\LaporanAbsensiResource\\Pages\\ListLaporanAbsensis::updatedActiveTab<\/a>"],[0,5,"<a href=\"LemburResource.php.html#43\">App\\Filament\\Resources\\Absensi\\LemburResource::canViewAny<\/a>"],[0,5,"<a href=\"LemburResource.php.html#54\">App\\Filament\\Resources\\Absensi\\LemburResource::getEloquentQuery<\/a>"],[0,2,"<a href=\"LemburResource.php.html#75\">App\\Filament\\Resources\\Absensi\\LemburResource::form<\/a>"],[0,2,"<a href=\"LemburResource.php.html#169\">App\\Filament\\Resources\\Absensi\\LemburResource::infolist<\/a>"],[0,10,"<a href=\"LemburResource.php.html#244\">App\\Filament\\Resources\\Absensi\\LemburResource::table<\/a>"],[100,1,"<a href=\"LemburResource.php.html#302\">App\\Filament\\Resources\\Absensi\\LemburResource::getRelations<\/a>"],[100,1,"<a href=\"LemburResource.php.html#309\">App\\Filament\\Resources\\Absensi\\LemburResource::getPages<\/a>"],[0,1,"<a href=\"LemburResource\/Pages\/EditLembur.php.html#13\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\EditLembur::getHeaderActions<\/a>"],[0,1,"<a href=\"LemburResource\/Pages\/ListLemburs.php.html#13\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\ListLemburs::getHeaderActions<\/a>"],[0,1,"<a href=\"LemburResource\/Pages\/ViewLembur.php.html#13\">App\\Filament\\Resources\\Absensi\\LemburResource\\Pages\\ViewLembur::getHeaderActions<\/a>"],[0,5,"<a href=\"LiburCutiResource.php.html#38\">App\\Filament\\Resources\\Absensi\\LiburCutiResource::canViewAny<\/a>"],[0,7,"<a href=\"LiburCutiResource.php.html#49\">App\\Filament\\Resources\\Absensi\\LiburCutiResource::getEloquentQuery<\/a>"],[0,3,"<a href=\"LiburCutiResource.php.html#78\">App\\Filament\\Resources\\Absensi\\LiburCutiResource::form<\/a>"],[0,9,"<a href=\"LiburCutiResource.php.html#156\">App\\Filament\\Resources\\Absensi\\LiburCutiResource::table<\/a>"],[100,1,"<a href=\"LiburCutiResource.php.html#238\">App\\Filament\\Resources\\Absensi\\LiburCutiResource::getRelations<\/a>"],[100,1,"<a href=\"LiburCutiResource.php.html#245\">App\\Filament\\Resources\\Absensi\\LiburCutiResource::getPages<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Pages\/EditLiburCuti.php.html#13\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\EditLiburCuti::getHeaderActions<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Pages\/ListLiburCutis.php.html#14\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\ListLiburCutis::getHeaderWidgets<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Pages\/ListLiburCutis.php.html#21\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Pages\\ListLiburCutis::getHeaderActions<\/a>"],[0,7,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#19\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats::getStats<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#64\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats::countApproved<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#71\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats::getActiveYear<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#76\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats::findNextApprovedLeave<\/a>"],[0,4,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#89\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats::formatPeriod<\/a>"],[0,1,"<a href=\"LiburCutiResource\/Widgets\/LiburCutiStats.php.html#107\">App\\Filament\\Resources\\Absensi\\LiburCutiResource\\Widgets\\LiburCutiStats::baseApprovedQuery<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

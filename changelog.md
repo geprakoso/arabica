@@ -1,5 +1,10 @@
 # Changelog - Arabica Management System
 
+## 2025-12-25 (Thursday)
+### Testing Updates
+- **InventoryResource**: Added Pest coverage for list rendering, active inventory filtering, and snapshot calculations.
+- **Testing Notes**: Added a "Catatan Testing" section in README_PEST with setup and debugging tips.
+
 ## 2025-12-24 (Wednesday)
 ### 17:00 — Final UI Polish
 - **LaporanAbsensiResource**:

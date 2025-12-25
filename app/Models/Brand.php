@@ -23,7 +23,7 @@ class Brand extends Model
     ];
 
     protected $casts = [
-        'is active' => 'bool',
+        'is_active' => 'bool',
     ];
 
     protected static function booted()
