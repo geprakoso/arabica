@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\Akunting;
 
 use App\Enums\KategoriAkun; // Sesuaikan namespace Enum Anda
+use App\Enums\KelompokNeraca;
 use App\Filament\Resources\Akunting\KodeAkunResource\Pages;
 use App\Models\KodeAkun; // Sesuaikan namespace Model Anda
 use Filament\Facades\Filament;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
@@ -53,6 +56,23 @@ class KodeAkunResource extends Resource
                             ->searchable()
                             ->preload()
                             ->placeholder('Pilih kategori')
+                            ->reactive()
+                            ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                if (! in_array($state, [KategoriAkun::Aktiva->value, KategoriAkun::Pasiva->value], true)) {
+                                    $set('kelompok_neraca', null);
+                                }
+                            })
+                            ->columnSpanFull(),
+
+                        Select::make('kelompok_neraca')
+                            ->label('Kelompok Neraca')
+                            ->options(KelompokNeraca::class)
+                            ->native(false)
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Pilih kelompok neraca')
+                            ->visible(fn (Get $get): bool => in_array($get('kategori_akun'), [KategoriAkun::Aktiva->value, KategoriAkun::Pasiva->value], true))
+                            ->required(fn (Get $get): bool => in_array($get('kategori_akun'), [KategoriAkun::Aktiva->value, KategoriAkun::Pasiva->value], true))
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
@@ -76,6 +96,20 @@ class KodeAkunResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (?string $state) => KategoriAkun::tryFrom($state)?->getLabel() ?? '-')
                     ->color(fn (?string $state) => KategoriAkun::tryFrom($state)?->getColor()),
+                TextColumn::make('kelompok_neraca')
+                    ->label('Kelompok Neraca')
+                    ->badge()
+                    ->formatStateUsing(function ($state): string {
+                        $enum = $state instanceof KelompokNeraca ? $state : KelompokNeraca::tryFrom((string) $state);
+
+                        return $enum?->getLabel() ?? '-';
+                    })
+                    ->color(function ($state): ?string {
+                        $enum = $state instanceof KelompokNeraca ? $state : KelompokNeraca::tryFrom((string) $state);
+
+                        return $enum?->getColor();
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime()

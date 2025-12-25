@@ -44,8 +44,8 @@ class LaporanInputTransaksiResource extends Resource
 
     // Konfigurasi Navigasi & Label
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
-    protected static ?string $navigationLabel = 'Laporan Input Transaksi';
-    protected static ?string $pluralModelLabel = 'Laporan Input Transaksi';
+    protected static ?string $navigationLabel = 'Input Transaksi';
+    protected static ?string $pluralModelLabel = 'Input Transaksi';
     protected static ?string $slug = 'laporan-input-transaksi';
     protected static ?int $navigationSort = 2;
     protected static ?string $navigationGroup = 'Reports';

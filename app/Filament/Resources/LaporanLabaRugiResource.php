@@ -32,8 +32,8 @@ class LaporanLabaRugiResource extends Resource
 {
     protected static ?string $model = LaporanLabaRugi::class;
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'Laporan Laba Rugi';
-    protected static ?string $pluralLabel = 'Laporan Laba Rugi';
+    protected static ?string $navigationLabel = 'Laba Rugi';
+    protected static ?string $pluralLabel = 'Laba Rugi';
     protected static ?string $navigationIcon = 'hugeicons-pie-chart';
 
     public static function form(Form $form): Form
@@ -105,7 +105,7 @@ class LaporanLabaRugiResource extends Resource
                             ->label('Beban Usaha')
                             ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                         TextEntry::make('laba_rugi')
-                            ->label('Laba / Rugi')
+                            ->label('Laba Bersih')
                             ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
                     ])
                     ->columns(2),

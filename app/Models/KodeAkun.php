@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\KelompokNeraca;
 use Illuminate\Database\Eloquent\Model;
 
 class KodeAkun extends Model
@@ -11,5 +12,10 @@ class KodeAkun extends Model
         'kode_akun',
         'nama_akun',
         'kategori_akun',
+        'kelompok_neraca',
+    ];
+
+    protected $casts = [
+        'kelompok_neraca' => KelompokNeraca::class,
     ];
 }
