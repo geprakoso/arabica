@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Akunting\LaporanNeracaResource\Pages;
 
 use App\Filament\Resources\Akunting\LaporanNeracaResource;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Enums\MaxWidth;
 
 class ViewLaporanNeraca extends ViewRecord
 {
@@ -23,5 +24,10 @@ class ViewLaporanNeraca extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [];
+    }
+
+    public function getMaxContentWidth(): MaxWidth
+    {
+        return MaxWidth::Full;
     }
 }

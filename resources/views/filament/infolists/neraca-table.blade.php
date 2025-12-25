@@ -1,4 +1,15 @@
 @php
+    $data = $getState() ?? [];
+    $company_name = data_get($data, 'company_name', '');
+    $as_of_label = data_get($data, 'as_of_label', '-');
+    $aset_lancar = data_get($data, 'aset_lancar', []);
+    $aset_tidak_lancar = data_get($data, 'aset_tidak_lancar', []);
+    $liabilitas_pendek = data_get($data, 'liabilitas_pendek', []);
+    $liabilitas_panjang = data_get($data, 'liabilitas_panjang', []);
+    $ekuitas = data_get($data, 'ekuitas', []);
+    $totals = data_get($data, 'totals', []);
+    $selisih = data_get($data, 'selisih', 0);
+
     $formatRupiah = function ($value): string {
         $value = (float) $value;
         $formatted = number_format(abs($value), 0, ',', '.');
@@ -7,17 +18,21 @@
     };
 @endphp
 
-<div class="space-y-4">
-    <div class="text-center">
-        <div class="text-lg font-semibold uppercase">Laporan Neraca</div>
-        <div class="text-sm text-gray-500">(Posisi Keuangan)</div>
-        <div class="text-sm">{{ $company_name }}</div>
-        <div class="text-sm">Per {{ $as_of_label }}</div>
-        <div class="text-xs text-gray-500">(Dalam Rupiah)</div>
+<div class="w-full max-w-none space-y-4">
+    <div class="grid w-full grid-cols-1 gap-2 md:grid-cols-2">
+        <div class="space-y-1 text-left">
+            <div class="text-lg font-semibold uppercase">Laporan Neraca</div>
+            <div class="text-sm text-gray-500">(Posisi Keuangan)</div>
+            <div class="text-sm">{{ $company_name }}</div>
+        </div>
+        <div class="space-y-1 text-right md:justify-self-end">
+            <div class="text-sm">Per {{ $as_of_label }}</div>
+            <div class="text-xs text-gray-500">(Dalam Rupiah)</div>
+        </div>
     </div>
 
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table class="min-w-full text-sm">
+    <div class="w-full max-w-none overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <table class="w-full min-w-full text-sm">
             <tbody>
                 <tr class="bg-gray-100 font-semibold uppercase">
                     <td class="px-4 py-2">Aset</td>

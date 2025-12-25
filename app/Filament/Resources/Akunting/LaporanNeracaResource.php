@@ -87,13 +87,18 @@ class LaporanNeracaResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
+            ->columns(1)
             ->schema([
                 Section::make('Laporan Neraca')
+                    ->maxWidth('max-w-none w-full')
                     ->schema([
                         ViewEntry::make('neraca_table')
                             ->label('')
                             ->view('filament.infolists.neraca-table')
-                            ->viewData(fn ($record) => self::neracaViewData($record)),
+                            ->state(fn ($record) => self::neracaViewData($record))
+                            ->maxWidth('max-w-none w-full')
+                            ->extraEntryWrapperAttributes(['class' => 'w-full max-w-none'])
+                            ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
             ]);

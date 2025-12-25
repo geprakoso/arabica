@@ -10,6 +10,7 @@ use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Auth;
 use App\Filament\Pages\StockInventory;
 use Illuminate\Support\Facades\Storage;
+use Filament\Support\Enums\MaxWidth;
 use Orion\FilamentGreeter\GreeterPlugin;
 use Shanerbaner82\PanelRoles\PanelRoles;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
@@ -47,6 +48,7 @@ class AkuntingPanelProvider extends PanelProvider
                 'secondary' => Color::Green,
                 'accent' => Color::Red,
             ])
+            ->maxContentWidth(MaxWidth::Full)
             // Register resources khusus Keuangan.
             ->resources([
                 \App\Filament\Resources\Akunting\JenisAkunResource::class,
