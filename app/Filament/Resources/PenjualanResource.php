@@ -251,15 +251,15 @@ class PenjualanResource extends Resource
     /**
      * Hitung grand total gabungan dari produk dan jasa.
      */
-    protected static function calculateGrandTotal(Penjualan $record): float
+    protected static function calculateGrandTotal(Penjualan $record): int
     {
-        $totalProduk = $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
-        $totalJasa = $record->jasaItems->sum(fn ($jasa) => (float) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
+        $totalProduk = $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+        $totalJasa = $record->jasaItems->sum(fn ($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
 
         return $totalProduk + $totalJasa;
     }
 
-    protected static function formatCurrency(float $value): string
+    protected static function formatCurrency(int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
     }

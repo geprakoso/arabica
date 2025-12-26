@@ -268,8 +268,8 @@ class InventoryResource extends Resource
             $rawHpp = $item->hpp;
 
             $rawHargaJual = $item->harga_jual;
-            $hpp = is_null($rawHpp) ? null : (float) $rawHpp;
-            $hargaJual = is_null($rawHargaJual) ? null : (float) $rawHargaJual;
+            $hpp = is_null($rawHpp) ? null : (int) $rawHpp;
+            $hargaJual = is_null($rawHargaJual) ? null : (int) $rawHargaJual;
             return [
                 'no_po' => $purchase->no_po ?? '-',
                 'tanggal' => $tanggal,
@@ -290,8 +290,8 @@ class InventoryResource extends Resource
             $latestHargaJual = $latestBatchRecord->harga_jual;
 
             $latestBatch = [
-                'hpp' => is_null($latestHpp) ? null : (float) $latestHpp,
-                'harga_jual' => is_null($latestHargaJual) ? null : (float) $latestHargaJual,
+                'hpp' => is_null($latestHpp) ? null : (int) $latestHpp,
+                'harga_jual' => is_null($latestHargaJual) ? null : (int) $latestHargaJual,
                 'tanggal' => optional($latestBatchRecord->pembelian?->tanggal)->format('d M Y'),
             ];
         }
@@ -353,7 +353,7 @@ class InventoryResource extends Resource
     // Helper untuk format mata uang IDR.
     protected static function formatCurrency($value): string
     {
-        $amount = (float) ($value ?? 0);
+        $amount = (int) ($value ?? 0);
 
         return Money::IDR($amount, true)->formatWithoutZeroes();
     }

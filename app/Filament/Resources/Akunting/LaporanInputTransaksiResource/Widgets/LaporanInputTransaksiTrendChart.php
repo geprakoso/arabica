@@ -53,11 +53,11 @@ class LaporanInputTransaksiTrendChart extends AdvancedChartWidget
             }
 
             if ($category === KategoriAkun::Pendapatan) {
-                $income[$row->day] = (float) $row->total;
+                $income[$row->day] = (int) $row->total;
             }
 
             if ($category === KategoriAkun::Beban) {
-                $expense[$row->day] = (float) $row->total;
+                $expense[$row->day] = (int) $row->total;
             }
         }
 
@@ -69,8 +69,8 @@ class LaporanInputTransaksiTrendChart extends AdvancedChartWidget
             $key = $date->toDateString();
 
             $labels[] = $date->format('d M');
-            $incomeSeries[] = (float) ($income[$key] ?? 0);
-            $expenseSeries[] = (float) ($expense[$key] ?? 0);
+            $incomeSeries[] = (int) ($income[$key] ?? 0);
+            $expenseSeries[] = (int) ($expense[$key] ?? 0);
         }
 
         return [

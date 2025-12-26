@@ -62,12 +62,12 @@ class PembelianReportResource extends Resource
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
                     ->state(fn(Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
+                        $record->items->sum(fn($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
                     )), //menghitung total HPP dari relasi items
                 TextColumn::make('total_harga_jual')
                     ->label('Total Harga Jual')
                     ->state(fn(Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
+                        $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
                     )), //menghitung total harga jual dari relasi items
             ])
             ->filters([

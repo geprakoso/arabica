@@ -202,7 +202,7 @@ class LaporanInputTransaksiResource extends Resource
                     ->defaultFormat('xlsx')
                     ->withHiddenColumns()
                     ->formatStates([
-                        'nominal_transaksi' => fn (InputTransaksiToko $record) => (float) $record->nominal_transaksi,
+                        'nominal_transaksi' => fn (InputTransaksiToko $record) => (int) $record->nominal_transaksi,
                     ])
                     ->columnFormats([
                         'nominal_transaksi' => '[$Rp-421] #,##0.00',
@@ -225,7 +225,7 @@ class LaporanInputTransaksiResource extends Resource
                         ->defaultFormat('xlsx')
                         ->withHiddenColumns()
                         ->formatStates([
-                            'nominal_transaksi' => fn (InputTransaksiToko $record) => (float) $record->nominal_transaksi,
+                            'nominal_transaksi' => fn (InputTransaksiToko $record) => (int) $record->nominal_transaksi,
                         ])
                         ->columnFormats([
                             'nominal_transaksi' => '[$Rp-421] #,##0.00',

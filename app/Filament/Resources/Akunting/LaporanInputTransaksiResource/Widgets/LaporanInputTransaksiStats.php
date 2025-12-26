@@ -79,9 +79,9 @@ class LaporanInputTransaksiStats extends AdvancedStatsOverviewWidget
         return [$currentStart, $currentEnd, $previousStart, $previousEnd];
     }
 
-    protected function sumByCategory(KategoriAkun $category, Carbon $start, Carbon $end): float
+    protected function sumByCategory(KategoriAkun $category, Carbon $start, Carbon $end): int
     {
-        return (float) InputTransaksiToko::query()
+        return (int) InputTransaksiToko::query()
             ->where('kategori_transaksi', $category)
             ->whereBetween('tanggal_transaksi', [$start, $end])
             ->sum('nominal_transaksi');
@@ -121,20 +121,20 @@ class LaporanInputTransaksiStats extends AdvancedStatsOverviewWidget
 
         foreach (CarbonPeriod::create($start, $end) as $date) {
             $key = $date->toDateString();
-            $series[$key] = (float) ($raw[$key] ?? 0);
+            $series[$key] = (int) ($raw[$key] ?? 0);
         }
 
         return $series;
     }
 
-    protected function formatCurrency(float $value): string
+    protected function formatCurrency(int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
     }
 
-    protected function formatDelta(float $current, float $previous): string
+    protected function formatDelta(int $current, int $previous): string
     {
-        if ($previous <= 0.0) {
+        if ($previous <= 0) {
             return 'Tidak ada pembanding bulan lalu';
         }
 
@@ -148,9 +148,9 @@ class LaporanInputTransaksiStats extends AdvancedStatsOverviewWidget
         return $sign . number_format($delta, 1, ',', '.') . '% vs bulan lalu';
     }
 
-    protected function deltaIcon(float $current, float $previous): ?string
+    protected function deltaIcon(int $current, int $previous): ?string
     {
-        if ($previous <= 0.0 || $current === $previous) {
+        if ($previous <= 0 || $current === $previous) {
             return null;
         }
 
@@ -159,9 +159,9 @@ class LaporanInputTransaksiStats extends AdvancedStatsOverviewWidget
             : 'heroicon-o-arrow-trending-down';
     }
 
-    protected function deltaColor(float $current, float $previous, bool $positiveIsGood = true): string
+    protected function deltaColor(int $current, int $previous, bool $positiveIsGood = true): string
     {
-        if ($previous <= 0.0 || $current === $previous) {
+        if ($previous <= 0 || $current === $previous) {
             return 'gray';
         }
 

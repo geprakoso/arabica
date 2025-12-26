@@ -32,10 +32,10 @@ class PembelianExporter extends Exporter
                 ->state(fn (Pembelian $record) => $record->items->sum('qty')),
             ExportColumn::make('total_hpp')
                 ->label('Total HPP')
-                ->state(fn (Pembelian $record) => $record->items->sum(fn ($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))),
+                ->state(fn (Pembelian $record) => $record->items->sum(fn ($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))),
             ExportColumn::make('total_harga_jual')
                 ->label('Total Harga Jual')
-                ->state(fn (Pembelian $record) => $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))),
+                ->state(fn (Pembelian $record) => $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))),
         ];
     }
 

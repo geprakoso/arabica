@@ -152,7 +152,7 @@ class ItemsRelationManager extends RelationManager
         }
 
         $customPrice = $data['harga_jual'] ?? null;
-        $customPrice = ($customPrice === '' || $customPrice === null) ? null : (float) $customPrice;
+        $customPrice = ($customPrice === '' || $customPrice === null) ? null : (int) $customPrice;
         $condition = $data['kondisi'] ?? null;
 
         return DB::transaction(function () use ($penjualan, $productId, $qty, $customPrice, $condition): PenjualanItem {
@@ -168,7 +168,7 @@ class ItemsRelationManager extends RelationManager
         });
     }
 
-    protected function fulfillUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?float $customPrice, ?string $condition): Collection
+    protected function fulfillUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?int $customPrice, ?string $condition): Collection
     {
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
@@ -243,7 +243,7 @@ class ItemsRelationManager extends RelationManager
             ->toArray();
     }
 
-    protected function getDefaultPriceForProduct(int $productId, ?string $condition = null): ?float
+    protected function getDefaultPriceForProduct(int $productId, ?string $condition = null): ?int
     {
         $batch = $this->getOldestAvailableBatch($productId, $condition);
 

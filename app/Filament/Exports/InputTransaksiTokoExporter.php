@@ -46,7 +46,7 @@ class InputTransaksiTokoExporter extends Exporter
             ExportColumn::make('nominal_transaksi')
                 ->label('Nominal (IDR)')
                 ->formatStateUsing(fn ($state) => $state !== null
-                    ? 'Rp ' . number_format((float) $state, 2, ',', '.')
+                    ? 'Rp ' . number_format((int) $state, 2, ',', '.')
                     : 'Rp 0,00'),
 
             ExportColumn::make('keterangan_transaksi')

@@ -13,23 +13,21 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Actions\StaticAction;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Textarea;
-use Filament\Infolists\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TimePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ImageEntry;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use App\Filament\Resources\Absensi\AbsensiResource\Pages;
 use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Split;
@@ -175,7 +173,25 @@ class AbsensiResource extends Resource
                         ]),
                 ])
                     ->columnSpanFull() // Agar wizard lebar penuh
-                    ->submitAction(new \Illuminate\Support\HtmlString('<button type="submit" class="fi-btn fi-btn-size-md fi-btn-color-primary">Simpan Absensi</button>'))
+                    ->submitAction(
+                        Action::make('submit')
+                            ->label('Simpan Absensi')
+                            ->color('success')
+                            ->icon('heroicon-m-check')
+
+                    )
+                    ->cancelAction(
+                        Action::make('cancel')
+                            ->label('Batal')
+                            ->color('danger')
+                            ->icon('heroicon-m-x-mark')
+                    )
+                    ->previousAction (fn (FormAction $action) =>
+                        $action
+                            ->label('Sebelumnya')
+                            ->color('secondary')
+                            ->icon('heroicon-m-arrow-left')
+                    ),
             ]);
     }
 

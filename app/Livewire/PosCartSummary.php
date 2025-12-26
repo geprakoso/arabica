@@ -12,15 +12,15 @@ class PosCartSummary extends StatsOverviewWidget
 
     public array $services = [];
 
-    public float $discount = 0.0;
+    public int $discount = 0;
 
     protected int | string | array $columnSpan = 'full';
 
-    public function mount(array $items = [], array $services = [], float | int $discount = 0): void
+    public function mount(array $items = [], array $services = [], int $discount = 0): void
     {
         $this->items = $items;
         $this->services = $services;
-        $this->discount = (float) $discount;
+        $this->discount = (int) $discount;
     }
     /**
      * Reset cached stats on every request to ensure data freshness.
@@ -53,8 +53,8 @@ class PosCartSummary extends StatsOverviewWidget
         ];
     }
 
-    protected static function formatCurrency(float $value): string
+    protected static function formatCurrency(int $value): string
     {
-        return 'Rp ' . number_format((float) $value, 0, ',', '.');
+        return 'Rp ' . number_format((int) $value, 0, ',', '.');
     }
 }

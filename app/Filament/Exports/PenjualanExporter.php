@@ -32,13 +32,13 @@ class PenjualanExporter extends Exporter
                 ->state(fn (Penjualan $record) => $record->items->sum('qty')),
             ExportColumn::make('total_penjualan')
                 ->label('Total Penjualan')
-                ->state(fn (Penjualan $record) => $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))),
+                ->state(fn (Penjualan $record) => $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))),
             ExportColumn::make('total_hpp')
                 ->label('Total HPP')
-                ->state(fn (Penjualan $record) => $record->items->sum(fn ($item) => (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))),
+                ->state(fn (Penjualan $record) => $record->items->sum(fn ($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))),
             ExportColumn::make('total_margin')
                 ->label('Margin')
-                ->state(fn (Penjualan $record) => $record->items->sum(fn ($item) => ((float) ($item->harga_jual ?? 0) - (float) ($item->hpp ?? 0)) * (int) ($item->qty ?? 0))),
+                ->state(fn (Penjualan $record) => $record->items->sum(fn ($item) => ((int) ($item->harga_jual ?? 0) - (int) ($item->hpp ?? 0)) * (int) ($item->qty ?? 0))),
         ];
     }
 

@@ -80,7 +80,7 @@ class CheckoutPosAction
                 }
 
                 $hargaJual = Arr::get($itemData, 'harga_jual');
-                $hargaJual = ($hargaJual === '' || is_null($hargaJual)) ? null : (float) $hargaJual;
+                $hargaJual = ($hargaJual === '' || is_null($hargaJual)) ? null : (int) $hargaJual;
                 $kondisi = Arr::get($itemData, 'kondisi');
 
                 $lineTotal = $this->fulfillItemUsingFifo(
@@ -110,7 +110,7 @@ class CheckoutPosAction
                     $harga = Jasa::query()->whereKey($jasaId)->value('harga');
                 }
 
-                $harga = (float) ($harga ?? 0);
+                $harga = (int) ($harga ?? 0);
 
                 PenjualanJasa::query()->create([
                     'id_penjualan' => $penjualan->getKey(),
@@ -123,12 +123,12 @@ class CheckoutPosAction
                 $total += $harga * $qty;
             }
 
-            $diskonTotal = (float) Arr::get($payload, 'diskon_total', 0);
+            $diskonTotal = (int) Arr::get($payload, 'diskon_total', 0);
             $diskonTotal = min(max($diskonTotal, 0), $total);
 
             $grandTotal = max(0, $total - $diskonTotal);
             $tunaiDiterima = Arr::get($payload, 'tunai_diterima');
-            $kembalian = is_null($tunaiDiterima) ? null : max(0, (float) $tunaiDiterima - $grandTotal);
+            $kembalian = is_null($tunaiDiterima) ? null : max(0, (int) $tunaiDiterima - $grandTotal);
 
             $penjualan->update([
                 'total' => $total,
@@ -141,7 +141,7 @@ class CheckoutPosAction
         });
     }
 
-    protected function fulfillItemUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?float $customPrice, ?string $kondisi, int $itemIndex): float
+    protected function fulfillItemUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?int $customPrice, ?string $kondisi, int $itemIndex): int
     {
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
@@ -167,7 +167,7 @@ class CheckoutPosAction
         }
 
         $remaining = $qty;
-        $lineTotal = 0.0;
+        $lineTotal = 0;
 
         foreach ($batches as $batch) {
             if ($remaining <= 0) {
@@ -181,7 +181,7 @@ class CheckoutPosAction
             }
 
             $takeQty = min($remaining, $batchAvailable);
-            $unitPrice = $customPrice ?? (float) $batch->harga_jual;
+            $unitPrice = $customPrice ?? (int) $batch->harga_jual;
 
             PenjualanItem::query()->create([
                 'id_penjualan' => $penjualan->getKey(),

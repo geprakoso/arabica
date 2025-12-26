@@ -119,13 +119,13 @@ class AdvancedStatsOverviewWidget extends BaseWidget
     // ---------------------------------------------------------------------------
 
     // Menambah "Rp" dan titik ribuan
-    protected function formatCurrency(float|int $value): string
+    protected function formatCurrency(int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
     }
 
     // Hanya titik ribuan tanpa "Rp"
-    protected function formatNumber(float|int $value): string
+    protected function formatNumber(int $value): string
     {
         return number_format($value, 0, ',', '.');
     }
@@ -135,7 +135,7 @@ class AdvancedStatsOverviewWidget extends BaseWidget
     // ---------------------------------------------------------------------------
 
     // [RELASI-A] Implementasi Menghitung Total Uang Penjualan
-    protected function sumTotalPenjualanForPeriod(Carbon $from, Carbon $to): float|int
+    protected function sumTotalPenjualanForPeriod(Carbon $from, Carbon $to): int
     {
         // // [DEBUG] Cek range tanggal: dd($from, $to);
         
@@ -144,12 +144,12 @@ class AdvancedStatsOverviewWidget extends BaseWidget
             ->get() // Ambil semua data (Hati-hati jika datanya ribuan, bisa berat!)
             // Koleksi PHP (Processing di level PHP, bukan Database)
             ->sum(fn ($penjualan) => $penjualan->items->sum(
-                fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0)
+                fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0)
             ));
     }
 
     // [RELASI-B] Implementasi Menghitung Qty Barang Terjual
-    protected function sumTotalQtyForPeriod(Carbon $from, Carbon $to): float|int
+    protected function sumTotalQtyForPeriod(Carbon $from, Carbon $to): int
     {
         return Penjualan::whereBetween('tanggal_penjualan', [$from, $to])
             ->with('items')
@@ -158,7 +158,7 @@ class AdvancedStatsOverviewWidget extends BaseWidget
     }
 
     // [RELASI-E] Implementasi Menghitung Total Pembelian (Modal Keluar)
-    protected function sumTotalPembelianForPeriod(Carbon $from, Carbon $to): float|int
+    protected function sumTotalPembelianForPeriod(Carbon $from, Carbon $to): int
     {
         $pembelians = Pembelian::whereBetween('created_at', [$from, $to]) 
             ->with('items') 
@@ -167,7 +167,7 @@ class AdvancedStatsOverviewWidget extends BaseWidget
         return $pembelians->sum(function ($record) {
             return $record->items->sum(function ($item) {
                 // Menghitung HPP * Qty
-                return (float) ($item->hpp ?? 0) * (int) ($item->qty ?? 0);
+                return (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0);
             });
         });
     }
