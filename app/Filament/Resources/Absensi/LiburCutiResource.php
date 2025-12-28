@@ -139,12 +139,14 @@ class LiburCutiResource extends Resource
                                 DatePicker::make('mulai_tanggal')
                                     ->label('Tanggal Mulai')
                                     ->native(false)
+                                    ->locale('id')
                                     ->displayFormat('d F Y')
                                     ->required(),
 
                                 DatePicker::make('sampai_tanggal')
                                     ->label('Sampai Tanggal')
                                     ->native(false)
+                                    ->locale('id')
                                     ->displayFormat('d F Y')
                                     ->afterOrEqual('mulai_tanggal') // Validasi logis
                                     ->required(),
@@ -159,6 +161,9 @@ class LiburCutiResource extends Resource
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Karyawan')
+                    ->icon('heroicon-m-user')
+                    ->weight('bold')
+                    ->description(fn(LiburCuti $record) => $record->user->email ?? '-')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('keperluan')
@@ -172,11 +177,13 @@ class LiburCutiResource extends Resource
                     ->sortable(),
                 TextColumn::make('mulai_tanggal')
                     ->label('Mulai')
+                    ->icon('heroicon-m-calendar-days')
                     ->date('d M Y')
                     ->sortable()
                     ->default('today'),
                 TextColumn::make('sampai_tanggal')
                     ->label('Sampai')
+                    ->icon('heroicon-m-calendar-days')
                     ->date('d M Y')
                     ->placeholder('-')
                     ->sortable(),
@@ -197,12 +204,14 @@ class LiburCutiResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([
                 SelectFilter::make('keperluan')
+                    ->native(false)
                     ->options(
                         collect(Keperluan::cases())
                             ->mapWithKeys(fn(Keperluan $case) => [$case->value => $case->getLabel()])
                             ->all()
                     ),
                 SelectFilter::make('status_pengajuan')
+                    ->native(false)
                     ->options(
                         collect(StatusPengajuan::cases())
                             ->mapWithKeys(fn(StatusPengajuan $case) => [$case->value => $case->getLabel()])
@@ -210,21 +219,36 @@ class LiburCutiResource extends Resource
                     ),
                 Filter::make('periode')
                     ->form([
-                        DatePicker::make('mulai')->label('Mulai dari'),
-                        DatePicker::make('sampai')->label('Sampai tanggal'),
+                        DatePicker::make('mulai')
+                            ->native(false)
+                            ->locale('id')
+                            ->placeholder(now()->translatedFormat('d F Y'))
+                            ->label('Mulai dari'),
+                        DatePicker::make('sampai')
+                            ->native(false)
+                            ->locale('id')
+                            ->placeholder(now()->translatedFormat('d F Y'))
+                            ->label('Sampai tanggal'),
                     ])
                     ->query(function (Builder $query, array $data) {
                         return $query
                             ->when($data['mulai'] ?? null, fn($q, $date) => $q->whereDate('mulai_tanggal', '>=', $date))
                             ->when($data['sampai'] ?? null, fn($q, $date) => $q->whereDate('mulai_tanggal', '<=', $date));
                     }),
+
+                SelectFilter::make('user_id')
+                    ->native(false)
+                    ->label('Karyawan')
+                    ->options(function () {
+                        return Karyawan::all()->pluck('nama_karyawan', 'user_id');
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()
-                ->label('Detail')
-                ->icon('heroicon-m-eye'),
-                
+                    ->label('Detail')
+                    ->icon('heroicon-m-eye'),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

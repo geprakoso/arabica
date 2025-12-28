@@ -20,6 +20,10 @@ use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\Layout\Split as TableSplit;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 // use Laravel\Pail\File;
@@ -61,7 +65,7 @@ class ProdukResource extends Resource
                 Group::make()
                     ->columnSpan(['lg' => 2]) // Memakan 2 grid di layar besar
                     ->schema([
-                        
+
                         // Section 1: Informasi Dasar
                         Section::make('Informasi Produk')
                             ->description('Masukan nama dan deskripsi lengkap produk.')
@@ -76,7 +80,13 @@ class ProdukResource extends Resource
                                 Forms\Components\RichEditor::make('deskripsi')
                                     ->label('Deskripsi Lengkap')
                                     ->toolbarButtons([
-                                        'bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3'
+                                        'bold',
+                                        'italic',
+                                        'bulletList',
+                                        'orderedList',
+                                        'link',
+                                        'h2',
+                                        'h3'
                                     ]) // Toolbar minimalis agar clean
                                     ->columnSpanFull(),
                             ]),
@@ -114,7 +124,7 @@ class ProdukResource extends Resource
                 Group::make()
                     ->columnSpan(['lg' => 1]) // Memakan 1 grid sisa
                     ->schema([
-                        
+
                         // Section 3: Gambar (Di sidebar agar proporsional)
                         Section::make('Media')
                             ->icon('heroicon-m-photo')
@@ -125,8 +135,8 @@ class ProdukResource extends Resource
                                     ->imageEditor() // Fitur crop bawaan filament
                                     ->disk('public')
                                     ->directory('produks/' . now()->format('Y/m/d'))
-                                    ->getUploadedFileNameForStorageUsing(fn (TemporaryUploadedFile $file, Get $get) => 
-                                        (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
                                     )
                                     ->openable()
                                     ->downloadable(),
@@ -137,7 +147,7 @@ class ProdukResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('sku')
                                     ->label('SKU (Kode Stok)')
-                                    ->default(fn () => Produk::generateSku())
+                                    ->default(fn() => Produk::generateSku())
                                     ->dehydrated()
                                     ->readOnly() // Lebih aman readonly daripada disabled jika masih mau disubmit
                                     ->required()
@@ -170,12 +180,12 @@ class ProdukResource extends Resource
         return $infolist
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA) ===
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Informasi Dasar
                         InfolistSection::make('Detail Produk')
                             ->icon('heroicon-m-information-circle')
@@ -212,15 +222,15 @@ class ProdukResource extends Resource
                                                 // Asumsi input P,L,T dalam cm. Hasil biasanya dalam Kg atau Gram tergantung kurir.
                                                 // Umumnya rumus dibagi 4000/6000 menghasilkan Kg. 
                                                 // Mari kita anggap hasilnya Kg.
-                                                
+
                                                 $p = $record->panjang ?? 0;
                                                 $l = $record->lebar ?? 0;
                                                 $t = $record->tinggi ?? 0;
-                                                
-                                                if($p == 0 || $l == 0 || $t == 0) return '-';
+
+                                                if ($p == 0 || $l == 0 || $t == 0) return '-';
 
                                                 $volumetric = ($p * $l * $t) / 4000;
-                                                
+
                                                 return number_format($volumetric, 2) . ' Kg';
                                             })
                                             ->icon('heroicon-m-calculator')
@@ -247,7 +257,7 @@ class ProdukResource extends Resource
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Gambar
                         InfolistSection::make('Visual')
                             ->schema([
@@ -288,26 +298,44 @@ class ProdukResource extends Resource
     {
         return $table
             ->columns([
-                //
-                TextColumn::make('nama_produk')
-                    ->label('Nama Produk')
-                    ->formatStateUsing(fn ($state) => strtoupper($state))
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('kategori.nama_kategori')
-                    ->label('Kategori')
-                    ->formatStateUsing(fn ($state) => ucfirst(strtolower($state)))
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('brand.nama_brand')
-                    ->label('Brand')
-                    ->formatStateUsing(fn ($state) => ucfirst(strtolower($state)))                  
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('sku')
-                    ->label('SKU')
-                    ->searchable()
-                    ->sortable(),
+                TableSplit::make([
+                    ImageColumn::make('image_url')
+                        ->label('')
+                        ->disk('public')
+                        ->height(128)
+                        ->width(128)
+                        ->square()
+                        ->defaultImageUrl(url('/images/icons/icon-256x256.png'))
+                        ->extraImgAttributes([
+                            'class' => 'rounded-lg border border-gray-200/60 object-cover shadow-sm',
+                            'alt' => 'Foto Produk',
+                        ]),
+                    Stack::make([
+                        TextColumn::make('nama_produk')
+                            ->label('Produk')
+                            ->weight('bold')
+                            ->size(TextColumnSize::Large)
+                            ->description(fn(Produk $record) => 'SKU: ' . ($record->sku ?? '-'))
+                            ->searchable()
+                            ->sortable(),
+                        TextColumn::make('kategori.nama_kategori')
+                            ->label('Kategori')
+                            ->badge()
+                            ->color('info')
+                            ->icon('heroicon-m-tag')
+                            ->formatStateUsing(fn($state) => ucfirst(strtolower($state)))
+                            ->searchable()
+                            ->sortable(),
+                        TextColumn::make('brand.nama_brand')
+                            ->label('Brand')
+                            ->badge()
+                            ->color('gray')
+                            ->icon('heroicon-m-building-office-2')
+                            ->formatStateUsing(fn($state) => ucfirst(strtolower($state)))
+                            ->searchable()
+                            ->sortable(),
+                    ])->space(2),
+                ])->from('md'),
             ])
             ->filters([
                 //

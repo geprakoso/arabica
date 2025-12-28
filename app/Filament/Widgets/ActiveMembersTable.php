@@ -35,7 +35,7 @@ class ActiveMembersTable extends AdvancedTableWidget
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_spent')
                     ->label('Total Belanja')
-                    ->formatStateUsing(fn($state) => money($state * 100, 'IDR')->formatWithoutZeroes())
+                    ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('last_purchase')
                     ->label('Terakhir')

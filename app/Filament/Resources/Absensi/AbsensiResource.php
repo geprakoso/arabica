@@ -186,7 +186,8 @@ class AbsensiResource extends Resource
                             ->color('danger')
                             ->icon('heroicon-m-x-mark')
                     )
-                    ->previousAction (fn (FormAction $action) =>
+                    ->previousAction(
+                        fn(FormAction $action) =>
                         $action
                             ->label('Sebelumnya')
                             ->color('secondary')

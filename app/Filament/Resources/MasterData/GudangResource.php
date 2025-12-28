@@ -52,15 +52,15 @@ class GudangResource extends Resource
                         Toggle::make('is_active')
                             ->label('Aktifkan Gudang')
                             ->default(true),
-                ]),
+                    ]),
                 Section::make('Koordinat')
                     ->schema([
-                TextInput::make('latitude')->numeric(),
-                TextInput::make('longitude')->numeric(),
-                TextInput::make('radius_km')
-                    ->label('Radius (Meter)')
-                    ->numeric()
-                    ->default(50),
+                        TextInput::make('latitude')->numeric(),
+                        TextInput::make('longitude')->numeric(),
+                        TextInput::make('radius_km')
+                            ->label('Radius (Meter)')
+                            ->numeric()
+                            ->default(50),
                     ]),
             ]);
     }
@@ -72,12 +72,15 @@ class GudangResource extends Resource
                 //
                 TextColumn::make('nama_gudang')
                     ->label('Nama Gudang')
+                    ->weight('bold')
+                    ->icon('heroicon-o-building-storefront')
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('lokasi_gudang')
+                    ->icon('heroicon-o-map')
                     ->label('Lokasi')
-                    ->sortable()
-                    ->searchable(),
+                    ->limit(25)
+                    ->sortable(),
                 IconColumn::make('is_active')
                     ->label('Aktifkan')
                     ->boolean(),
