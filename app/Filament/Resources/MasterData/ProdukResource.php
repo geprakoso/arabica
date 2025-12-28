@@ -40,6 +40,7 @@ use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Support\Enums\FontFamily;
+use Illuminate\Support\HtmlString;
 
 
 // use Laravel\SerializableClosure\Serializers\Native;
@@ -315,7 +316,7 @@ class ProdukResource extends Resource
                             ->label('Produk')
                             ->weight('bold')
                             ->size(TextColumnSize::Large)
-                            ->description(fn(Produk $record) => 'SKU: ' . ($record->sku ?? '-'))
+                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('kategori.nama_kategori')

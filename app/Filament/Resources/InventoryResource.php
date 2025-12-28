@@ -19,6 +19,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use App\Filament\Resources\InventoryResource\Pages;
@@ -27,6 +28,8 @@ use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Columns\Layout\Split as TableSplit;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Components\Section as InfolistSection;
+use App\Filament\Exports\InventoryOpnameExporter;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 
 class InventoryResource extends Resource
 {
@@ -60,7 +63,7 @@ class InventoryResource extends Resource
                         ]),
                     Stack::make([
                         TextColumn::make('nama_produk')
-                            ->description(fn(Produk $record) => 'SKU: ' . $record->sku ?? '-')
+                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->label('Produk')
                             ->formatStateUsing(fn($state) => strtoupper($state))
                             ->searchable()
@@ -141,6 +144,46 @@ class InventoryResource extends Resource
                     ->relationship('kategori', 'nama_kategori')
                     ->searchable()
                     ->preload(),
+            ])
+            ->headerActions([
+                FilamentExportHeaderAction::make('export_inventory_pdf')
+                    ->label('Download')
+                    ->button()
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('primary')
+                    ->fileName('stok-opname')
+                    ->defaultFormat('pdf')
+                    ->disableTableColumns()
+                    ->withColumns([
+                        TextColumn::make('sku')
+                            ->label('SKU'),
+                        TextColumn::make('nama_produk')
+                            ->label('Nama Produk'),
+                        TextColumn::make('brand.nama_brand')
+                            ->label('Brand'),
+                        TextColumn::make('kategori.nama_kategori')
+                            ->label('Kategori'),
+                        TextColumn::make('total_qty')
+                            ->label('Stok Sistem')
+                            ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0)),
+                        TextColumn::make('latest_batch.hpp')
+                            ->label('HPP')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null),
+                        TextColumn::make('latest_batch.harga_jual')
+                            ->label('Harga Jual')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null),
+                        TextColumn::make('stok_opname')
+                            ->label('Stok Opname')
+                            ->state(fn() => null),
+                        TextColumn::make('selisih')
+                            ->label('Selisih')
+                            ->state(fn() => null),
+                    ])
+                    ->extraViewData([
+                        'title' => 'Stok Opname Inventory',
+                        'subtitle' => 'Haen Komputer • Dicetak: ' . now()->format('d M Y'),
+                        'sort_key' => 'kategori.nama_kategori',
+                    ]),
             ])
             ->actions([
                 ActionGroup::make([
