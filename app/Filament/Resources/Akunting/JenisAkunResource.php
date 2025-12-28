@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Akunting;
 
+use App\Enums\KategoriAkun;
 use App\Filament\Resources\Akunting\JenisAkunResource\Pages;
 use App\Models\JenisAkun;
 use App\Models\KodeAkun;
@@ -88,6 +89,11 @@ class JenisAkunResource extends Resource
                     ->label('Nama Jenis Akun')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('kodeAkun.kategori_akun')
+                    ->label('Kategori Akun')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => KategoriAkun::tryFrom($state)?->getLabel() ?? '-')
+                    ->color(fn (?string $state) => KategoriAkun::tryFrom($state)?->getColor()),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime()

@@ -2,6 +2,34 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2025.12.28
+- Menambahkan **Kode Akun** default (11, 12, 21, 22, 31, 41, 51, 52, 61, 71, 81) melalui seeder baru dan mengaitkannya ke `DatabaseSeeder` agar otomatis tersedia saat deploy/seed.
+- Menyempurnakan **Laba Rugi Detail**: baris **Beban Usaha** kini diambil dari **Jenis Akun** dengan kode akun 51/52/61/81 dan baris **Pendapatan Lain‑lain** dari kode akun 41/71, termasuk pengurutan dan perhitungan total per jenis akun.
+- Menyaring baris **Beban Usaha** agar hanya menampilkan nominal yang terisi (total 0 disembunyikan), serta menampilkan label berdasarkan **nama_jenis_akun** tanpa prefix kode.
+- Menambahkan aksi **Export** berbentuk dropdown tunggal pada halaman detail laba rugi untuk **CSV/XLSX/PDF**, berikut template PDF khusus yang menyamai tampilan infolist.
+- Menyesuaikan tampilan infolist laba rugi: format angka negatif menggunakan tanda minus, dan menambahkan jarak atas 10px pada baris judul tebal (kecuali **Pendapatan**).
+- Menambahkan ikon pada tab **Bulanan/Detail** dan memastikan tab aktif tidak tersangkut ketika kembali dari detail ke list.
+- Menambahkan badge **Kategori Akun** pada tabel **Jenis Akun** dengan label dan warna mengikuti enum.
+
+## 2025.12.27
+- Tidak ada perubahan terkomit di git pada tanggal ini.
+
+## 2025.12.26
+- Tidak ada perubahan terkomit di git pada tanggal ini.
+
+## 2025.12.25
+- Menambahkan **Laporan Neraca** lengkap (resource, list/view pages, model, migrasi kolom `kelompok_neraca`, dan enum **KelompokNeraca**).
+- Menambahkan field **Kelompok Neraca** pada **Kode Akun** serta penyesuaian logika filter/komposisi laporan neraca berdasarkan kategori akun.
+- Menyusun tampilan infolist **Neraca** (template tabel + layout) dan mendaftarkan resource neraca pada panel akunting.
+
+## 2025.12.24
+- Tidak ada perubahan terkomit di git pada tanggal ini.
+
+## 2025.12.23
+- Memperluas modul **Laba Rugi** dan **Input Transaksi Toko** (filter tab, detail infolist, dan penyesuaian perhitungan subtotal).
+- Menambahkan/menyelaraskan komponen tampilan untuk **Beban**, **Pembelian**, dan **Penjualan** pada laporan (infolist & livewire table), termasuk perbaikan format tampilan item.
+- Menyempurnakan tampilan **Penjualan** (items & jasa) serta relasi tampilan laporan agar konsisten di halaman view.
+
 ## 2025.12.22
 - Mengotomatisasi kategori transaksi di **Input Transaksi Toko** berdasarkan Kode/Jenis Akun agar konsisten dengan klasifikasi akun.
 - Menjadikan **Kode Akun** dan **Jenis Akun** sebagai submenu dari **Input Transaksi Toko**, termasuk perbaikan breadcrumb/heading di halaman list.
