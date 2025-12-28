@@ -29,6 +29,12 @@ class LaporanNeracaResource extends Resource
     protected static ?string $pluralLabel = 'Neraca';
     protected static ?string $navigationIcon = 'heroicon-o-scale';
     protected static ?string $slug = 'laporan-neraca';
+    protected static array $kelompokNeracaMapping = [
+        // Mapping manual: 'kode_akun' => KelompokNeraca::...
+        // Contoh:
+        // '101' => KelompokNeraca::AsetLancar,
+        // '201' => KelompokNeraca::LiabilitasJangkaPendek,
+    ];
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -178,17 +184,18 @@ class LaporanNeracaResource extends Resource
         $jenisAkunTable = (new JenisAkun())->getTable();
         $kodeAkunTable = (new KodeAkun())->getTable();
 
-        $kelompokValues = array_map(
-            fn (KelompokNeraca $kelompok) => $kelompok->value,
-            $kelompokList
-        );
+        $kodeAkunList = self::getKodeAkunByKelompok($kelompokList);
 
         return InputTransaksiToko::query()
             ->selectRaw("COALESCE(SUM({$transaksiTable}.nominal_transaksi), 0)")
             ->leftJoin($jenisAkunTable, "{$jenisAkunTable}.id", '=', "{$transaksiTable}.kode_jenis_akun_id")
             ->leftJoin($kodeAkunTable, "{$kodeAkunTable}.id", '=', "{$jenisAkunTable}.kode_akun_id")
             ->where("{$transaksiTable}.kategori_transaksi", $kategori->value)
-            ->whereIn("{$kodeAkunTable}.kelompok_neraca", $kelompokValues)
+            ->when(
+                empty($kodeAkunList),
+                fn (Builder $query) => $query->whereRaw('1 = 0'),
+                fn (Builder $query) => $query->whereIn("{$kodeAkunTable}.kode_akun", $kodeAkunList),
+            )
             ->whereRaw("{$transaksiTable}.tanggal_transaksi <= LAST_DAY({$reportTable}.month_start)");
     }
 
@@ -243,6 +250,7 @@ class LaporanNeracaResource extends Resource
         $transaksiTable = (new InputTransaksiToko())->getTable();
         $jenisAkunTable = (new JenisAkun())->getTable();
         $kodeAkunTable = (new KodeAkun())->getTable();
+        $kodeAkunList = self::getKodeAkunByKelompok([$kelompok]);
 
         return InputTransaksiToko::query()
             ->selectRaw("{$kodeAkunTable}.kode_akun as kode_akun")
@@ -251,7 +259,11 @@ class LaporanNeracaResource extends Resource
             ->leftJoin($jenisAkunTable, "{$jenisAkunTable}.id", '=', "{$transaksiTable}.kode_jenis_akun_id")
             ->leftJoin($kodeAkunTable, "{$kodeAkunTable}.id", '=', "{$jenisAkunTable}.kode_akun_id")
             ->where("{$transaksiTable}.kategori_transaksi", $kategori->value)
-            ->where("{$kodeAkunTable}.kelompok_neraca", $kelompok->value)
+            ->when(
+                empty($kodeAkunList),
+                fn (Builder $query) => $query->whereRaw('1 = 0'),
+                fn (Builder $query) => $query->whereIn("{$kodeAkunTable}.kode_akun", $kodeAkunList),
+            )
             ->whereDate("{$transaksiTable}.tanggal_transaksi", '<=', $asOf)
             ->groupBy("{$kodeAkunTable}.id", "{$kodeAkunTable}.kode_akun", "{$kodeAkunTable}.nama_akun")
             ->orderBy("{$kodeAkunTable}.kode_akun")
@@ -275,6 +287,23 @@ class LaporanNeracaResource extends Resource
             fn (float $carry, array $row): float => $carry + (float) ($row['total'] ?? 0),
             0.0,
         );
+    }
+
+    /**
+     * @param array<int, KelompokNeraca> $kelompokList
+     * @return array<int, string>
+     */
+    protected static function getKodeAkunByKelompok(array $kelompokList): array
+    {
+        if (empty($kelompokList)) {
+            return [];
+        }
+
+        return collect(self::$kelompokNeracaMapping)
+            ->filter(fn (KelompokNeraca $kelompok) => in_array($kelompok, $kelompokList, true))
+            ->keys()
+            ->values()
+            ->all();
     }
 
     public static function formatMonthLabel(?string $monthStart): string

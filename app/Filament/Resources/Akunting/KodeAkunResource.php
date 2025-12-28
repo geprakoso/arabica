@@ -11,21 +11,24 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Collection;
 
 class KodeAkunResource extends Resource
 {
     protected static ?string $model = KodeAkun::class;
-    protected static ?string $navigationLabel = 'Kode Akun';
+    protected static ?string $navigationLabel = '1. Kode Akun';
     protected static ?string $pluralLabel = 'Kode Akun';
     protected static ?string $navigationIcon = 'hugeicons-bar-code-02';
     protected static ?string $navigationParentItem = 'Input Transaksi Toko';
     protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?int $navigationSort = 1;
     
     public static function shouldRegisterNavigation(): bool
     {
@@ -72,7 +75,6 @@ class KodeAkunResource extends Resource
                             ->preload()
                             ->placeholder('Pilih kelompok neraca')
                             ->visible(fn (Get $get): bool => in_array($get('kategori_akun'), [KategoriAkun::Aktiva->value, KategoriAkun::Pasiva->value], true))
-                            ->required(fn (Get $get): bool => in_array($get('kategori_akun'), [KategoriAkun::Aktiva->value, KategoriAkun::Pasiva->value], true))
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
@@ -135,7 +137,26 @@ class KodeAkunResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Tables\Actions\DeleteBulkAction $action, Collection $records): void {
+                            $records->loadCount('inputTransaksiTokos');
+                            $blocked = $records->filter(
+                                fn (KodeAkun $record): bool => $record->input_transaksi_tokos_count > 0
+                            );
+
+                            if ($blocked->isEmpty()) {
+                                return;
+                            }
+
+                            $blockedCount = $blocked->sum('input_transaksi_tokos_count');
+                            Notification::make()
+                                ->title('Tidak bisa hapus kode akun')
+                                ->body("Masih ada {$blockedCount} transaksi terkait di Input Transaksi Toko. Hapus transaksi atau jenis akun terkait terlebih dahulu.")
+                                ->danger()
+                                ->send();
+
+                            $action->halt();
+                        }),
                 ]),
             ]);
     }

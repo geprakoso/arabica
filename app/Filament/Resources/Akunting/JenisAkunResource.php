@@ -10,10 +10,13 @@ use Filament\Forms\Form;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Collection;
 
 class JenisAkunResource extends Resource
 {
@@ -21,7 +24,10 @@ class JenisAkunResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationParentItem = 'Input Transaksi Toko';
+    protected static ?string $navigationLabel = '2. Jenis Akun';
+    protected static ?string $pluralLabel = 'Jenis Akun';
     protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?int $navigationSort = 2;
     public static function shouldRegisterNavigation(): bool
     {
         return Filament::getCurrentPanel()?->getId() === 'admin';
@@ -42,6 +48,15 @@ class JenisAkunResource extends Resource
                             ->native(false)
                             ->required()
                             ->disabledOn('edit')
+                            ->reactive()
+                            ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                if (blank($state)) {
+                                    $set('kode_jenis_akun', null);
+                                    return;
+                                }
+
+                                $set('kode_jenis_akun', JenisAkun::generateKodeJenisAkun((int) $state));
+                            })
                             ->columnSpanFull(),
 
                         TextInput::make('kode_jenis_akun')
@@ -98,7 +113,26 @@ class JenisAkunResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Tables\Actions\DeleteBulkAction $action, Collection $records): void {
+                            $records->loadCount('inputTransaksiTokos');
+                            $blocked = $records->filter(
+                                fn (JenisAkun $record): bool => $record->input_transaksi_tokos_count > 0
+                            );
+
+                            if ($blocked->isEmpty()) {
+                                return;
+                            }
+
+                            $blockedCount = $blocked->sum('input_transaksi_tokos_count');
+                            Notification::make()
+                                ->title('Tidak bisa hapus jenis akun')
+                                ->body("Masih ada {$blockedCount} transaksi terkait di Input Transaksi Toko. Hapus transaksi tersebut terlebih dahulu.")
+                                ->danger()
+                                ->send();
+
+                            $action->halt();
+                        }),
                 ]),
             ]);
     }

@@ -55,7 +55,8 @@ class TopExpensesTable extends AdvancedTableWidget
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-exclamation-circle')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->getStateUsing(fn (InputTransaksiToko $record): bool => ! empty($record->buktiTransaksiGallery())),
             ])
             ->actions([
                 Tables\Actions\Action::make('lihat')

@@ -13,7 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Get;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
@@ -29,13 +29,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
-use Filament\Infolists\Components\Actions as InfolistActions;
-use Filament\Infolists\Components\Actions\Action as InfolistAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
-use Illuminate\Support\Facades\Storage;
 
 class LaporanInputTransaksiResource extends Resource
 {
@@ -305,39 +302,14 @@ class LaporanInputTransaksiResource extends Resource
                             ->icon('heroicon-m-paper-clip')
                             ->collapsible()
                             ->schema([
-                                ImageEntry::make('bukti_transaksi')
+                                ViewEntry::make('bukti_transaksi_gallery')
+                                    ->label('')
                                     ->hiddenLabel()
-                                    ->disk('public')
-                                    ->visibility('public')
-                                    ->height(300)
-                                    ->extraImgAttributes([
-                                        'class' => 'object-contain rounded-lg border border-gray-200 w-full bg-gray-50',
-                                        'alt' => 'Bukti Transaksi',
-                                    ])
-                                    ->placeholder('Tidak ada bukti yang diunggah.'),
-                                InfolistActions::make([
-                                    InfolistAction::make('view_full')
-                                        ->label('Lihat')
-                                        ->icon('heroicon-m-arrows-pointing-out')
-                                        ->visible(fn ($record): bool => filled($record->bukti_transaksi))
-                                        ->url(fn ($record): ?string => self::buktiUrl($record), true),
-                                    InfolistAction::make('download')
-                                        ->label('Unduh')
-                                        ->icon('heroicon-m-arrow-down-tray')
-                                        ->visible(fn ($record): bool => filled($record->bukti_transaksi))
-                                        ->url(fn ($record): ?string => self::buktiUrl($record))
-                                        ->extraAttributes(['download' => true]),
-                                ])->alignment('center'),
+                                    ->view('filament.infolists.components.media-manager-gallery')
+                                    ->state(fn (InputTransaksiToko $record) => $record->buktiTransaksiGallery()),
                             ]),
                     ]),
             ]);
-    }
-
-    protected static function buktiUrl(InputTransaksiToko $record): ?string
-    {
-        return filled($record->bukti_transaksi)
-            ? Storage::disk('public')->url($record->bukti_transaksi)
-            : null;
     }
 
     public static function getPages(): array

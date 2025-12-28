@@ -3,14 +3,19 @@
 namespace App\Models;
 
 use App\Enums\KategoriAkun;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\AkunTransaksi;
 use App\Models\JenisAkun;
 use App\Models\User;
-use App\Models\AkunTransaksi;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class InputTransaksiToko extends Model
+class InputTransaksiToko extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
     protected $table = 'ak_input_transaksi_tokos';
 
     protected $fillable = [
@@ -43,5 +48,30 @@ class InputTransaksiToko extends Model
     public function akunTransaksi(): BelongsTo
     {
         return $this->belongsTo(AkunTransaksi::class);
+    }
+
+    /**
+     * Gallery bukti transaksi (media library + fallback legacy path).
+     *
+     * @return array<int, array{url: string, name: string}>
+     */
+    public function buktiTransaksiGallery(): array
+    {
+        $items = $this->getMedia('bukti_transaksi')
+            ->map(fn ($media) => [
+                'url' => $media->getUrl(),
+                'name' => $media->name ?? 'Bukti Transaksi',
+            ])
+            ->values()
+            ->all();
+
+        if (empty($items) && filled($this->bukti_transaksi)) {
+            $items[] = [
+                'url' => Storage::disk('public')->url($this->bukti_transaksi),
+                'name' => 'Bukti Transaksi',
+            ];
+        }
+
+        return $items;
     }
 }

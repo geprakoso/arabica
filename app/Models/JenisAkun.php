@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Models\AkunTransaksi;
 use App\Models\KodeAkun;
+use App\Models\InputTransaksiToko;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JenisAkun extends Model
 {
@@ -41,6 +43,14 @@ class JenisAkun extends Model
     public function akunTransaksi(): BelongsTo
     {
         return $this->belongsTo(AkunTransaksi::class);
+    }
+
+    /**
+     * Transaksi toko yang memakai jenis akun ini.
+     */
+    public function inputTransaksiTokos(): HasMany
+    {
+        return $this->hasMany(InputTransaksiToko::class, 'kode_jenis_akun_id');
     }
 
     /**

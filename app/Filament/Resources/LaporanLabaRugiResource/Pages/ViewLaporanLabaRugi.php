@@ -25,4 +25,5 @@ class ViewLaporanLabaRugi extends ViewRecord
     {
         return [];
     }
+    
 }

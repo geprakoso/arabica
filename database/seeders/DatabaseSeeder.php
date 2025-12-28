@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
             ProfilePerusahaanSeeder::class,
             KaryawanSeeder::class,
             AkunTransaksiSeeder::class,
+            KodeAkunSeeder::class,
             BrandSeeder::class,
             KategoriSeeder::class,
             ProdukSeeder::class,

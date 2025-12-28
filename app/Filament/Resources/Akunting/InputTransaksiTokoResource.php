@@ -15,7 +15,6 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Grid as FormsGrid;
 use Filament\Forms\Get;
@@ -23,17 +22,15 @@ use Filament\Forms\Set;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Actions;
-use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use App\Models\JenisAkun;
+use App\Filament\Forms\Components\MediaManagerPicker;
 
 class InputTransaksiTokoResource extends Resource
 {
@@ -67,23 +64,6 @@ class InputTransaksiTokoResource extends Resource
                                     ->displayFormat('d F Y')
                                     ->default(now())
                                     ->prefixIcon('hugeicons-calendar-01'),
-
-                                Select::make('kategori_transaksi')
-                                    ->label('Kategori')
-                                    ->required()
-                                    ->options(KategoriAkun::class)
-                                    ->native(false)
-                                    ->searchable()
-                                    ->preload()
-                                    ->prefixIcon('hugeicons-tag-01')
-                                    ->helperText('Kategori diisi otomatis dari kode akun.')
-                                    ->disabled()
-                                    ->dehydrated(),
-                            ]),
-
-                        // --- BARIS 2: Detail Akun ---
-                        FormsGrid::make(2)
-                            ->schema([
                                 Select::make('kode_jenis_akun_id')
                                     ->label('Jenis Akun')
                                     ->required()
@@ -92,13 +72,17 @@ class InputTransaksiTokoResource extends Resource
                                         titleAttribute: 'nama_jenis_akun',
                                         modifyQueryUsing: fn (Builder $query, Get $get) => $get('kategori_transaksi')
                                             ? $query->whereHas('kodeAkun', fn (Builder $q) => $q->where('kategori_akun', $get('kategori_transaksi')))
-                                            : $query->whereRaw('1 = 0'),
+                                            : $query,
                                     )
                                     ->searchable()
                                     ->preload()
                                     ->native(false)
                                     ->prefixIcon('hugeicons-credit-card')
                                     ->placeholder('Pilih jenis akun')
+                                    ->getOptionLabelFromRecordUsing(
+                                        fn (JenisAkun $record): HtmlString => self::formatJenisAkunLabelWithBadge($record)
+                                    )
+                                    ->allowHtml()
                                     ->reactive()
                                     ->afterStateUpdated(function (Set $set, ?string $state) {
                                         if (blank($state)) {
@@ -114,6 +98,38 @@ class InputTransaksiTokoResource extends Resource
 
                                         $set('kategori_transaksi', $kategori);
                                     }),
+                            ]),
+
+                        // --- BARIS 2: Detail Akun ---
+                        FormsGrid::make(2)
+                            ->schema([
+                                Select::make('kategori_transaksi')
+                                    ->label('Kategori')
+                                    ->required()
+                                    ->options(KategoriAkun::class)
+                                    ->native(false)
+                                    ->searchable()
+                                    ->preload()
+                                    ->placeholder('Pilih kategori untuk filter')
+                                    ->prefixIcon('hugeicons-tag-01')
+                                    ->reactive()
+                                    ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                        $selectedJenis = $get('kode_jenis_akun_id');
+                                        if (! $selectedJenis) {
+                                            return;
+                                        }
+
+                                        $kategoriJenis = JenisAkun::query()
+                                            ->with('kodeAkun')
+                                            ->find($selectedJenis)
+                                            ?->kodeAkun
+                                            ?->kategori_akun;
+
+                                        if ($kategoriJenis !== $state) {
+                                            $set('kode_jenis_akun_id', null);
+                                        }
+                                    })
+                                    ->dehydrated(),
 
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi (Opsional)')
@@ -132,8 +148,8 @@ class InputTransaksiTokoResource extends Resource
                             ->numeric()
                             ->prefix('Rp')
                             ->placeholder('0')
-                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
-                            ->stripCharacters([',', '.', 'Rp', ' '])
+                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                            // ->stripCharacters([',', '.', 'Rp', ' '])
                             ->columnSpanFull(), // Nominal dibuat lebar agar fokus
 
                         Textarea::make('keterangan_transaksi')
@@ -143,16 +159,11 @@ class InputTransaksiTokoResource extends Resource
                             ->columnSpanFull(),
 
                         // --- BARIS 4: Bukti ---
-                        FileUpload::make('bukti_transaksi')
-                            ->label('Upload Bukti')
-                            ->directory('bukti-transaksi')
+                        MediaManagerPicker::make('bukti_transaksi')
+                            ->label('Upload Bukti (Gallery)')
                             ->disk('public')
-                            ->visibility('public')
-                            ->image()
-                            ->imageEditor()
-                            ->openable()
-                            ->downloadable()
-                            ->maxSize(2048)
+                            ->maxItems(10)
+                            ->reorderable()
                             ->columnSpanFull(),
 
                         // --- Hidden Fields ---
@@ -193,8 +204,9 @@ class InputTransaksiTokoResource extends Resource
 
                                 TextEntry::make('nominal_transaksi')
                                     ->label('Nominal')
-                                    ->money('IDR')
+                                    // ->money('idr', false)
                                     ->weight(FontWeight::Bold)
+                                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
                                     ->size(TextEntry\TextEntrySize::Large)
                                     // Warnai berdasarkan enum yang tersimpan; fallback ke abu-abu bila tidak dikenali.
                                     ->color(function ($state, $record) {
@@ -215,7 +227,10 @@ class InputTransaksiTokoResource extends Resource
                                         TextEntry::make('jenisAkun.nama_jenis_akun')
                                             ->label('Jenis Akun')
                                             ->icon('heroicon-m-credit-card')
-                                            ->weight(FontWeight::Medium),
+                                            ->weight(FontWeight::Medium)
+                                            ->formatStateUsing(
+                                                fn ($state, InputTransaksiToko $record): string => self::formatJenisAkunLabel($record->jenisAkun)
+                                            ),
 
                                         TextEntry::make('akunTransaksi.nama_akun')
                                             ->label('Akun Transaksi')
@@ -242,36 +257,11 @@ class InputTransaksiTokoResource extends Resource
                         InfolistSection::make('Bukti Transaksi')
                             ->icon('heroicon-m-paper-clip')
                             ->schema([
-                                ImageEntry::make('bukti_transaksi')
+                                ViewEntry::make('bukti_transaksi_gallery')
                                     ->label('')
                                     ->hiddenLabel()
-                                    ->disk('public')
-                                    ->visibility('public')
-                                    ->height(250)
-                                    // Hanya tampil jika ada file bukti.
-                                    ->visible(fn ($record) => filled($record->bukti_transaksi))
-                                    // Klik gambar buka versi penuh di tab baru (gunakan url bawaan komponen).
-                                    ->url(fn ($record) => filled($record->bukti_transaksi) ? Storage::disk('public')->url($record->bukti_transaksi) : null, true)
-                                    ->extraImgAttributes([
-                                        'class' => 'object-contain rounded-lg border border-gray-200 w-full bg-gray-50',
-                                        'alt' => 'Bukti Transaksi',
-                                    ]),
-                                // Tombol aksi: lihat penuh & unduh.
-                                Actions::make([
-                                    Action::make('view_full')
-                                        ->label('Lihat')
-                                        ->icon('heroicon-m-arrows-pointing-out')
-                                        ->url(fn ($record) => filled($record->bukti_transaksi) ? Storage::disk('public')->url($record->bukti_transaksi) : null)
-                                        ->openUrlInNewTab(),
-                                    Action::make('download')
-                                        ->label('Unduh')
-                                        ->icon('heroicon-m-arrow-down-tray')
-                                        // Pakai atribut download agar browser memaksa unduh file.
-                                        ->url(fn ($record) => filled($record->bukti_transaksi) ? Storage::disk('public')->url($record->bukti_transaksi) : null)
-                                        ->extraAttributes([
-                                            'download' => true,
-                                        ]),
-                                ])->alignment('center'),
+                                    ->view('filament.infolists.components.media-manager-gallery')
+                                    ->state(fn (InputTransaksiToko $record) => $record->buktiTransaksiGallery()),
                             ]),
 
                         // Section 4: Metadata
@@ -302,7 +292,10 @@ class InputTransaksiTokoResource extends Resource
                 Tables\Columns\TextColumn::make('jenisAkun.nama_jenis_akun')
                     ->label('Jenis Akun')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(
+                        fn ($state, InputTransaksiToko $record): string => self::formatJenisAkunLabel($record->jenisAkun)
+                    ),
                 Tables\Columns\TextColumn::make('kategori_transaksi')
                     ->label('Kategori')
                     ->badge()
@@ -310,7 +303,8 @@ class InputTransaksiTokoResource extends Resource
                     ->color(fn (?KategoriAkun $state) => $state?->getColor()),
                 Tables\Columns\TextColumn::make('nominal_transaksi')
                     ->label('Nominal')
-                    ->money('idr', true)
+                    // ->money('idr', false)
+                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Penginput')
@@ -417,5 +411,62 @@ class InputTransaksiTokoResource extends Resource
             'view' => Pages\ViewInputTransaksiToko::route('/{record}'),
             'edit' => Pages\EditInputTransaksiToko::route('/{record}/edit'),
         ];
+    }
+
+    protected static function formatJenisAkunLabel(?JenisAkun $jenisAkun): string
+    {
+        if (! $jenisAkun) {
+            return '-';
+        }
+
+        $kodeJenisAkun = $jenisAkun->kode_jenis_akun;
+        $namaJenis = $jenisAkun->nama_jenis_akun;
+        $label = trim(sprintf('%s - %s', $kodeJenisAkun, $namaJenis), ' -');
+
+        return $label !== '' ? $label : ($kodeJenisAkun ?? $namaJenis ?? '-');
+    }
+
+    protected static function formatJenisAkunLabelWithBadge(?JenisAkun $jenisAkun): HtmlString
+    {
+        if (! $jenisAkun) {
+            return new HtmlString('-');
+        }
+
+        $kodeJenisAkun = $jenisAkun->kode_jenis_akun;
+        $namaJenis = $jenisAkun->nama_jenis_akun;
+        $label = trim(sprintf('%s - %s', $kodeJenisAkun, $namaJenis), ' -');
+
+        $kategori = $jenisAkun->kodeAkun?->kategori_akun;
+        $kategoriEnum = KategoriAkun::tryFrom((string) $kategori);
+        $kategoriLabel = $kategoriEnum?->getLabel();
+        $color = $kategoriEnum?->getColor() ?? 'gray';
+
+        if ($kategoriLabel) {
+            $badgeClasses = 'fi-badge flex items-center justify-center gap-x-1 rounded-md text-xs font-medium ring-1 ring-inset px-1.5 py-0.5';
+
+            if ($color === 'gray') {
+                $badgeClasses .= ' bg-gray-50 text-gray-600 ring-gray-600/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20';
+                $badgeStyle = '';
+            } else {
+                $badgeClasses .= ' fi-color-custom bg-custom-50 text-custom-600 ring-custom-600/10 dark:bg-custom-400/10 dark:text-custom-400 dark:ring-custom-400/30';
+                $badgeStyle = \Filament\Support\get_color_css_variables($color, shades: [50, 400, 600], alias: 'badge');
+            }
+
+            $badge = sprintf(
+                '<span class="%s shrink-0" %s>%s</span>',
+                e($badgeClasses),
+                $badgeStyle ? 'style="' . e($badgeStyle) . '"' : '',
+                e($kategoriLabel)
+            );
+
+            return new HtmlString(
+                '<span class="flex items-center justify-between gap-2">' .
+                    '<span class="min-w-0 truncate">' . e($label) . '</span>' .
+                    $badge .
+                '</span>'
+            );
+        }
+
+        return new HtmlString(e($label !== '' ? $label : ($kodeJenisAkun ?? $namaJenis ?? '-')));
     }
 }
