@@ -104,7 +104,7 @@ class AdminPanelProvider extends PanelProvider
 
             ->renderHook(
                 'panels::head.end',
-                fn(): string => Blade::render("@laravelPWA") . <<<HTML
+                fn(): string => <<<HTML
                     <style>
                         /* --- 0. SIDEBAR SETTINGS --- */
                         :root {
