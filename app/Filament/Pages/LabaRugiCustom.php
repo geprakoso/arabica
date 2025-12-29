@@ -70,8 +70,8 @@ class LabaRugiCustom extends Page
     public function getBreadcrumbs(): array
     {
         return [
-            \App\Filament\Resources\LaporanLabaRugiResource::getUrl('index')
-                => \App\Filament\Resources\LaporanLabaRugiResource::getBreadcrumb(),
+            \App\Filament\Resources\Akunting\LaporanLabaRugiResource::getUrl('index')
+                => \App\Filament\Resources\Akunting\LaporanLabaRugiResource::getBreadcrumb(),
             'Detail',
         ];
     }
@@ -105,14 +105,12 @@ class LabaRugiCustom extends Page
                     ->label('')
                     ->prefix('Mulai')
                     ->maxDate(fn (callable $get) => $get('end_date'))
-                    ->closeOnDateSelection()
                     ->native(false)
                     ->live(),
                 DatePicker::make('end_date')
                     ->label('')
                     ->prefix('Sampai')
                     ->minDate(fn (callable $get) => $get('start_date'))
-                    ->closeOnDateSelection()
                     ->native(false)
                     ->live(),
             ])
