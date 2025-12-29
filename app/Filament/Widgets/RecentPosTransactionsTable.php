@@ -43,20 +43,20 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                     ->copyMessageDuration(1500),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal')
-                    ->dateTime('d M Y, H:i')
+                    ->dateTime('d M Y')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sumber_transaksi')
                     ->label('Sumber')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => strtoupper($state ?? 'POS'))
-                    ->color(fn (?string $state) => $state === 'manual' ? 'gray' : 'primary')
-                    ->tooltip(fn (?string $state) => $state === 'manual' ? 'Input melalui Penjualan' : 'Input melalui POS'),
+                    ->formatStateUsing(fn(?string $state) => strtoupper($state ?? 'POS'))
+                    ->color(fn(?string $state) => $state === 'manual' ? 'gray' : 'primary')
+                    ->tooltip(fn(?string $state) => $state === 'manual' ? 'Input melalui Penjualan' : 'Input melalui POS'),
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
                     ->formatStateUsing(function ($state, Penjualan $record) {
-                        $produkTotal = $record->items->sum(fn ($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
-                        $jasaTotal = $record->jasaItems->sum(fn ($service) => (float) ($service->harga ?? 0));
-                        $diskon = (float) ($record->diskon_total ?? 0);
+                        $produkTotal = $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+                        $jasaTotal = $record->jasaItems->sum(fn($service) => (int) ($service->harga ?? 0));
+                        $diskon = (int) ($record->diskon_total ?? 0);
                         $computed = max(0, ($produkTotal + $jasaTotal) - $diskon);
                         $total = ($state ?? 0) > 0 ? $state : $computed;
 

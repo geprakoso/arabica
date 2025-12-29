@@ -13,12 +13,19 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Actions\StaticAction;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use App\Filament\Resources\InventoryResource\Pages;
+use Filament\Tables\Columns\Layout\Grid as TableGrid;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Tables\Columns\Layout\Split as TableSplit;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\Section;
@@ -26,6 +33,8 @@ use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Grid;
 use Filament\Support\Enums\FontFamily;
 use Filament\Support\Enums\FontWeight;
+use App\Filament\Exports\InventoryOpnameExporter;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 
 class InventoryResource extends Resource
 {
@@ -34,7 +43,7 @@ class InventoryResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
-    protected static ?string $pluralLabel = 'Inventory'; 
+    protected static ?string $pluralLabel = 'Inventory';
     public static function form(Form $form): Form
     {
         return $form->schema([]);
@@ -45,65 +54,156 @@ class InventoryResource extends Resource
         return $table
             ->defaultSort('nama_produk')
             ->columns([
-                TextColumn::make('nama_produk')
-                    ->formatStateUsing(fn($state) => strtoupper($state))
-                    ->label('Produk')
-                    ->searchable()
-                    ->sortable()
-                    ->wrap(),
-                TextColumn::make('brand.nama_brand')
-                    ->label('Brand')
-                    ->formatStateUsing(fn($state) => Str::title($state))
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make('kategori.nama_kategori')
-                    ->label('Kategori')
-                    ->formatStateUsing(fn($state) => Str::title($state))
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make('total_qty')
-                    ->label('Qty')
-                    ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0))
-                    ->badge()
-                    ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
-                    ->sortable(),
-                TextColumn::make('latest_batch.hpp')
-                    ->label('HPP Terbaru')
-                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
-                    ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
-                    ->sortable(),
-                TextColumn::make('latest_batch.harga_jual')
-                    ->label('Harga Jual Terbaru')
-                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
-                    ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
-                    ->sortable(),
-                TextColumn::make('batch_count')
-                    ->label(' Batch Aktif')
-                    ->state(fn(Produk $record) => (int) ($record->batch_count ?? 0))
-                    ->badge()
-                    ->color('success')
-                    ->sortable(),
+                TableSplit::make([
+                    ImageColumn::make('image_url')
+                        ->label('')
+                        ->disk('public')
+                        ->height(150)
+                        ->width(150)
+                        ->square()
+                        ->defaultImageUrl(url('/images/icons/icon-256x256.png'))
+                        ->extraImgAttributes([
+                            'class' => 'rounded-lg border border-gray-200/60 object-cover shadow-sm',
+                            'alt' => 'Foto Produk',
+                        ]),
+                    Stack::make([
+                        TextColumn::make('nama_produk')
+                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
+                            ->label('Produk')
+                            ->formatStateUsing(fn($state) => strtoupper($state))
+                            ->searchable()
+                            ->weight('bold')
+                            ->size(TextColumnSize::Large)
+                            ->sortable()
+                            ->wrap(),
+                        TextColumn::make('brand.nama_brand')
+                            ->label('Brand')
+                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->badge()
+                            ->color('info')
+                            ->icon('heroicon-o-tag')
+                            ->sortable()
+                            ->columnSpan(2)
+                            ->wrap(),
+                        TextColumn::make('kategori.nama_kategori')
+                            ->label('Kategori')
+                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->badge()
+                            ->color('warning')
+                            ->icon('heroicon-o-rectangle-stack')
+                            ->sortable()
+                            ->columnSpan(2)
+                            ->wrap(),
+                        TableGrid::make(10)->schema([
+                            TextColumn::make('total_qty')
+                                ->label('Stok')
+                                ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0))
+                                ->badge()
+                                ->color(fn($state) => $state > 10 ? 'success' : ($state > 3 ? 'warning' : 'danger'))
+                                ->icon('heroicon-o-archive-box')
+                                ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
+                                ->columnSpan(2)
+                                ->sortable(),
+                            TextColumn::make('batch_count')
+                                ->label('Batch')
+                                ->state(fn(Produk $record) => (int) ($record->batch_count ?? 0))
+                                ->badge()
+                                ->icon('heroicon-o-clipboard-document-list')
+                                ->color('primary')
+                                ->columnSpan(2)
+                                ->toggleable(isToggledHiddenByDefault: true),
+
+                        ]),
+                    ])->space(2),
+                    Stack::make([
+                        TextColumn::make('latest_batch.hpp')
+                            ->label('HPP')
+                            ->weight('bold')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
+                            ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
+                            ->alignEnd()
+                            ->size(TextColumnSize::Large)
+                            ->icon('heroicon-o-currency-dollar')
+                            ->color('gray'),
+                        TextColumn::make('latest_batch.harga_jual')
+                            ->label('Harga Jual Terkini')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
+                            ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
+                            ->weight('bold')
+                            ->size(TextColumnSize::Large)
+                            ->alignEnd()
+                            ->icon('heroicon-o-banknotes')
+                            ->color('success'),
+                    ])->space(2),
+
+                ])->from('md'),
             ])
             ->filters([
                 SelectFilter::make('brand_id')
                     ->label('Brand')
                     ->relationship('brand', 'nama_brand')
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('kategori_id')
                     ->label('Kategori')
                     ->relationship('kategori', 'nama_kategori')
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
+            ])
+            ->headerActions([
+                FilamentExportHeaderAction::make('export_inventory_pdf')
+                    ->label('Download')
+                    ->button()
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('primary')
+                    ->fileName('stok-opname')
+                    ->defaultFormat('pdf')
+                    ->disableTableColumns()
+                    ->withColumns([
+                        TextColumn::make('sku')
+                            ->label('SKU'),
+                        TextColumn::make('nama_produk')
+                            ->label('Nama Produk'),
+                        TextColumn::make('brand.nama_brand')
+                            ->label('Brand'),
+                        TextColumn::make('kategori.nama_kategori')
+                            ->label('Kategori'),
+                        TextColumn::make('total_qty')
+                            ->label('Stok Sistem')
+                            ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0)),
+                        TextColumn::make('latest_batch.hpp')
+                            ->label('HPP')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null),
+                        TextColumn::make('latest_batch.harga_jual')
+                            ->label('Harga Jual')
+                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null),
+                        TextColumn::make('stok_opname')
+                            ->label('Stok Opname')
+                            ->state(fn() => null),
+                        TextColumn::make('selisih')
+                            ->label('Selisih')
+                            ->state(fn() => null),
+                    ])
+                    ->extraViewData([
+                        'title' => 'Stok Opname Inventory',
+                        'subtitle' => 'Haen Komputer • Dicetak: ' . now()->format('d M Y'),
+                        'sort_key' => 'kategori.nama_kategori',
+                    ]),
             ])
             ->actions([
-                 Action::make('detail')
-                    ->slideOver()
-                    ->icon('heroicon-o-eye')
-                    ->size('sm')
-                    ->modalWidth('6xl')
-                    ->modalHeading('Detail Inventory')
-                    ->modalSubmitAction(false)
-                    ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
-                    ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
+                ActionGroup::make([
+                    Action::make('detail')
+                        ->label('Detail')
+                        ->slideOver()
+                        ->icon('heroicon-o-eye')
+                        ->color('gray')
+                        ->modalWidth('6xl')
+                        ->modalHeading('Detail Inventory')
+                        ->modalSubmitAction(false)
+                        ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
+                        ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
+                ])
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([]);
     }
@@ -221,7 +321,7 @@ class InventoryResource extends Resource
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems')
+            ->whereHas('pembelianItems', fn($q) => $q->where($qtySisaColumn, '>', 0))
             ->with([
                 'brand',
                 'kategori',
@@ -289,8 +389,8 @@ class InventoryResource extends Resource
             $rawHpp = $item->hpp;
 
             $rawHargaJual = $item->harga_jual;
-            $hpp = is_null($rawHpp) ? null : (float) $rawHpp;
-            $hargaJual = is_null($rawHargaJual) ? null : (float) $rawHargaJual;
+            $hpp = is_null($rawHpp) ? null : (int) $rawHpp;
+            $hargaJual = is_null($rawHargaJual) ? null : (int) $rawHargaJual;
             return [
                 'no_po' => $purchase->no_po ?? '-',
                 'tanggal' => $tanggal,
@@ -311,8 +411,8 @@ class InventoryResource extends Resource
             $latestHargaJual = $latestBatchRecord->harga_jual;
 
             $latestBatch = [
-                'hpp' => is_null($latestHpp) ? null : (float) $latestHpp,
-                'harga_jual' => is_null($latestHargaJual) ? null : (float) $latestHargaJual,
+                'hpp' => is_null($latestHpp) ? null : (int) $latestHpp,
+                'harga_jual' => is_null($latestHargaJual) ? null : (int) $latestHargaJual,
                 'tanggal' => optional($latestBatchRecord->pembelian?->tanggal)->format('d M Y'),
             ];
         }
@@ -374,7 +474,7 @@ class InventoryResource extends Resource
     // Helper untuk format mata uang IDR.
     protected static function formatCurrency($value): string
     {
-        $amount = (float) ($value ?? 0);
+        $amount = (int) ($value ?? 0);
 
         return Money::IDR($amount, true)->formatWithoutZeroes();
     }

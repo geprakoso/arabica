@@ -16,6 +16,23 @@ class CreateStockOpname extends CreateRecord
         return static::getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
+    protected function getCreateFormAction(): \Filament\Actions\Action
+    {
+        return parent::getCreateFormAction()
+            ->label('Buat Stock Opname')
+            ->icon('heroicon-o-plus');
+    }
+
+    protected function getCreateAnotherFormAction(): \Filament\Actions\Action
+    {
+        return parent::getCreateAnotherFormAction()
+            ->hidden()
+        ;
+    }
+
+
+
+
     protected function getCreatedNotification(): ?Notification
     {
         return Notification::make()

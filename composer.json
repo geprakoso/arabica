@@ -3,7 +3,10 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
@@ -12,6 +15,7 @@
         "alperenersoy/filament-export": "^3.0",
         "ariaieboy/filament-currency": "^1.13",
         "awcodes/filament-badgeable-column": "^2.3",
+        "barryvdh/laravel-dompdf": "^3.1",
         "bezhansalleh/filament-panel-switch": "^1.1",
         "bezhansalleh/filament-shield": "^3.9",
         "codeat3/blade-carbon-icons": "^2.37",
@@ -30,6 +34,7 @@
         "oriondevelops/filament-greeter": "^0.2.2",
         "shanerbaner82/panel-roles": "^0.0.3",
         "solution-forest/tab-layout-plugin": "^2.2",
+        "silviolleite/laravelpwa": "^2.0",
         "spatie/eloquent-sortable": "^4.5",
         "tomatophp/filament-media-manager": "^1.1"
     },
@@ -41,6 +46,9 @@
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
+        "pestphp/pest": "^3.8",
+        "pestphp/pest-plugin-laravel": "^3.2",
+        "pestphp/pest-plugin-livewire": "^3.0",
         "phpunit/phpunit": "^11.5.3"
     },
     "autoload": {
@@ -71,7 +79,7 @@
         ],
         "test": [
             "@php artisan config:clear --ansi",
-            "@php artisan test"
+            "./vendor/bin/pest"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

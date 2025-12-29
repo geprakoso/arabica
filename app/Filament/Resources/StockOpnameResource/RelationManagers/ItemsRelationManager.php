@@ -25,20 +25,24 @@ class ItemsRelationManager extends RelationManager
         return $form->schema([
             Select::make('produk_id')
                 ->label('Produk')
-                ->options(fn () => PenjualanResource::getAvailableProductOptions())
+                ->options(fn() => PenjualanResource::getAvailableProductOptions())
                 ->searchable()
                 ->preload()
                 ->required()
                 ->reactive()
                 ->native(false)
-                ->afterStateUpdated(fn (Set $set) => $set('pembelian_item_id', null)),
+                ->prefixIcon('heroicon-o-cube')
+                ->placeholder('Pilih Produk')
+                ->afterStateUpdated(fn(Set $set) => $set('pembelian_item_id', null)),
             Select::make('pembelian_item_id')
-                ->label('Batch')
-                ->options(fn (Get $get) => PenjualanResource::getBatchOptions($get('produk_id') ? (int) $get('produk_id') : null))
+                ->label('Batch / PO')
+                ->options(fn(Get $get) => PenjualanResource::getBatchOptions($get('produk_id') ? (int) $get('produk_id') : null))
                 ->required()
                 ->native(false)
-                ->disabled(fn (Get $get) => ! $get('produk_id'))
+                ->disabled(fn(Get $get) => ! $get('produk_id'))
                 ->reactive()
+                ->prefixIcon('heroicon-o-archive-box')
+                ->placeholder('Pilih Batch')
                 ->afterStateUpdated(function (Set $set, ?int $state): void {
                     if (! $state) {
                         return;
@@ -58,12 +62,15 @@ class ItemsRelationManager extends RelationManager
                 ->numeric()
                 ->required()
                 ->disabled()
-                ->dehydrated(),
+                ->dehydrated()
+                ->suffix('Pcs'),
             TextInput::make('stok_fisik')
                 ->label('Stok Fisik')
                 ->numeric()
                 ->required()
-                ->live()
+                ->live(onBlur: true)
+                ->suffix('Pcs')
+                ->placeholder('0')
                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
                     $selisih = ((int) $state) - (int) $get('stok_sistem');
                     $set('selisih', $selisih);
@@ -72,9 +79,11 @@ class ItemsRelationManager extends RelationManager
                 ->label('Selisih')
                 ->numeric()
                 ->disabled()
-                ->dehydrated(),
+                ->dehydrated()
+                ->suffix('Pcs'),
             TextInput::make('catatan')
-                ->label('Catatan')
+                ->label('Catatan Item')
+                ->placeholder('Catatan khusus untuk item ini...')
                 ->columnSpanFull(),
         ])->columns(2);
     }
@@ -85,36 +94,50 @@ class ItemsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('produk.nama_produk')
                     ->label('Produk')
-                    ->searchable(),
-                TextColumn::make('pembelianItem.pembelian.no_po')
-                    ->label('No. PO')
-                    ->placeholder('-'),
+                    ->searchable()
+                    ->weight('bold')
+                    ->icon('heroicon-o-cube')
+                    ->description(fn($record) => $record->pembelianItem?->pembelian?->no_po ? 'PO: ' . $record->pembelianItem->pembelian->no_po : '-'),
                 TextColumn::make('stok_sistem')
-                    ->label('Sistem'),
+                    ->label('Sistem')
+                    ->alignCenter()
+                    ->badge()
+                    ->color('gray'),
                 TextColumn::make('stok_fisik')
-                    ->label('Fisik'),
+                    ->label('Fisik')
+                    ->alignCenter()
+                    ->weight('bold'),
                 TextColumn::make('selisih')
                     ->label('Selisih')
+                    ->alignCenter()
                     ->badge()
                     ->colors([
-                        'success' => fn ($state) => $state > 0,
-                        'danger' => fn ($state) => $state < 0,
-                    ]),
+                        'success' => fn($state) => $state > 0,
+                        'danger' => fn($state) => $state < 0,
+                        'warning' => fn($state) => $state == 0,
+                    ])
+                    ->icon(fn($state) => match (true) {
+                        $state > 0 => 'heroicon-o-arrow-trending-up',
+                        $state < 0 => 'heroicon-o-arrow-trending-down',
+                        default => 'heroicon-o-minus',
+                    }),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Item')
-                    ->visible(fn () => ! $this->getOwnerRecord()->isPosted()),
+                    ->icon('heroicon-o-plus')
+                    ->visible(fn() => ! $this->getOwnerRecord()->isPosted()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->visible(fn ($record) => ! $record->opname->isPosted()),
+                    ->visible(fn($record) => ! $record->opname->isPosted())
+                    ->color('warning'),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn ($record) => ! $record->opname->isPosted()),
+                    ->visible(fn($record) => ! $record->opname->isPosted()),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
-                    ->visible(fn () => ! $this->getOwnerRecord()->isPosted()),
+                    ->visible(fn() => ! $this->getOwnerRecord()->isPosted()),
             ]);
     }
 }

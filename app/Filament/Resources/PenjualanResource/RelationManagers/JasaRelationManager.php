@@ -66,7 +66,7 @@ class JasaRelationManager extends RelationManager
                     ->wrap(),
                 TextColumn::make('harga')
                     ->label('Tarif')
-                    ->formatStateUsing(fn ($state): string => 'Rp ' . number_format((float) ($state ?? 0), 0, ',', '.')),
+                    ->formatStateUsing(fn ($state): string => 'Rp ' . number_format((int) ($state ?? 0), 0, ',', '.')),
                 TextColumn::make('catatan')
                     ->label('Catatan')
                     ->limit(40)

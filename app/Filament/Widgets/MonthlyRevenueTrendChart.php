@@ -52,7 +52,7 @@ class MonthlyRevenueTrendChart extends AdvancedChartWidget
         foreach (CarbonPeriod::create($start, '1 month', $end) as $month) {
             $key = $month->format('Y-m');
             $labels[] = $month->translatedFormat('M Y');
-            $data[] = (float) ($totals[$key] ?? 0);
+            $data[] = (int) ($totals[$key] ?? 0);
         }
 
         return [

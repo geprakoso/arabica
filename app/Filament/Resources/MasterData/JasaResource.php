@@ -46,18 +46,18 @@ class JasaResource extends Resource
     protected static ?string $pluralModelLabel = 'Jasa';
     protected static ?string $navigationLabel = 'Jasa';
     protected static ?int $navigationSort = 2;
-    
+
     public static function form(Form $form): Form
     {
         return $form
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (Konten Utama) ===
                 Group::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Informasi Dasar
                         Section::make('Informasi Jasa')
                             ->description('Detail lengkap mengenai layanan jasa yang ditawarkan.')
@@ -76,7 +76,13 @@ class JasaResource extends Resource
                                 Forms\Components\RichEditor::make('deskripsi')
                                     ->label('Deskripsi Lengkap')
                                     ->toolbarButtons([
-                                        'bold', 'italic', 'bulletList', 'orderedList', 'h3', 'undo', 'redo'
+                                        'bold',
+                                        'italic',
+                                        'bulletList',
+                                        'orderedList',
+                                        'h3',
+                                        'undo',
+                                        'redo'
                                     ]) // Toolbar minimalis
                                     ->columnSpanFull(),
                             ]),
@@ -90,20 +96,23 @@ class JasaResource extends Resource
                                     ->label('Biaya Jasa')
                                     ->prefix('Rp')
                                     ->placeholder('0')
-                                    ->currencyMask(thousandSeparator: ',', decimalSeparator: '.', precision: 2)
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
                                     ->required(),
 
                                 Forms\Components\TimePicker::make('estimasi_waktu_jam')
                                     ->label('Estimasi Durasi')
-                                    ->prefix('Jam') // UX: Memperjelas ini adalah durasi
+                                    ->prefix('Jam')
                                     ->seconds(false)
                                     ->required()
-                                    // Logika custom kamu tetap saya pertahankan
                                     ->datalist([
-                                        '01:00', '02:00', '03:00', '04:00', '05:00',
+                                        '01:00',
+                                        '02:00',
+                                        '03:00',
+                                        '04:00',
+                                        '05:00',
                                     ])
-                                    ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::parse($state)->hour : null)
-                                    ->afterStateHydrated(fn ($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
+                                    ->dehydrateStateUsing(fn(?string $state) => $state ? Carbon::parse($state)->hour : null)
+                                    ->afterStateHydrated(fn($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
                             ]),
                     ]),
 
@@ -111,7 +120,7 @@ class JasaResource extends Resource
                 Group::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Gambar
                         Section::make('Media')
                             ->icon('heroicon-m-photo')
@@ -121,7 +130,7 @@ class JasaResource extends Resource
                                     ->image()
                                     ->imageEditor()
                                     ->disk('public')
-                                    ->directory(fn () => 'jasas/' . now()->format('Y/m/d'))
+                                    ->directory(fn() => 'jasas/' . now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
                                         $datePrefix = now()->format('ymd');
                                         $slug = Str::slug($get('nama_jasa') ?? 'jasa');
@@ -136,7 +145,7 @@ class JasaResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('sku')
                                     ->label('Kode SKU')
-                                    ->default(fn () => Jasa::generateSku())
+                                    ->default(fn() => Jasa::generateSku())
                                     ->disabled() // Tetap disabled
                                     ->dehydrated() // Agar tetap tersimpan ke DB
                                     ->required()
@@ -152,12 +161,12 @@ class JasaResource extends Resource
         return $infolist
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA) ===
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Informasi Dasar
                         InfolistSection::make('Detail Layanan')
                             ->icon('heroicon-m-wrench-screwdriver')
@@ -195,13 +204,13 @@ class JasaResource extends Resource
                                             ->placeholder('Tidak ada estimasi'),
                                     ]),
                             ]),
-                ]),
+                    ]),
 
                 // === KOLOM KANAN (SIDEBAR) ===
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Gambar
                         InfolistSection::make('Visual')
                             ->schema([
@@ -210,7 +219,7 @@ class JasaResource extends Resource
                                     ->disk('public')
                                     ->height(200)
                                     ->extraImgAttributes([
-                                        'class' => 'object-cover rounded-lg shadow-sm w-full', 
+                                        'class' => 'object-cover rounded-lg shadow-sm w-full',
                                         'alt' => 'Foto Jasa',
                                     ]),
                             ]),
@@ -227,7 +236,7 @@ class JasaResource extends Resource
                                 IconEntry::make('is_active')
                                     ->label('Status Aktif')
                                     ->boolean(), // Menampilkan ceklis/silang
-                                    
+
                                 TextEntry::make('created_at')
                                     ->label('Terdaftar Sejak')
                                     ->dateTime('d M Y')
@@ -245,13 +254,22 @@ class JasaResource extends Resource
                 //
                 TextColumn::make('nama_jasa')
                     ->label('Nama Jasa')
+                    ->color('primary')
+                    ->weight('bold')
+                    ->icon('heroicon-m-wrench-screwdriver')
+                    ->description(fn(Jasa $record) => $record->sku)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('harga_formatted')
                     ->label('Harga')
-                    ->alignRight(),
+                    ->alignRight()
+                    ->sortable(),
                 TextColumn::make('estimasi_waktu_jam')
                     ->label('Estimasi Waktu (Jam)')
+                    ->prefix('')
+                    ->badge()
+                    ->suffix(' Jam')
+                    ->icon('heroicon-m-clock')
                     ->sortable(),
             ])
             ->filters([

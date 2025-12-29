@@ -61,9 +61,9 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
         ];
     }
 
-    protected function sumRevenueBetween(Carbon $start, Carbon $end): float
+    protected function sumRevenueBetween(Carbon $start, Carbon $end): int
     {
-        return (float) Penjualan::query()
+        return (int) Penjualan::query()
             ->posOnly()
             ->whereBetween('tanggal_penjualan', [$start, $end])
             ->sum('grand_total');
@@ -144,7 +144,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
     }
 
     /**
-     * @param  Collection<string, float|int>  $dataset
+     * @param  Collection<string, int>  $dataset
      */
     protected function fillDailySeries(Collection $dataset, Carbon $start, Carbon $end): array
     {
@@ -157,7 +157,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
 
         foreach (CarbonPeriod::create($start, $effectiveEnd) as $date) {
             $key = $date->toDateString();
-            $series[] = (float) ($dataset[$key] ?? 0);
+            $series[] = (int) ($dataset[$key] ?? 0);
         }
 
         return $series;
@@ -183,12 +183,12 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
         return [$start, $start->copy()->endOfMonth()];
     }
 
-    protected function formatCurrency(float $value): string
+    protected function formatCurrency(int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
     }
 
-    protected function formatDelta(float $current, float $previous): string
+    protected function formatDelta(int $current, int $previous): string
     {
         if ($previous <= 0) {
             return 'Tidak ada pembanding bulan lalu';
@@ -200,7 +200,7 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
         return $sign . number_format($delta, 1, ',', '.') . '% dibanding bulan lalu';
     }
 
-    protected function resolveDeltaIcon(float $current, float $previous): ?string
+    protected function resolveDeltaIcon(int $current, int $previous): ?string
     {
         if ($current === $previous) {
             return null;

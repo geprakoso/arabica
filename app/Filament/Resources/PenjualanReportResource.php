@@ -134,36 +134,36 @@ class PenjualanReportResource extends Resource
         ];
     }
     // format currency 
-    protected static function formatCurrency(float | int $value): string
+    protected static function formatCurrency(int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
     }
 
-    protected static function calculateProductTotal(Penjualan $record): float
+    protected static function calculateProductTotal(Penjualan $record): int
     {
-        return (float) $record->items->sum(function ($item): float {
+        return (int) $record->items->sum(function ($item): int {
             $qty = (int) ($item->qty ?? 0);
-            $harga = (float) ($item->harga_jual ?? 0);
+            $harga = (int) ($item->harga_jual ?? 0);
 
             return $harga * $qty;
         });
     }
 
-    protected static function calculateHppTotal(Penjualan $record): float
+    protected static function calculateHppTotal(Penjualan $record): int
     {
-        return (float) $record->items->sum(function ($item): float {
+        return (int) $record->items->sum(function ($item): int {
             $qty = (int) ($item->qty ?? 0);
-            $hpp = (float) ($item->hpp ?? 0);
+            $hpp = (int) ($item->hpp ?? 0);
 
             return $hpp * $qty;
         });
     }
 
-    protected static function calculateServiceTotal(Penjualan $record): float
+    protected static function calculateServiceTotal(Penjualan $record): int
     {
-        return (float) $record->jasaItems->sum(function ($service): float {
+        return (int) $record->jasaItems->sum(function ($service): int {
             $qty = max(1, (int) ($service->qty ?? 1));
-            $harga = (float) ($service->harga ?? 0);
+            $harga = (int) ($service->harga ?? 0);
 
             return $harga * $qty;
         });

@@ -232,13 +232,13 @@ class PosSaleResource extends Resource
                                 ->data(fn(Get $get): array => [
                                     'items' => $get('items') ?? [],
                                     'services' => $get('services') ?? [],
-                                    'discount' => (float) ($get('diskon_total') ?? 0),
+                                    'discount' => (int) ($get('diskon_total') ?? 0),
                                 ])
                                 ->key(function (Get $get): string {
                                     $payload = [
                                         'items' => $get('items') ?? [],
                                         'services' => $get('services') ?? [],
-                                        'discount' => (float) ($get('diskon_total') ?? 0),
+                                        'discount' => (int) ($get('diskon_total') ?? 0),
                                     ];
 
                                     return 'pos-cart-summary-' . md5(json_encode($payload));
@@ -267,7 +267,7 @@ class PosSaleResource extends Resource
                                         // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
                                             [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
-                                            $discount = max(0, (float) ($state ?? 0));
+                                            $discount = max(0, (int) ($state ?? 0));
                                             $discount = min($discount, $totalAmount);
                                             $set('diskon_total', $discount);
 
@@ -287,7 +287,7 @@ class PosSaleResource extends Resource
                                         ->rule(function (Get $get) {
                                             return function (string $attribute, $value, \Closure $fail) use ($get) {
                                                 [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
-                                                $discount = (float) ($get('diskon_total') ?? 0);
+                                                $discount = (int) ($get('diskon_total') ?? 0);
                                                 $grandTotal = max(0, $totalAmount - $discount);
                                                 if ($value < $grandTotal) {
                                                     $fail("Tunai Kurang Dari Harga Total (Rp " . number_format($grandTotal, 0, ',', '.') . ")");
@@ -344,16 +344,16 @@ class PosSaleResource extends Resource
 
         $totalQty = (int) $productItems->sum(fn (array $item) => (int) ($item['qty'] ?? 0));
 
-        $productsTotal = (float) $productItems->sum(function (array $item) {
+        $productsTotal = (int) $productItems->sum(function (array $item) {
             $qty = (int) ($item['qty'] ?? 0);
             $price = self::resolveUnitPrice($item);
-            $discount = (float) ($item['diskon'] ?? 0);
+            $discount = (int) ($item['diskon'] ?? 0);
 
             return max(0, ($price * $qty) - $discount);
         });
 
-        $servicesTotal = (float) $serviceItems->sum(function (array $service) {
-            $price = (float) ($service['harga'] ?? 0);
+        $servicesTotal = (int) $serviceItems->sum(function (array $service) {
+            $price = (int) ($service['harga'] ?? 0);
 
             return max(0, $price);
         });
@@ -463,11 +463,11 @@ class PosSaleResource extends Resource
      * @param Set $set
      * @param Get $get
      * @param mixed $overrideCash
-     * @param ?float $overrideDiscount
+     * @param ?int $overrideDiscount
      * @return void
      */
 
-    protected static function refreshChangeField(Set $set, Get $get, $overrideCash = null, ?float $overrideDiscount = null): void
+    protected static function refreshChangeField(Set $set, Get $get, $overrideCash = null, ?int $overrideDiscount = null): void
     {
         $cashValue = $overrideCash ?? $get('tunai_diterima');
 
@@ -477,31 +477,31 @@ class PosSaleResource extends Resource
         }
 
         [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
-        $discount = $overrideDiscount ?? (float) ($get('diskon_total') ?? 0);
+        $discount = $overrideDiscount ?? (int) ($get('diskon_total') ?? 0);
         $discount = min(max($discount, 0), $totalAmount);
 
         $grandTotal = max(0, $totalAmount - $discount);
-        $set('kembalian', max(0, (float) $cashValue - $grandTotal));
+        $set('kembalian', max(0, (int) $cashValue - $grandTotal));
     }
 
     /**
      * Menghitung harga satuan
      *
      * @param array $item
-     * @return float
+     * @return int
      */
-    protected static function resolveUnitPrice(array $item): float
+    protected static function resolveUnitPrice(array $item): int
     {
         $price = $item['harga_jual'] ?? null;
 
         if ($price !== null && $price !== '') {
-            return (float) $price;
+            return (int) $price;
         }
 
         $productId = isset($item['id_produk']) ? (int) $item['id_produk'] : null;
         $condition = $item['kondisi'] ?? null;
 
-        return (float) (self::getDefaultPriceForProduct($productId, $condition) ?? 0);
+        return (int) (self::getDefaultPriceForProduct($productId, $condition) ?? 0);
     }
 
     /**
@@ -509,10 +509,10 @@ class PosSaleResource extends Resource
      *
      * @param ?int $productId
      * @param ?string $condition
-     * @return ?float
+     * @return ?int
      */
 
-    protected static function getDefaultPriceForProduct(?int $productId, ?string $condition = null): ?float
+    protected static function getDefaultPriceForProduct(?int $productId, ?string $condition = null): ?int
     {
         $batch = self::getOldestAvailableBatch($productId, $condition);
 
@@ -572,7 +572,7 @@ class PosSaleResource extends Resource
             ->all();
     }
 
-    protected static function getDefaultServicePrice(?int $serviceId): ?float
+    protected static function getDefaultServicePrice(?int $serviceId): ?int
     {
         if (! $serviceId) {
             return null;

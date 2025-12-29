@@ -1,16 +1,38 @@
 <?php
 
-namespace Tests\Unit;
+// Basic PHP Unit Tests (no Laravel dependencies)
 
-use PHPUnit\Framework\TestCase;
+test('true is true', function () {
+    expect(true)->toBeTrue();
+});
 
-class ExampleTest extends TestCase
-{
-    /**
-     * A basic test example.
-     */
-    public function test_that_true_is_true(): void
-    {
-        $this->assertTrue(true);
-    }
-}
+test('basic math works', function () {
+    expect(1 + 1)->toBe(2);
+});
+
+test('arrays can be checked', function () {
+    $array = ['name' => 'Arabica', 'type' => 'Laravel App'];
+
+    expect($array)
+        ->toHaveKey('name')
+        ->toHaveKey('type')
+        ->and($array['name'])->toBe('Arabica');
+});
+
+test('strings can be manipulated', function () {
+    $string = 'Hello World';
+
+    expect($string)
+        ->toBeString()
+        ->toContain('World')
+        ->toStartWith('Hello');
+});
+
+test('numbers can be compared', function () {
+    $number = 42;
+
+    expect($number)
+        ->toBeInt()
+        ->toBeGreaterThan(40)
+        ->toBeLessThan(50);
+});

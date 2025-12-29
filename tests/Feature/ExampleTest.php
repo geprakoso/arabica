@@ -1,19 +1,34 @@
 <?php
 
-namespace Tests\Feature;
+use App\Models\User;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+// Laravel Feature Tests
 
-class ExampleTest extends TestCase
-{
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
-    {
-        $response = $this->get('/');
+test('environment is testing', function () {
+    expect(app()->environment())->toBe('testing');
+});
 
-        $response->assertStatus(200);
-    }
-}
+test('config can be accessed', function () {
+    expect(config('app.name'))->toBeString();
+});
+
+test('user model exists', function () {
+    expect(class_exists(User::class))->toBeTrue();
+});
+
+test('user model has fillable attributes', function () {
+    $user = new User();
+
+    expect($user->getFillable())
+        ->toBeArray()
+        ->toContain('name')
+        ->toContain('email');
+});
+
+test('user model has hidden attributes', function () {
+    $user = new User();
+
+    expect($user->getHidden())
+        ->toBeArray()
+        ->toContain('password');
+});

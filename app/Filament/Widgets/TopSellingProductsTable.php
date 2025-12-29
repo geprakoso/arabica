@@ -36,7 +36,9 @@ class TopSellingProductsTable extends AdvancedTableWidget
             ->columns([
                 Tables\Columns\TextColumn::make('nama_produk')
                     ->label('Produk')
-                    ->limit(35),
+                    ->wrap()
+                    ->limit(35)
+                    ->description(fn(Produk $record) => $record->sku ? 'SKU: ' . $record->sku : null),
                 Tables\Columns\TextColumn::make('total_qty')
                     ->label('Qty')
                     ->badge()
@@ -44,11 +46,12 @@ class TopSellingProductsTable extends AdvancedTableWidget
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Omzet')
-                    ->money('idr', true)
+                    ->formatStateUsing(fn($state) => money($state, 'idr', false)->formatWithoutZeroes())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('last_sold_at')
                     ->label('Terakhir Terjual')
                     ->date()
+                    ->dateTime('d M Y')
                     ->sortable(),
             ])
             ->defaultSort('total_qty', 'desc')

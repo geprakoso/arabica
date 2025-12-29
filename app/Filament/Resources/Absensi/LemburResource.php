@@ -26,6 +26,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
+use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Date;
@@ -36,7 +38,7 @@ class LemburResource extends Resource
 
     protected static ?string $navigationIcon = 'hugeicons-clock-05';
     protected static ?string $navigationGroup = 'Absensi';
-    protected static ?string $navigationLabel = 'Lembur'; 
+    protected static ?string $navigationLabel = 'Lembur';
 
     public static function canViewAny(): bool
     {
@@ -110,7 +112,7 @@ class LemburResource extends Resource
                                 Forms\Components\DatePicker::make('tanggal')
                                     ->label('Tanggal Lembur')
                                     ->native(false) // Tampilan kalender modern
-                                    ->displayFormat('d F Y')
+                                    ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->locale('id')->translatedFormat('d F Y') : '-')
                                     ->default(now())
                                     ->required()
                                     ->columnSpanFull(), // Tanggal full width di atas jam
@@ -153,7 +155,7 @@ class LemburResource extends Resource
                                     ->label('Catatan Supervisor')
                                     ->placeholder('Alasan diterima/ditolak...')
                                     ->rows(4)
-                                    ->visible(fn (Get $get) => in_array($get('status'), [
+                                    ->visible(fn(Get $get) => in_array($get('status'), [
                                         StatusPengajuan::Diterima->value,
                                         StatusPengajuan::Ditolak->value,
                                         // Pastikan value ini sesuai dengan Enum kamu (misal: 'diterima', 'ditolak' atau 1, 2)
@@ -169,12 +171,12 @@ class LemburResource extends Resource
         return $infolist
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA) ===
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Informasi Karyawan & Keperluan
                         InfolistSection::make('Informasi Pengajuan')
                             ->icon('heroicon-m-document-text')
@@ -183,7 +185,7 @@ class LemburResource extends Resource
                                     ->label('Nama Karyawan')
                                     ->icon('heroicon-m-user')
                                     ->weight('bold'),
-                                    
+
                                 TextEntry::make('keperluan')
                                     ->label('Keperluan Lembur')
                                     ->columnSpanFull()
@@ -198,15 +200,15 @@ class LemburResource extends Resource
                                     ->schema([
                                         TextEntry::make('tanggal')
                                             ->label('Tanggal')
-                                            ->date('d F Y') // Format tanggal Indonesia friendly
+                                            ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->locale('id')->translatedFormat('d F Y') : '-') // Format tanggal Indonesia friendly
                                             ->icon('heroicon-m-calendar'),
-                                            
+
                                         TextEntry::make('jam_mulai')
                                             ->label('Mulai')
                                             ->time('H:i')
                                             ->icon('heroicon-m-play-circle')
                                             ->color('success'), // Hijau untuk mulai
-                                            
+
                                         TextEntry::make('jam_selesai')
                                             ->label('Selesai')
                                             ->time('H:i')
@@ -215,13 +217,13 @@ class LemburResource extends Resource
                                             ->color('danger'), // Merah untuk selesai
                                     ]),
                             ]),
-                ]),
+                    ]),
 
                 // === KOLOM KANAN (STATUS) ===
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Validasi
                         InfolistSection::make('Status Validasi')
                             ->icon('heroicon-m-check-badge')
@@ -243,34 +245,52 @@ class LemburResource extends Resource
     {
         return $table
             ->columns([
-                //
                 TextColumn::make('user.name')
                     ->label('Karyawan')
+                    ->description(fn(Lembur $record) => $record->user->email ?? '-')
+                    ->icon('heroicon-m-user')
                     ->searchable()
                     ->sortable(),
+
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
+                    ->description(fn(Lembur $record) => $record->tanggal->locale('id')->translatedFormat('l')) // Hari
+                    ->icon('heroicon-m-calendar')
                     ->sortable(),
+
+                TextColumn::make('jam_mulai')
+                    ->label('Waktu')
+                    ->icon('heroicon-m-clock')
+                    ->formatStateUsing(fn(Lembur $record) => Carbon::parse($record->jam_mulai)->format('H:i') . ' - ' . ($record->jam_selesai ? Carbon::parse($record->jam_selesai)->format('H:i') : '?')),
+
                 TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->formatStateUsing(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getLabel()
                         : (filled($state) ? StatusPengajuan::from($state)->getLabel() : null))
-                    ->color(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->color(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getColor()
                         : (filled($state) ? StatusPengajuan::from($state)->getColor() : null))
+                    ->icon(fn(StatusPengajuan|string|null $state) => match ($state instanceof StatusPengajuan ? $state->value : $state) {
+                        'diterima', 1, '1' => 'heroicon-m-check-circle',
+                        'ditolak', 2, '2' => 'heroicon-m-x-circle',
+                        default => 'heroicon-m-clock',
+                    })
                     ->sortable(),
-                TextColumn::make('keperluan')
-                    ->limit(40)
-                    ->wrap(),            
-                    ])
+            ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ])
+                    ->label('Aksi')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->tooltip('Menu Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

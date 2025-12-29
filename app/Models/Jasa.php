@@ -66,7 +66,7 @@ class Jasa extends Model
             return '-';
         }
 
-        return 'Rp ' . number_format((float) $this->harga, 0, ',', '.');
+        return 'Rp ' . number_format((int) $this->harga, 0, ',', '.');
     }
 
     /**

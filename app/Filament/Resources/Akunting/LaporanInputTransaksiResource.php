@@ -199,7 +199,10 @@ class LaporanInputTransaksiResource extends Resource
                     ->defaultFormat('xlsx')
                     ->withHiddenColumns()
                     ->formatStates([
-                        'nominal_transaksi' => fn (InputTransaksiToko $record) => 'Rp ' . number_format((float) $record->nominal_transaksi, 2, ',', '.'),
+                        'nominal_transaksi' => fn (InputTransaksiToko $record) => (int) $record->nominal_transaksi,
+                    ])
+                    ->columnFormats([
+                        'nominal_transaksi' => '[$Rp-421] #,##0.00',
                     ])
                     ->disableAdditionalColumns()
                     ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
@@ -224,7 +227,10 @@ class LaporanInputTransaksiResource extends Resource
                         ->defaultFormat('xlsx')
                         ->withHiddenColumns()
                         ->formatStates([
-                            'nominal_transaksi' => fn (InputTransaksiToko $record) => 'Rp ' . number_format((float) $record->nominal_transaksi, 2, ',', '.'),
+                            'nominal_transaksi' => fn (InputTransaksiToko $record) => (int) $record->nominal_transaksi,
+                        ])
+                        ->columnFormats([
+                            'nominal_transaksi' => '[$Rp-421] #,##0.00',
                         ])
                         ->disableAdditionalColumns()
                         ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),

@@ -67,9 +67,9 @@ class PosActivityStats extends AdvancedStatsOverviewWidget
             ->count();
     }
 
-    protected function sumRevenueBetween(Carbon $start, Carbon $end): float
+    protected function sumRevenueBetween(Carbon $start, Carbon $end): int
     {
-        return (float) Penjualan::query()
+        return (int) Penjualan::query()
             ->posOnly()
             ->whereBetween('tanggal_penjualan', [$start, $end])
             ->sum('grand_total');
@@ -139,14 +139,14 @@ class PosActivityStats extends AdvancedStatsOverviewWidget
     }
 
     /**
-     * @param  Collection<string, float|int>  $dataset
+     * @param  Collection<string, int>  $dataset
      */
     protected function fillDailySeries(Collection $dataset, Carbon $start, Carbon $end): array
     {
         $series = [];
 
         foreach (CarbonPeriod::create($start, $end) as $date) {
-            $series[] = (float) ($dataset[$date->toDateString()] ?? 0);
+            $series[] = (int) ($dataset[$date->toDateString()] ?? 0);
         }
 
         return $series;
@@ -160,12 +160,12 @@ class PosActivityStats extends AdvancedStatsOverviewWidget
         return [$start, $end];
     }
 
-    protected function formatCurrency(float $value): string
+    protected function formatCurrency(int $value): string
     {
         return 'Rp ' . number_format($value, 0, ',', '.');
     }
 
-    protected function formatDelta(float|int $current, float|int $previous): string
+    protected function formatDelta(int $current, int $previous): string
     {
         if ($previous <= 0) {
             return 'Tidak ada pembanding';
@@ -177,7 +177,7 @@ class PosActivityStats extends AdvancedStatsOverviewWidget
         return $sign . number_format($delta, 1, ',', '.') . '% vs kemarin';
     }
 
-    protected function resolveDeltaIcon(float|int $current, float|int $previous): ?string
+    protected function resolveDeltaIcon(int $current, int $previous): ?string
     {
         if ($current === $previous) {
             return null;
