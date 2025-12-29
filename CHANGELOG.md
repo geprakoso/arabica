@@ -63,6 +63,15 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - Menyelesaikan merge branch keuangan dan menyelesaikan konflik.
 - Menyesuaikan format ekspor akuntansi.
 
+## 2025.12.23
+- Menambahkan ringkasan **Laporan Laba Rugi**: total penjualan (pendapatan) dan laba kotor (pendapatan - HPP), serta memperbarui judul halaman view agar menampilkan bulan laporan.
+- Menyelaraskan perhitungan **Laporan Laba Rugi**: total penjualan kini mencakup penjualan produk + jasa, laba kotor/laba rugi dihitung dari total gabungan, serta memastikan bulan dengan penjualan jasa saja tetap muncul.
+- Memperbaiki daftar tahun pada filter **Laporan Laba Rugi** agar mencakup tahun yang hanya memiliki data penjualan.
+- Menambahkan pagination Livewire (25 baris per halaman) pada tabel daftar penjualan, beban, dan pembelian; total pada bagian bawah kini dihitung untuk seluruh bulan, bukan hanya halaman aktif.
+- Menormalkan logika **Daftar Beban** agar data beban konsisten antara tabel dan agregasi bulanan dengan mengacu ke kategori transaksi atau kategori akun terkait.
+- Menonaktifkan widget **TopExpensesTable** pada Laporan Input Transaksi tanpa menghapus kodenya.
+- Menambahkan filter rentang waktu pada daftar **Input Transaksi Toko** (1m/3m/6m/1y/custom) dan tab header kategori (Aktiva, Pasiva, Pendapatan, Beban, Semua).
+
 ## 2025.12.22
 - Mengotomatisasi kategori transaksi di **Input Transaksi Toko** berdasarkan Kode/Jenis Akun agar konsisten dengan klasifikasi akun.
 - Menjadikan **Kode Akun** dan **Jenis Akun** sebagai submenu dari **Input Transaksi Toko**, termasuk perbaikan breadcrumb/heading di halaman list.
