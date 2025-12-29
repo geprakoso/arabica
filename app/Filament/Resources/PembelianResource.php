@@ -27,7 +27,7 @@ class PembelianResource extends Resource
     protected static ?string $navigationLabel = 'Pembelian';
 
     protected static ?string $pluralLabel = 'Pembelian';
-    
+
     protected static ?string $navigationGroup = 'Inventory';
 
     protected static ?int $navigationSort = 2;
@@ -44,7 +44,7 @@ class PembelianResource extends Resource
                                     ->label('No. PO')
                                     ->prefixIcon('heroicon-s-tag')
                                     ->required()
-                                    ->default(fn () => Pembelian::generatePO()) //generate no_po otomatis
+                                    ->default(fn() => Pembelian::generatePO()) //generate no_po otomatis
                                     ->disabled()
                                     ->dehydrated(true)
                                     ->unique(ignoreRecord: true),
@@ -109,13 +109,13 @@ class PembelianResource extends Resource
                                 DatePicker::make('tgl_tempo')
                                     ->label('Tanggal Tempo')
                                     ->native(false)
-                                    ->visible(fn (callable $get) => $get('jenis_pembayaran') === 'tempo')
-                                    ->required(fn (callable $get) => $get('jenis_pembayaran') === 'tempo'),
+                                    ->visible(fn(callable $get) => $get('jenis_pembayaran') === 'tempo')
+                                    ->required(fn(callable $get) => $get('jenis_pembayaran') === 'tempo'),
                             ])
                             ->columns(2),
                         Tab::make('Produk Dibeli')
                             ->schema([
-                               TableRepeater::make('items')
+                                TableRepeater::make('items')
                                     ->relationship('items')
                                     ->label('Daftar Produk')
                                     ->minItems(1)
@@ -131,14 +131,14 @@ class PembelianResource extends Resource
                                             ->label('HPP')
                                             ->numeric()
                                             ->prefix('Rp ')
-                                            ->currencyMask(thousandSeparator: '.',decimalSeparator: ',',precision: 2) // format pemisah uang
+                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2) // format pemisah uang
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('harga_jual')
                                             ->label('Harga Jual')
                                             ->numeric()
                                             ->prefix('Rp ')
-                                            ->currencyMask(thousandSeparator: '.',decimalSeparator: ',',precision: 2) // format pemisah uang
+                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2) // format pemisah uang
                                             ->minValue(0)
                                             ->required(),
                                         TextInput::make('qty')
@@ -174,53 +174,76 @@ class PembelianResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('requestOrders'))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with('requestOrders'))
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
+                    ->icon('heroicon-m-document-text')
+                    ->weight('bold')
+                    ->color('primary')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
-                    ->date()
+                    ->date('d M Y')
+                    ->icon('heroicon-m-calendar')
+                    ->color('gray')
                     ->sortable(),
                 TextColumn::make('supplier.nama_supplier')
                     ->label('Supplier')
+                    ->icon('heroicon-m-building-storefront')
+                    ->weight('medium')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('request_orders_label')
                     ->label('Request Order')
-                    ->state(fn (Pembelian $record) => $record->requestOrders
-                        ->map(fn ($ro) => '#'.$ro->no_ro)
-                        ->implode(', ')) // semua Request Order yang terkait → ambil no_ro → kasih # di depan → gabung jadi satu teks dipisah koma.
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-m-hashtag')
+                    ->state(fn(Pembelian $record) => $record->requestOrders
+                        ->map(fn($ro) => '#' . $ro->no_ro)
+                        ->toArray())
+                    ->separator(',')
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
+                    ->icon('heroicon-m-user')
+                    ->color('secondary')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('tipe_pembelian')
                     ->label('Tipe')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null), // Ubah text ke format uppercase dan ganti underscore dengan spasi
+                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->colors([
+                        'success' => 'ppn',
+                        'gray' => 'non_ppn',
+                    ]),
                 TextColumn::make('jenis_pembayaran')
                     ->label('Pembayaran')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null) // Ubah text ke format uppercase dan ganti underscore dengan spasi
+                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'lunas',
-                        'warning' => 'tempo',
+                        'danger' => 'tempo',
                     ]),
                 TextColumn::make('items_count')
-                    ->label('Jumlah Produk')
+                    ->label('Jml Item')
                     ->counts('items')
+                    ->badge()
+                    ->color('gray')
+                    ->alignCenter()
                     ->sortable(),
             ])
             ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                ->icon('heroicon-s-eye')
-                ->label('Detail'),
-                Tables\Actions\EditAction::make(),
+                    ->icon('heroicon-m-eye')
+                    ->color('info')
+                    ->tooltip('Lihat Detail'),
+                Tables\Actions\EditAction::make()
+                    ->icon('heroicon-m-pencil-square')
+                    ->tooltip('Edit'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -249,7 +272,7 @@ class PembelianResource extends Resource
     {
         $ids = collect($requestOrderIds)
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique();
 
         if ($ids->isEmpty()) {
@@ -260,10 +283,9 @@ class PembelianResource extends Resource
             ->whereIn('id', $ids)
             ->pluck('no_ro')
             ->filter()
-            ->map(fn ($noRo) => "#{$noRo}")
+            ->map(fn($noRo) => "#{$noRo}")
             ->toArray();
 
         return empty($tags) ? null : implode(', ', $tags);
     }
-
 }

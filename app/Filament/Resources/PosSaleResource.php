@@ -3,30 +3,30 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
+use App\Models\Jasa;
 use Filament\Tables;
 use App\Models\Gudang;
-use App\Models\Jasa;
 use App\Models\Member;
 use App\Models\Produk;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use App\Models\Karyawan;
 use Filament\Forms\Form;
 use App\Models\Penjualan;
 use App\Enums\MetodeBayar;
 use Filament\Tables\Table;
 use App\Models\PembelianItem;
-use Filament\Forms\Components\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Wizard\Step;
+use Filament\Forms\Components\Actions\Action;
 use Illuminate\Validation\ValidationException;
 use App\Filament\Resources\PosSaleResource\Pages;
 use Filament\Forms\Components\Livewire as LivewireComponent;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Filament\Support\Enums\Alignment;
 
 class PosSaleResource extends Resource
 {
@@ -44,180 +44,209 @@ class PosSaleResource extends Resource
             ->schema([
                 Wizard::make([
                     Step::make('Informasi Penjualan')
-                        ->columns(2)
+                        ->icon('heroicon-m-information-circle')
                         ->schema([
-                            Forms\Components\DatePicker::make('tanggal_penjualan')
-                                ->required()
-                                ->native(false)
-                                ->default(now()),
-                            Forms\Components\Select::make('id_member')
-                                ->label('Member')
-                                ->options(Member::query()->pluck('nama_member', 'id'))
-                                ->formatStateUsing(fn($state) => $state ? (int) $state : null)
-                                ->searchable()
-                                ->required(),
-                            Forms\Components\Select::make('gudang_id')
-                                ->label('Gudang')
-                                ->options(Gudang::query()->pluck('nama_gudang', 'id'))
-                                ->searchable()
-                                ->nullable(),
-                            Forms\Components\Textarea::make('catatan')
-                                ->nullable(),
-                        ]),
-                    Step::make('Keranjang')
-                        ->schema([
-                            TableRepeater::make('items')
-                                ->createItemButtonLabel('Tambah Produk')
-                                ->addAction(fn (Action $action) => $action->color('primary'))
-                                ->label('Produk')
-                                ->minItems(0)
-                                ->columnSpanFull()
-                                ->helperText('Batch akan dipilih otomatis berdasarkan stok tertua (FIFO).')
-                                ->childComponents([
-                                    Forms\Components\Select::make('id_produk')
-                                        ->label('Produk')
-                                        ->options(function () {
-                                            $qtyColumn = PembelianItem::qtySisaColumn();
-
-                                            return Produk::query()
-                                                ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
-                                                ->orderBy('nama_produk')
-                                                ->pluck('nama_produk', 'id')
-                                                ->map(fn(string $name) => strtoupper($name))
-                                                ->toArray();
-                                        })
-                                        ->searchable()
-                                        ->reactive()
-                                        ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
-                                            if (! $state) {
-                                                $set('harga_jual', null);
-                                                $set('kondisi', null);
-                                                return;
-                                            }
-
-                                            $conditions = self::getConditionOptionsForProduct($state);
-                                            $selectedCondition = null;
-
-                                            if (count($conditions) === 1) {
-                                                $selectedCondition = array_key_first($conditions);
-                                                $set('kondisi', $selectedCondition);
-                                            } elseif (array_key_exists($get('kondisi'), $conditions)) {
-                                                $selectedCondition = $get('kondisi');
-                                            } else {
-                                                $set('kondisi', null);
-                                            }
-
-                                            $set('harga_jual', PosSaleResource::getDefaultPriceForProduct($state, $selectedCondition));
-                                        })
-                                        ->required(),
-                                    Forms\Components\TextInput::make('qty')
-                                        ->label('Qty')
-                                        ->numeric()
-                                        ->default(1)
-                                        ->minValue(1)
-                                        ->required(),
-                                    Forms\Components\TextInput::make('harga_jual')
-                                        ->label('Harga')
-                                        ->numeric()
-                                        ->currencyMask(
-                                            thousandSeparator: '.',
-                                            decimalSeparator: ',',
-                                            precision: 0,
-                                        )
-                                        ->prefix('Rp')
-                                        ->helperText('Kosongkan untuk pakai harga default batch lama.')
-                                        ->nullable(),
-                                    Forms\Components\Select::make('kondisi')
-                                        ->native(false)
-                                        ->label('Kondisi')
-                                        // Mengambil opsi kondisi produk. Perhatikan bahwa jika produk tidak ditemukan atau tidak memiliki kondisi, daftar opsi akan kosong.
-                                        ->options(function (Get $get): array {
-                                            $productId = $get('id_produk');
-
-                                            return $productId
-                                                ? self::getConditionOptionsForProduct((int) $productId)
-                                                : [];
-                                        })
-                                        // disabled jika opsi kondisi hanya satu
-                                        ->disabled(function (Get $get): bool {
-                                            $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
-
-                                            return count($options) <= 1;
-                                        })
-                                        ->required(fn(Get $get): bool => count(self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0))) > 1)
-                                        // placeholder jika opsi kondisi hanya satu
-                                        ->placeholder(function (Get $get): string {
-                                            $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
-
-                                            if (empty($options)) {
-                                                return 'Pilih Kondisi';
-                                            }
-
-                                            $labels = array_values($options);
-
-                                            if (count($labels) === 1) {
-                                                return 'Otomatis: ' . $labels[0];
-                                            }
-
-                                            return 'Pilih kondisi (' . implode(' / ', $labels) . ')';
-                                        })
-                                        // set harga jual berdasarkan kondisi
-                                        ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
-                                            $productId = (int) ($get('id_produk') ?? 0);
-
-                                            if ($productId < 1) {
-                                                return;
-                                            }
-
-                                            $set('harga_jual', PosSaleResource::getDefaultPriceForProduct($productId, $state));
-                                        })
-                                        ->reactive()
-                                        ->nullable(),
-                                ])
-                                ->colStyles([
-                                    'id_produk' => 'width: 40%;',
-                                    'qty' => 'width: 10%;',
-                                    'harga_jual' => 'width: 30%;',
-                                    'kondisi' => 'width: 15%;',
-                                ]),
-                            TableRepeater::make('services')
-                                ->label('Jasa')
-                                ->minItems(0)
-                                ->columnSpanFull()
-                                ->addAction(fn (Action $action) => $action->color('primary'))
-                                ->createItemButtonLabel('Tambah Jasa')
-                                ->helperText('Setiap entri dianggap satu layanan, tanpa kolom qty terpisah.')
-                                ->childComponents([
-                                    Forms\Components\Select::make('jasa_id')
-                                        ->label('Jasa')
-                                        ->options(fn () => self::getAvailableServiceOptions())
-                                        ->searchable()
-                                        ->preload()
+                            Forms\Components\Section::make('Informasi Penjualan')
+                                ->description('Lengkapi data transaksi sebelum menambahkan item.')
+                                ->columns(4)
+                                ->schema([
+                                    Forms\Components\DatePicker::make('tanggal_penjualan')
+                                        ->label('Tanggal')
                                         ->required()
                                         ->native(false)
-                                        ->reactive()
-                                        ->afterStateUpdated(function (Set $set, ?int $state): void {
-                                            $set('harga', $state ? self::getDefaultServicePrice($state) : null);
-                                        }),
-                                    Forms\Components\TextInput::make('harga')
-                                        ->label('Harga Jasa')
-                                        ->numeric()
-                                        ->currencyMask(
-                                            thousandSeparator: '.',
-                                            decimalSeparator: ',',
-                                            precision: 0,
-                                        )
-                                        ->prefix('Rp')
-                                        ->nullable(),
+                                        ->default(now())
+                                        ->columnSpan(1),
+                                    Forms\Components\Select::make('id_member')
+                                        ->label('Member')
+                                        ->options(Member::query()->pluck('nama_member', 'id'))
+                                        ->formatStateUsing(fn($state) => $state ? (int) $state : null)
+                                        ->searchable()
+                                        ->required()
+                                        ->columnSpan(2),
+                                    Forms\Components\Select::make('id_karyawan')
+                                        ->label('Kasir')
+                                        ->options(Karyawan::query()->pluck('nama_karyawan', 'id'))
+                                        ->searchable()
+                                        ->nullable()
+                                        ->columnSpan(1),
+                                    Forms\Components\Select::make('gudang_id')
+                                        ->label('Gudang')
+                                        ->options(Gudang::query()->pluck('nama_gudang', 'id'))
+                                        ->searchable()
+                                        ->nullable()
+                                        ->columnSpan(1),
                                     Forms\Components\Textarea::make('catatan')
                                         ->label('Catatan')
-                                        ->maxLength(255)
-                                        ->nullable(),
-                                ])
-                                ->colStyles([
-                                    'jasa_id' => 'width: 40%;',
-                                    'harga' => 'width: 30%;',
-                                    'catatan' => 'width: 30%;',
+                                        ->rows(2)
+                                        ->nullable()
+                                        ->columnSpanFull(),
+                                ]),
+                        ]),
+                    Step::make('Keranjang')
+                        ->icon('heroicon-m-shopping-cart')
+                        ->schema([
+                            Forms\Components\Section::make('Keranjang Produk')
+                                ->description('Batch dipilih otomatis berdasarkan FIFO stok.')
+                                ->icon('heroicon-m-cube')
+                                ->schema([
+                                    TableRepeater::make('items')
+                                        ->createItemButtonLabel('Tambah Produk')
+                                        ->addAction(fn(Action $action) => $action->color('primary'))
+                                        ->label('Produk')
+                                        ->minItems(0)
+                                        ->columnSpanFull()
+                                        ->helperText('Batch akan dipilih otomatis berdasarkan stok tertua (FIFO).')
+                                        ->childComponents([
+                                            Forms\Components\Select::make('id_produk')
+                                                ->label('Produk')
+                                                ->options(function () {
+                                                    $qtyColumn = PembelianItem::qtySisaColumn();
+
+                                                    return Produk::query()
+                                                        ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
+                                                        ->orderBy('nama_produk')
+                                                        ->pluck('nama_produk', 'id')
+                                                        ->map(fn(string $name) => strtoupper($name))
+                                                        ->toArray();
+                                                })
+                                                ->searchable()
+                                                ->reactive()
+                                                ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
+                                                    if (! $state) {
+                                                        $set('harga_jual', null);
+                                                        $set('kondisi', null);
+                                                        return;
+                                                    }
+
+                                                    $conditions = self::getConditionOptionsForProduct($state);
+                                                    $selectedCondition = null;
+
+                                                    if (count($conditions) === 1) {
+                                                        $selectedCondition = array_key_first($conditions);
+                                                        $set('kondisi', $selectedCondition);
+                                                    } elseif (array_key_exists($get('kondisi'), $conditions)) {
+                                                        $selectedCondition = $get('kondisi');
+                                                    } else {
+                                                        $set('kondisi', null);
+                                                    }
+
+                                                    $set('harga_jual', PosSaleResource::getDefaultPriceForProduct($state, $selectedCondition));
+                                                })
+                                                ->required(),
+                                            Forms\Components\TextInput::make('qty')
+                                                ->label('Qty')
+                                                ->numeric()
+                                                ->default(1)
+                                                ->minValue(1)
+                                                ->required(),
+                                            Forms\Components\TextInput::make('harga_jual')
+                                                ->label('Harga')
+                                                ->numeric()
+                                                ->currencyMask(
+                                                    thousandSeparator: '.',
+                                                    decimalSeparator: ',',
+                                                    precision: 0,
+                                                )
+                                                ->prefix('Rp')
+                                                ->helperText('Kosongkan untuk pakai harga default batch lama.')
+                                                ->nullable(),
+                                            Forms\Components\Select::make('kondisi')
+                                                ->native(false)
+                                                ->label('Kondisi')
+                                                // Mengambil opsi kondisi produk. Perhatikan bahwa jika produk tidak ditemukan atau tidak memiliki kondisi, daftar opsi akan kosong.
+                                                ->options(function (Get $get): array {
+                                                    $productId = $get('id_produk');
+
+                                                    return $productId
+                                                        ? self::getConditionOptionsForProduct((int) $productId)
+                                                        : [];
+                                                })
+                                                // disabled jika opsi kondisi hanya satu
+                                                ->disabled(function (Get $get): bool {
+                                                    $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
+
+                                                    return count($options) <= 1;
+                                                })
+                                                ->required(fn(Get $get): bool => count(self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0))) > 1)
+                                                // placeholder jika opsi kondisi hanya satu
+                                                ->placeholder(function (Get $get): string {
+                                                    $options = self::getConditionOptionsForProduct((int) ($get('id_produk') ?? 0));
+
+                                                    if (empty($options)) {
+                                                        return 'Pilih Kondisi';
+                                                    }
+
+                                                    $labels = array_values($options);
+
+                                                    if (count($labels) === 1) {
+                                                        return 'Otomatis: ' . $labels[0];
+                                                    }
+
+                                                    return 'Pilih kondisi (' . implode(' / ', $labels) . ')';
+                                                })
+                                                // set harga jual berdasarkan kondisi
+                                                ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
+                                                    $productId = (int) ($get('id_produk') ?? 0);
+
+                                                    if ($productId < 1) {
+                                                        return;
+                                                    }
+
+                                                    $set('harga_jual', PosSaleResource::getDefaultPriceForProduct($productId, $state));
+                                                })
+                                                ->reactive()
+                                                ->nullable(),
+                                        ])
+                                        ->colStyles([
+                                            'id_produk' => 'width: 40%;',
+                                            'qty' => 'width: 10%;',
+                                            'harga_jual' => 'width: 30%;',
+                                            'kondisi' => 'width: 15%;',
+                                        ]),
+                                ]),
+                            Forms\Components\Section::make('Jasa')
+                                ->description('Setiap entri dianggap satu layanan, tanpa kolom qty terpisah.')
+                                ->icon('heroicon-m-wrench-screwdriver')
+                                ->schema([
+                                    TableRepeater::make('services')
+                                        ->label('Jasa')
+                                        ->minItems(0)
+                                        ->columnSpanFull()
+                                        ->addAction(fn(Action $action) => $action->color('primary'))
+                                        ->createItemButtonLabel('Tambah Jasa')
+                                        ->helperText('Setiap entri dianggap satu layanan, tanpa kolom qty terpisah.')
+                                        ->childComponents([
+                                            Forms\Components\Select::make('jasa_id')
+                                                ->label('Jasa')
+                                                ->options(fn() => self::getAvailableServiceOptions())
+                                                ->searchable()
+                                                ->preload()
+                                                ->required()
+                                                ->native(false)
+                                                ->reactive()
+                                                ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                                    $set('harga', $state ? self::getDefaultServicePrice($state) : null);
+                                                }),
+                                            Forms\Components\TextInput::make('harga')
+                                                ->label('Harga Jasa')
+                                                ->numeric()
+                                                ->currencyMask(
+                                                    thousandSeparator: '.',
+                                                    decimalSeparator: ',',
+                                                    precision: 0,
+                                                )
+                                                ->prefix('Rp')
+                                                ->nullable(),
+                                            Forms\Components\Textarea::make('catatan')
+                                                ->label('Catatan')
+                                                ->maxLength(255)
+                                                ->nullable(),
+                                        ])
+                                        ->colStyles([
+                                            'jasa_id' => 'width: 40%;',
+                                            'harga' => 'width: 30%;',
+                                            'catatan' => 'width: 30%;',
+                                        ]),
                                 ]),
                         ])
                         ->afterValidation(function (Get $get): void {
@@ -227,7 +256,7 @@ class PosSaleResource extends Resource
                     Step::make('Ringkasan & Pembayaran')
                         ->columns(2)
                         ->schema([
-                            // ringkasan transaksi 
+                            // ringkasan transaksi
                             LivewireComponent::make('pos-cart-summary')
                                 ->data(fn(Get $get): array => [
                                     'items' => $get('items') ?? [],
@@ -261,10 +290,8 @@ class PosSaleResource extends Resource
                                             decimalSeparator: ',',
                                             precision: 0,
                                         )
-
                                         ->prefix('Rp')
                                         ->live(onBlur: true)
-                                        // Batasi diskon agar tidak melebihi total belanja
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
                                             [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
                                             $discount = max(0, (int) ($state ?? 0));
@@ -283,7 +310,6 @@ class PosSaleResource extends Resource
                                         ->afterStateUpdated(function (Set $set, $state, Get $get): void {
                                             self::refreshChangeField($set, $get, $state);
                                         })
-                                        // validasi tunai diterima tidak boleh kurang dari harga total
                                         ->rule(function (Get $get) {
                                             return function (string $attribute, $value, \Closure $fail) use ($get) {
                                                 [, $totalAmount] = self::summarizeCart($get('items'), $get('services'));
@@ -342,7 +368,7 @@ class PosSaleResource extends Resource
         $productItems = collect($items ?? []);
         $serviceItems = collect($services ?? []);
 
-        $totalQty = (int) $productItems->sum(fn (array $item) => (int) ($item['qty'] ?? 0));
+        $totalQty = (int) $productItems->sum(fn(array $item) => (int) ($item['qty'] ?? 0));
 
         $productsTotal = (int) $productItems->sum(function (array $item) {
             $qty = (int) ($item['qty'] ?? 0);
@@ -367,7 +393,7 @@ class PosSaleResource extends Resource
      * @param ?array $items
      * @throws ValidationException
      */
-    protected static function ensureStockIsAvailable(?array $items): void
+    public static function ensureStockIsAvailable(?array $items): void
     {
         $items = $items ?? [];
         $requests = [];
@@ -421,7 +447,7 @@ class PosSaleResource extends Resource
         }
     }
 
-    protected static function ensureCartIsNotEmpty(?array $items, ?array $services): void
+    public static function ensureCartIsNotEmpty(?array $items, ?array $services): void
     {
         if (blank($items) && blank($services)) {
             throw ValidationException::withMessages([

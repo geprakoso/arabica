@@ -83,30 +83,46 @@ class PenjualanResource extends Resource
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
+                    ->icon('heroicon-m-receipt-percent')
+                    ->weight('bold')
+                    ->color('primary')
+                    ->copyable()
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal_penjualan')
                     ->label('Tanggal')
-                    ->date()
+                    ->date('d M Y')
+                    ->icon('heroicon-m-calendar')
+                    ->color('gray')
                     ->sortable(),
                 TextColumn::make('member.nama_member')
                     ->label('Member')
+                    ->icon('heroicon-m-user-group')
                     ->placeholder('-')
+                    ->weight('medium')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
+                    ->icon('heroicon-m-user')
+                    ->color('secondary')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('items_count')
-                    ->label('Jumlah Item')
+                    ->label('Jml Item')
+                    ->badge()
+                    ->color('gray')
+                    ->alignCenter()
                     ->sortable(),
                 TextColumn::make('grand_total_display')
                     ->label('Grand Total')
-                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
+                    ->weight('bold')
+                    ->color('success')
+                    ->alignRight()
+                    ->state(fn(Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
             ])
             ->filters([
-                 Tables\Filters\Filter::make('periode')
+                Tables\Filters\Filter::make('periode')
                     ->label('Periode')
                     ->form([
                         DatePicker::make('from')
@@ -133,17 +149,15 @@ class PenjualanResource extends Resource
                     ->placeholder('Semua'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->icon('heroicon-m-eye')
+                    ->color('info')
+                    ->tooltip('Lihat Detail'),
+                Tables\Actions\EditAction::make()
+                    ->icon('heroicon-m-pencil-square')
+                    ->tooltip('Edit'),
+                Tables\Actions\DeleteAction::make()
+                    ->icon('heroicon-m-trash'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -253,8 +267,8 @@ class PenjualanResource extends Resource
      */
     protected static function calculateGrandTotal(Penjualan $record): int
     {
-        $totalProduk = $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
-        $totalJasa = $record->jasaItems->sum(fn ($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
+        $totalProduk = $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+        $totalJasa = $record->jasaItems->sum(fn($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
 
         return $totalProduk + $totalJasa;
     }

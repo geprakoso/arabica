@@ -34,6 +34,8 @@ use Filament\Infolists\Components\Split;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Forms\Components\Section;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 
 class AbsensiResource extends Resource
@@ -173,19 +175,17 @@ class AbsensiResource extends Resource
                         ]),
                 ])
                     ->columnSpanFull() // Agar wizard lebar penuh
-                    ->submitAction(
-                        Action::make('submit')
-                            ->label('Simpan Absensi')
-                            ->color('success')
-                            ->icon('heroicon-m-check')
-
-                    )
-                    ->cancelAction(
-                        Action::make('cancel')
-                            ->label('Batal')
-                            ->color('danger')
-                            ->icon('heroicon-m-x-mark')
-                    )
+                    ->submitAction(new HtmlString(
+                        Blade::render(
+                            '<x-filament::button type="submit" color="success" icon="heroicon-m-check">Simpan Absensi</x-filament::button>'
+                        )
+                    ))
+                    ->cancelAction(new HtmlString(
+                        Blade::render(
+                            '<x-filament::button tag="a" :href="$url" color="danger" icon="heroicon-m-x-mark">Batal</x-filament::button>',
+                            ['url' => static::getUrl('index')]
+                        )
+                    ))
                     ->previousAction(
                         fn(FormAction $action) =>
                         $action
