@@ -30,10 +30,12 @@ use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use App\Filament\Forms\Components\MediaManagerPicker;
 use App\Filament\Resources\MasterData\KaryawanResource\Pages;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Illuminate\Validation\Rule;
 
 class KaryawanResource extends Resource
@@ -115,33 +117,11 @@ class KaryawanResource extends Resource
                             ->description('Upload berkas penting (KTP, Ijazah, CV, dll).')
                             ->icon('heroicon-m-paper-clip') // Icon paperclip lebih relevan
                             ->schema([
-                                // Menggunakan Repeater agar lebih rapi: Ada Nama Dokumen & Filenya
-                                Forms\Components\Repeater::make('dokumen_karyawan')
-                                    ->label('Daftar Berkas')
-                                    ->addActionLabel('Tambah Dokumen')
-                                    ->reorderableWithButtons()
-                                    ->collapsible() // Bisa dilipat agar tidak memakan tempat
-                                    ->itemLabel(fn (array $state): ?string => $state['jenis_dokumen'] ?? 'Dokumen Baru')
-                                    ->schema([
-                                        Forms\Components\Grid::make(2)
-                                            ->schema([
-                                                Forms\Components\TextInput::make('jenis_dokumen')
-                                                    ->label('Jenis Dokumen')
-                                                    ->placeholder('Contoh: KTP / Ijazah S1')
-                                                    ->required()
-                                                    ->columnSpan(1),
-
-                                                Forms\Components\FileUpload::make('file_path')
-                                                    ->label('Upload File')
-                                                    ->disk('public')
-                                                    ->directory('karyawan/dokumen')
-                                                    ->acceptedFileTypes(['application/pdf', 'image/*']) // PDF & Gambar
-                                                    ->maxSize(5120) // Maks 5MB
-                                                    ->openable()
-                                                    ->downloadable()
-                                                    ->columnSpan(1),
-                                            ]),
-                                    ])
+                                MediaManagerPicker::make('dokumen_karyawan')
+                                    ->label('Upload Dokumen (Gallery)')
+                                    ->disk('public')
+                                    ->maxItems(10)
+                                    ->reorderable()
                                     ->columnSpanFull(),
                             ]),
                     ]),
@@ -184,6 +164,19 @@ class KaryawanResource extends Resource
                                     ->offColor('danger')
                                     ->inline(false),
 
+                                // 4. Role Selection
+                                Forms\Components\Select::make('role_id')
+                                    ->label('Role / Jabatan')
+                                    ->relationship('role', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->disabled(false),
+                                    // Kita bisa kunci juga Role-nya jika mau
+                                    // ->disabled(fn (Get $get, string $operation) => 
+                                    //     $operation === 'edit' && ! $get('ubah_akses_login')
+                                    // ),
+
                                 // 2. Toggle Pemicu "Ubah Login" (Hanya muncul saat Mode Edit)
                                 Forms\Components\Toggle::make('ubah_akses_login')
                                     ->label('Ubah Email & Password?')
@@ -212,17 +205,6 @@ class KaryawanResource extends Resource
                                         ];
                                     }),
 
-                                // 4. Role Selection
-                                Forms\Components\Select::make('role_id')
-                                    ->label('Role / Jabatan')
-                                    ->relationship('role', 'name')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required()
-                                    // Kita bisa kunci juga Role-nya jika mau
-                                    ->disabled(fn (Get $get, string $operation) => 
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
-                                    ),
 
                                 // 5. Password
                                 Forms\Components\TextInput::make('password')
@@ -310,28 +292,11 @@ class KaryawanResource extends Resource
                         InfolistSection::make('Berkas Dokumen')
                             ->icon('heroicon-m-folder-open')
                             ->schema([
-                                RepeatableEntry::make('dokumen_karyawan')
-                                    ->label('') // Kosongkan label agar tidak redundan
-                                    ->schema([
-                                        InfolistGrid::make(2)
-                                            ->schema([
-                                                TextEntry::make('jenis_dokumen')
-                                                    ->label('Jenis Dokumen')
-                                                    ->icon('heroicon-m-document-text')
-                                                    ->weight('bold'),
-
-                                                TextEntry::make('file_path')
-                                                    ->label('File')
-                                                    ->formatStateUsing(fn () => 'Unduh / Lihat File')
-                                                    ->url(fn ($state) => Storage::url($state)) // Link ke file public
-                                                    ->openUrlInNewTab()
-                                                    ->icon('heroicon-m-arrow-down-tray')
-                                                    ->color('info')
-                                                    ->badge(), // Tampil sebagai tombol kecil
-                                            ]),
-                                    ])
-                                    ->grid(2) // Menampilkan 2 dokumen per baris (opsional, jika banyak)
-                                    ->columnSpanFull(),
+                                ViewEntry::make('dokumen_karyawan_gallery')
+                                    ->label('')
+                                    ->hiddenLabel()
+                                    ->view('filament.infolists.components.media-manager-gallery')
+                                    ->state(fn (\App\Models\Karyawan $record) => $record->dokumenKaryawanGallery()),
                             ]),
                     ]),
 

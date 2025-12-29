@@ -21,14 +21,47 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - Menambahkan **Laporan Neraca** lengkap (resource, list/view pages, model, migrasi kolom `kelompok_neraca`, dan enum **KelompokNeraca**).
 - Menambahkan field **Kelompok Neraca** pada **Kode Akun** serta penyesuaian logika filter/komposisi laporan neraca berdasarkan kategori akun.
 - Menyusun tampilan infolist **Neraca** (template tabel + layout) dan mendaftarkan resource neraca pada panel akunting.
+- Menambahkan pengujian **InventoryResource** (render list, filter inventaris aktif, serta kalkulasi snapshot).
+- Menambahkan bagian **Catatan Testing** di `README_PEST` untuk setup dan tips debugging.
 
 ## 2025.12.24
-- Tidak ada perubahan terkomit di git pada tanggal ini.
+- Memoles tampilan **Laporan Absensi**: penyesuaian ikon jam hadir/keluar dengan warna status dan penegasan nama karyawan pada tabel.
+- Menyempurnakan **Lembur** dan **Laporan Absensi**: ikon kolom informatif, dropdown action, lokalisasi tanggal Indonesia, serta ringkasan kehadiran berbentuk badge berwarna dengan ikon.
+- Mengubah **Absensi** ke tampilan detail **Slide-over** dua kolom, merapikan wizard form, dan memastikan seluruh format tanggal berbahasa Indonesia.
+- Merombak **Stock Adjustment**: layout 3 kolom, repeater inline, serta perbaikan bug pada field `created_at` dan konflik tipe `Action`.
 
 ## 2025.12.23
+- Menambahkan integrasi **PWA** (laravel-pwa) beserta ikon/splash screen dan `serviceworker.js` untuk cache dasar.
 - Memperluas modul **Laba Rugi** dan **Input Transaksi Toko** (filter tab, detail infolist, dan penyesuaian perhitungan subtotal).
 - Menambahkan/menyelaraskan komponen tampilan untuk **Beban**, **Pembelian**, dan **Penjualan** pada laporan (infolist & livewire table), termasuk perbaikan format tampilan item.
 - Menyempurnakan tampilan **Penjualan** (items & jasa) serta relasi tampilan laporan agar konsisten di halaman view.
+- Memperhalus UI **Request Order**, **Stock Opname**, dan widget dashboard (Active Members, Recent Transactions, Top Selling Products).
+
+## 2024.12.20
+- Menginisialisasi berkas `changelog.md`.
+- Menambahkan relation manager pada resource **Jasa**.
+
+## 2024.12.19
+- Menyempurnakan UI/UX header tabs.
+
+## 2024.12.18
+- Memperbaiki logika perhitungan laporan absensi (telat/jam hadir).
+
+## 2024.12.17
+- Menambahkan tombol **Create** dengan ikon plus pada header list view.
+
+## 2024.12.16
+- Mengoptimasi resource-panel pasca migrasi dan memperbaiki bug minor pasca merge.
+- Menstabilkan widget absensi.
+
+## 2024.12.15
+- Memperbaiki widget kalkulasi penyesuaian stok.
+- Mengintegrasikan pembaruan besar dari branch **Laporan-Cuti** dan menyinkronkan branch **Keuangan** ke main.
+- Menambahkan **Modal Helper View**.
+
+## 2024.12.14
+- Menyelesaikan merge branch keuangan dan menyelesaikan konflik.
+- Menyesuaikan format ekspor akuntansi.
 
 ## 2025.12.22
 - Mengotomatisasi kategori transaksi di **Input Transaksi Toko** berdasarkan Kode/Jenis Akun agar konsisten dengan klasifikasi akun.
