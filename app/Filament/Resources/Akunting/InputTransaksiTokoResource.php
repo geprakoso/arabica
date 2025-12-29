@@ -74,8 +74,9 @@ class InputTransaksiTokoResource extends Resource
                                             ? $query->whereHas('kodeAkun', fn (Builder $q) => $q->where('kategori_akun', $get('kategori_transaksi')))
                                             : $query,
                                     )
-                                    ->searchable()
+                                    ->searchable(['nama_jenis_akun', 'kode_jenis_akun'])
                                     ->preload()
+                                    // ->clearable()
                                     ->native(false)
                                     ->prefixIcon('hugeicons-credit-card')
                                     ->placeholder('Pilih jenis akun')

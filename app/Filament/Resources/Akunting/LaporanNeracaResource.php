@@ -34,6 +34,7 @@ class LaporanNeracaResource extends Resource
         // Contoh:
         // '101' => KelompokNeraca::AsetLancar,
         // '201' => KelompokNeraca::LiabilitasJangkaPendek,
+        '11' => KelompokNeraca::AsetLancar,
     ];
 
     public static function shouldRegisterNavigation(): bool
