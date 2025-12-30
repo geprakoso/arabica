@@ -302,7 +302,7 @@
                 <div class="info-content">
                     @if($penjualan->member)
                         <div style="font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 4px;">{{ $penjualan->member->nama_member }}</div>
-                        <div style="color: #6b7280;">{{ $penjualan->member->no_telp ?? '-' }}</div>
+                        <div style="color: #6b7280;">{{ $penjualan->member->no_hp ?? '-' }}</div>
                     @else
                         <div style="font-size: 18px; font-weight: 700; color: #111827;">Pelanggan Umum</div>
                         <div style="color: #6b7280;">-</div>

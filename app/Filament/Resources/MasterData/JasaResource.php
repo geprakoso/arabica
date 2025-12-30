@@ -65,6 +65,7 @@ class JasaResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('nama_jasa')
                                     ->label('Nama Jasa')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->required()
                                     ->placeholder('Contoh: Service AC Split 1PK')
                                     ->unique(ignoreRecord: true)

@@ -66,22 +66,24 @@ class KaryawanResource extends Resource
                             ->icon('heroicon-m-user')
                             ->schema([
                                 Forms\Components\TextInput::make('nama_karyawan')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->label('Nama Lengkap')
                                     ->required()
                                     ->placeholder('Nama sesuai KTP')
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
+                                    ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
                                     ->columnSpanFull(),
 
                                 Forms\Components\Grid::make(2)
                                     ->schema([
                                         Forms\Components\TextInput::make('slug')
                                             ->label('Slug')
+                                            ->dehydrateStateUsing(fn($state) => Str::slug($state))
                                             ->required()
                                             ->unique(Karyawan::class, 'slug', ignoreRecord: true)
                                             ->readOnly()
                                             ->dehydrated(),
-                                        
+
                                         Forms\Components\TextInput::make('telepon')
                                             ->label('No. Handphone / WA')
                                             ->tel()
@@ -96,6 +98,7 @@ class KaryawanResource extends Resource
                             ->schema([
                                 Forms\Components\Textarea::make('alamat')
                                     ->label('Alamat Lengkap')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->rows(3)
                                     ->placeholder('Jalan, RT/RW, Nomor Rumah...')
                                     ->columnSpanFull(),
@@ -120,7 +123,7 @@ class KaryawanResource extends Resource
                                     ->addActionLabel('Tambah Dokumen')
                                     ->reorderableWithButtons()
                                     ->collapsible() // Bisa dilipat agar tidak memakan tempat
-                                    ->itemLabel(fn (array $state): ?string => $state['jenis_dokumen'] ?? 'Dokumen Baru')
+                                    ->itemLabel(fn(array $state): ?string => $state['jenis_dokumen'] ?? 'Dokumen Baru')
                                     ->schema([
                                         Forms\Components\Grid::make(2)
                                             ->schema([
@@ -162,8 +165,8 @@ class KaryawanResource extends Resource
                                     ->circleCropper()
                                     ->disk('public')
                                     ->directory('karyawan/foto')
-                                    ->getUploadedFileNameForStorageUsing(fn (TemporaryUploadedFile $file, Get $get) => 
-                                        (now()->format('ymd') . '-' . Str::slug($get('nama_karyawan') ?? 'karyawan') . '.' . $file->getClientOriginalExtension())
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_karyawan') ?? 'karyawan') . '.' . $file->getClientOriginalExtension())
                                     )
                                     ->preserveFilenames()
                                     ->columnSpanFull()
@@ -191,7 +194,7 @@ class KaryawanResource extends Resource
                                     ->helperText('Aktifkan ini jika ingin mengubah email atau password user.')
                                     ->live() // PENTING: Agar form langsung bereaksi saat diklik
                                     ->dehydrated(false) // PENTING: Field ini tidak akan disimpan ke database
-                                    ->visible(fn (string $operation) => $operation === 'edit') // Hanya muncul pas Edit
+                                    ->visible(fn(string $operation) => $operation === 'edit') // Hanya muncul pas Edit
                                     ->default(false),
 
                                 // 3. Email Login
@@ -200,7 +203,8 @@ class KaryawanResource extends Resource
                                     ->email()
                                     ->required()
                                     // Logic: Disable jika sedang Edit DAN Toggle belum dinyalakan
-                                    ->disabled(fn (Get $get, string $operation) => 
+                                    ->disabled(
+                                        fn(Get $get, string $operation) =>
                                         $operation === 'edit' && ! $get('ubah_akses_login')
                                     )
                                     // Validasi Unique yang Diperbaiki
@@ -219,7 +223,8 @@ class KaryawanResource extends Resource
                                     ->preload()
                                     ->required()
                                     // Kita bisa kunci juga Role-nya jika mau
-                                    ->disabled(fn (Get $get, string $operation) => 
+                                    ->disabled(
+                                        fn(Get $get, string $operation) =>
                                         $operation === 'edit' && ! $get('ubah_akses_login')
                                     ),
 
@@ -229,14 +234,15 @@ class KaryawanResource extends Resource
                                     ->password()
                                     ->revealable()
                                     // Logic Disable sama seperti Email
-                                    ->disabled(fn (Get $get, string $operation) => 
+                                    ->disabled(
+                                        fn(Get $get, string $operation) =>
                                         $operation === 'edit' && ! $get('ubah_akses_login')
                                     )
                                     // Hanya required saat Create (Saat edit boleh kosong jika tidak ingin ubah password)
-                                    ->required(fn (string $operation) => $operation === 'create')
+                                    ->required(fn(string $operation) => $operation === 'create')
                                     // Simpan hanya jika ada isinya
-                                    ->dehydrated(fn ($state) => filled($state))
-                                    ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
+                                    ->dehydrated(fn($state) => filled($state))
+                                    ->dehydrateStateUsing(fn($state) => Hash::make($state)),
 
                                 // 6. Password Confirmation
                                 Forms\Components\TextInput::make('password_confirmation')
@@ -245,11 +251,12 @@ class KaryawanResource extends Resource
                                     ->revealable()
                                     ->same('password')
                                     // Logic Disable sama
-                                    ->disabled(fn (Get $get, string $operation) => 
+                                    ->disabled(
+                                        fn(Get $get, string $operation) =>
                                         $operation === 'edit' && ! $get('ubah_akses_login')
                                     )
                                     // Wajib jika password utama diisi
-                                    ->required(fn (Get $get) => filled($get('password'))),
+                                    ->required(fn(Get $get) => filled($get('password'))),
                             ]),
                     ]),
             ]);
@@ -281,7 +288,7 @@ class KaryawanResource extends Resource
                                         TextEntry::make('telepon')
                                             ->label('Kontak')
                                             ->icon('heroicon-m-device-phone-mobile')
-                                            ->url(fn ($record) => "tel:{$record->telepon}")
+                                            ->url(fn($record) => "tel:{$record->telepon}")
                                             ->color('primary'),
                                     ]),
 
@@ -294,11 +301,12 @@ class KaryawanResource extends Resource
                                 // Menampilkan detail wilayah dalam satu baris (inline)
                                 TextEntry::make('wilayah_lengkap')
                                     ->label('Detail Wilayah')
-                                    ->state(fn ($record) => 
+                                    ->state(
+                                        fn($record) =>
                                         implode(', ', array_filter([
-                                            $record->kelurahan, 
-                                            $record->kecamatan, 
-                                            $record->kota, 
+                                            $record->kelurahan,
+                                            $record->kecamatan,
+                                            $record->kota,
                                             $record->provinsi
                                         ]))
                                     )
@@ -321,8 +329,8 @@ class KaryawanResource extends Resource
 
                                                 TextEntry::make('file_path')
                                                     ->label('File')
-                                                    ->formatStateUsing(fn () => 'Unduh / Lihat File')
-                                                    ->url(fn ($state) => Storage::url($state)) // Link ke file public
+                                                    ->formatStateUsing(fn() => 'Unduh / Lihat File')
+                                                    ->url(fn($state) => Storage::url($state)) // Link ke file public
                                                     ->openUrlInNewTab()
                                                     ->icon('heroicon-m-arrow-down-tray')
                                                     ->color('info')
@@ -374,7 +382,7 @@ class KaryawanResource extends Resource
                                     ->label('Jabatan / Role')
                                     ->badge()
                                     ->color('warning'), // Warna jabatan
-                                    
+
                                 TextEntry::make('slug')
                                     ->label('ID Slug')
                                     ->size(TextEntrySize::Small)

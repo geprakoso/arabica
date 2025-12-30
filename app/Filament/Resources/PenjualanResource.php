@@ -2,23 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PenjualanResource\Pages;
-use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
-use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
-use App\Models\PembelianItem;
-use App\Models\Penjualan;
+use Filament\Tables;
 use App\Models\Produk;
+use Filament\Forms\Form;
+use App\Models\Penjualan;
+use Filament\Tables\Table;
+use App\Models\PembelianItem;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\PenjualanResource\Pages;
+use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
+use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
 
 class PenjualanResource extends Resource
 {
@@ -109,9 +110,10 @@ class PenjualanResource extends Resource
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('items_count')
-                    ->label('Jml Item')
+                    ->label('Item & Jasa')
                     ->badge()
-                    ->color('gray')
+                    ->icon('heroicon-m-shopping-cart')
+                    ->color('primary')
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('grand_total_display')
@@ -149,15 +151,20 @@ class PenjualanResource extends Resource
                     ->placeholder('Semua'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->icon('heroicon-m-eye')
-                    ->color('info')
-                    ->tooltip('Lihat Detail'),
-                Tables\Actions\EditAction::make()
-                    ->icon('heroicon-m-pencil-square')
-                    ->tooltip('Edit'),
-                Tables\Actions\DeleteAction::make()
-                    ->icon('heroicon-m-trash'),
+                ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->icon('heroicon-m-eye')
+                        ->color('info')
+                        ->tooltip('Lihat Detail'),
+                    Tables\Actions\EditAction::make()
+                        ->icon('heroicon-m-pencil-square')
+                        ->tooltip('Edit'),
+                    Tables\Actions\DeleteAction::make()
+                        ->icon('heroicon-m-trash'),
+                ])
+                    ->hidden(fn(Penjualan $record): bool => $record->items()->exists() || $record->jasaItems()->exists())
+                    ->label('Aksi')
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

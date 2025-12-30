@@ -315,6 +315,7 @@ class ProdukResource extends Resource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->size(TextColumnSize::Large)
                             ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->searchable()
@@ -324,7 +325,7 @@ class ProdukResource extends Resource
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-m-tag')
-                            ->formatStateUsing(fn($state) => ucfirst(strtolower($state)))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('brand.nama_brand')
@@ -332,7 +333,7 @@ class ProdukResource extends Resource
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-m-building-office-2')
-                            ->formatStateUsing(fn($state) => ucfirst(strtolower($state)))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                     ])->space(2),

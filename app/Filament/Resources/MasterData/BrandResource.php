@@ -40,11 +40,11 @@ class BrandResource extends Resource
                         ->schema([
                             Forms\Components\TextInput::make('nama_brand')
                                 ->label('Nama Brand')
-                                ->dehydrateStateUsing(fn ($state) => Str::title($state))
+                                ->dehydrateStateUsing(fn($state) => Str::title($state))
                                 ->required(),
                             Forms\Components\TextInput::make('slug')
                                 ->label('Slug')
-                                ->dehydrateStateUsing(fn ($state) => Str::title($state))
+                                ->dehydrateStateUsing(fn($state) => Str::title($state))
                                 ->unique(ignoreRecord: true),
                             Toggle::make('is_active')
                                 ->label('Aktifkan Brand')
@@ -58,7 +58,7 @@ class BrandResource extends Resource
                                 ->label('Gambar Produk')
                                 ->image()
                                 ->disk('public')
-                                ->directory(fn () => 'produks/' . now()->format('Y/m/d'))
+                                ->directory(fn() => 'produks/' . now()->format('Y/m/d'))
                                 ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get): string {
                                     $datePrefix = now()->format('ymd');
                                     $slug = Str::slug($get('nama_brand') ?? 'brand');
@@ -77,31 +77,44 @@ class BrandResource extends Resource
     {
         return $table
             ->columns([
-                //
-                TextColumn::make('nama_brand')
-                    ->label('Nama Brand')
-                    ->formatStateUsing(fn (Brand $record) => Str::upper($record->nama_brand))
-                    ->searchable()
-                    ->sortable(),
-                // TextColumn::make('is_active')
-                //     ->label('Aktif')
-                //     ->badge()
-                //     ->hidden()
-                //     ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
-                //     ->color(fn (bool $state) => $state ? 'success' : 'danger')
-                //     ->sortable(),
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\ImageColumn::make('logo_url')
+                        ->height('100%')
+                        ->width('100%')
+                        ->disk('public')
+                        ->defaultImageUrl(url('/images/icons/icon-256x256.png'))
+                        ->extraImgAttributes(['class' => 'object-contain h-32 w-full bg-white rounded-t-lg mb-2']),
+
+                    Tables\Columns\Layout\Stack::make([
+                        TextColumn::make('nama_brand')
+                            ->weight('bold')
+                            ->label('Nama Brand')
+                            ->formatStateUsing(fn($state) => Str::upper($state))
+                            ->size(TextColumn\TextColumnSize::Large)
+                            ->searchable()
+                            ->alignCenter(),
+
+                        TextColumn::make('slug')
+                            ->icon('heroicon-m-link')
+                            ->iconColor('gray')
+                            ->color('gray')
+                            ->size(TextColumn\TextColumnSize::Small)
+                            ->alignCenter(),
+                    ])->space(1),
+                ])->space(3),
             ])
-            ->filters([
-                //
+            ->contentGrid([
+                'md' => 3,
+                'xl' => 4,
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()->color('info'),
+                    Tables\Actions\EditAction::make()->color('warning'),
+                    Tables\Actions\DeleteAction::make(),
+                ])
+                    ->icon('heroicon-m-ellipsis-horizontal')
+                    ->tooltip('Aksi'),
             ]);
     }
 

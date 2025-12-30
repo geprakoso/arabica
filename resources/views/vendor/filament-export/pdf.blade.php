@@ -112,7 +112,7 @@
         $groupedRows = $groupKey
             ? $sortedRows->groupBy(fn ($row) => data_get($row, $groupKey, $row[$groupKey] ?? '-') ?: '-')
             : collect(['' => $sortedRows]);
-        $groupLabelPrefix = $group_label ?? 'Kategori';
+        // $groupLabelPrefix = $group_label ?? 'Kategori';
     @endphp
 
     <div class="header">
@@ -137,7 +137,7 @@
                 @if ($groupKey)
                     <tr class="group-header">
                         <td colspan="{{ $colCount }}">
-                            {{ $groupLabelPrefix }}: {{ $groupLabel }}
+                            {{ $groupLabel }}
                         </td>
                     </tr>
                 @endif

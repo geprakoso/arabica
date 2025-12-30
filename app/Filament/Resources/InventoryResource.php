@@ -66,7 +66,7 @@ class InventoryResource extends Resource
                         TextColumn::make('nama_produk')
                             ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->label('Produk')
-                            ->formatStateUsing(fn($state) => strtoupper($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->weight('bold')
                             ->size(TextColumnSize::Large)

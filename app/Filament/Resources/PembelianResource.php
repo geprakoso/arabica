@@ -2,21 +2,22 @@
 
 namespace App\Filament\Resources;
 
-use App\Models\Pembelian;
-use App\Models\RequestOrder;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
 use Filament\Tables;
+use Filament\Forms\Form;
+use App\Models\Pembelian;
+use Filament\Tables\Table;
+use App\Models\RequestOrder;
 use Filament\Resources\Resource;
-use Filament\Forms\Components\Select;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
-use App\Filament\Resources\PembelianResource\Pages;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\PembelianResource\Pages;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class PembelianResource extends Resource
 {
@@ -230,20 +231,26 @@ class PembelianResource extends Resource
                 TextColumn::make('items_count')
                     ->label('Jml Item')
                     ->counts('items')
+                    ->icon('heroicon-m-shopping-cart')
                     ->badge()
-                    ->color('gray')
+                    ->color('primary')
                     ->alignCenter()
                     ->sortable(),
             ])
             ->filters([])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->icon('heroicon-m-eye')
-                    ->color('info')
-                    ->tooltip('Lihat Detail'),
-                Tables\Actions\EditAction::make()
-                    ->icon('heroicon-m-pencil-square')
-                    ->tooltip('Edit'),
+                ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->icon('heroicon-m-eye')
+                        ->color('primary')
+                        ->tooltip('Lihat Detail'),
+                    Tables\Actions\EditAction::make()
+                        ->icon('heroicon-m-pencil-square')
+                        ->color('warning')
+                        ->tooltip('Edit'),
+                ])
+                    ->label('Aksi')
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

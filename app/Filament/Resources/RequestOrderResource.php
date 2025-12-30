@@ -136,27 +136,28 @@ class RequestOrderResource extends Resource
                     ->label('No. RO')
                     ->searchable()
                     ->weight('bold')
-                    ->icon('heroicon-o-hashtag')
+                    ->icon('heroicon-m-hashtag')
                     ->color('primary')
                     ->copyable()
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
-                    ->icon('heroicon-o-calendar')
+                    ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Pemohon')
-                    ->icon('heroicon-o-user-circle')
+                    ->icon('heroicon-m-user-circle')
                     ->weight('medium')
+                    ->color('success')
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('items_count')
                     ->label('Jml Item')
                     ->counts('items')
                     ->badge()
-                    ->icon('heroicon-o-shopping-cart')
+                    ->icon('heroicon-m-shopping-cart')
                     ->color('info')
                     ->alignCenter()
                     ->sortable(),
@@ -169,13 +170,15 @@ class RequestOrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\ViewAction::make()
+                        ->icon('heroicon-o-eye')
+                        ->color('primary'),
                     Tables\Actions\EditAction::make()
                         ->color('warning'),
                     Tables\Actions\DeleteAction::make(),
                 ])
-                    ->link()
-                    ->label('Aksi'),
+                    ->label('Aksi')
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -47,12 +47,12 @@ class MemberResource extends Resource
         return $form
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA) ===
                 Group::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Data Diri
                         Section::make('Informasi Personal')
                             ->description('Data diri lengkap member.')
@@ -60,6 +60,7 @@ class MemberResource extends Resource
                             ->schema([
                                 TextInput::make('nama_member')
                                     ->label('Nama Lengkap')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->required()
                                     ->placeholder('Masukan nama lengkap')
                                     ->columnSpanFull(), // Agar nama terlihat dominan
@@ -72,7 +73,7 @@ class MemberResource extends Resource
                                             ->required()
                                             ->unique(ignoreRecord: true)
                                             ->placeholder('08xxxxxxxxxx'),
-                                        
+
                                         TextInput::make('email')
                                             ->label('Alamat Email')
                                             ->email()
@@ -87,6 +88,7 @@ class MemberResource extends Resource
                             ->schema([
                                 Textarea::make('alamat') // Ganti textinput jadi textarea agar muat banyak
                                     ->label('Alamat Lengkap')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->rows(3)
                                     ->placeholder('Nama jalan, nomor rumah, RT/RW...')
                                     ->columnSpanFull(),
@@ -94,10 +96,13 @@ class MemberResource extends Resource
                                 Grid::make(3) // Grid 3 untuk wilayah
                                     ->schema([
                                         TextInput::make('provinsi')
+                                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                                             ->label('Provinsi'),
                                         TextInput::make('kota')
+                                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                                             ->label('Kota/Kabupaten'),
                                         TextInput::make('kecamatan')
+                                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                                             ->label('Kecamatan'),
                                     ]),
                             ]),
@@ -107,7 +112,7 @@ class MemberResource extends Resource
                 Group::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Foto Profil
                         Section::make('Foto Profil')
                             ->icon('heroicon-m-camera')
@@ -147,7 +152,7 @@ class MemberResource extends Resource
                         InfolistSection::make('Identitas Member')
                             ->icon('heroicon-m-user-circle')
                             ->schema([
-                                
+
                                 // Baris 1: Nama Besar
                                 TextEntry::make('nama_member')
                                     ->label('Nama Lengkap')
@@ -162,14 +167,14 @@ class MemberResource extends Resource
                                             ->label('Email')
                                             ->icon('heroicon-m-envelope')
                                             ->copyable() // Fitur copy
-                                            ->url(fn ($record) => "mailto:{$record->email}") // Klik untuk kirim email
+                                            ->url(fn($record) => "mailto:{$record->email}") // Klik untuk kirim email
                                             ->color('info')
                                             ->placeholder('-'),
 
                                         TextEntry::make('no_hp')
                                             ->label('WhatsApp / Telepon')
                                             ->icon('heroicon-m-device-phone-mobile')
-                                            ->url(fn ($record) => "tel:{$record->no_hp}") // Klik untuk telepon
+                                            ->url(fn($record) => "tel:{$record->no_hp}") // Klik untuk telepon
                                             ->color('success'),
                                     ]),
                             ]),
@@ -184,12 +189,12 @@ class MemberResource extends Resource
                                     ->columnSpanFull(),
 
                                 // Grid untuk detail wilayah agar rapi sejajar
-                                InfolistGrid::make(3) 
+                                InfolistGrid::make(3)
                                     ->schema([
                                         TextEntry::make('provinsi')
                                             ->label('Provinsi')
                                             ->icon('heroicon-m-map'),
-                                            
+
                                         TextEntry::make('kota')
                                             ->label('Kota/Kab')
                                             ->icon('heroicon-m-building-office-2'),
@@ -250,6 +255,7 @@ class MemberResource extends Resource
                 //
                 TextColumn::make('nama_member')
                     ->label('Nama Member')
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('no_hp')
