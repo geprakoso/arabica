@@ -24,4 +24,9 @@ class CreateSupplier extends CreateRecord
             ->info()
             ->sendToDatabase($recipients);
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

@@ -8,6 +8,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
@@ -29,6 +30,9 @@ use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Province;
 
 class MemberResource extends Resource
 {
@@ -95,15 +99,69 @@ class MemberResource extends Resource
 
                                 Grid::make(3) // Grid 3 untuk wilayah
                                     ->schema([
-                                        TextInput::make('provinsi')
-                                            ->dehydrateStateUsing(fn($state) => Str::title($state))
-                                            ->label('Provinsi'),
-                                        TextInput::make('kota')
-                                            ->dehydrateStateUsing(fn($state) => Str::title($state))
-                                            ->label('Kota/Kabupaten'),
-                                        TextInput::make('kecamatan')
-                                            ->dehydrateStateUsing(fn($state) => Str::title($state))
-                                            ->label('Kecamatan'),
+                                        Select::make('provinsi')
+                                            ->label('Provinsi')
+                                            ->searchable()
+                                            ->options(fn() => Province::query()
+                                                ->orderBy('name')
+                                                ->pluck('name', 'name')
+                                                ->all())
+                                            ->live()
+                                            ->afterStateUpdated(function (callable $set): void {
+                                                $set('kota', null);
+                                                $set('kecamatan', null);
+                                            })
+                                            ->placeholder('Pilih provinsi'),
+                                        Select::make('kota')
+                                            ->label('Kota/Kabupaten')
+                                            ->searchable()
+                                            ->options(function (Get $get): array {
+                                                $provinceName = $get('provinsi');
+                                                if (!$provinceName) {
+                                                    return [];
+                                                }
+
+                                                $provinceCode = Province::query()
+                                                    ->where('name', $provinceName)
+                                                    ->value('code');
+
+                                                if (!$provinceCode) {
+                                                    return [];
+                                                }
+
+                                                return City::query()
+                                                    ->where('province_code', $provinceCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->live()
+                                            ->afterStateUpdated(fn($set) => $set('kecamatan', null))
+                                            ->placeholder('Pilih kota/kabupaten'),
+                                        Select::make('kecamatan')
+                                            ->label('Kecamatan')
+                                            ->searchable()
+                                            ->options(function (Get $get): array {
+                                                $cityName = $get('kota');
+                                                if (!$cityName) {
+                                                    return [];
+                                                }
+
+                                                $cityCode = City::query()
+                                                    ->where('name', $cityName)
+                                                    ->value('code');
+
+                                                if (!$cityCode) {
+                                                    return [];
+                                                }
+
+                                                return District::query()
+                                                    ->where('city_code', $cityCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->placeholder('Pilih kecamatan'),
                                     ]),
                             ]),
                     ]),
