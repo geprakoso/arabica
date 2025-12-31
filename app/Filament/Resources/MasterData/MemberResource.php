@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MasterData;
 use App\Filament\Resources\MasterData\MemberResource\Pages;
 use App\Models\Member;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
@@ -30,6 +31,7 @@ use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use App\Support\WebpUpload;
 use Laravolt\Indonesia\Models\City;
 use Laravolt\Indonesia\Models\District;
 use Laravolt\Indonesia\Models\Province;
@@ -189,6 +191,7 @@ class MemberResource extends Resource
                                         $extension = $file->getClientOriginalExtension();
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames(),
                             ]),
                     ]),

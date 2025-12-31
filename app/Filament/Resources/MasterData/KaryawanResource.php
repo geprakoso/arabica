@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Group;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
@@ -33,8 +34,14 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use App\Filament\Resources\MasterData\KaryawanResource\Pages;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Support\WebpUpload;
 use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Validation\Rule;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Province;
+use Laravolt\Indonesia\Models\Village;
+
 
 class KaryawanResource extends Resource
 {
@@ -105,10 +112,105 @@ class KaryawanResource extends Resource
 
                                 Forms\Components\Grid::make(2)
                                     ->schema([
-                                        Forms\Components\TextInput::make('provinsi')->label('Provinsi'),
-                                        Forms\Components\TextInput::make('kota')->label('Kota/Kabupaten'),
-                                        Forms\Components\TextInput::make('kecamatan')->label('Kecamatan'),
-                                        Forms\Components\TextInput::make('kelurahan')->label('Kelurahan/Desa'),
+                                        Select::make('provinsi')
+                                            ->label('Provinsi')
+                                            ->searchable()
+                                            ->preload()
+                                            ->options(fn() => Province::query()
+                                                ->orderBy('name')
+                                                ->pluck('name', 'name')
+                                                ->all())
+                                            ->live()
+                                            ->afterStateUpdated(function (callable $set): void {
+                                                $set('kota', null);
+                                                $set('kecamatan', null);
+                                                $set('kelurahan', null);
+                                            })
+                                            ->placeholder('Pilih provinsi'),
+                                        Select::make('kota')
+                                            ->label('Kota/Kabupaten')
+                                            ->searchable()
+                                            ->preload()
+                                            ->options(function (Get $get): array {
+                                                $provinceName = $get('provinsi');
+                                                if (!$provinceName) {
+                                                    return [];
+                                                }
+
+                                                $provinceCode = Province::query()
+                                                    ->where('name', $provinceName)
+                                                    ->value('code');
+
+                                                if (!$provinceCode) {
+                                                    return [];
+                                                }
+
+                                                return City::query()
+                                                    ->where('province_code', $provinceCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->live()
+                                            ->afterStateUpdated(function (callable $set): void {
+                                                $set('kecamatan', null);
+                                                $set('kelurahan', null);
+                                            })
+                                            ->placeholder('Pilih kota/kabupaten'),
+                                        Select::make('kecamatan')
+                                            ->label('Kecamatan')
+                                            ->searchable()
+                                            ->preload()
+                                            ->options(function (Get $get): array {
+                                                $cityName = $get('kota');
+                                                if (!$cityName) {
+                                                    return [];
+                                                }
+
+                                                $cityCode = City::query()
+                                                    ->where('name', $cityName)
+                                                    ->value('code');
+
+                                                if (!$cityCode) {
+                                                    return [];
+                                                }
+
+                                                return District::query()
+                                                    ->where('city_code', $cityCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->live()
+                                            ->afterStateUpdated(function (callable $set): void {
+                                                $set('kelurahan', null);
+                                            })
+                                            ->placeholder('Pilih kecamatan'),
+                                        Select::make('kelurahan')
+                                            ->label('Kelurahan/Desa')
+                                            ->searchable()
+                                            ->preload()
+                                            ->options(function (Get $get): array {
+                                                $districtName = $get('kecamatan');
+                                                if (!$districtName) {
+                                                    return [];
+                                                }
+
+                                                $districtCode = District::query()
+                                                    ->where('name', $districtName)
+                                                    ->value('code');
+
+                                                if (!$districtCode) {
+                                                    return [];
+                                                }
+
+                                                return Village::query()
+                                                    ->where('district_code', $districtCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->placeholder('Pilih kelurahan/desa'),
                                     ]),
                             ]),
 
@@ -168,6 +270,7 @@ class KaryawanResource extends Resource
                                     ->getUploadedFileNameForStorageUsing(
                                         fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_karyawan') ?? 'karyawan') . '.' . $file->getClientOriginalExtension())
                                     )
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames()
                                     ->columnSpanFull()
                                     ->alignCenter(), // Agar posisi di tengah

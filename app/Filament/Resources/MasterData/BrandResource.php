@@ -6,6 +6,7 @@ use App\Filament\Resources\MasterData\BrandResource\Pages;
 // use App\Filament\Resources\MasterData\BrandResource\RelationManagers;
 use App\Models\Brand;
 use Filament\Forms;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
@@ -18,6 +19,7 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Str; // Import Str
 // use Closure; // Import Closure for callable type hint
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Support\WebpUpload;
 
 
 class BrandResource extends Resource
@@ -58,6 +60,10 @@ class BrandResource extends Resource
                                 ->label('Gambar Produk')
                                 ->image()
                                 ->disk('public')
+                                ->imageEditor()
+                                ->imageCropAspectRatio('1:1')
+                                ->imageResizeTargetWidth(800)
+                                ->imageResizeTargetHeight(800)
                                 ->directory(fn() => 'produks/' . now()->format('Y/m/d'))
                                 ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get): string {
                                     $datePrefix = now()->format('ymd');
@@ -65,6 +71,7 @@ class BrandResource extends Resource
                                     $extension = $file->getClientOriginalExtension();
                                     return "{$datePrefix}-{$slug}.{$extension}";
                                 })
+                                ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                 ->preserveFilenames()
                                 ->nullable(),
                         ]),
@@ -103,6 +110,7 @@ class BrandResource extends Resource
                     ])->space(1),
                 ])->space(3),
             ])
+            ->searchable(false)
             ->contentGrid([
                 'md' => 3,
                 'xl' => 4,

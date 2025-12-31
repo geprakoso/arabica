@@ -8,6 +8,7 @@ use App\Models\Produk;
 use Filament\Forms;
 // use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Form;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
@@ -28,6 +29,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 // use Laravel\Pail\File;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Support\WebpUpload;
 use Illuminate\Support\Str; // Import Str
 use Closure; // Import Closure for callable type hint
 use Filament\Actions\Exports\Models\Export;
@@ -139,6 +141,7 @@ class ProdukResource extends Resource
                                     ->getUploadedFileNameForStorageUsing(
                                         fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
                                     )
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->openable()
                                     ->downloadable(),
                             ]),

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MasterData;
 use Filament\Forms;
 // use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
 use Filament\Tables;
+use Filament\Forms\Get;
 use App\Models\Supplier;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -13,16 +14,19 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Tabs;
+use Laravolt\Indonesia\Models\City;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Split;
-use Filament\Forms\Components\Section;
-use Filament\Support\Enums\FontWeight;
 // use Illuminate\Database\Eloquent\Builder;
 // use Illuminate\Database\Eloquent\SoftDeletingScope;
 // use Dom\Text;
-use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Section;
 // use Ramsey\Uuid\Type\Time;
+use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Tabs\Tab;
 use Filament\Tables\Columns\TextColumn;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Province;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
@@ -107,17 +111,71 @@ class SupplierResource extends Resource
                         Section::make('Area Wilayah')
                             ->dehydrateStateUsing(fn($state) => Str::title($state))
                             ->schema([
-                                Forms\Components\TextInput::make('provinsi')
+                                Forms\Components\Select::make('provinsi')
                                     ->label('Provinsi')
-                                    ->placeholder('Jawa Barat'),
+                                    ->searchable()
+                                    ->options(fn() => Province::query()
+                                        ->orderBy('name')
+                                        ->pluck('name', 'name')
+                                        ->all())
+                                    ->live()
+                                    ->afterStateUpdated(function (callable $set): void {
+                                        $set('kota', null);
+                                        $set('kecamatan', null);
+                                    })
+                                    ->placeholder('Pilih provinsi'),
+                                Forms\Components\Select::make('kota')
+                                    ->label('Kota/Kabupaten')
+                                    ->searchable()
+                                    ->options(function (Get $get): array {
+                                        $provinceName = $get('provinsi');
+                                        if (!$provinceName) {
+                                            return [];
+                                        }
 
-                                Forms\Components\TextInput::make('kota')
-                                    ->label('Kota / Kabupaten')
-                                    ->placeholder('Bandung'),
+                                        $provinceCode = Province::query()
+                                            ->where('name', $provinceName)
+                                            ->value('code');
 
-                                Forms\Components\TextInput::make('kecamatan')
+                                        if (!$provinceCode) {
+                                            return [];
+                                        }
+
+                                        return City::query()
+                                            ->where('province_code', $provinceCode)
+                                            ->orderBy('name')
+                                            ->pluck('name', 'name')
+                                            ->all();
+                                    })
+                                    ->live()
+                                    ->afterStateUpdated(fn($set) => $set('kecamatan', null))
+                                    ->placeholder('Pilih kota/kabupaten'),
+
+
+                                Forms\Components\Select::make('kecamatan')
                                     ->label('Kecamatan')
-                                    ->placeholder('Cicendo'),
+                                    ->searchable()
+                                    ->options(function (Get $get): array {
+                                        $cityName = $get('kota');
+                                        if (!$cityName) {
+                                            return [];
+                                        }
+
+                                        $cityCode = City::query()
+                                            ->where('name', $cityName)
+                                            ->value('code');
+
+                                        if (!$cityCode) {
+                                            return [];
+                                        }
+
+                                        return District::query()
+                                            ->where('city_code', $cityCode)
+                                            ->orderBy('name')
+                                            ->pluck('name', 'name')
+                                            ->all();
+                                    })
+                                    ->placeholder('Pilih kecamatan'),
                             ]),
                     ]),
             ]);

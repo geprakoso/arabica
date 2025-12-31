@@ -73,7 +73,7 @@ describe('Inventory Resource - List', function () {
             ->assertSuccessful();
     });
 
-    
+
 
     test('menampilkan produk yang masih aktif', function () {
         $produkAktif = Produk::create([
@@ -163,7 +163,7 @@ describe('Inventory Resource - Snapshot', function () {
             'kondisi' => 'baru',
         ]);
 
-        
+
 
         $reflection = new ReflectionMethod(InventoryResource::class, 'getInventorySnapshot');
         $reflection->setAccessible(true);
@@ -171,9 +171,8 @@ describe('Inventory Resource - Snapshot', function () {
 
         expect($snapshot['qty'])->toBe(10);
         expect($snapshot['batch_count'])->toBe(2);
-        expect($snapshot['latest_batch']['hpp'])->toBe(12500.0);
-        expect($snapshot['latest_batch']['harga_jual'])->toBe(21000.0);
+        expect($snapshot['latest_batch']['hpp'])->toBe(12500);
+        expect($snapshot['latest_batch']['harga_jual'])->toBe(21000);
         expect($snapshot['latest_batch']['tanggal'])->toBe($pembelianBaru->tanggal->format('d M Y'));
     });
-
 });

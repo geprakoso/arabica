@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Form;
@@ -25,6 +26,7 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Str; // Import Str
 // use Closure; // Import Closure for callable type hint
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Support\WebpUpload;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
@@ -138,6 +140,7 @@ class JasaResource extends Resource
                                         $extension = $file->getClientOriginalExtension();
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames(),
                             ]),
 
