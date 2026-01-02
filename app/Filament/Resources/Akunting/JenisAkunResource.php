@@ -31,7 +31,8 @@ class JenisAkunResource extends Resource
     protected static ?int $navigationSort = 2;
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'admin';
+        return Filament::getCurrentPanel()?->getId() === 'admin'
+            && static::canViewAny();
     }
 
     public static function form(Form $form): Form

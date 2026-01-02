@@ -9,6 +9,8 @@ use App\Models\InputTransaksiToko;
 use App\Models\JenisAkun;
 use App\Models\KodeAkun;
 use App\Models\LaporanNeraca;
+use App\Models\Pembelian;
+use App\Models\PembelianItem;
 use Filament\Facades\Filament;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
@@ -35,11 +37,16 @@ class LaporanNeracaResource extends Resource
         // '101' => KelompokNeraca::AsetLancar,
         // '201' => KelompokNeraca::LiabilitasJangkaPendek,
         '11' => KelompokNeraca::AsetLancar,
+        '12' => KelompokNeraca::AsetTidakLancar,
+        '21' => KelompokNeraca::LiabilitasJangkaPendek,
+        '22' => KelompokNeraca::LiabilitasJangkaPanjang,
+        
     ];
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'admin';
+        return Filament::getCurrentPanel()?->getId() === 'admin'
+            && static::canViewAny();
     }
 
     public static function table(Table $table): Table
@@ -211,6 +218,13 @@ class LaporanNeracaResource extends Resource
         $liabilitasPanjang = self::fetchKelompokRows($asOf, KategoriAkun::Pasiva, KelompokNeraca::LiabilitasJangkaPanjang);
         $ekuitas = self::fetchKelompokRows($asOf, KategoriAkun::Pasiva, KelompokNeraca::Ekuitas);
 
+        $persediaanBarang = [
+            'nama' => 'Persediaan Barang',
+            'total' => self::totalInventoryHpp($asOf),
+        ];
+
+        array_unshift($asetLancar, $persediaanBarang);
+
         $totalAsetLancar = self::sumRows($asetLancar);
         $totalAsetTidakLancar = self::sumRows($asetTidakLancar);
         $totalLiabilitasPendek = self::sumRows($liabilitasPendek);
@@ -254,8 +268,8 @@ class LaporanNeracaResource extends Resource
         $kodeAkunList = self::getKodeAkunByKelompok([$kelompok]);
 
         return InputTransaksiToko::query()
-            ->selectRaw("{$kodeAkunTable}.kode_akun as kode_akun")
-            ->selectRaw("{$kodeAkunTable}.nama_akun as nama_akun")
+            ->selectRaw("{$jenisAkunTable}.kode_jenis_akun as kode_jenis_akun")
+            ->selectRaw("{$jenisAkunTable}.nama_jenis_akun as nama_jenis_akun")
             ->selectRaw("SUM({$transaksiTable}.nominal_transaksi) as total")
             ->leftJoin($jenisAkunTable, "{$jenisAkunTable}.id", '=', "{$transaksiTable}.kode_jenis_akun_id")
             ->leftJoin($kodeAkunTable, "{$kodeAkunTable}.id", '=', "{$jenisAkunTable}.kode_akun_id")
@@ -266,15 +280,15 @@ class LaporanNeracaResource extends Resource
                 fn (Builder $query) => $query->whereIn("{$kodeAkunTable}.kode_akun", $kodeAkunList),
             )
             ->whereDate("{$transaksiTable}.tanggal_transaksi", '<=', $asOf)
-            ->groupBy("{$kodeAkunTable}.id", "{$kodeAkunTable}.kode_akun", "{$kodeAkunTable}.nama_akun")
-            ->orderBy("{$kodeAkunTable}.kode_akun")
+            ->groupBy("{$jenisAkunTable}.id", "{$jenisAkunTable}.kode_jenis_akun", "{$jenisAkunTable}.nama_jenis_akun")
+            ->orderBy("{$jenisAkunTable}.kode_jenis_akun")
             ->get()
             ->map(function ($row): array {
-                $kode = $row->kode_akun ?? '-';
-                $nama = $row->nama_akun ?? '-';
+                $kode = $row->kode_jenis_akun ?? '-';
+                $nama = $row->nama_jenis_akun ?? '-';
 
                 return [
-                    'nama' => "{$kode} - {$nama}",
+                    'nama' => $nama,
                     'total' => (float) $row->total,
                 ];
             })
@@ -305,6 +319,22 @@ class LaporanNeracaResource extends Resource
             ->keys()
             ->values()
             ->all();
+    }
+
+    protected static function totalInventoryHpp(Carbon $asOf): float
+    {
+        $pembelianItemTable = (new PembelianItem())->getTable();
+        $pembelianTable = (new Pembelian())->getTable();
+        $qtyColumn = PembelianItem::qtySisaColumn();
+
+        $total = PembelianItem::query()
+            ->leftJoin($pembelianTable, "{$pembelianTable}.id_pembelian", '=', "{$pembelianItemTable}.id_pembelian")
+            ->whereDate("{$pembelianTable}.tanggal", '<=', $asOf)
+            ->where("{$pembelianItemTable}.{$qtyColumn}", '>', 0)
+            ->selectRaw("SUM(COALESCE({$pembelianItemTable}.hpp, 0) * COALESCE({$pembelianItemTable}.{$qtyColumn}, 0)) as total")
+            ->value('total');
+
+        return (float) ($total ?? 0);
     }
 
     public static function formatMonthLabel(?string $monthStart): string

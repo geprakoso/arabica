@@ -119,7 +119,8 @@ class PosActivityResource extends Resource
      */
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
+        return Filament::getCurrentPanel()?->getId() === 'pos'
+            && static::canViewAny();
     }
 
     // mendapatkan widget yang akan di tampilkan di resource

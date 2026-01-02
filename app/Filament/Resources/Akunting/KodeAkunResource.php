@@ -32,7 +32,8 @@ class KodeAkunResource extends Resource
     
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'admin';
+        return Filament::getCurrentPanel()?->getId() === 'admin'
+            && static::canViewAny();
     }
     
     public static function form(Form $form): Form

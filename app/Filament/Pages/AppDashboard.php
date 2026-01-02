@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Widgets\Widget;
@@ -9,6 +10,8 @@ use Filament\Widgets\WidgetConfiguration;
 
 class AppDashboard extends BaseDashboard
 {
+    use HasPageShield;
+
     /**
      * @return array<class-string<\Filament\Widgets\Widget> | \Filament\Widgets\WidgetConfiguration>
      */

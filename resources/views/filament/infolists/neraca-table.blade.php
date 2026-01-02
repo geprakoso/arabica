@@ -54,7 +54,7 @@
                     </tr>
                 @endforelse
                 <tr class="bg-gray-50 font-semibold">
-                    <td class="px-4 py-2">Total Aset Lancar</td>
+                    <td class="px-4 py-2">Total</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['aset_lancar']) }}</td>
                 </tr>
 
@@ -74,11 +74,11 @@
                     </tr>
                 @endforelse
                 <tr class="bg-gray-50 font-semibold">
-                    <td class="px-4 py-2">Total Aset Tidak Lancar</td>
+                    <td class="px-4 py-2">Total</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['aset_tidak_lancar']) }}</td>
                 </tr>
                 <tr class="bg-gray-100 font-semibold uppercase">
-                    <td class="px-4 py-2">Total Aset</td>
+                    <td class="px-4 py-2">Total Aset Keseluruhan</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['aset']) }}</td>
                 </tr>
 
@@ -102,7 +102,7 @@
                     </tr>
                 @endforelse
                 <tr class="bg-gray-50 font-semibold">
-                    <td class="px-4 py-2">Total Liabilitas Jangka Pendek</td>
+                    <td class="px-4 py-2">Total</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['liabilitas_pendek']) }}</td>
                 </tr>
 
@@ -122,11 +122,11 @@
                     </tr>
                 @endforelse
                 <tr class="bg-gray-50 font-semibold">
-                    <td class="px-4 py-2">Total Liabilitas Jangka Panjang</td>
+                    <td class="px-4 py-2">Total</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['liabilitas_panjang']) }}</td>
                 </tr>
                 <tr class="bg-gray-100 font-semibold uppercase">
-                    <td class="px-4 py-2">Total Liabilitas</td>
+                    <td class="px-4 py-2">Total Liabilitas Keseluruhan</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['liabilitas']) }}</td>
                 </tr>
 
@@ -146,11 +146,11 @@
                     </tr>
                 @endforelse
                 <tr class="bg-gray-50 font-semibold">
-                    <td class="px-4 py-2">Total Ekuitas</td>
+                    <td class="px-4 py-2">Total</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['ekuitas']) }}</td>
                 </tr>
                 <tr class="bg-gray-100 font-semibold uppercase">
-                    <td class="px-4 py-2">Total Kewajiban + Ekuitas</td>
+                    <td class="px-4 py-2">Total</td>
                     <td class="px-4 py-2 text-right">{{ $formatRupiah($totals['liabilitas_ekuitas']) }}</td>
                 </tr>
             </tbody>

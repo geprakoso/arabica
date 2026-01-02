@@ -591,7 +591,8 @@ class PosSaleResource extends Resource
      */
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
+        return Filament::getCurrentPanel()?->getId() === 'pos'
+            && static::canViewAny();
     }
 
     /**
