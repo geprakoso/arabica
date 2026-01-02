@@ -17,7 +17,7 @@ use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Get;
 // use Filament\Resources\Set;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
@@ -45,7 +45,7 @@ use Illuminate\Support\HtmlString;
 
 // use Laravel\SerializableClosure\Serializers\Native;
 
-class ProdukResource extends Resource
+class ProdukResource extends BaseResource
 {
     protected static ?string $model = Produk::class;
 

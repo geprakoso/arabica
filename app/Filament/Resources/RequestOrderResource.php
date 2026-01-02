@@ -10,7 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\RequestOrder;
 use App\Models\Kategori;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Split as FormsSplit;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
@@ -32,7 +32,7 @@ use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Grid;
 use Filament\Support\Enums\FontWeight;
 
-class RequestOrderResource extends Resource
+class RequestOrderResource extends BaseResource
 {
     protected static ?string $model = RequestOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';

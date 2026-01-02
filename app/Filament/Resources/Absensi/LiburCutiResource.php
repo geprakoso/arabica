@@ -15,7 +15,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +25,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Auth;
 
-class LiburCutiResource extends Resource
+class LiburCutiResource extends BaseResource
 {
     protected static ?string $model = LiburCuti::class;
 

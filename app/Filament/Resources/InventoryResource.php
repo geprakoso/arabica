@@ -10,7 +10,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use App\Models\PembelianItem;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Actions\StaticAction;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
@@ -36,7 +36,7 @@ use Filament\Support\Enums\FontWeight;
 use App\Filament\Exports\InventoryOpnameExporter;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 
-class InventoryResource extends Resource
+class InventoryResource extends BaseResource
 {
     protected static ?string $model = Produk::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
@@ -44,6 +44,8 @@ class InventoryResource extends Resource
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
     protected static ?string $pluralLabel = 'Inventory';
+    protected static ?string $modelLabel = 'Inventory';
+    protected static ?string $pluralModelLabel = 'Inventory';
     public static function form(Form $form): Form
     {
         return $form->schema([]);

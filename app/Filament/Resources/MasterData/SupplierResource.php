@@ -14,7 +14,7 @@ use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Tabs\Tab;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 // use Illuminate\Database\Eloquent\Builder;
@@ -29,7 +29,7 @@ use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Support\Enums\FontWeight;
 
-class SupplierResource extends Resource
+class SupplierResource extends BaseResource
 {
     protected static ?string $model = Supplier::class;
 

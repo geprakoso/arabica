@@ -8,7 +8,7 @@ use App\Models\PenjadwalanPengiriman;
 use App\Models\Penjualan;
 use App\Models\Member;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
@@ -36,7 +36,7 @@ use Filament\Support\Enums\IconPosition;
 use Filament\Support\Enums\FontFamily;
 use Filament\Forms\Components\FileUpload;
 
-class PenjadwalanPengirimanResource extends Resource
+class PenjadwalanPengirimanResource extends BaseResource
 {
     protected static ?string $model = PenjadwalanPengiriman::class;
 

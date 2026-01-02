@@ -8,7 +8,7 @@ use App\Filament\Resources\Akunting\KodeAkunResource\Pages;
 use App\Models\KodeAkun; // Sesuaikan namespace Model Anda
 use Filament\Facades\Filament;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
@@ -20,7 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Collection;
 
-class KodeAkunResource extends Resource
+class KodeAkunResource extends BaseResource
 {
     protected static ?string $model = KodeAkun::class;
     protected static ?string $navigationLabel = '1. Kode Akun';

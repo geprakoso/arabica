@@ -12,7 +12,7 @@ use App\Models\Karyawan;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -38,7 +38,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Illuminate\Validation\Rule;
 
-class KaryawanResource extends Resource
+class KaryawanResource extends BaseResource
 {
     protected static ?string $model = Karyawan::class;
     protected static ?string $recordRouteKeyName = 'slug';
@@ -177,15 +177,26 @@ class KaryawanResource extends Resource
                                     //     $operation === 'edit' && ! $get('ubah_akses_login')
                                     // ),
 
-                                // 2. Toggle Pemicu "Ubah Login" (Hanya muncul saat Mode Edit)
-                                Forms\Components\Toggle::make('ubah_akses_login')
-                                    ->label('Ubah Email & Password?')
+                                // 2. Toggle Pemicu "Ubah Email" (Hanya muncul saat Mode Edit)
+                                Forms\Components\Toggle::make('ubah_email_login')
+                                    ->label('Ubah Email?')
                                     ->onColor('warning')
                                     ->offColor('gray')
-                                    ->helperText('Aktifkan ini jika ingin mengubah email atau password user.')
-                                    ->live() // PENTING: Agar form langsung bereaksi saat diklik
-                                    ->dehydrated(false) // PENTING: Field ini tidak akan disimpan ke database
-                                    ->visible(fn (string $operation) => $operation === 'edit') // Hanya muncul pas Edit
+                                    ->helperText('Aktifkan ini jika ingin mengubah email user.')
+                                    ->live()
+                                    ->dehydrated(false)
+                                    ->visible(fn (string $operation) => $operation === 'edit')
+                                    ->default(false),
+
+                                // 2b. Toggle Pemicu "Ubah Password" (Hanya muncul saat Mode Edit)
+                                Forms\Components\Toggle::make('ubah_password_login')
+                                    ->label('Ubah Password?')
+                                    ->onColor('warning')
+                                    ->offColor('gray')
+                                    ->helperText('Aktifkan ini jika ingin mengubah password user.')
+                                    ->live()
+                                    ->dehydrated(false)
+                                    ->visible(fn (string $operation) => $operation === 'edit')
                                     ->default(false),
 
                                 // 3. Email Login
@@ -193,10 +204,15 @@ class KaryawanResource extends Resource
                                     ->label('Email Login')
                                     ->email()
                                     ->required()
+                                    ->autocomplete('off')
+                                    ->afterStateHydrated(function (TextInput $component, ?Karyawan $record) {
+                                        $component->state($record?->user?->email);
+                                    })
                                     // Logic: Disable jika sedang Edit DAN Toggle belum dinyalakan
                                     ->disabled(fn (Get $get, string $operation) => 
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                        $operation === 'edit' && ! $get('ubah_email_login')
                                     )
+                                    ->dehydrated(fn (Get $get, string $operation) => $operation === 'create' || $get('ubah_email_login'))
                                     // Validasi Unique yang Diperbaiki
                                     ->rules(function ($record) {
                                         $userId = $record?->user_id; // Ambil user_id dari relasi karyawan
@@ -211,14 +227,15 @@ class KaryawanResource extends Resource
                                     ->label('Password')
                                     ->password()
                                     ->revealable()
+                                    ->autocomplete('new-password')
                                     // Logic Disable sama seperti Email
                                     ->disabled(fn (Get $get, string $operation) => 
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                        $operation === 'edit' && ! $get('ubah_password_login')
                                     )
                                     // Hanya required saat Create (Saat edit boleh kosong jika tidak ingin ubah password)
                                     ->required(fn (string $operation) => $operation === 'create')
                                     // Simpan hanya jika ada isinya
-                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->dehydrated(fn ($state, Get $get, string $operation) => filled($state) && ($operation === 'create' || ($get('ubah_password_login') ?? false)))
                                     ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
 
                                 // 6. Password Confirmation
@@ -229,7 +246,7 @@ class KaryawanResource extends Resource
                                     ->same('password')
                                     // Logic Disable sama
                                     ->disabled(fn (Get $get, string $operation) => 
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                        $operation === 'edit' && ! $get('ubah_password_login')
                                     )
                                     // Wajib jika password utama diisi
                                     ->required(fn (Get $get) => filled($get('password'))),

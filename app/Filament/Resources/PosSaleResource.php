@@ -17,7 +17,7 @@ use Filament\Tables\Table;
 use App\Models\PembelianItem;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\TextInput;
@@ -28,7 +28,7 @@ use Filament\Forms\Components\Livewire as LivewireComponent;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Support\Enums\Alignment;
 
-class PosSaleResource extends Resource
+class PosSaleResource extends BaseResource
 {
     protected static ?string $model = Penjualan::class;
 

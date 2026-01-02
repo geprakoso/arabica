@@ -8,7 +8,7 @@ use App\Models\RequestOrder;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Tables;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section as FormsSection;
 use Filament\Forms\Components\Grid as FormsGrid;
@@ -35,7 +35,7 @@ use Filament\Infolists\Components\Split;
 use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 
-class PembelianResource extends Resource
+class PembelianResource extends BaseResource
 {
     protected static ?string $model = Pembelian::class;
     protected static ?string $navigationIcon = 'heroicon-o-receipt-refund';

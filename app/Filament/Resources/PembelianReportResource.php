@@ -8,7 +8,7 @@ use Filament\Forms\Form;
 use App\Models\Pembelian;
 use Akaunting\Money\Money;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\ExportAction;
@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Exports\PembelianExporter;
 use App\Filament\Resources\PembelianReportResource\Pages;
 
-class PembelianReportResource extends Resource
+class PembelianReportResource extends BaseResource
 {
     protected static ?string $model = Pembelian::class;
 
@@ -25,6 +25,10 @@ class PembelianReportResource extends Resource
     protected static ?string $navigationLabel = 'Laporan Pembelian';
 
     protected static ?string $pluralLabel = 'Laporan Pembelian';
+
+    protected static ?string $modelLabel = 'Laporan Pembelian';
+
+    protected static ?string $pluralModelLabel = 'Laporan Pembelian';
 
     protected static ?string $navigationGroup = 'Reports';
 

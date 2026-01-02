@@ -8,7 +8,7 @@ use Filament\Forms\Set;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\StockAdjustment;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Grid;
 use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Group;
@@ -25,7 +25,7 @@ use App\Filament\Resources\PenjualanResource;
 use App\Filament\Resources\StockAdjustmentResource\Pages;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
-class StockAdjustmentResource extends Resource
+class StockAdjustmentResource extends BaseResource
 {
     protected static ?string $model = StockAdjustment::class;
 

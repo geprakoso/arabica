@@ -12,7 +12,7 @@ use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +36,7 @@ use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Forms\Components\Section;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 
-class AbsensiResource extends Resource
+class AbsensiResource extends BaseResource
 {
     protected static ?string $model = Absensi::class;
 
@@ -49,8 +49,8 @@ class AbsensiResource extends Resource
     {
         $user = Filament::auth()->user();
 
-        return $user?->can('view_any_absensi::absensi')
-            || $user?->can('view_limit_absensi::absensi')
+        return $user?->can('view_any_absensi')
+            || $user?->can('view_limit_absensi')
             || false;
     }
 
@@ -60,7 +60,7 @@ class AbsensiResource extends Resource
         $user = Filament::auth()->user();
 
         // When only view_limit is granted, restrict to own records.
-        if ($user?->can('view_limit_absensi::absensi') && ! $user->can('view_any_absensi::absensi')) {
+        if ($user?->can('view_limit_absensi') && ! $user->can('view_any_absensi')) {
             $query->where('user_id', $user->id);
         }
 

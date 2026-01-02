@@ -15,7 +15,7 @@ use Filament\Facades\Filament;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\ViewEntry;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -23,7 +23,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
-class LaporanNeracaResource extends Resource
+class LaporanNeracaResource extends BaseResource
 {
     protected static ?string $model = LaporanNeraca::class;
     protected static ?string $navigationGroup = 'Reports';

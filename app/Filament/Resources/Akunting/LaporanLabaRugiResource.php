@@ -15,7 +15,7 @@ use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Columns\TextColumn;
@@ -30,7 +30,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class LaporanLabaRugiResource extends Resource
+class LaporanLabaRugiResource extends BaseResource
 {
     protected static ?string $model = LaporanLabaRugi::class;
     protected static ?string $navigationGroup = 'Reports';

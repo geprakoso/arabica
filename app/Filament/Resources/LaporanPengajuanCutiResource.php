@@ -15,14 +15,14 @@ use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 
-class LaporanPengajuanCutiResource extends Resource
+class LaporanPengajuanCutiResource extends BaseResource
 {
     protected static ?string $model = LaporanPengajuanCuti::class;
 

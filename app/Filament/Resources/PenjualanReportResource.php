@@ -8,14 +8,14 @@ use Filament\Tables;
 use Filament\Forms\Form;
 use App\Models\Penjualan;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 // use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PenjualanReportResource\Pages;
 
-class PenjualanReportResource extends Resource
+class PenjualanReportResource extends BaseResource
 {
     protected static ?string $model = Penjualan::class;
 
@@ -26,6 +26,10 @@ class PenjualanReportResource extends Resource
     protected static ?string $navigationLabel = 'Laporan Penjualan';
 
     protected static ?string $pluralLabel = 'Laporan Penjualan';
+
+    protected static ?string $modelLabel = 'Laporan Penjualan';
+
+    protected static ?string $pluralModelLabel = 'Laporan Penjualan';
 
     protected static ?int $navigationSort = 1;
 

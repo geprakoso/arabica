@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Filament\Facades\Filament;
 use Livewire\Attributes\Title;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use function Laravel\Prompts\text;
 use Filament\Infolists\Components\Grid;
 use Filament\Forms\Components\DatePicker;
@@ -23,7 +23,7 @@ use Carbon\CarbonInterface;
 use App\Filament\Resources\PosActivityResource\Pages;
 use App\Filament\Resources\PosActivityResource\Widgets\PosActivityStats;
 
-class PosActivityResource extends Resource
+class PosActivityResource extends BaseResource
 {
     protected static ?string $model = Penjualan::class;
 

@@ -6,7 +6,7 @@ use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\StockOpname;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\StockOpnameResource\Pages;
 use App\Filament\Resources\StockOpnameResource\RelationManagers\ItemsRelationManager;
 
-class StockOpnameResource extends Resource
+class StockOpnameResource extends BaseResource
 {
     protected static ?string $model = StockOpname::class;
 

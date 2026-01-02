@@ -10,7 +10,7 @@ use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Get;
@@ -20,7 +20,7 @@ use Illuminate\Support\Str; // Import Str
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 
-class BrandResource extends Resource
+class BrandResource extends BaseResource
 {
     protected static ?string $model = Brand::class;
     // protected static ?string $cluster = MasterData::class;

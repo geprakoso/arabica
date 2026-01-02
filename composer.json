@@ -33,8 +33,8 @@
         "nuxtifyts/dash-stack-theme": "^1.3",
         "oriondevelops/filament-greeter": "^0.2.2",
         "shanerbaner82/panel-roles": "^0.0.3",
-        "solution-forest/tab-layout-plugin": "^2.2",
         "silviolleite/laravelpwa": "^2.0",
+        "solution-forest/tab-layout-plugin": "^2.2",
         "spatie/eloquent-sortable": "^4.5",
         "tomatophp/filament-media-manager": "^1.1"
     },

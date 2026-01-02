@@ -14,7 +14,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Get;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -35,7 +35,7 @@ use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Support\Enums\FontFamily;
 
-class JasaResource extends Resource
+class JasaResource extends BaseResource
 {
     protected static ?string $model = Jasa::class;
 

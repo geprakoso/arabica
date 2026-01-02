@@ -11,7 +11,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
@@ -30,7 +30,7 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Support\Enums\FontWeight;
 
 
-class PenjadwalanTugasResource extends Resource
+class PenjadwalanTugasResource extends BaseResource
 {
     protected static ?string $model = PenjadwalanTugas::class;
 

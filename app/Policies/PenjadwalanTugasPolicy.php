@@ -15,7 +15,7 @@ class PenjadwalanTugasPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_penjadwalan::penjadwalan::tugas');
+        return $user->can('view_any_penjadwalan::tugas');
     }
 
     /**
@@ -23,7 +23,7 @@ class PenjadwalanTugasPolicy
      */
     public function view(User $user, PenjadwalanTugas $penjadwalanTugas): bool
     {
-        return $user->can('view_penjadwalan::penjadwalan::tugas');
+        return $user->can('view_penjadwalan::tugas');
     }
 
     /**
@@ -31,7 +31,7 @@ class PenjadwalanTugasPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_penjadwalan::penjadwalan::tugas');
+        return $user->can('create_penjadwalan::tugas');
     }
 
     /**
@@ -39,7 +39,7 @@ class PenjadwalanTugasPolicy
      */
     public function update(User $user, PenjadwalanTugas $penjadwalanTugas): bool
     {
-        return $user->can('update_penjadwalan::penjadwalan::tugas');
+        return $user->can('update_penjadwalan::tugas');
     }
 
     /**
@@ -47,7 +47,7 @@ class PenjadwalanTugasPolicy
      */
     public function delete(User $user, PenjadwalanTugas $penjadwalanTugas): bool
     {
-        return $user->can('delete_penjadwalan::penjadwalan::tugas');
+        return $user->can('delete_penjadwalan::tugas');
     }
 
     /**
@@ -55,7 +55,7 @@ class PenjadwalanTugasPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_penjadwalan::penjadwalan::tugas');
+        return $user->can('delete_any_penjadwalan::tugas');
     }
 
     /**
@@ -63,7 +63,7 @@ class PenjadwalanTugasPolicy
      */
     public function forceDelete(User $user, PenjadwalanTugas $penjadwalanTugas): bool
     {
-        return $user->can('force_delete_penjadwalan::penjadwalan::tugas');
+        return $user->can('force_delete_penjadwalan::tugas');
     }
 
     /**
@@ -71,7 +71,7 @@ class PenjadwalanTugasPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_penjadwalan::penjadwalan::tugas');
+        return $user->can('force_delete_any_penjadwalan::tugas');
     }
 
     /**
@@ -79,7 +79,7 @@ class PenjadwalanTugasPolicy
      */
     public function restore(User $user, PenjadwalanTugas $penjadwalanTugas): bool
     {
-        return $user->can('restore_penjadwalan::penjadwalan::tugas');
+        return $user->can('restore_penjadwalan::tugas');
     }
 
     /**
@@ -87,7 +87,7 @@ class PenjadwalanTugasPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_penjadwalan::penjadwalan::tugas');
+        return $user->can('restore_any_penjadwalan::tugas');
     }
 
     /**
@@ -95,7 +95,7 @@ class PenjadwalanTugasPolicy
      */
     public function replicate(User $user, PenjadwalanTugas $penjadwalanTugas): bool
     {
-        return $user->can('replicate_penjadwalan::penjadwalan::tugas');
+        return $user->can('replicate_penjadwalan::tugas');
     }
 
     /**
@@ -103,6 +103,6 @@ class PenjadwalanTugasPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_penjadwalan::penjadwalan::tugas');
+        return $user->can('reorder_penjadwalan::tugas');
     }
 }
