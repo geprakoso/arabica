@@ -23,6 +23,7 @@
         "eightynine/filament-advanced-widgets": "^3.0",
         "emmanpbarrameda/filament-take-picture-field": "^1.1",
         "filament/filament": "3.3",
+        "guava/calendar": "*",
         "icetalker/filament-table-repeater": "^1.4",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
@@ -108,7 +109,7 @@
         "optimize-autoloader": true,
         "github-oauth": {},
         "http-timeout": 600,
-        "lock": false,
+        "lock": true,
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {

@@ -59,6 +59,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\WelcomeWeatherWidget::class,
                 \App\Filament\Widgets\AbsensiWidget::class,
                 \App\Filament\Widgets\ActiveMembersTable::class,
+                \App\Filament\Widgets\JadwalKalenderWidget::class,
                 \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
                 \App\Filament\Widgets\LowStockProductsTable::class,
                 \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
