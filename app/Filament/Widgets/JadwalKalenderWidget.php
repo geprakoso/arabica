@@ -2,31 +2,32 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\StatusPengajuan;
+use Carbon\Carbon;
+use App\Models\User;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
+use App\Models\LiburCuti;
 use App\Enums\StatusTugas;
+use Livewire\Attributes\On;
+use Filament\Actions\Action;
+use App\Models\KalenderEvent;
+use App\Enums\StatusPengajuan;
+use Filament\Facades\Filament;
+use App\Models\PenjadwalanTugas;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\RichEditor;
+use Guava\Calendar\Widgets\CalendarWidget;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\Absensi\LiburCutiResource;
 use App\Filament\Resources\Penjadwalan\KalenderEventResource;
 use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
-use App\Models\KalenderEvent;
-use App\Models\LiburCuti;
-use App\Models\PenjadwalanTugas;
-use App\Models\User;
-use Carbon\Carbon;
-use Filament\Actions\Action;
-use Guava\Calendar\Widgets\CalendarWidget;
-use Filament\Facades\Filament;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Notifications\Notification;
-use Illuminate\Support\Collection;
-use Livewire\Attributes\On;
 
 class JadwalKalenderWidget extends CalendarWidget
 {
@@ -61,6 +62,10 @@ class JadwalKalenderWidget extends CalendarWidget
             ->get();
 
         foreach ($liburCutis as $libur) {
+
+            if ($libur->user_id !== Auth::user()->id) {
+                continue;
+            }
             $rawMulai = $libur->getRawOriginal('mulai_tanggal');
             $rawSampai = $libur->getRawOriginal('sampai_tanggal');
 
@@ -415,7 +420,7 @@ class JadwalKalenderWidget extends CalendarWidget
                 ->required(),
             Select::make('karyawan_id')
                 ->label('Ditugaskan Kepada')
-                ->options(fn () => User::query()->orderBy('name')->pluck('name', 'id')->all())
+                ->options(fn() => User::query()->orderBy('name')->pluck('name', 'id')->all())
                 ->searchable()
                 ->required(),
             DatePicker::make('tanggal_mulai')
@@ -466,7 +471,7 @@ class JadwalKalenderWidget extends CalendarWidget
                 ->native(false)
                 ->seconds(false)
                 ->required()
-                ->minDate(fn (Get $get) => $get('mulai')),
+                ->minDate(fn(Get $get) => $get('mulai')),
         ];
     }
 

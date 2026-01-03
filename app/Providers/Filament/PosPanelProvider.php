@@ -107,7 +107,7 @@ class PosPanelProvider extends PanelProvider
                     ->title(text: 'Selamat datang di Point Of Sale Haen Komputer', enabled: true)
                     ->avatar(
                         size: 'w-16 h-16',
-                        url: fn () => optional(Auth::user()?->karyawan)?->image_url
+                        url: fn() => optional(Auth::user()?->karyawan)?->image_url
                             ? Storage::disk('public')->url(Auth::user()->karyawan->image_url)
                             : null,
                     )
