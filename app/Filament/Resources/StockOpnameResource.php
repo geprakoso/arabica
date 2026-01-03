@@ -105,9 +105,9 @@ class StockOpnameResource extends BaseResource
                     ->label('Status')
                     ->badge()
                     ->icon(fn(string $state): string => match ($state) {
-                        'draft' => 'heroicon-o-pencil-square',
-                        'posted' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle',
+                        'draft' => 'heroicon-m-pencil-square',
+                        'posted' => 'heroicon-m-check-circle',
+                        default => 'heroicon-m-question-mark-circle',
                     })
                     ->colors([
                         'warning' => 'draft',
@@ -116,20 +116,27 @@ class StockOpnameResource extends BaseResource
             ])
             ->filters([])
             ->actions([
+                Action::make('post')
+                    ->button()
+                    ->color('success')
+                    ->visible(fn(StockOpname $record) => ! $record->isPosted())
+                    ->icon('heroicon-m-paper-airplane')
+                    ->label('Posting')
+                    ->requiresConfirmation()
+                    ->action(fn(StockOpname $record) => $record->post(Auth::user()))
+                    ->successNotificationTitle('Stock opname berhasil diposting.')
+                    ->color('success'),
+                Tables\Actions\DeleteAction::make()
+                    ->button()
+                    ->icon('heroicon-m-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->label('Hapus')
+                    ->visible(fn(StockOpname $record) => ! $record->isPosted()),
                 Tables\Actions\ActionGroup::make([
-                    Action::make('post')
-                        ->label('Posting')
-                        ->icon('heroicon-o-paper-airplane')
-                        ->requiresConfirmation()
-                        // ->visible(fn(StockOpname $record) => ! $record->isPosted())
-                        ->action(fn(StockOpname $record) => $record->post(Auth::user()))
-                        ->successNotificationTitle('Stock opname berhasil diposting.')
-                        ->color('success'),
                     Tables\Actions\EditAction::make()
                         ->color('warning'),
                     Tables\Actions\ViewAction::make(),
-                    Tables\Actions\DeleteAction::make(),
-                    // ->visible(fn(StockOpname $record) => ! $record->isPosted()),
                 ])
                     ->label('Aksi')
                     ->visible(fn(StockOpname $record) => ! $record->isPosted())

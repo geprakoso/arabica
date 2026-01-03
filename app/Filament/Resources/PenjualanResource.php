@@ -2,34 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PenjualanResource\Pages;
-use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
-use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
-use App\Models\PembelianItem;
-use App\Models\Member;
-use App\Models\Penjualan;
-use App\Models\Produk;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Group as InfoGroup;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Infolists\Infolist;
-use App\Filament\Resources\BaseResource;
-use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
+use App\Models\Produk;
+use Filament\Forms\Form;
+use App\Models\Penjualan;
 use Filament\Tables\Table;
+use App\Models\PembelianItem;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\RichEditor;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use App\Filament\Resources\PenjualanResource\Pages;
+use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
+use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
 
 class PenjualanResource extends BaseResource
 {
@@ -127,30 +117,47 @@ class PenjualanResource extends BaseResource
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
+                    ->icon('heroicon-m-receipt-percent')
+                    ->weight('bold')
+                    ->color('primary')
+                    ->copyable()
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal_penjualan')
                     ->label('Tanggal')
-                    ->date()
+                    ->date('d M Y')
+                    ->icon('heroicon-m-calendar')
+                    ->color('gray')
                     ->sortable(),
                 TextColumn::make('member.nama_member')
                     ->label('Member')
+                    ->icon('heroicon-m-user-group')
                     ->placeholder('-')
+                    ->weight('medium')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
+                    ->icon('heroicon-m-user')
+                    ->color('secondary')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('items_count')
-                    ->label('Jumlah Item')
+                    ->label('Item & Jasa')
+                    ->badge()
+                    ->icon('heroicon-m-shopping-cart')
+                    ->color('primary')
+                    ->alignCenter()
                     ->sortable(),
                 TextColumn::make('grand_total_display')
                     ->label('Grand Total')
-                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
+                    ->weight('bold')
+                    ->color('success')
+                    ->alignRight()
+                    ->state(fn(Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
             ])
             ->filters([
-                 Tables\Filters\Filter::make('periode')
+                Tables\Filters\Filter::make('periode')
                     ->label('Periode')
                     ->form([
                         DatePicker::make('from')
@@ -177,17 +184,20 @@ class PenjualanResource extends BaseResource
                     ->placeholder('Semua'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->icon('heroicon-m-eye')
+                        ->color('info')
+                        ->tooltip('Lihat Detail'),
+                    Tables\Actions\EditAction::make()
+                        ->icon('heroicon-m-pencil-square')
+                        ->tooltip('Edit'),
+                    Tables\Actions\DeleteAction::make()
+                        ->icon('heroicon-m-trash'),
+                ])
+                    ->hidden(fn(Penjualan $record): bool => $record->items()->exists() || $record->jasaItems()->exists())
+                    ->label('Aksi')
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -462,8 +472,8 @@ class PenjualanResource extends BaseResource
      */
     protected static function calculateGrandTotal(Penjualan $record): int
     {
-        $totalProduk = $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
-        $totalJasa = $record->jasaItems->sum(fn ($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
+        $totalProduk = $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+        $totalJasa = $record->jasaItems->sum(fn($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
 
         return $totalProduk + $totalJasa;
     }

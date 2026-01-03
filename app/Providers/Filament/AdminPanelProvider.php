@@ -55,6 +55,21 @@ class AdminPanelProvider extends PanelProvider
                 AppDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->widgets([
+                \App\Filament\Widgets\OpenWeatherWidget::class,
+                \App\Filament\Widgets\WelcomeWeatherWidget::class,
+                \App\Filament\Widgets\AbsensiWidget::class,
+                \App\Filament\Widgets\ActiveMembersTable::class,
+                \App\Filament\Widgets\JadwalKalenderWidget::class,
+                \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
+                \App\Filament\Widgets\LowStockProductsTable::class,
+                \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
+                // \App\Filament\Widgets\PosSalesStatsOverview::class,
+                \App\Filament\Widgets\RecentPosTransactionsTable::class,
+                \App\Filament\Widgets\ServiceWidget::class,
+                \App\Filament\Widgets\TopSellingProductsTable::class,
+                \App\Filament\Widgets\TugasWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

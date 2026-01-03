@@ -12,16 +12,18 @@ use App\Models\PembelianItem;
 use Filament\Infolists\Infolist;
 use App\Filament\Resources\BaseResource;
 use Filament\Actions\StaticAction;
+use Illuminate\Support\HtmlString;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
+use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\HtmlString;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+use App\Filament\Exports\InventoryOpnameExporter;
 use App\Filament\Resources\InventoryResource\Pages;
 use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
@@ -72,7 +74,7 @@ class InventoryResource extends BaseResource
                         TextColumn::make('nama_produk')
                             ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->label('Produk')
-                            ->formatStateUsing(fn($state) => strtoupper($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->weight('bold')
                             ->size(TextColumnSize::Large)
@@ -155,12 +157,12 @@ class InventoryResource extends BaseResource
             ->headerActions([
                 FilamentExportHeaderAction::make('export_inventory_pdf')
                     ->label('Download')
-                    ->button()
                     ->icon('heroicon-m-arrow-down-tray')
-                    ->color('primary')
-                    ->fileName('stok-opname')
+                    ->color('success')
+                    ->fileName('Stok Opname ' . '_' . date('d M Y'))
                     ->defaultFormat('pdf')
                     ->disableTableColumns()
+                    ->modalHeading(false)
                     ->withColumns([
                         TextColumn::make('sku')
                             ->label('SKU'),
@@ -174,10 +176,10 @@ class InventoryResource extends BaseResource
                             ->label('Stok Sistem')
                             ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0)),
                         TextColumn::make('latest_batch.hpp')
-                            ->label('HPP')
+                            ->label('HPP Terkini')
                             ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null),
                         TextColumn::make('latest_batch.harga_jual')
-                            ->label('Harga Jual')
+                            ->label('Harga Jual Terkini')
                             ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null),
                         TextColumn::make('stok_opname')
                             ->label('Stok Opname')
@@ -187,10 +189,15 @@ class InventoryResource extends BaseResource
                             ->state(fn() => null),
                     ])
                     ->extraViewData([
-                        'title' => 'Stok Opname Inventory',
-                        'subtitle' => 'Haen Komputer • Dicetak: ' . now()->format('d M Y'),
+                        'title' => 'Haen Komputer',
+                        'subtitle' => 'Laporan Stok Opname',
+                        'printed_by' => Auth::user()?->name ?? '-',
+                        'printed_at' => now()->format('d M Y H:i'),
                         'sort_key' => 'kategori.nama_kategori',
-                    ]),
+                        'group_by' => 'kategori.nama_kategori',
+                        'group_label' => 'Kategori',
+                    ])
+
             ])
             ->actions([
                 ActionGroup::make([

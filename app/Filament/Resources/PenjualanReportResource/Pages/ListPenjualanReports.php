@@ -10,15 +10,4 @@ use Filament\Actions\ExportAction;
 class ListPenjualanReports extends ListRecords
 {
     protected static string $resource = PenjualanReportResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ExportAction::make()
-                ->label('Download')
-                ->color('success')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->exporter(PenjualanExporter::class),
-        ];
-    }
 }

@@ -7,9 +7,11 @@ use App\Models\Member;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
@@ -31,6 +33,10 @@ use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Support\Enums\FontWeight;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use App\Support\WebpUpload;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Province;
 
 class MemberResource extends BaseResource
 {
@@ -49,12 +55,12 @@ class MemberResource extends BaseResource
         return $form
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA) ===
                 Group::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Data Diri
                         Section::make('Informasi Personal')
                             ->description('Data diri lengkap member.')
@@ -62,6 +68,7 @@ class MemberResource extends BaseResource
                             ->schema([
                                 TextInput::make('nama_member')
                                     ->label('Nama Lengkap')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->required()
                                     ->placeholder('Masukan nama lengkap')
                                     ->columnSpanFull(), // Agar nama terlihat dominan
@@ -74,7 +81,7 @@ class MemberResource extends BaseResource
                                             ->required()
                                             ->unique(ignoreRecord: true)
                                             ->placeholder('08xxxxxxxxxx'),
-                                        
+
                                         TextInput::make('email')
                                             ->label('Alamat Email')
                                             ->email()
@@ -89,18 +96,76 @@ class MemberResource extends BaseResource
                             ->schema([
                                 Textarea::make('alamat') // Ganti textinput jadi textarea agar muat banyak
                                     ->label('Alamat Lengkap')
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->rows(3)
                                     ->placeholder('Nama jalan, nomor rumah, RT/RW...')
                                     ->columnSpanFull(),
 
                                 Grid::make(3) // Grid 3 untuk wilayah
                                     ->schema([
-                                        TextInput::make('provinsi')
-                                            ->label('Provinsi'),
-                                        TextInput::make('kota')
-                                            ->label('Kota/Kabupaten'),
-                                        TextInput::make('kecamatan')
-                                            ->label('Kecamatan'),
+                                        Select::make('provinsi')
+                                            ->label('Provinsi')
+                                            ->searchable()
+                                            ->options(fn() => Province::query()
+                                                ->orderBy('name')
+                                                ->pluck('name', 'name')
+                                                ->all())
+                                            ->live()
+                                            ->afterStateUpdated(function (callable $set): void {
+                                                $set('kota', null);
+                                                $set('kecamatan', null);
+                                            })
+                                            ->placeholder('Pilih provinsi'),
+                                        Select::make('kota')
+                                            ->label('Kota/Kabupaten')
+                                            ->searchable()
+                                            ->options(function (Get $get): array {
+                                                $provinceName = $get('provinsi');
+                                                if (!$provinceName) {
+                                                    return [];
+                                                }
+
+                                                $provinceCode = Province::query()
+                                                    ->where('name', $provinceName)
+                                                    ->value('code');
+
+                                                if (!$provinceCode) {
+                                                    return [];
+                                                }
+
+                                                return City::query()
+                                                    ->where('province_code', $provinceCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->live()
+                                            ->afterStateUpdated(fn($set) => $set('kecamatan', null))
+                                            ->placeholder('Pilih kota/kabupaten'),
+                                        Select::make('kecamatan')
+                                            ->label('Kecamatan')
+                                            ->searchable()
+                                            ->options(function (Get $get): array {
+                                                $cityName = $get('kota');
+                                                if (!$cityName) {
+                                                    return [];
+                                                }
+
+                                                $cityCode = City::query()
+                                                    ->where('name', $cityName)
+                                                    ->value('code');
+
+                                                if (!$cityCode) {
+                                                    return [];
+                                                }
+
+                                                return District::query()
+                                                    ->where('city_code', $cityCode)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'name')
+                                                    ->all();
+                                            })
+                                            ->placeholder('Pilih kecamatan'),
                                     ]),
                             ]),
                     ]),
@@ -109,7 +174,7 @@ class MemberResource extends BaseResource
                 Group::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Foto Profil
                         Section::make('Foto Profil')
                             ->icon('heroicon-m-camera')
@@ -128,6 +193,7 @@ class MemberResource extends BaseResource
                                         $extension = $file->getClientOriginalExtension();
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames(),
                             ]),
                     ]),
@@ -149,7 +215,7 @@ class MemberResource extends BaseResource
                         InfolistSection::make('Identitas Member')
                             ->icon('heroicon-m-user-circle')
                             ->schema([
-                                
+
                                 // Baris 1: Nama Besar
                                 TextEntry::make('nama_member')
                                     ->label('Nama Lengkap')
@@ -164,14 +230,14 @@ class MemberResource extends BaseResource
                                             ->label('Email')
                                             ->icon('heroicon-m-envelope')
                                             ->copyable() // Fitur copy
-                                            ->url(fn ($record) => "mailto:{$record->email}") // Klik untuk kirim email
+                                            ->url(fn($record) => "mailto:{$record->email}") // Klik untuk kirim email
                                             ->color('info')
                                             ->placeholder('-'),
 
                                         TextEntry::make('no_hp')
                                             ->label('WhatsApp / Telepon')
                                             ->icon('heroicon-m-device-phone-mobile')
-                                            ->url(fn ($record) => "tel:{$record->no_hp}") // Klik untuk telepon
+                                            ->url(fn($record) => "tel:{$record->no_hp}") // Klik untuk telepon
                                             ->color('success'),
                                     ]),
                             ]),
@@ -186,12 +252,12 @@ class MemberResource extends BaseResource
                                     ->columnSpanFull(),
 
                                 // Grid untuk detail wilayah agar rapi sejajar
-                                InfolistGrid::make(3) 
+                                InfolistGrid::make(3)
                                     ->schema([
                                         TextEntry::make('provinsi')
                                             ->label('Provinsi')
                                             ->icon('heroicon-m-map'),
-                                            
+
                                         TextEntry::make('kota')
                                             ->label('Kota/Kab')
                                             ->icon('heroicon-m-building-office-2'),
@@ -252,6 +318,7 @@ class MemberResource extends BaseResource
                 //
                 TextColumn::make('nama_member')
                     ->label('Nama Member')
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('no_hp')

@@ -2,32 +2,37 @@
 
 namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\MasterData\SupplierResource\Pages;
-// use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
-use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRelationManager;
-use App\Models\Supplier;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Split;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Tabs\Tab;
-use App\Filament\Resources\BaseResource;
+// use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
 use Filament\Tables;
+use Filament\Forms\Get;
+use App\Models\Supplier;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Tabs;
+use Laravolt\Indonesia\Models\City;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Split;
 // use Illuminate\Database\Eloquent\Builder;
 // use Illuminate\Database\Eloquent\SoftDeletingScope;
 // use Dom\Text;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\Section;
 // use Ramsey\Uuid\Type\Time;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Tables\Columns\TextColumn;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Province;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use App\Filament\Resources\MasterData\SupplierResource\Pages;
+use Filament\Infolists\Components\Section as InfolistSection;
+use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRelationManager;
 
 class SupplierResource extends BaseResource
 {
@@ -46,14 +51,15 @@ class SupplierResource extends BaseResource
         return $form
             ->columns(3) // Grid utama 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA & ALAMAT) ===
                 Group::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Profil Supplier
                         Section::make('Profil Perusahaan')
+                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                             ->description('Identitas utama supplier.')
                             ->icon('heroicon-m-building-storefront')
                             ->schema([
@@ -68,6 +74,7 @@ class SupplierResource extends BaseResource
                         // Section 2: Alamat (Kita buat lebar agar leluasa)
                         Section::make('Alamat Lengkap')
                             ->icon('heroicon-m-map')
+                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                             ->schema([
                                 Forms\Components\Textarea::make('alamat')
                                     ->label('Jalan / Gedung')
@@ -81,7 +88,7 @@ class SupplierResource extends BaseResource
                 Group::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Kontak (Sidebar atas - High Priority)
                         Section::make('Kontak Person')
                             ->icon('heroicon-m-phone')
@@ -102,18 +109,73 @@ class SupplierResource extends BaseResource
 
                         // Section 4: Detail Wilayah
                         Section::make('Area Wilayah')
+                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                             ->schema([
-                                Forms\Components\TextInput::make('provinsi')
+                                Forms\Components\Select::make('provinsi')
                                     ->label('Provinsi')
-                                    ->placeholder('Jawa Barat'),
-                                    
-                                Forms\Components\TextInput::make('kota')
-                                    ->label('Kota / Kabupaten')
-                                    ->placeholder('Bandung'),
-                                    
-                                Forms\Components\TextInput::make('kecamatan')
+                                    ->searchable()
+                                    ->options(fn() => Province::query()
+                                        ->orderBy('name')
+                                        ->pluck('name', 'name')
+                                        ->all())
+                                    ->live()
+                                    ->afterStateUpdated(function (callable $set): void {
+                                        $set('kota', null);
+                                        $set('kecamatan', null);
+                                    })
+                                    ->placeholder('Pilih provinsi'),
+                                Forms\Components\Select::make('kota')
+                                    ->label('Kota/Kabupaten')
+                                    ->searchable()
+                                    ->options(function (Get $get): array {
+                                        $provinceName = $get('provinsi');
+                                        if (!$provinceName) {
+                                            return [];
+                                        }
+
+                                        $provinceCode = Province::query()
+                                            ->where('name', $provinceName)
+                                            ->value('code');
+
+                                        if (!$provinceCode) {
+                                            return [];
+                                        }
+
+                                        return City::query()
+                                            ->where('province_code', $provinceCode)
+                                            ->orderBy('name')
+                                            ->pluck('name', 'name')
+                                            ->all();
+                                    })
+                                    ->live()
+                                    ->afterStateUpdated(fn($set) => $set('kecamatan', null))
+                                    ->placeholder('Pilih kota/kabupaten'),
+
+
+                                Forms\Components\Select::make('kecamatan')
                                     ->label('Kecamatan')
-                                    ->placeholder('Cicendo'),
+                                    ->searchable()
+                                    ->options(function (Get $get): array {
+                                        $cityName = $get('kota');
+                                        if (!$cityName) {
+                                            return [];
+                                        }
+
+                                        $cityCode = City::query()
+                                            ->where('name', $cityName)
+                                            ->value('code');
+
+                                        if (!$cityCode) {
+                                            return [];
+                                        }
+
+                                        return District::query()
+                                            ->where('city_code', $cityCode)
+                                            ->orderBy('name')
+                                            ->pluck('name', 'name')
+                                            ->all();
+                                    })
+                                    ->placeholder('Pilih kecamatan'),
                             ]),
                     ]),
             ]);
@@ -124,12 +186,12 @@ class SupplierResource extends BaseResource
         return $infolist
             ->columns(3) // Layout grid 3 kolom
             ->schema([
-                
+
                 // === KOLOM KIRI (DATA UTAMA) ===
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
-                        
+
                         // Section 1: Header Profil
                         InfolistSection::make('Profil Supplier')
                             ->icon('heroicon-m-building-storefront')
@@ -158,7 +220,7 @@ class SupplierResource extends BaseResource
                                             ->label('Terdaftar Sejak')
                                             ->dateTime('d F Y')
                                             ->icon('heroicon-m-calendar'),
-                                            
+
                                         TextEntry::make('updated_at')
                                             ->label('Terakhir Update')
                                             ->dateTime('d F Y H:i')
@@ -172,7 +234,7 @@ class SupplierResource extends BaseResource
                 InfolistGroup::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-                        
+
                         // Section 3: Kontak (Actionable)
                         InfolistSection::make('Hubungi Kami')
                             ->icon('heroicon-m-phone')
@@ -182,14 +244,14 @@ class SupplierResource extends BaseResource
                                     ->icon('heroicon-m-device-phone-mobile')
                                     ->copyable() // Fitur copy nomor
                                     ->copyMessage('Nomor HP disalin')
-                                    ->url(fn ($record) => "tel:{$record->no_hp}") // Klik untuk menelepon
+                                    ->url(fn($record) => "tel:{$record->no_hp}") // Klik untuk menelepon
                                     ->color('success'),
 
                                 TextEntry::make('email')
                                     ->label('Email Kantor')
                                     ->icon('heroicon-m-envelope')
                                     ->copyable()
-                                    ->url(fn ($record) => "mailto:{$record->email}") // Klik untuk email
+                                    ->url(fn($record) => "mailto:{$record->email}") // Klik untuk email
                                     ->color('info'),
                             ]),
 

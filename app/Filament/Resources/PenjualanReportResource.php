@@ -2,20 +2,19 @@
 
 namespace App\Filament\Resources;
 
-// use App\Filament\Exports\PenjualanExporter;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
 use App\Models\Penjualan;
 use Filament\Tables\Table;
-use App\Filament\Resources\BaseResource;
-// use Filament\Tables\Actions\ExportAction;
+use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PenjualanReportResource\Pages;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 
-class PenjualanReportResource extends BaseResource
+class PenjualanReportResource extends Resource
 {
     protected static ?string $model = Penjualan::class;
 
@@ -46,32 +45,46 @@ class PenjualanReportResource extends BaseResource
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
+                    ->icon('heroicon-m-receipt-percent')
+                    ->weight('bold')
+                    ->color('primary')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal_penjualan')
                     ->label('Tanggal')
                     ->date('d M Y')
+                    ->icon('heroicon-m-calendar')
+                    ->color('gray')
                     ->sortable(),
                 TextColumn::make('member.nama_member')
                     ->label('Member')
+                    ->icon('heroicon-m-user-group')
+                    ->weight('medium')
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
+                    ->icon('heroicon-m-user')
+                    ->color('secondary')
                     ->toggleable(),
                 TextColumn::make('total_qty')
                     ->label('Total Qty')
+                    ->badge()
+                    ->color('info')
                     ->state(fn(Penjualan $record) => $record->items->sum('qty')) //menghitung total qty dari relasi items
                     ->sortable(),
                 TextColumn::make('total_jasa')
                     ->label('Total Jasa')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
                         self::calculateServiceTotal($record)
                     ))
+                    ->color('warning')
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('total_penjualan')
                     ->label('Total Penjualan')
+                    ->weight('bold')
+                    ->color('success')
                     ->state(fn(Penjualan $record) => self::formatCurrency(
                         self::calculateProductTotal($record) + self::calculateServiceTotal($record)
                     )) // format currency
@@ -81,16 +94,20 @@ class PenjualanReportResource extends BaseResource
                     ->state(fn(Penjualan $record) => self::formatCurrency(
                         self::calculateHppTotal($record)
                     )) // format currency
+                    ->color('danger')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 TextColumn::make('total_margin')
                     ->label('Margin')
                     ->state(fn(Penjualan $record) => self::formatCurrency(
                         (self::calculateProductTotal($record) - self::calculateHppTotal($record)) + self::calculateServiceTotal($record)
                     )) // format currency
+                    ->color('success')
+                    ->weight('bold')
                     ->sortable(),
             ])
             ->filters([
-                                 Tables\Filters\Filter::make('periode')
+                Tables\Filters\Filter::make('periode')
                     ->label('Periode')
                     ->form([
                         DatePicker::make('from')
@@ -116,12 +133,20 @@ class PenjualanReportResource extends BaseResource
                     ->native(false)
                     ->placeholder('Semua'),
             ])
-            // ->headerActions([
-            //     ExportAction::make('export_penjualan')
-            //         ->label('Download CSV')
-            //         ->color('primary')
-            //         ->exporter(PenjualanExporter::class),
-            // ])
+            ->headerActions([
+                FilamentExportHeaderAction::make('export')
+                    ->label('Download')
+                    ->defaultFormat('pdf')
+                    ->filename('Laporan Penjualan' . '_' . date('d M Y'))
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('success')
+                    ->modalHeading(false)
+                    ->extraViewData([
+                        'title' => 'Haen Komputer',
+                        'subtitle' => 'Laporan Penjualan',
+                        'tanggal' => now()->format('d-m-Y'),
+                    ])
+            ])
             ->actions([])
             ->bulkActions([]);
     }

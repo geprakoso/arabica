@@ -16,6 +16,7 @@ use App\Filament\Resources\BaseResource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Textarea;
@@ -34,6 +35,9 @@ use Filament\Infolists\Components\Split;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Forms\Components\Section;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
+use App\Support\WebpUpload;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
@@ -121,12 +125,34 @@ class AbsensiResource extends BaseResource
                                     TakePicture::make('camera_test')
                                         ->hiddenLabel() // Label moved to section
                                         ->disk('public')
+                                        ->imageEditor()
+                                        ->imageQuality(80)
                                         ->directory('uploads/absensi')
                                         ->visibility('public')
                                         ->useModal(true)
                                         ->showCameraSelector(true)
                                         ->aspect('4:3')
                                         ->imageQuality(80)
+                                        ->dehydrateStateUsing(function (?string $state, $get, $set, TakePicture $component): mixed {
+                                            if (! $state || ! Str::startsWith($state, 'data:image/')) {
+                                                return $state;
+                                            }
+
+                                            $path = WebpUpload::storeBase64(
+                                                $state,
+                                                $component->getDisk(),
+                                                $component->getDirectory(),
+                                                $component->getVisibility(),
+                                                $component->getImageQuality()
+                                            );
+
+                                            if ($component->getTargetField() && $component->getTargetField() !== $component->getName()) {
+                                                $set($component->getTargetField(), $path);
+                                                return null;
+                                            }
+
+                                            return $path;
+                                        })
                                         ->shouldDeleteOnEdit(false)
                                         ->required(fn(Get $get) => $get('status') === 'hadir') // Wajib jika Hadir
                                         ->columnSpanFull(),
