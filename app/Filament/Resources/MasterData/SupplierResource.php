@@ -7,10 +7,11 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Get;
 use App\Models\Supplier;
-use Filament\Forms\Form;
+// use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Filament\Infolists\Infolist;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Tabs;
@@ -25,6 +26,7 @@ use Filament\Forms\Components\Section;
 use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Laravolt\Indonesia\Models\District;
 use Laravolt\Indonesia\Models\Province;
 use Filament\Infolists\Components\TextEntry;
@@ -34,7 +36,7 @@ use App\Filament\Resources\MasterData\SupplierResource\Pages;
 use Filament\Infolists\Components\Section as InfolistSection;
 use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRelationManager;
 
-class SupplierResource extends BaseResource
+class SupplierResource extends Resource
 {
     protected static ?string $model = Supplier::class;
 
@@ -199,7 +201,7 @@ class SupplierResource extends BaseResource
                                 TextEntry::make('nama_supplier')
                                     ->label('Nama Perusahaan')
                                     ->weight(FontWeight::Bold) // Font tebal
-                                    ->size(TextEntry\TextEntrySize::Large) // Ukuran besar
+                                    ->size(TextEntrySize::Large) // Ukuran besar
                                     ->icon('heroicon-m-check-badge') // Icon verifikasi visual
                                     ->color('primary')
                                     ->columnSpanFull(),

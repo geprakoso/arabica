@@ -35,7 +35,6 @@ use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Grid;
 use Filament\Support\Enums\FontFamily;
 use Filament\Support\Enums\FontWeight;
-use App\Filament\Exports\InventoryOpnameExporter;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 
 class InventoryResource extends BaseResource
