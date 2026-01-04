@@ -19,6 +19,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
@@ -191,7 +192,7 @@ class MemberResource extends Resource
                                         $extension = $file->getClientOriginalExtension();
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
-                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                                    ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames(),
                             ]),
                     ]),
@@ -254,15 +255,21 @@ class MemberResource extends Resource
                                     ->schema([
                                         TextEntry::make('provinsi')
                                             ->label('Provinsi')
-                                            ->icon('heroicon-m-map'),
+                                            ->icon('heroicon-m-map')
+                                            ->badge()
+                                            ->color('gray'),
 
                                         TextEntry::make('kota')
                                             ->label('Kota/Kab')
-                                            ->icon('heroicon-m-building-office-2'),
+                                            ->icon('heroicon-m-building-office-2')
+                                            ->badge()
+                                            ->color('gray'),
 
                                         TextEntry::make('kecamatan')
                                             ->label('Kecamatan')
-                                            ->icon('heroicon-m-building-library'),
+                                            ->icon('heroicon-m-building-library')
+                                            ->badge()
+                                            ->color('gray'),
                                     ]),
                             ]),
                     ]),
@@ -285,7 +292,7 @@ class MemberResource extends Resource
                                         'class' => 'mx-auto shadow-lg border-4 border-white', // Styling tambahan (Tailwind)
                                         'alt' => 'Foto Member',
                                     ])
-                                    ->defaultImageUrl(url('/images/placeholder-avatar.png')), // Opsional: Placeholder
+                                    ->defaultImageUrl(url('/images/icons/icon-512x512.png')), // Default PWA icon
                             ]),
 
                         // Section 4: Metadata Sistem
@@ -313,16 +320,26 @@ class MemberResource extends Resource
     {
         return $table
             ->columns([
-                //
                 TextColumn::make('nama_member')
-                    ->label('Nama Member')
+                    ->label('Member')
                     ->formatStateUsing(fn($state) => Str::title($state))
+                    ->description(fn(Member $record) => $record->email ?: $record->no_hp)
+                    ->icon('heroicon-m-user')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('no_hp')
-                    ->label('No. HP')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-m-device-phone-mobile')
+                    ->copyable()
+                    ->color('success')
+                    ->url(fn(Member $record) => $record->no_hp ? 'https://wa.me/' . $record->no_hp : null, true)
                     ->searchable()
-                    ->sortable(),
+                    ->toggleable(),
+                TextColumn::make('kota')
+                    ->label('Kota/Kab')
+                    ->badge()
+                    ->color('gray')
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
                     ->dateTime('d M Y')

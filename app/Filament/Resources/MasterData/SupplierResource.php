@@ -266,11 +266,15 @@ class SupplierResource extends Resource
 
                                 TextEntry::make('kota')
                                     ->label('Kota / Kab')
-                                    ->icon('heroicon-m-building-office'),
+                                    ->icon('heroicon-m-building-office')
+                                    ->badge()
+                                    ->color('gray'),
 
                                 TextEntry::make('kecamatan')
                                     ->label('Kecamatan')
-                                    ->icon('heroicon-m-map'),
+                                    ->icon('heroicon-m-map')
+                                    ->badge()
+                                    ->color('gray'),
                             ]),
                     ]),
             ]);
@@ -282,13 +286,25 @@ class SupplierResource extends Resource
             ->columns([
                 //
                 TextColumn::make('nama_supplier')
-                    ->label('Nama Supplier')
+                    ->label('Supplier')
+                    ->icon('heroicon-m-building-storefront')
+                    ->description(fn(Supplier $record) => $record->email ?: $record->no_hp)
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('no_hp')
-                    ->label('No. HP')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-m-device-phone-mobile')
+                    ->copyable()
+                    ->color('success')
+                    ->url(fn(Supplier $record) => $record->no_hp ? 'https://wa.me/' . $record->no_hp : null, true)
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
+                TextColumn::make('kota')
+                    ->label('Kota/Kab')
+                    ->badge()
+                    ->color('gray')
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
                     ->dateTime('d M Y')
