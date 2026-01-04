@@ -8,6 +8,7 @@ use Carbon\CarbonPeriod;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedChartWidget;
 use Illuminate\Support\Facades\DB;
+use Filament\Facades\Filament;
 
 class MonthlyRevenueTrendChart extends AdvancedChartWidget
 {
@@ -27,7 +28,12 @@ class MonthlyRevenueTrendChart extends AdvancedChartWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
+    
     protected function getType(): string
     {
         return 'line';

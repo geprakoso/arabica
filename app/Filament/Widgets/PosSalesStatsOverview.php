@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use EightyNine\FilamentAdvancedWidget\AdvancedStatsOverviewWidget;
 use EightyNine\FilamentAdvancedWidget\AdvancedStatsOverviewWidget\Stat;
+use Filament\Facades\Filament;
 use Illuminate\Support\Collection;
 
 class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
@@ -17,6 +18,11 @@ class PosSalesStatsOverview extends AdvancedStatsOverviewWidget
     protected static ?int $sort = 2;
     protected static ?string $pollingInterval = null;
 
+
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
     protected function getStats(): array
     {
         [$currentStart, $currentEnd] = $this->currentMonthRange();

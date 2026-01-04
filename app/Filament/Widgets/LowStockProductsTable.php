@@ -10,12 +10,18 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Filament\Facades\Filament;
 
 class LowStockProductsTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
     protected static ?string $pollingInterval = null;
     protected static ?int $sort = 6;
+
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
     public function table(Table $table): Table
     {

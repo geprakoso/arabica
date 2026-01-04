@@ -9,18 +9,17 @@ class CreatePenjadwalanTugas extends CreateRecord
 {
     protected static string $resource = PenjadwalanTugasResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            $this->getCreateFormAction(),
-            $this->getCreateAnotherFormAction(),
-            $this->getCancelFormAction(),
-        ];
-    }
+    // protected function getHeaderActions(): array
+    // {
+    //     return [
+    //         $this->getCreateFormAction(),
+    //         $this->getCreateAnotherFormAction(),
+    //         $this->getCancelFormAction(),
+    //     ];
+    // }
 
-    protected function getFormActions(): array
-    {
-        // Pindahkan tombol ke header agar footer lebih bersih.
-        return [];
-    }
+    // protected function getFormActions(): array
+    // {
+    //     return [];php 
+    // }
 }
