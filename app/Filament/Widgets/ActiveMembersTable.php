@@ -11,19 +11,18 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use App\Filament\Resources\MasterData\MemberResource;
+use Filament\Facades\Filament;
 
 class ActiveMembersTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
     protected static ?string $pollingInterval = null;
     protected static ?int $sort = 4;
-    protected ?string $placeholderHeight = '16rem';
 
-    protected static ?string $icon = 'hugeicons-ai-user';
-    protected static ?string $heading = 'Member Aktif';
-    protected static ?string $iconColor = 'primary';
-    protected static ?string $description = 'Daftar member yang paling aktif belanja bulan ini.';
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
     public function table(Table $table): Table
     {

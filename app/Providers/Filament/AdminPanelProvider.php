@@ -36,6 +36,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->registration()
+            ->brandName('Haen Komputer')
+            // ->brandLogoUrl('/images/logo.png')
             // ->topbar()
             // ->topNavigation()
             ->sidebarCollapsibleOnDesktop()
@@ -346,7 +348,7 @@ class AdminPanelProvider extends PanelProvider
                         /* Utilities & Scrollbar */
                         .fi-sidebar-group { border-top: none !important; }
                         .gap-y-1 { row-gap: 1px !important; }
-                        .gap-y-2 { row-gap: 2px !important; }
+                        .gap-y-2 { row-gap: 2px !important; } 
                         
                         .fi-sidebar-nav {
                             scrollbar-width: thin;

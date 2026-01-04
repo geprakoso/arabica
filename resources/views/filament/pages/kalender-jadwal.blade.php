@@ -3,14 +3,6 @@
         {{ $this->form }}
     </x-filament::section>
 
-    {{-- <x-filament::section>
-        <div class="space-y-2 text-sm text-gray-600">
-            <div class="font-semibold text-gray-700">Cara Pakai</div>
-            <div>Klik event untuk lihat detail.</div>
-            <div>Drag di kalender untuk membuat tugas/event.</div>
-            <div>Gunakan tombol “Buat Tugas” atau “Buat Event” di header kalender.</div>
-        </div>
-    </x-filament::section> --}}
 
     <style>
         .ec {

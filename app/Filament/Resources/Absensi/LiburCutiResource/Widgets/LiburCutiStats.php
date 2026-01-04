@@ -64,6 +64,7 @@ class LiburCutiStats extends StatsOverviewWidget
     private function countApproved(User $user, Keperluan $keperluan, int $year): int
     {
         return $this->baseApprovedQuery($user, $keperluan)
+            ->where('user_id', $user->id)
             ->whereYear('mulai_tanggal', $year)
             ->count();
     }
@@ -78,10 +79,7 @@ class LiburCutiStats extends StatsOverviewWidget
         return LiburCuti::query()
             ->where('status_pengajuan', StatusPengajuan::Diterima)
             ->whereDate('mulai_tanggal', '>=', now()->startOfDay())
-            ->when(
-                $user->hasRole('karyawan'),
-                fn(Builder $query) => $query->where('user_id', $user->id),
-            )
+            ->where('user_id', $user->id)
             ->orderBy('mulai_tanggal')
             ->first();
     }
