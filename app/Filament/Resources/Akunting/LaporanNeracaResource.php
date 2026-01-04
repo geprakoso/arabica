@@ -207,7 +207,7 @@ class LaporanNeracaResource extends BaseResource
             ->whereRaw("{$transaksiTable}.tanggal_transaksi <= LAST_DAY({$reportTable}.month_start)");
     }
 
-    protected static function neracaViewData($record): array
+    public static function neracaViewData($record): array
     {
         $monthStart = $record?->month_start;
         $asOf = $monthStart ? Carbon::parse($monthStart)->endOfMonth() : now()->endOfMonth();

@@ -1,37 +1,58 @@
 <?php
 
-namespace App\Filament\Resources\Akunting\LaporanNeracaResource\Pages;
+namespace App\Filament\Pages;
 
 use App\Filament\Resources\Akunting\LaporanNeracaResource;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Form;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
+use Filament\Pages\Page;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Carbon;
+use Spatie\SimpleExcel\SimpleExcelWriter;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Illuminate\Contracts\View\View;
 
-class ViewLaporanNeraca extends ViewRecord
+class NeracaCustom extends Page
 {
-    protected static string $resource = LaporanNeracaResource::class;
+    use HasPageShield;
 
-    public function getTitle(): string
+    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $title = 'Laporan Neraca';
+    protected static string $view = 'filament.pages.neraca-custom';
+    protected static ?string $navigationGroup = 'Reports';
+
+    public ?array $data = [];
+
+    public function mount(): void
     {
-        $monthLabel = LaporanNeracaResource::formatMonthLabel($this->getRecord()?->month_start);
+        $this->form->fill([
+            'as_of_date' => now()->endOfMonth()->toDateString(),
+        ]);
+    }
 
-        if ($monthLabel === '-') {
-            return 'Laporan Neraca';
-        }
-
-        return "Laporan Neraca {$monthLabel}";
+    protected function getForms(): array
+    {
+        return [
+            'form',
+            'filtersForm',
+        ];
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\ActionGroup::make([
-                \Filament\Actions\Action::make('exportCsv')
+            ActionGroup::make([
+                Action::make('exportCsv')
                     ->label('Export CSV')
                     ->action(fn () => $this->exportCsv()),
-                \Filament\Actions\Action::make('exportXlsx')
+                Action::make('exportXlsx')
                     ->label('Export Excel')
                     ->action(fn () => $this->exportXlsx()),
-                \Filament\Actions\Action::make('exportPdf')
+                Action::make('exportPdf')
                     ->label('Export PDF')
                     ->action(fn () => $this->exportPdf()),
             ])
@@ -39,6 +60,77 @@ class ViewLaporanNeraca extends ViewRecord
                 ->icon('hugeicons-share-08')
                 ->button(),
         ];
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            LaporanNeracaResource::getUrl('index')
+                => LaporanNeracaResource::getBreadcrumb(),
+            'Detail',
+        ];
+    }
+
+    public function getHeader(): ?View
+    {
+        return view('filament.pages.partials.neraca-custom-header', [
+            'heading' => $this->getHeading(),
+            'subheading' => $this->getSubheading(),
+            'breadcrumbs' => filament()->hasBreadcrumbs() ? $this->getBreadcrumbs() : [],
+            'actions' => $this->getCachedHeaderActions(),
+        ]);
+    }
+
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                DatePicker::make('as_of_date')
+                    ->label('')
+                    ->closeOnDateSelection()
+                    ->native(false)
+                    ->hidden()
+                    ->live(),
+            ])
+            ->statePath('data');
+    }
+
+    public function filtersForm(Form $form): Form
+    {
+        return $form
+            ->schema([
+                DatePicker::make('as_of_date')
+                    ->label('Per Tanggal')
+                    ->native(false)
+                    ->live(),
+            ])
+            ->statePath('data');
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(1)
+            ->schema([
+                ViewEntry::make('neraca_table')
+                    ->label('')
+                    ->view('filament.infolists.neraca-custom-table')
+                    ->state(fn () => $this->reportData())
+                    ->extraEntryWrapperAttributes(['class' => 'w-full max-w-none'])
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    protected function reportData(): array
+    {
+        $asOf = $this->getAsOfDate();
+        
+        // Create a fake record with the as_of date
+        $fakeRecord = (object) [
+            'month_start' => $asOf->startOfMonth()->toDateString(),
+        ];
+
+        return LaporanNeracaResource::neracaViewData($fakeRecord);
     }
 
     protected function exportCsv()
@@ -67,7 +159,7 @@ class ViewLaporanNeraca extends ViewRecord
 
         $path = sys_get_temp_dir() . '/neraca-' . uniqid('', true) . '.xlsx';
 
-        \Spatie\SimpleExcel\SimpleExcelWriter::create($path)
+        SimpleExcelWriter::create($path)
             ->addRows($rows)
             ->close();
 
@@ -81,9 +173,10 @@ class ViewLaporanNeraca extends ViewRecord
     protected function exportPdf()
     {
         $fileName = $this->exportFileName('pdf');
-        $data = LaporanNeracaResource::neracaViewData($this->getRecord());
+        $data = $this->reportData();
+        $data['header_title'] = 'Laporan Neraca';
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.neraca-pdf', [
+        $pdf = Pdf::loadView('exports.neraca-custom-pdf', [
             'data' => $data,
         ])->setPaper('a4', 'portrait');
 
@@ -96,7 +189,7 @@ class ViewLaporanNeraca extends ViewRecord
 
     protected function buildExportRows(): array
     {
-        $data = LaporanNeracaResource::neracaViewData($this->getRecord());
+        $data = $this->reportData();
         $rows = [];
 
         // Aset Lancar
@@ -182,16 +275,15 @@ class ViewLaporanNeraca extends ViewRecord
 
     protected function exportFileName(string $extension): string
     {
-        $record = $this->getRecord();
-        $monthStart = $record?->month_start;
-        $date = $monthStart ? \Carbon\Carbon::parse($monthStart) : now();
-        $periode = $date->format('Y-m');
+        $date = $this->getAsOfDate();
+        $dateLabel = $date->format('Ymd');
 
-        return "neraca-{$periode}.{$extension}";
+        return "neraca-{$dateLabel}.{$extension}";
     }
 
-    // public function getMaxContentWidth(): MaxWidth
-    // {
-    //     return MaxWidth::Full;
-    // }
+    protected function getAsOfDate(): Carbon
+    {
+        $asOfInput = $this->data['as_of_date'] ?? null;
+        return filled($asOfInput) ? Carbon::parse($asOfInput)->endOfDay() : now()->endOfMonth();
+    }
 }
