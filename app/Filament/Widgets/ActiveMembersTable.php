@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use App\Filament\Resources\MasterData\MemberResource;
 use Filament\Facades\Filament;
 
 class ActiveMembersTable extends AdvancedTableWidget
@@ -53,9 +54,9 @@ class ActiveMembersTable extends AdvancedTableWidget
                     ->label(false)
                     ->icon(null)
                     ->slideOver()
-                    ->modalHeading(fn (Member $record) => $record->nama_member)
+                    ->modalHeading(fn(Member $record) => $record->nama_member)
                     ->modalWidth('6xl')
-                    ->infolist(fn (Infolist $infolist) => MemberResource::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => MemberResource::infolist($infolist)),
             ])
             ->paginated(false);
     }

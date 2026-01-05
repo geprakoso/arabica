@@ -10,6 +10,13 @@ class CreatePenjadwalanTugas extends CreateRecord
 {
     protected static string $resource = PenjadwalanTugasResource::class;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['created_by'] = $data['created_by'] ?? Filament::auth()->id();
+
+        return $data;
+    }
+
     // protected function getHeaderActions(): array
     // {
     //     return [
@@ -21,6 +28,7 @@ class CreatePenjadwalanTugas extends CreateRecord
 
     // protected function getFormActions(): array
     // {
-    //     return [];php 
+    //     // Pindahkan tombol ke header agar footer lebih bersih.
+    //     return [];
     // }
 }
