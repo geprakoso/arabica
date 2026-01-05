@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PosActivityResource;
 use Filament\Facades\Filament;
 
+
 class RecentPosTransactionsTable extends AdvancedTableWidget
 {
     use HasWidgetShield;
@@ -24,6 +25,11 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
     protected static ?string $heading = 'Transaksi Terbaru';
     protected static ?string $iconColor = 'primary';
     protected static ?string $description = 'Daftar transaksi terbaru pada sistem.';
+
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
     public function table(Table $table): Table
     {

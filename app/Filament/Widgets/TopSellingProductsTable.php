@@ -7,12 +7,16 @@ use App\Models\PenjualanItem;
 use App\Models\Produk;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use EightyNine\FilamentAdvancedWidget\AdvancedTableWidget;
+use Filament\Facades\Filament;
 use Filament\Tables;
 use Filament\Infolists\Infolist;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use App\Filament\Resources\InventoryResource;
+
+
+
 
 class TopSellingProductsTable extends AdvancedTableWidget
 {
@@ -25,6 +29,12 @@ class TopSellingProductsTable extends AdvancedTableWidget
     protected static ?string $heading = 'Produk Terlaris Bulan Ini';
     protected static ?string $iconColor = 'primary';
     protected static ?string $description = 'Daftar produk dengan penjualan tertinggi pada bulan berjalan.';
+
+
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
     public function table(Table $table): Table
     {

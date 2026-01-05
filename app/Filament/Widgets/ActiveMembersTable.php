@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use App\Filament\Resources\MasterData\MemberResource;
+use Filament\Facades\Filament;
 
 class ActiveMembersTable extends AdvancedTableWidget
 {
@@ -24,6 +25,11 @@ class ActiveMembersTable extends AdvancedTableWidget
     protected static ?string $heading = 'Member Aktif';
     protected static ?string $iconColor = 'primary';
     protected static ?string $description = 'Daftar member yang paling aktif belanja bulan ini.';
+
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
     public function table(Table $table): Table
     {
@@ -54,9 +60,9 @@ class ActiveMembersTable extends AdvancedTableWidget
                     ->label(false)
                     ->icon(null)
                     ->slideOver()
-                    ->modalHeading(fn (Member $record) => $record->nama_member)
+                    ->modalHeading(fn(Member $record) => $record->nama_member)
                     ->modalWidth('6xl')
-                    ->infolist(fn (Infolist $infolist) => MemberResource::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => MemberResource::infolist($infolist)),
             ])
             ->paginated(false);
     }

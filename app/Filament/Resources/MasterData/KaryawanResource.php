@@ -19,6 +19,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
@@ -424,8 +425,9 @@ class KaryawanResource extends BaseResource
                                         TextEntry::make('telepon')
                                             ->label('Kontak')
                                             ->icon('heroicon-m-device-phone-mobile')
-                                            ->url(fn($record) => "tel:{$record->telepon}")
-                                            ->color('primary'),
+                                            ->copyable()
+                                            ->url(fn($record) => $record->telepon ? 'https://wa.me/' . $record->telepon : null, true)
+                                            ->color('success'),
                                     ]),
 
                                 TextEntry::make('alamat')
@@ -446,7 +448,9 @@ class KaryawanResource extends BaseResource
                                             $record->provinsi
                                         ]))
                                     )
-                                    ->icon('heroicon-m-map'),
+                                    ->icon('heroicon-m-map')
+                                    ->badge()
+                                    ->color('gray'),
                             ]),
 
                         // Section 2: Berkas Dokumen (REPEATER DISPLAY)
@@ -532,22 +536,37 @@ class KaryawanResource extends BaseResource
     {
         return $table
             ->columns([
-                //
+                ImageColumn::make('image_url')
+                    ->label('')
+                    ->disk('public')
+                    ->circular()
+                    ->size(44)
+                    ->defaultImageUrl(url('/images/icons/icon-512x512.png')),
                 TextColumn::make('nama_karyawan')
-                    ->label('Nama Karyawan')
+                    ->label('Karyawan')
+                    ->icon('heroicon-m-identification')
+                    ->description(fn(Karyawan $record) => $record->role?->name)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('telepon')
-                    ->label('No. HP')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-m-device-phone-mobile')
+                    ->copyable()
+                    ->color('success')
+                    ->url(fn(Karyawan $record) => $record->telepon ? 'https://wa.me/' . $record->telepon : null, true)
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
+                TextColumn::make('role.name')
+                    ->label('Role')
+                    ->badge()
+                    ->color('warning')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
                     ->dateTime('d M Y')
-                    ->sortable(),
-                TextColumn::make('role.name')
-                    ->label('Role')
-                    ->searchable()
                     ->sortable(),
                 IconColumn::make('is_active')
                     ->label('Aktif')

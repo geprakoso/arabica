@@ -123,8 +123,6 @@ class AbsensiResource extends BaseResource
                                     TakePicture::make('camera_test')
                                         ->hiddenLabel() // Label moved to section
                                         ->disk('public')
-                                        ->imageEditor()
-                                        ->imageQuality(80)
                                         ->directory('uploads/absensi')
                                         ->visibility('public')
                                         ->useModal(true)

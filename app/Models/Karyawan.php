@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -35,6 +36,40 @@ class Karyawan extends Model implements HasMedia
         'is_active' => 'boolean',
         'dokumen_karyawan' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Karyawan $karyawan) {
+            $karyawan->slug ??= self::generateUniqueSlug($karyawan->nama_karyawan ?? Str::random(8));
+        });
+
+        static::updating(function (Karyawan $karyawan) {
+            if ($karyawan->isDirty('nama_karyawan') && blank($karyawan->slug)) {
+                $karyawan->slug = self::generateUniqueSlug($karyawan->nama_karyawan, $karyawan->id);
+            }
+        });
+    }
+
+    /**
+     * Generate a slug and keep it unique by appending a counter when needed.
+     */
+    public static function generateUniqueSlug(string $namaKaryawan, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($namaKaryawan) ?: Str::random(8);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (
+            self::where('slug', $slug)
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
+    }
 
     public function user()
     {
