@@ -6,7 +6,6 @@ namespace App\Models;
 
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
-use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -25,7 +24,7 @@ class User extends Authenticatable implements HasAvatar
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
-    /**aC6aC6
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -67,10 +66,6 @@ class User extends Authenticatable implements HasAvatar
 
     public function canAccessPanel(Panel $panel): bool
     {
-	// Mode darurat agar semua bisa masuk
-	return true;
-
-	/*
         $superAdminRole = config('filament-shield.super_admin.name', 'super_admin');
         $panelUserRole = config('filament-shield.panel_user.name', 'panel_user');
 
@@ -78,7 +73,6 @@ class User extends Authenticatable implements HasAvatar
         // atau punya role lain apa pun (fallback lama).
         return $this->hasAnyRole([$superAdminRole, $panelUserRole, 'kasir', 'petugas'])
             || $this->roles()->exists();
-	*/
     }
 
     public function chatGroups(): BelongsToMany

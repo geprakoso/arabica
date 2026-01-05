@@ -3,6 +3,19 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Filament\Pages\AppDashboard;
+use Filament\Facades\Filament;
+
+Route::get('/test-auth', function () {
+    $user = Auth::user();
+    return response()->json([
+        'is_logged_in' => Auth::check(),
+        'user_id' => $user->id ?? null,
+        'user_name' => $user->name ?? null,
+        'roles' => $user ? $user->getRoleNames() : [],
+        // 'panel_id' => Filament::getPanel('admin')->getId(),
+        'can_access_panel' => $user ? $user->canAccessPanel(Filament::getPanel('admin')) : false,
+    ]);
+});
 
 Route::get('/', function () {
     if (! Auth::check()) {

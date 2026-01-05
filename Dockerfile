@@ -28,7 +28,7 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Install dependencies (Optimized for production)
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install --optimize-autoloader --no-dev --no-scripts
 
 # Setup permissions
 RUN chown -R www-data:www-data /var/www \

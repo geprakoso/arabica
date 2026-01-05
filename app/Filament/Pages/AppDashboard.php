@@ -12,6 +12,8 @@ class AppDashboard extends BaseDashboard
 {
     use HasPageShield;
 
+
+
     /**
      * @return array<class-string<\Filament\Widgets\Widget> | \Filament\Widgets\WidgetConfiguration>
      */

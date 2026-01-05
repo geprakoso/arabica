@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Absensi;
+use App\Models\KodeAkun;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class AbsensiPolicy
+class KodeAkunPolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class AbsensiPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_absensi::laporan::absensi');
+        return $user->can('view_any_akunting::kode::akun');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Absensi $absensi): bool
+    public function view(User $user, KodeAkun $kodeAkun): bool
     {
-        return $user->can('view_absensi::laporan::absensi');
+        return $user->can('view_akunting::kode::akun');
     }
 
     /**
@@ -31,23 +31,23 @@ class AbsensiPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_absensi::laporan::absensi');
+        return $user->can('create_akunting::kode::akun');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Absensi $absensi): bool
+    public function update(User $user, KodeAkun $kodeAkun): bool
     {
-        return $user->can('update_absensi::laporan::absensi');
+        return $user->can('update_akunting::kode::akun');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Absensi $absensi): bool
+    public function delete(User $user, KodeAkun $kodeAkun): bool
     {
-        return $user->can('delete_absensi::laporan::absensi');
+        return $user->can('delete_akunting::kode::akun');
     }
 
     /**
@@ -55,15 +55,15 @@ class AbsensiPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_absensi::laporan::absensi');
+        return $user->can('delete_any_akunting::kode::akun');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Absensi $absensi): bool
+    public function forceDelete(User $user, KodeAkun $kodeAkun): bool
     {
-        return $user->can('force_delete_absensi::laporan::absensi');
+        return $user->can('force_delete_akunting::kode::akun');
     }
 
     /**
@@ -71,15 +71,15 @@ class AbsensiPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_absensi::laporan::absensi');
+        return $user->can('force_delete_any_akunting::kode::akun');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Absensi $absensi): bool
+    public function restore(User $user, KodeAkun $kodeAkun): bool
     {
-        return $user->can('restore_absensi::laporan::absensi');
+        return $user->can('restore_akunting::kode::akun');
     }
 
     /**
@@ -87,15 +87,15 @@ class AbsensiPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_absensi::laporan::absensi');
+        return $user->can('restore_any_akunting::kode::akun');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Absensi $absensi): bool
+    public function replicate(User $user, KodeAkun $kodeAkun): bool
     {
-        return $user->can('replicate_absensi::laporan::absensi');
+        return $user->can('replicate_akunting::kode::akun');
     }
 
     /**
@@ -103,6 +103,6 @@ class AbsensiPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_absensi::laporan::absensi');
+        return $user->can('reorder_akunting::kode::akun');
     }
 }
