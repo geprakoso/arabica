@@ -26,10 +26,10 @@ class ActiveMembersTable extends AdvancedTableWidget
     protected static ?string $iconColor = 'primary';
     protected static ?string $description = 'Daftar member yang paling aktif belanja bulan ini.';
 
-    public static function canView(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
-    }
+    // public static function canView(): bool
+    // {
+    //     return Filament::getCurrentPanel()?->getId() === 'pos';
+    // }
 
     public function table(Table $table): Table
     {

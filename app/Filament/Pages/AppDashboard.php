@@ -35,6 +35,7 @@ class AppDashboard extends BaseDashboard
                 \App\Filament\Widgets\AbsensiWidget::class,
                 \App\Filament\Widgets\ActiveMembersTable::class,
                 \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
+                \App\Filament\Widgets\JadwalKalenderWidget::class,
                 \App\Filament\Widgets\LowStockProductsTable::class,
                 \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
                 \App\Filament\Widgets\RecentPosTransactionsTable::class,
@@ -56,7 +57,7 @@ class AppDashboard extends BaseDashboard
     protected function sortWidgetsByOrderNumber(array $widgets): array
     {
         return collect($widgets)
-            ->sortBy(fn (string | WidgetConfiguration $widget): int => $this->normalizeWidgetClass($widget)::getSort())
+            ->sortBy(fn(string | WidgetConfiguration $widget): int => $this->normalizeWidgetClass($widget)::getSort())
             ->values()
             ->all();
     }

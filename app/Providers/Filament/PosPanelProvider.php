@@ -8,7 +8,6 @@ use Filament\PanelProvider;
 use Illuminate\Support\Carbon;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Auth;
-use App\Filament\Pages\AppDashboard;
 use App\Filament\Pages\StockInventory;
 use Illuminate\Support\Facades\Storage;
 use Orion\FilamentGreeter\GreeterPlugin;
@@ -57,9 +56,17 @@ class PosPanelProvider extends PanelProvider
                 \App\Filament\Resources\StockOpnameResource::class,
             ])
             ->pages([
-                AppDashboard::class,
+                Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->widgets([
+                OpenWeatherWidget::class,
+                PosSalesStatsOverview::class,
+                MonthlyRevenueTrendChart::class,
+                ActiveMembersTable::class,
+                LowStockProductsTable::class,
+                RecentPosTransactionsTable::class,
+                TopSellingProductsTable::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
