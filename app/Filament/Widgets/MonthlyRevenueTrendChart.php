@@ -21,7 +21,7 @@ class MonthlyRevenueTrendChart extends AdvancedChartWidget
 
     protected static ?string $maxHeight = '320px';
 
-    protected static ?string $icon = 'heroicon-o-chart-bar';  
+    protected static ?string $icon = 'heroicon-o-chart-bar';
 
     protected static ?string $iconColor = 'primary';
 
@@ -29,12 +29,12 @@ class MonthlyRevenueTrendChart extends AdvancedChartWidget
 
     protected int | string | array $columnSpan = 'full';
 
-    public static function canView(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
-    }
+    // public static function canView(): bool
+    // {
+    //     return Filament::getCurrentPanel()?->getId() === 'pos';
+    // }
 
-    
+
     protected function getType(): string
     {
         return 'line';

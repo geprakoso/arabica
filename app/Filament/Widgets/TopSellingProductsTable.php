@@ -31,17 +31,18 @@ class TopSellingProductsTable extends AdvancedTableWidget
     protected static ?string $description = 'Daftar produk dengan penjualan tertinggi pada bulan berjalan.';
 
 
-    public static function canView(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
-    }
+    // public static function canView(): bool
+    // {
+    //     return Filament::getCurrentPanel()?->getId() === 'pos';
+    // }
 
     public function table(Table $table): Table
     {
         return $table
             ->heading('')
-            ->query($this->getTableQuery()
-                ->limit(5)
+            ->query(
+                $this->getTableQuery()
+                    ->limit(5)
             )
             ->columns([
                 Tables\Columns\TextColumn::make('nama_produk')
@@ -71,9 +72,9 @@ class TopSellingProductsTable extends AdvancedTableWidget
                     ->label(false)
                     ->icon(null)
                     ->slideOver()
-                    ->modalHeading(fn (Produk $record) => $record->nama_produk)
+                    ->modalHeading(fn(Produk $record) => $record->nama_produk)
                     ->modalWidth('6xl')
-                    ->infolist(fn (Infolist $infolist) => InventoryResource::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => InventoryResource::infolist($infolist)),
             ])
             ->paginated(false);
     }

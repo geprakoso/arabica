@@ -26,18 +26,19 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
     protected static ?string $iconColor = 'primary';
     protected static ?string $description = 'Daftar transaksi terbaru pada sistem.';
 
-    public static function canView(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
-    }
+    // public static function canView(): bool
+    // {
+    //     return Filament::getCurrentPanel()?->getId() === 'pos';
+    // }
 
     public function table(Table $table): Table
     {
         return $table
             ->heading('')
-            ->query($this->getTableQuery()
-                ->limit(5)
-                )
+            ->query(
+                $this->getTableQuery()
+                    ->limit(5)
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('no_nota')
                     ->label('Nota'),
@@ -93,9 +94,9 @@ class RecentPosTransactionsTable extends AdvancedTableWidget
                     ->label(false)
                     ->icon(null)
                     ->slideOver()
-                    ->modalHeading(fn (Penjualan $record) => $record->no_nota)
+                    ->modalHeading(fn(Penjualan $record) => $record->no_nota)
                     ->modalWidth('6xl')
-                    ->infolist(fn (Infolist $infolist) => PosActivityResource::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => PosActivityResource::infolist($infolist)),
             ])
             ->defaultSort('tanggal_penjualan', 'desc')
             ->paginated(false);

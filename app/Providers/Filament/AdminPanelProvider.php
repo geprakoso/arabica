@@ -106,7 +106,6 @@ class AdminPanelProvider extends PanelProvider
 
             ])
             ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class,])
-            
             ->renderHook(
                 'panels::head.end',
                 fn(): string => <<<HTML

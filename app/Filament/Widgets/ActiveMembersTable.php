@@ -20,10 +20,10 @@ class ActiveMembersTable extends AdvancedTableWidget
     protected static ?string $pollingInterval = null;
     protected static ?int $sort = 4;
 
-    public static function canView(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
-    }
+    // public static function canView(): bool
+    // {
+    //     return Filament::getCurrentPanel()?->getId() === 'pos';
+    // }
 
     public function table(Table $table): Table
     {
