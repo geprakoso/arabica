@@ -6,7 +6,7 @@ use App\Filament\Resources\Akunting\InputTransaksiTokoResource\Pages;
 use App\Models\InputTransaksiToko;
 use Filament\Forms\Form;
 use Filament\Facades\Filament;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Enums\KategoriAkun; // Sesuaikan namespace Enum
@@ -32,7 +32,7 @@ use Illuminate\Support\HtmlString;
 use App\Models\JenisAkun;
 use App\Filament\Forms\Components\MediaManagerPicker;
 
-class InputTransaksiTokoResource extends Resource
+class InputTransaksiTokoResource extends BaseResource
 {
     protected static ?string $model = InputTransaksiToko::class;
     protected static ?string $navigationLabel = 'Input Transaksi Toko';
@@ -42,7 +42,8 @@ class InputTransaksiTokoResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'admin';
+        return Filament::getCurrentPanel()?->getId() === 'admin'
+            && static::canViewAny();
     }
 
     public static function form(Form $form): Form
@@ -74,8 +75,9 @@ class InputTransaksiTokoResource extends Resource
                                             ? $query->whereHas('kodeAkun', fn (Builder $q) => $q->where('kategori_akun', $get('kategori_transaksi')))
                                             : $query,
                                     )
-                                    ->searchable()
+                                    ->searchable(['nama_jenis_akun', 'kode_jenis_akun'])
                                     ->preload()
+                                    // ->clearable()
                                     ->native(false)
                                     ->prefixIcon('hugeicons-credit-card')
                                     ->placeholder('Pilih jenis akun')

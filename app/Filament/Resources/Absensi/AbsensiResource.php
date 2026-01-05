@@ -12,10 +12,11 @@ use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Textarea;
@@ -34,9 +35,12 @@ use Filament\Infolists\Components\Split;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Forms\Components\Section;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
+use App\Support\WebpUpload;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 
-class AbsensiResource extends Resource
+class AbsensiResource extends BaseResource
 {
     protected static ?string $model = Absensi::class;
 
@@ -49,8 +53,8 @@ class AbsensiResource extends Resource
     {
         $user = Filament::auth()->user();
 
-        return $user?->can('view_any_absensi::absensi')
-            || $user?->can('view_limit_absensi::absensi')
+        return $user?->can('view_any_absensi')
+            || $user?->can('view_limit_absensi')
             || false;
     }
 
@@ -60,7 +64,7 @@ class AbsensiResource extends Resource
         $user = Filament::auth()->user();
 
         // When only view_limit is granted, restrict to own records.
-        if ($user?->can('view_limit_absensi::absensi') && ! $user->can('view_any_absensi::absensi')) {
+        if ($user?->can('view_limit_absensi') && ! $user->can('view_any_absensi')) {
             $query->where('user_id', $user->id);
         }
 
@@ -119,12 +123,34 @@ class AbsensiResource extends Resource
                                     TakePicture::make('camera_test')
                                         ->hiddenLabel() // Label moved to section
                                         ->disk('public')
+                                        ->imageEditor()
+                                        ->imageQuality(80)
                                         ->directory('uploads/absensi')
                                         ->visibility('public')
                                         ->useModal(true)
                                         ->showCameraSelector(true)
                                         ->aspect('4:3')
                                         ->imageQuality(80)
+                                        ->dehydrateStateUsing(function (?string $state, $get, $set, TakePicture $component): mixed {
+                                            if (! $state || ! Str::startsWith($state, 'data:image/')) {
+                                                return $state;
+                                            }
+
+                                            $path = WebpUpload::storeBase64(
+                                                $state,
+                                                $component->getDisk(),
+                                                $component->getDirectory(),
+                                                $component->getVisibility(),
+                                                $component->getImageQuality()
+                                            );
+
+                                            if ($component->getTargetField() && $component->getTargetField() !== $component->getName()) {
+                                                $set($component->getTargetField(), $path);
+                                                return null;
+                                            }
+
+                                            return $path;
+                                        })
                                         ->shouldDeleteOnEdit(false)
                                         ->required(fn(Get $get) => $get('status') === 'hadir') // Wajib jika Hadir
                                         ->columnSpanFull(),
@@ -173,19 +199,17 @@ class AbsensiResource extends Resource
                         ]),
                 ])
                     ->columnSpanFull() // Agar wizard lebar penuh
-                    ->submitAction(
-                        Action::make('submit')
-                            ->label('Simpan Absensi')
-                            ->color('success')
-                            ->icon('heroicon-m-check')
-
-                    )
-                    ->cancelAction(
-                        Action::make('cancel')
-                            ->label('Batal')
-                            ->color('danger')
-                            ->icon('heroicon-m-x-mark')
-                    )
+                    ->submitAction(new HtmlString(
+                        Blade::render(
+                            '<x-filament::button type="submit" color="success" icon="heroicon-m-check">Simpan Absensi</x-filament::button>'
+                        )
+                    ))
+                    ->cancelAction(new HtmlString(
+                        Blade::render(
+                            '<x-filament::button tag="a" :href="$url" color="danger" icon="heroicon-m-x-mark">Batal</x-filament::button>',
+                            ['url' => static::getUrl('index')]
+                        )
+                    ))
                     ->previousAction(
                         fn(FormAction $action) =>
                         $action

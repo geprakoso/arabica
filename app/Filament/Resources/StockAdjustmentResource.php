@@ -8,7 +8,7 @@ use Filament\Forms\Set;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\StockAdjustment;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Grid;
 use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Group;
@@ -25,7 +25,7 @@ use App\Filament\Resources\PenjualanResource;
 use App\Filament\Resources\StockAdjustmentResource\Pages;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
-class StockAdjustmentResource extends Resource
+class StockAdjustmentResource extends BaseResource
 {
     protected static ?string $model = StockAdjustment::class;
 
@@ -184,9 +184,9 @@ class StockAdjustmentResource extends Resource
                         'success' => 'posted',
                     ])
                     ->icon(fn(string $state): string => match ($state) {
-                        'draft' => 'heroicon-o-pencil',
-                        'posted' => 'heroicon-o-check-circle',
-                        default => 'heroicon-o-question-mark-circle',
+                        'draft' => 'heroicon-m-pencil',
+                        'posted' => 'heroicon-m-check-circle',
+                        default => 'heroicon-m-question-mark-circle',
                     }),
                 TextColumn::make('items_count')
                     ->counts('items')
@@ -206,23 +206,29 @@ class StockAdjustmentResource extends Resource
                     ]),
             ])
             ->actions([
+                Action::make('post')
+                    ->label('Posting')
+                    ->button()
+                    ->icon('heroicon-m-paper-airplane')
+                    ->color('success')
+                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted())
+                    ->requiresConfirmation()
+                    ->modalHeading('Posting Penyesuaian Stok')
+                    ->modalDescription('Apakah Anda yakin ingin memposting penyesuaian ini? Stok akan diperbarui secara permanen.')
+                    ->modalSubmitActionLabel('Ya, Posting')
+                    ->action(fn(StockAdjustment $record) => $record->post(Auth::user()))
+                    ->successNotificationTitle('Penyesuaian stok berhasil diposting.'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->button()
+                    ->color('danger')
+                    ->icon('heroicon-m-trash')
+                    ->requiresConfirmation()
+                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted()),
                 Tables\Actions\ActionGroup::make([
-                    Action::make('post')
-                        ->label('Posting Stok')
-                        ->icon('heroicon-o-paper-airplane')
-                        ->color('success')
-                        ->visible(fn(StockAdjustment $record) => ! $record->isPosted())
-                        ->requiresConfirmation()
-                        ->modalHeading('Posting Penyesuaian Stok')
-                        ->modalDescription('Apakah Anda yakin ingin memposting penyesuaian ini? Stok akan diperbarui secara permanen.')
-                        ->modalSubmitActionLabel('Ya, Posting')
-                        ->action(fn(StockAdjustment $record) => $record->post(Auth::user()))
-                        ->successNotificationTitle('Penyesuaian stok berhasil diposting.'),
                     Tables\Actions\EditAction::make()
                         ->color('primary'),
                     Tables\Actions\ViewAction::make(),
-                    Tables\Actions\DeleteAction::make()
-                        ->visible(fn(StockAdjustment $record) => ! $record->isPosted()),
                 ])
                     ->label('Aksi')
                     ->tooltip('Menu Aksi')

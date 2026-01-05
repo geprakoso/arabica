@@ -22,7 +22,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -32,7 +32,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Date;
 
-class LemburResource extends Resource
+class LemburResource extends BaseResource
 {
     protected static ?string $model = Lembur::class;
 

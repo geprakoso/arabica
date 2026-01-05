@@ -7,80 +7,141 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>{{ $fileName }}</title>
     <style type="text/css" media="all">
-        * {
-            font-family: DejaVu Sans, sans-serif !important;
+        @page {
+            margin: 2cm;
         }
-
-        html {
-            width: 100%;
+        
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+            color: #333;
+            line-height: 1.4;
         }
 
         .header {
-            margin-bottom: 16px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #2563eb; /* Changed to Blue */
+            padding-bottom: 10px;
         }
 
         .title {
-            font-size: 18px;
-            font-weight: 700;
-            margin: 0 0 4px 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #111827;
+            text-transform: uppercase;
+            margin: 0;
         }
 
         .subtitle {
-            font-size: 12px;
+            font-size: 11px;
             color: #6b7280;
-            margin: 0;
+            margin: 4px 0 0 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             border-spacing: 0;
-            border-radius: 10px;
+            margin-bottom: 20px;
         }
 
-        table td,
         th {
-            border-color: #ededed;
-            border-style: solid;
-            border-width: 1px;
-            font-size: 12px;
-            overflow: hidden;
-            padding: 8px 5px;
-            word-break: normal;
+            background-color: #f8fafc;
+            color: #2563eb; /* Changed to Blue */
+            text-transform: uppercase;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 10px 6px;
+            border-bottom: 2px solid #e2e8f0;
+            text-align: left;
         }
 
-        table th {
-            font-weight: 600;
-            background: #1d4ed8;
-            color: #ffffff;
+        td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #475569;
+            vertical-align: top;
+        }
+        
+        tr:nth-child(even) td {
+            background-color: #f9fafb;
+        }
+        
+        .group-header td {
+            background-color: #dbeafe !important; /* Changed to Blue-100 */
+            color: #1e40af; /* Changed to Blue-800 */
+            font-weight: bold;
+            padding: 8px 6px;
+            font-size: 11px;
+        }
+
+        /* Signature Section */
+        .signature-section {
+            margin-top: 40px;
+            width: 100%;
+            page-break-inside: avoid;
+        }
+        
+        .signature-box {
+            float: right;
+            width: 200px;
+            text-align: center;
+        }
+        
+        .signature-line {
+            margin-top: 60px;
+            border-bottom: 1px solid #333;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 9px;
+            color: #94a3b8;
+            text-align: right;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 10px;
+            clear: both;
         }
     </style>
 </head>
 <body>
-    <div class="content">
-        @php
-            $sortedRows = isset($sort_key) ? $rows->sortBy($sort_key, SORT_NATURAL | SORT_FLAG_CASE) : $rows;
-        @endphp
+    @php
+        $sortedRows = isset($sort_key) ? $rows->sortBy($sort_key, SORT_NATURAL | SORT_FLAG_CASE) : $rows;
+        $colCount = $columns->count();
+        $groupKey = $group_by ?? null;
+        $groupedRows = $groupKey
+            ? $sortedRows->groupBy(fn ($row) => data_get($row, $groupKey, $row[$groupKey] ?? '-') ?: '-')
+            : collect(['' => $sortedRows]);
+        // $groupLabelPrefix = $group_label ?? 'Kategori';
+    @endphp
 
-        <div class="header">
-            <p class="title">{{ $title ?? $fileName }}</p>
-            @if (! empty($subtitle))
-                <p class="subtitle">{{ $subtitle }}</p>
-            @endif
-        </div>
+    <div class="header">
+        <h1 class="title">{{ $title ?? $fileName }}</h1>
+        @if (! empty($subtitle))
+            <p class="subtitle">{{ $subtitle }}</p>
+        @endif
+    </div>
 
-        <table>
-            <thead>
-                <tr>
-                    @foreach ($columns as $column)
-                        <th>
-                            {{ $column->getLabel() }}
-                        </th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($sortedRows as $row)
+    <table>
+        <thead>
+            <tr>
+                @foreach ($columns as $column)
+                    <th>
+                        {{ $column->getLabel() }}
+                    </th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($groupedRows as $groupLabel => $groupRows)
+                @if ($groupKey)
+                    <tr class="group-header">
+                        <td colspan="{{ $colCount }}">
+                            {{ $groupLabel }}
+                        </td>
+                    </tr>
+                @endif
+                @foreach ($groupRows as $row)
                     <tr>
                         @foreach ($columns as $column)
                             <td>
@@ -89,8 +150,20 @@
                         @endforeach
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <p style="margin-bottom: 5px;">Disetujui Oleh,</p>
+            <div class="signature-line"></div>
+            <p style="margin-top: 5px;">( ...................................... )</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        Dicetak oleh: {{ $printed_by ?? 'System' }} • {{ $printed_at ?? date('d/m/Y H:i') }}
     </div>
 </body>
 </html>

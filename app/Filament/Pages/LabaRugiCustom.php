@@ -19,9 +19,12 @@ use Filament\Pages\Page;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 use Spatie\SimpleExcel\SimpleExcelWriter;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class LabaRugiCustom extends Page
 {
+    use HasPageShield;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $title = 'Laporan Laba Rugi';
     protected static string $view = 'filament.pages.laba-rugi-custom';

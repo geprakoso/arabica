@@ -7,12 +7,12 @@ use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class UserResource extends Resource
+class UserResource extends BaseResource
 {
     protected static ?string $model = User::class;
 

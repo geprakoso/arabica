@@ -10,7 +10,7 @@ use App\Models\Kategori;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
@@ -19,7 +19,7 @@ use App\Filament\Resources\MasterData\KategoriResource\Pages;
 // use Illuminate\Database\Eloquent\SoftDeletingScope;
 // use Ramsey\Uuid\Guid\Fields;
 
-class KategoriResource extends Resource
+class KategoriResource extends BaseResource
 {
     protected static ?string $model = Kategori::class;
     // protected static ?string $cluster = MasterData::class;
@@ -40,7 +40,7 @@ class KategoriResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('nama_kategori')
                             ->label('Nama Kategori')
-                            ->dehydrateStateUsing(fn ($state) => Str::title($state))
+                            ->dehydrateStateUsing(fn($state) => Str::title($state))
                             ->required(),
                         Forms\Components\TextInput::make('slug')
                             ->label('Slug')
@@ -64,23 +64,30 @@ class KategoriResource extends Resource
             ->columns([
                 //
                 TextColumn::make('nama_kategori')
-                    ->label('Nama Kategori')
-                    ->formatStateUsing(fn (Kategori $record) => Str::title($record->nama_kategori))
+                    ->formatStateUsing(fn($state) => Str::title($state))
+                    ->label('Kategori')
+                    ->weight('bold')
+                    ->icon('heroicon-o-tag')
+                    ->color('primary')
                     ->searchable()
                     ->sortable(),
-                // TextColumn::make('is_active')
-                //     ->label('Aktif')
-                //     ->badge()
-                //     ->formatStateUsing(fn (bool $state) => $state ? 'Aktif' : 'Nonaktif')
-                //     ->color(fn (bool $state) => $state ? 'success' : 'danger')
-                //     ->sortable(),
+                TextColumn::make('slug')
+                    ->formatStateUsing(fn($state) => Str::title($state))
+                    ->icon('heroicon-m-link')
+                    ->color('gray')
+                    ->toggleable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()->color('info'),
+                    Tables\Actions\EditAction::make()->color('warning'),
+                    Tables\Actions\DeleteAction::make(),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -7,7 +7,7 @@ use Awcodes\FilamentBadgeableColumn\Components\BadgeableColumn;
 use App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages;
 use App\Models\Absensi;
 use Carbon\Carbon;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -15,7 +15,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-class LaporanAbsensiResource extends Resource
+class LaporanAbsensiResource extends BaseResource
 {
     protected static ?string $model = Absensi::class;
 
@@ -24,6 +24,8 @@ class LaporanAbsensiResource extends Resource
     protected static ?string $navigationGroup = 'Absensi';
 
     protected static ?string $navigationLabel = 'Laporan Absensi';
+
+    protected static ?string $modelLabel = 'Laporan Absensi';
 
     protected static ?string $pluralModelLabel = 'Laporan Absensi';
 

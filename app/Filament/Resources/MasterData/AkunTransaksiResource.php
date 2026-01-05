@@ -10,7 +10,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Pages\SubNavigationPosition;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Filters\SelectFilter;
@@ -18,7 +18,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class AkunTransaksiResource extends Resource
+class AkunTransaksiResource extends BaseResource
 {
     protected static ?string $model = AkunTransaksi::class;
 

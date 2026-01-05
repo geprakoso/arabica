@@ -7,7 +7,7 @@ use App\Models\PenjadwalanService;
 use App\Models\Member;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Grid as FormsGrid;
@@ -30,7 +30,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\MasterData\JasaResource;
 
-class PenjadwalanServiceResource extends Resource
+class PenjadwalanServiceResource extends BaseResource
 {
     protected static ?string $model = PenjadwalanService::class;
 

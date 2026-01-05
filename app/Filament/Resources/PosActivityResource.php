@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Filament\Facades\Filament;
 use Livewire\Attributes\Title;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use function Laravel\Prompts\text;
 use Filament\Infolists\Components\Grid;
 use Filament\Forms\Components\DatePicker;
@@ -18,12 +18,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Carbon\CarbonInterface;
 
 use App\Filament\Resources\PosActivityResource\Pages;
 use App\Filament\Resources\PosActivityResource\Widgets\PosActivityStats;
 
-class PosActivityResource extends Resource
+class PosActivityResource extends BaseResource
 {
     protected static ?string $model = Penjualan::class;
 
@@ -36,33 +39,76 @@ class PosActivityResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->posOnly())
+            ->modifyQueryUsing(fn(Builder $query) => $query->posOnly())
             ->columns([
-                Tables\Columns\TextColumn::make('no_nota')->label('Nota')->searchable(),
-                Tables\Columns\TextColumn::make('tanggal_penjualan')->date()->label('Tanggal'),
-                Tables\Columns\TextColumn::make('grand_total')
-                    ->label('Grand Total')
-                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
-                Tables\Columns\TextColumn::make('metode_bayar')
-                ->label('Metode Bayar')
-                ->badge()
-                    ->color(fn (MetodeBayar $state) => match ($state) {
-                        MetodeBayar::CASH => 'success',
-                        MetodeBayar::CARD => 'info',
-                        MetodeBayar::TRANSFER => 'gray',
-                        MetodeBayar::EWALLET => 'warning',
-                        default => 'secondary',
-                    })
-                    ->icon(fn (MetodeBayar $state) => match ($state) {
-                        MetodeBayar::CASH => 'heroicon-o-currency-dollar',
-                        MetodeBayar::CARD => 'heroicon-o-credit-card',
-                        MetodeBayar::TRANSFER => 'heroicon-o-banknotes',
-                        MetodeBayar::EWALLET => 'heroicon-o-wallet',
-                        default => 'heroicon-o-question-mark-circle',
-                    })
-                    ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label()),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->toggleable(isToggledHiddenByDefault: true),
+                Split::make([
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('no_nota')
+                            ->label('Nota')
+                            ->badge()
+                            ->color('primary')
+                            ->weight('bold')
+                            ->size(TextColumnSize::Large)
+                            ->description(function (Penjualan $record): string {
+                                $kasir = $record->karyawan?->nama_karyawan ?? '-';
+                                $member = $record->member?->nama_member
+                                    ? Str::title($record->member->nama_member)
+                                    : '-';
+
+                                return "Kasir: {$kasir} • Member: {$member}";
+                            })
+                            ->searchable()
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('tanggal_penjualan')
+                            ->label('Tanggal')
+                            ->date('d M Y')
+                            ->icon('heroicon-m-calendar-days')
+                            ->color('gray')
+                            ->sortable(),
+                    ])->space(2),
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('metode_bayar')
+                            ->label('Metode Bayar')
+                            ->badge()
+                            ->color(fn(MetodeBayar $state) => match ($state) {
+                                MetodeBayar::CASH => 'success',
+                                MetodeBayar::CARD => 'info',
+                                MetodeBayar::TRANSFER => 'gray',
+                                MetodeBayar::EWALLET => 'warning',
+                                default => 'secondary',
+                            })
+                            ->icon(fn(MetodeBayar $state) => match ($state) {
+                                MetodeBayar::CASH => 'heroicon-o-currency-dollar',
+                                MetodeBayar::CARD => 'heroicon-o-credit-card',
+                                MetodeBayar::TRANSFER => 'heroicon-o-banknotes',
+                                MetodeBayar::EWALLET => 'heroicon-o-wallet',
+                                default => 'heroicon-o-question-mark-circle',
+                            })
+                            ->formatStateUsing(fn(?MetodeBayar $state) => $state?->label()),
+                        Tables\Columns\TextColumn::make('created_at')
+                            ->label('Waktu Input')
+                            ->dateTime('d M Y H:i')
+                            ->color('gray')
+                            ->toggleable(isToggledHiddenByDefault: true),
+                    ])->space(2),
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('grand_total')
+                            ->label('Grand Total')
+                            ->weight('bold')
+                            ->size(TextColumnSize::Large)
+                            ->alignEnd()
+                            ->color('success')
+                            ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes()),
+                        Tables\Columns\TextColumn::make('diskon_total')
+                            ->label('Diskon')
+                            ->alignEnd()
+                            ->color('gray')
+                            ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
+                            ->toggleable(isToggledHiddenByDefault: true),
+                    ])->space(1),
+                ])->from('md'),
             ])
+            ->defaultSort('tanggal_penjualan', 'desc')
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\Action::make('print')
@@ -119,7 +165,8 @@ class PosActivityResource extends Resource
      */
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
+        return Filament::getCurrentPanel()?->getId() === 'pos'
+            && static::canViewAny();
     }
 
     // mendapatkan widget yang akan di tampilkan di resource
@@ -141,7 +188,7 @@ class PosActivityResource extends Resource
                     ->description('Informasi Transaksi')
                     ->icon('heroicon-o-flag')
                     ->schema([
-                        TextEntry::make('no_nota')  
+                        TextEntry::make('no_nota')
                             ->label('Nota')
                             ->icon('heroicon-o-receipt-refund')
                             ->badge()
@@ -150,7 +197,7 @@ class PosActivityResource extends Resource
                             ->label('Tanggal'),
                         TextEntry::make('member.nama_member')
                             ->label('Member')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->badge()
                             ->size('md')
                             ->color('success')
@@ -158,7 +205,7 @@ class PosActivityResource extends Resource
                         TextEntry::make('karyawan.nama_karyawan')
                             ->label('Kasir')
                             ->placeholder('-'),
-                        TextEntry::make('catatan')  
+                        TextEntry::make('catatan')
                             ->label('Catatan')
                             ->columnSpanFull()
                             ->placeholder('-'),
@@ -169,16 +216,16 @@ class PosActivityResource extends Resource
                                     TextEntry::make('metode_bayar')
                                         ->label('Metode Bayar')
                                         ->size('lg')
-                                        ->formatStateUsing(fn (?MetodeBayar $state) => $state?->label())
+                                        ->formatStateUsing(fn(?MetodeBayar $state) => $state?->label())
                                         ->badge()
-                                        ->color(fn (MetodeBayar $state) => match ($state) {
+                                        ->color(fn(MetodeBayar $state) => match ($state) {
                                             MetodeBayar::CASH => 'success',
                                             MetodeBayar::CARD => 'info',
                                             MetodeBayar::TRANSFER => 'gray',
                                             MetodeBayar::EWALLET => 'warning',
                                             default => 'secondary',
                                         })
-                                        ->icon(fn (MetodeBayar $state) => match ($state) {
+                                        ->icon(fn(MetodeBayar $state) => match ($state) {
                                             MetodeBayar::CASH => 'heroicon-o-currency-dollar',
                                             MetodeBayar::CARD => 'heroicon-o-credit-card',
                                             MetodeBayar::TRANSFER => 'heroicon-o-banknotes',
@@ -189,22 +236,22 @@ class PosActivityResource extends Resource
                                     TextEntry::make('grand_total')
                                         ->size('lg')
                                         ->weight('bold')
-                                        ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
+                                        ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
                                         ->label('Grand Total'),
                                     TextEntry::make('tunai_diterima')
                                         ->label('Tunai Diterima')
-                                        ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
+                                        ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
                                         ->weight('bold')
                                         ->size('lg')
                                         ->placeholder('-'),
                                     TextEntry::make('diskon_total')
                                         ->label('Diskon')
-                                        ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
+                                        ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
                                         ->size('lg')
                                         ->weight('bold')
                                         ->placeholder('-'),
                                     TextEntry::make('kembalian')
-                                        ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
+                                        ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
                                         ->label('Kembalian')
                                         ->weight('bold')
                                         ->size('lg')
@@ -223,48 +270,48 @@ class PosActivityResource extends Resource
                                     ->schema([
                                         Grid::make(11)->schema([
                                             TextEntry::make('produk.nama_produk')
-                                                    ->label('Produk')
-                                                    ->weight('semibold')
-                                                    ->size('md')
-                                                    ->columnSpan(5)
-                                                    ->formatStateUsing(fn ($state) => strtoupper($state ?? '-')),
-                                                TextEntry::make('qty')
-                                                    ->label('Qty')
-                                                    ->badge()
-                                                    ->color('primary')
-                                                    ->columnSpan(1),
-                                                TextEntry::make('harga_jual')
-                                                    ->label('Harga')
-                                                    ->size('md')
-                                                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
-                                                    ->weight('semibold')
-                                                    ->columnSpan(2),
+                                                ->label('Produk')
+                                                ->weight('semibold')
+                                                ->size('md')
+                                                ->columnSpan(5)
+                                                ->formatStateUsing(fn($state) => strtoupper($state ?? '-')),
+                                            TextEntry::make('qty')
+                                                ->label('Qty')
+                                                ->badge()
+                                                ->color('primary')
+                                                ->columnSpan(1),
+                                            TextEntry::make('harga_jual')
+                                                ->label('Harga')
+                                                ->size('md')
+                                                ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
+                                                ->weight('semibold')
+                                                ->columnSpan(2),
                                             TextEntry::make('items_subtotal_display')
-                                                    ->label('Subtotal')
-                                                    ->weight('semibold')
-                                                    ->size('md')
-                                                    ->state(fn($record) => ($record->qty ?? 0) * ($record->harga_jual ?? 0) * 100)
-                                                    ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes())
-                                                    ->columnSpan(2),
-                                                    TextEntry::make('kondisi')
-                                                        ->label('Kondisi')
-                                                        ->badge()
-                                                        ->color(fn ($state) => $state === 'baru' ? 'success' : 'warning')
-                                                        ->columnSpan(1)
-                                                        ->placeholder('-')
-                                                        ->formatStateUsing(fn ($state) => strtoupper($state ?? '-')),
-                                            ]),
-                                            ])
-                                    // ->extraAttributes([
-                                    //     'class' => 'rounded-2xl border border-gray-200/80 bg-white/80 p-4 shadow-sm ring-gray-950/10 dark:border-white/10 dark:bg-gray-900/60 dark:ring-white/2',
-                                    // ]),
+                                                ->label('Subtotal')
+                                                ->weight('semibold')
+                                                ->size('md')
+                                                ->state(fn($record) => ($record->qty ?? 0) * ($record->harga_jual ?? 0) * 100)
+                                                ->formatStateUsing(fn($state) => money($state, 'IDR')->formatWithoutZeroes())
+                                                ->columnSpan(2),
+                                            TextEntry::make('kondisi')
+                                                ->label('Kondisi')
+                                                ->badge()
+                                                ->color(fn($state) => $state === 'baru' ? 'success' : 'warning')
+                                                ->columnSpan(1)
+                                                ->placeholder('-')
+                                                ->formatStateUsing(fn($state) => strtoupper($state ?? '-')),
+                                        ]),
+                                    ])
+                                // ->extraAttributes([
+                                //     'class' => 'rounded-2xl border border-gray-200/80 bg-white/80 p-4 shadow-sm ring-gray-950/10 dark:border-white/10 dark:bg-gray-900/60 dark:ring-white/2',
+                                // ]),
                             ]),
                         // TextEntry::make('items_subtotal_display')
                         //     ->label('Subtotal Item')
                         //     ->state(fn(Penjualan $record) => $record->items?->sum(fn($item) => (float) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0)) ?? 0 )
                         //     ->moneyy('IDR')
                         //     ->columnSpanFull()
-                        ]),       //     ->extraAttributes(['class' => 'text-left font-semibold text-lg mt-2']),
+                    ]),       //     ->extraAttributes(['class' => 'text-left font-semibold text-lg mt-2']),
             ]);
     }
 }

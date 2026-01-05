@@ -12,14 +12,14 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Collection;
 
-class JenisAkunResource extends Resource
+class JenisAkunResource extends BaseResource
 {
     protected static ?string $model = JenisAkun::class;
 
@@ -31,7 +31,8 @@ class JenisAkunResource extends Resource
     protected static ?int $navigationSort = 2;
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'admin';
+        return Filament::getCurrentPanel()?->getId() === 'admin'
+            && static::canViewAny();
     }
 
     public static function form(Form $form): Form

@@ -4,11 +4,13 @@ namespace App\Providers;
 
 use App\Support\ChatifyMessenger;
 use App\Http\Responses\PanelLoginResponse;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Chatify\ChatifyMessenger as VendorChatifyMessenger;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,6 +35,29 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        FilamentShield::configurePermissionIdentifierUsing(function (string $resource): string {
+            $identifier = Str::of($resource)
+                ->afterLast('Resources\\')
+                ->before('Resource')
+                ->replace('\\', '')
+                ->snake()
+                ->replace('_', '::')
+                ->toString();
+
+            $segments = explode('::', $identifier);
+            $normalized = [];
+
+            foreach ($segments as $segment) {
+                if ($segment === '' || end($normalized) === $segment) {
+                    continue;
+                }
+
+                $normalized[] = $segment;
+            }
+
+            return implode('::', $normalized);
+        });
+
         if (class_exists(PanelSwitch::class)) {
             PanelSwitch::configureUsing(function (PanelSwitch $switch) {
                 $switch

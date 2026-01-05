@@ -10,7 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\RequestOrder;
 use App\Models\Kategori;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Forms\Components\Split as FormsSplit;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
@@ -32,7 +32,7 @@ use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Grid;
 use Filament\Support\Enums\FontWeight;
 
-class RequestOrderResource extends Resource
+class RequestOrderResource extends BaseResource
 {
     protected static ?string $model = RequestOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
@@ -158,27 +158,28 @@ class RequestOrderResource extends Resource
                     ->label('No. RO')
                     ->searchable()
                     ->weight('bold')
-                    ->icon('heroicon-o-hashtag')
+                    ->icon('heroicon-m-hashtag')
                     ->color('primary')
                     ->copyable()
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
-                    ->icon('heroicon-o-calendar')
+                    ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Pemohon')
-                    ->icon('heroicon-o-user-circle')
+                    ->icon('heroicon-m-user-circle')
                     ->weight('medium')
+                    ->color('success')
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('items_count')
                     ->label('Jml Item')
                     ->counts('items')
                     ->badge()
-                    ->icon('heroicon-o-shopping-cart')
+                    ->icon('heroicon-m-shopping-cart')
                     ->color('info')
                     ->alignCenter()
                     ->sortable(),
@@ -191,13 +192,15 @@ class RequestOrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\ViewAction::make()
+                        ->icon('heroicon-o-eye')
+                        ->color('primary'),
                     Tables\Actions\EditAction::make()
                         ->color('warning'),
                     Tables\Actions\DeleteAction::make(),
                 ])
-                    ->link()
-                    ->label('Aksi'),
+                    ->label('Aksi')
+                    ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

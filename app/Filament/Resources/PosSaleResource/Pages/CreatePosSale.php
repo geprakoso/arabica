@@ -12,6 +12,13 @@ class CreatePosSale extends CreateRecord
 {
     protected static string $resource = PosSaleResource::class;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        PosSaleResource::ensureStockIsAvailable($data['items'] ?? []);
+        PosSaleResource::ensureCartIsNotEmpty($data['items'] ?? [], $data['services'] ?? []);
+
+        return $data;
+    }
 
     protected function handleRecordCreation(array $data): Model
     {

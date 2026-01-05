@@ -8,15 +8,13 @@ use Filament\Forms\Form;
 use App\Models\Pembelian;
 use Akaunting\Money\Money;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\ExportAction;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Exports\PembelianExporter;
 use App\Filament\Resources\PembelianReportResource\Pages;
 
-class PembelianReportResource extends Resource
+class PembelianReportResource extends BaseResource
 {
     protected static ?string $model = Pembelian::class;
 
@@ -25,6 +23,10 @@ class PembelianReportResource extends Resource
     protected static ?string $navigationLabel = 'Laporan Pembelian';
 
     protected static ?string $pluralLabel = 'Laporan Pembelian';
+
+    protected static ?string $modelLabel = 'Laporan Pembelian';
+
+    protected static ?string $pluralModelLabel = 'Laporan Pembelian';
 
     protected static ?string $navigationGroup = 'Reports';
 
@@ -43,29 +45,44 @@ class PembelianReportResource extends Resource
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
+                    ->icon('heroicon-m-document-text')
+                    ->weight('bold')
+                    ->color('primary')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
+                    ->icon('heroicon-m-calendar')
+                    ->color('gray')
                     ->sortable(),
                 TextColumn::make('supplier.nama_supplier')
                     ->label('Supplier')
+                    ->icon('heroicon-m-building-storefront')
+                    ->weight('medium')
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
+                    ->icon('heroicon-m-user')
+                    ->color('secondary')
                     ->toggleable(),
                 TextColumn::make('total_items')
                     ->label('Total Qty')
+                    ->badge()
+                    ->color('info')
                     ->state(fn(Pembelian $record) => $record->items->sum('qty')), //menghitung total qty dari relasi items
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
                     ->state(fn(Pembelian $record) => self::formatCurrency(
                         $record->items->sum(fn($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
-                    )), //menghitung total HPP dari relasi items
+                    )) //menghitung total HPP dari relasi items
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('total_harga_jual')
-                    ->label('Total Harga Jual')
+                    ->label('Total Pembelian')
+                    ->weight('bold')
+                    ->color('success')
                     ->state(fn(Pembelian $record) => self::formatCurrency(
                         $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
                     )), //menghitung total harga jual dari relasi items
@@ -86,10 +103,18 @@ class PembelianReportResource extends Resource
                     }),
             ])
             ->headerActions([
-                ExportAction::make('export_pembelian')
-                    ->label('Download CSV')
-                    ->color('primary')
-                    ->exporter(PembelianExporter::class),
+                \AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction::make('export')
+                    ->label('Download')
+                    ->filename('Laporan Pembelian' . '_' . date('d M Y'))
+                    ->defaultFormat('pdf')
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('success')
+                    ->modalHeading(false)
+                    ->extraViewData([
+                        'title' => 'Haen Komputer',
+                        'subtitle' => 'Laporan Pembelian',
+                        'tanggal' => now()->format('d-m-Y'),
+                    ])
             ])
             ->actions([])
             ->bulkActions([]);

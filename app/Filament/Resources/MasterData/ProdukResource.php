@@ -8,6 +8,7 @@ use App\Models\Produk;
 use Filament\Forms;
 // use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Form;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Tabs;
@@ -17,7 +18,7 @@ use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Get;
 // use Filament\Resources\Set;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
@@ -28,6 +29,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 // use Laravel\Pail\File;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Support\WebpUpload;
 use Illuminate\Support\Str; // Import Str
 use Closure; // Import Closure for callable type hint
 use Filament\Actions\Exports\Models\Export;
@@ -45,7 +47,7 @@ use Illuminate\Support\HtmlString;
 
 // use Laravel\SerializableClosure\Serializers\Native;
 
-class ProdukResource extends Resource
+class ProdukResource extends BaseResource
 {
     protected static ?string $model = Produk::class;
 
@@ -139,6 +141,7 @@ class ProdukResource extends Resource
                                     ->getUploadedFileNameForStorageUsing(
                                         fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
                                     )
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->openable()
                                     ->downloadable(),
                             ]),
@@ -315,6 +318,7 @@ class ProdukResource extends Resource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->size(TextColumnSize::Large)
                             ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->searchable()
@@ -324,7 +328,7 @@ class ProdukResource extends Resource
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-m-tag')
-                            ->formatStateUsing(fn($state) => ucfirst(strtolower($state)))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('brand.nama_brand')
@@ -332,7 +336,7 @@ class ProdukResource extends Resource
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-m-building-office-2')
-                            ->formatStateUsing(fn($state) => ucfirst(strtolower($state)))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                     ])->space(2),

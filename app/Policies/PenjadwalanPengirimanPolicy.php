@@ -15,7 +15,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('view_any_penjadwalan::pengiriman');
     }
 
     /**
@@ -23,7 +23,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function view(User $user, PenjadwalanPengiriman $penjadwalanPengiriman): bool
     {
-        return $user->can('view_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('view_penjadwalan::pengiriman');
     }
 
     /**
@@ -31,7 +31,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('create_penjadwalan::pengiriman');
     }
 
     /**
@@ -39,7 +39,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function update(User $user, PenjadwalanPengiriman $penjadwalanPengiriman): bool
     {
-        return $user->can('update_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('update_penjadwalan::pengiriman');
     }
 
     /**
@@ -47,7 +47,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function delete(User $user, PenjadwalanPengiriman $penjadwalanPengiriman): bool
     {
-        return $user->can('delete_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('delete_penjadwalan::pengiriman');
     }
 
     /**
@@ -55,7 +55,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('delete_any_penjadwalan::pengiriman');
     }
 
     /**
@@ -63,7 +63,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function forceDelete(User $user, PenjadwalanPengiriman $penjadwalanPengiriman): bool
     {
-        return $user->can('force_delete_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('force_delete_penjadwalan::pengiriman');
     }
 
     /**
@@ -71,7 +71,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('force_delete_any_penjadwalan::pengiriman');
     }
 
     /**
@@ -79,7 +79,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function restore(User $user, PenjadwalanPengiriman $penjadwalanPengiriman): bool
     {
-        return $user->can('restore_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('restore_penjadwalan::pengiriman');
     }
 
     /**
@@ -87,7 +87,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('restore_any_penjadwalan::pengiriman');
     }
 
     /**
@@ -95,7 +95,7 @@ class PenjadwalanPengirimanPolicy
      */
     public function replicate(User $user, PenjadwalanPengiriman $penjadwalanPengiriman): bool
     {
-        return $user->can('replicate_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('replicate_penjadwalan::pengiriman');
     }
 
     /**
@@ -103,6 +103,6 @@ class PenjadwalanPengirimanPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_penjadwalan::penjadwalan::pengiriman');
+        return $user->can('reorder_penjadwalan::pengiriman');
     }
 }

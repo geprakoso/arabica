@@ -10,9 +10,12 @@ use App\Models\KodeAkun;
 use Filament\Facades\Filament;
 use App\Filament\Pages\AppDashboard;
 use Filament\Pages\Page;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class PengaturanAkunting extends Page
 {
+    use HasPageShield;
+
     // Ikon default (tidak dipakai di nav karena halaman tidak terdaftar di sidebar).
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 

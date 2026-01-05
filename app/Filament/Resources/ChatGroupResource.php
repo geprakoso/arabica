@@ -6,14 +6,14 @@ use App\Filament\Resources\ChatGroupResource\Pages;
 use App\Models\ChatGroup;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
-class ChatGroupResource extends Resource
+class ChatGroupResource extends BaseResource
 {
     protected static ?string $model = ChatGroup::class; // Tell Filament to use the ChatGroup model.
 

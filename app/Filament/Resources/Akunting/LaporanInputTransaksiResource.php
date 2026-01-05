@@ -18,7 +18,7 @@ use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Resources\BaseResource;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -34,7 +34,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 
-class LaporanInputTransaksiResource extends Resource
+class LaporanInputTransaksiResource extends BaseResource
 {
     // Kita gunakan Model yang sama, tapi Resource ini khusus Laporan
     protected static ?string $model = InputTransaksiToko::class;
@@ -42,7 +42,8 @@ class LaporanInputTransaksiResource extends Resource
     // Konfigurasi Navigasi & Label
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
     protected static ?string $navigationLabel = 'Input Transaksi';
-    protected static ?string $pluralModelLabel = 'Input Transaksi';
+    protected static ?string $modelLabel = 'Laporan Input Transaksi';
+    protected static ?string $pluralModelLabel = 'Laporan Input Transaksi';
     protected static ?string $slug = 'laporan-input-transaksi';
     protected static ?int $navigationSort = 2;
     protected static ?string $navigationGroup = 'Reports';
@@ -55,7 +56,8 @@ class LaporanInputTransaksiResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getCurrentPanel()?->getId() === 'admin';
+        return Filament::getCurrentPanel()?->getId() === 'admin'
+            && static::canViewAny();
     }
 
     public static function table(Table $table): Table
