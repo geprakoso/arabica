@@ -38,7 +38,7 @@ class LowStockProductsTable extends AdvancedTableWidget
                 Tables\Columns\TextColumn::make('nama_produk')
                     ->label('Produk')
                     ->limit(35)
-                    ->tooltip(fn (string $state): string => $state),
+                    ->tooltip(fn(string $state): string => $state),
                 Tables\Columns\TextColumn::make('brand.nama_brand')
                     ->label('Brand')
                     ->placeholder('-'),
@@ -54,9 +54,9 @@ class LowStockProductsTable extends AdvancedTableWidget
                     ->label(false)
                     ->icon(null)
                     ->slideOver()
-                    ->modalHeading(fn (Produk $record) => $record->nama_produk)
+                    ->modalHeading(fn(Produk $record) => $record->nama_produk)
                     ->modalWidth('6xl')
-                    ->infolist(fn (Infolist $infolist) => InventoryResource::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => InventoryResource::infolist($infolist)),
             ])
             ->paginated(false);
     }
@@ -83,8 +83,8 @@ class LowStockProductsTable extends AdvancedTableWidget
 
         return Produk::query()
             ->with('brand')
-            ->whereHas('pembelianItems', fn ($q) => $q->where($qtyColumn, '>', 0))
-            ->withSum(['pembelianItems as stok_tersisa' => fn ($q) => $q->where($qtyColumn, '>', 0)], $qtyColumn)
+            ->whereHas('pembelianItems', fn($q) => $q->where($qtyColumn, '>', 0))
+            ->withSum(['pembelianItems as stok_tersisa' => fn($q) => $q->where($qtyColumn, '>', 0)], $qtyColumn)
             ->orderBy('stok_tersisa')
             ->having('stok_tersisa', '<=', 20);
     }

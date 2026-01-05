@@ -4,18 +4,20 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Karyawan;
 use App\Models\ChatGroup;
 
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasAvatar
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
@@ -81,5 +83,16 @@ class User extends Authenticatable
     public function karyawan(): HasOne
     {
         return $this->hasOne(Karyawan::class, 'user_id'); // Link user to their employee profile if one exists.
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        $path = $this->karyawan?->image_url;
+
+        if (! $path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($path);
     }
 }
