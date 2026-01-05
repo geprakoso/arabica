@@ -39,11 +39,29 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     ports:
-      - "127.0.0.1:3306:3306"  # <-- TAMBAHKAN INI
+      - "127.0.0.1:3307:3306"  # <-- TAMBAHKAN INI
     volumes:
       - dbdata:/var/lib/mysql
     networks:
       - arabica-network
+
+  # Service Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arabica-queue
+    restart: unless-stopped
+    working_dir: /var/www
+    # Perintah ini yang menjalankan worker secara terus menerus
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    volumes:
+      - ./:/var/www
+    networks:
+      - arabica-network
+    depends_on:
+      - app
+      - db
 
 networks:
   arabica-network:
