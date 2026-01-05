@@ -27,10 +27,10 @@ class LowStockProductsTable extends AdvancedTableWidget
     protected static ?string $iconColor = 'danger';
     protected static ?string $description = 'Daftar produk dengan stok terendah pada bulan ini.';
 
-    public static function canView(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'pos';
-    }
+    // public static function canView(): bool
+    // {
+    //     return Filament::getCurrentPanel()?->getId() === 'pos';
+    // }
 
     public function table(Table $table): Table
     {
