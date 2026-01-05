@@ -17,6 +17,8 @@ use App\Models\Karyawan;
 use App\Models\ChatGroup;
 
 
+
+// User Model
 class User extends Authenticatable implements HasAvatar
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
