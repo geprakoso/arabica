@@ -19,6 +19,26 @@ class SimpleFilamentAuth
         if (Auth::guard('web')->check()) {
             // User sudah login, pastikan Filament tahu user ini
             Auth::shouldUse('web');
+            $user = Auth::guard('web')->user();
+            $panel = Filament::getCurrentPanel();
+
+            // Tolak akses jika user belum punya role agar tidak masuk panel.
+            if ($user && ! $user->roles()->exists()) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                if ($panel) {
+                    return redirect()
+                        ->to($panel->getLoginUrl())
+                        ->with('error', 'Akun belum memiliki role. Hubungi admin untuk akses.');
+                }
+
+                return redirect()
+                    ->route('filament.admin.auth.login')
+                    ->with('error', 'Akun belum memiliki role. Hubungi admin untuk akses.');
+            }
+
             return $next($request);
         }
 
