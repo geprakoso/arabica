@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Filament\Facades\Filament;
 use App\Filament\Resources\InventoryResource;
 
 class LowStockProductsTable extends AdvancedTableWidget
@@ -25,6 +26,11 @@ class LowStockProductsTable extends AdvancedTableWidget
     protected static ?string $heading = 'Produk hampir habis';
     protected static ?string $iconColor = 'danger';
     protected static ?string $description = 'Daftar produk dengan stok terendah pada bulan ini.';
+
+    public static function canView(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'pos';
+    }
 
     public function table(Table $table): Table
     {
