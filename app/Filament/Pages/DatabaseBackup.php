@@ -78,7 +78,7 @@ class DatabaseBackup extends Page
                 "--host=\"{$host}\"",
                 "--port=\"{$port}\"",
                 "--no-tablespaces",
-                "--ssl-mode=DISABLED", // Bypass SSL for Docker MySQL
+                "--skip-ssl", // Bypass SSL for Docker MySQL
             ];
 
             if (!empty($password)) {
@@ -174,7 +174,7 @@ class DatabaseBackup extends Page
                 "--user=\"{$username}\"",
                 "--host=\"{$host}\"",
                 "--port=\"{$port}\"",
-                "--ssl-mode=DISABLED", // Bypass SSL for Docker MySQL
+                "--skip-ssl", // Bypass SSL for Docker MySQL
             ];
 
             if (!empty($password)) {
