@@ -2,6 +2,28 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.06
+### Perbaikan Fitur Database Backup & Restore
+- Memperbaiki bug upload file database backup berukuran besar (>2MB) yang menyebabkan error "Upload gagal".
+- Menambahkan **server-router.php** untuk menangani static files (CSS, JS, gambar) pada development server dengan benar.
+- Memperbarui **ServeWithLink.php** untuk menggunakan PHP built-in server dengan konfigurasi upload yang lebih besar:
+  - `upload_max_filesize = 128M`
+  - `post_max_size = 130M`
+  - `memory_limit = 512M`
+  - `max_execution_time = 300s`
+  - `max_input_time = 300s`
+- Memperbarui **config/livewire.php**: meningkatkan `max_upload_time` dari 5 menit menjadi 30 menit untuk mendukung upload file besar.
+- Menambahkan **public/.user.ini** untuk konfigurasi PHP upload pada development server lokal.
+
+### Konfigurasi Docker untuk Production
+- Memperbarui **Dockerfile**:
+  - Menambahkan paket `default-mysql-client` untuk mengaktifkan perintah `mysqldump` dan `mysql` yang dibutuhkan fitur export/import database.
+  - Menambahkan konfigurasi PHP upload (128M) dan timeout (300s) melalui `/usr/local/etc/php/conf.d/uploads.ini`.
+- Memperbarui **docker/nginx/conf.d/app.conf**:
+  - Meningkatkan `client_max_body_size` dari 100M menjadi 128M.
+  - Menambahkan pengaturan timeout untuk upload file besar: `client_body_timeout`, `send_timeout`, `proxy_read_timeout` (300s).
+  - Menambahkan `fastcgi_read_timeout` dan `fastcgi_send_timeout` (300s) untuk operasi yang berjalan lama.
+
 ## 2025.12.28
 - Menambahkan **Kode Akun** default (11, 12, 21, 22, 31, 41, 51, 52, 61, 71, 81) melalui seeder baru dan mengaitkannya ke `DatabaseSeeder` agar otomatis tersedia saat deploy/seed.
 - Menyempurnakan **Laba Rugi Detail**: baris **Beban Usaha** kini diambil dari **Jenis Akun** dengan kode akun 51/52/61/81 dan baris **Pendapatan Lain‑lain** dari kode akun 41/71, termasuk pengurutan dan perhitungan total per jenis akun.

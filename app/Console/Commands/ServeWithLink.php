@@ -26,8 +26,18 @@ class ServeWithLink extends Command
             $this->output->write($buffer);
         });
 
-        $this->info('Starting server...');
-        $serveProcess = Process::fromShellCommandline('php artisan serve --host=0.0.0.0', base_path());
+        $this->info('Starting server with large file upload support...');
+        
+        // Create a router script that handles static files properly
+        $routerPath = base_path('server-router.php');
+        
+        // Use PHP built-in server with custom ini settings and proper router
+        $cmd = sprintf(
+            'php -d upload_max_filesize=128M -d post_max_size=130M -d memory_limit=512M -d max_execution_time=300 -d max_input_time=300 -S 0.0.0.0:8000 -t public %s',
+            escapeshellarg($routerPath)
+        );
+        
+        $serveProcess = Process::fromShellCommandline($cmd, base_path());
         $serveProcess->setTimeout(null)->setIdleTimeout(null);
         $serveProcess->run(function ($type, $buffer) {
             $this->output->write($buffer);
