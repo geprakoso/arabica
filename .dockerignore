@@ -1,0 +1,50 @@
+# Dependencies - will be installed inside container
+/vendor
+/node_modules
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE/Editor
+.idea
+.vscode
+.fleet
+.nova
+.zed
+*.swp
+*.swo
+
+# Environment files (use docker secrets or env vars instead)
+.env
+.env.*
+!.env.example
+
+# Testing
+.phpunit.result.cache
+.phpunit.cache
+/storage/logs/*.log
+
+# Development files
+/storage/debugbar
+/storage/pail
+*.log
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+/public/build
+/public/hot
+/public/storage
+
+# Documentation
+*.md
+!README.md
+
+# Local development files
+php-dev.ini
+server-router.php
+Homestead.json
+Homestead.yaml
+docker-compose.override.yml
