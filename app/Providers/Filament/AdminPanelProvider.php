@@ -35,7 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->registration()
+            // ->registration()
             ->brandName('Haen Komputer')
             // ->brandLogoUrl('/images/logo.png')
             // ->topbar()

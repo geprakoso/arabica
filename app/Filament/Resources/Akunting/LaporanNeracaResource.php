@@ -43,11 +43,11 @@ class LaporanNeracaResource extends BaseResource
         
     ];
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        return Filament::getCurrentPanel()?->getId() === 'admin'
-            && static::canViewAny();
-    }
+    // public static function shouldRegisterNavigation(): bool
+    // {
+    //     // Hide this resource from the navigation; keep routes accessible.
+    //     return false;
+    // }
 
     public static function table(Table $table): Table
     {

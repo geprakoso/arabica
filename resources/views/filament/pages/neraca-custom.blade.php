@@ -1,6 +1,6 @@
 @php
     $bulananUrl = \App\Filament\Resources\Akunting\LaporanNeracaResource::getUrl('index');
-    $detailUrl = \App\Filament\Pages\NeracaCustom::getUrl();
+    $detailUrl = \App\Filament\Pages\NeracaCustom::getUrl(['tab' => 'detail']);
     $currentUrl = url()->current();
 @endphp
 

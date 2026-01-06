@@ -25,6 +25,11 @@ class NeracaCustom extends Page
     protected static string $view = 'filament.pages.neraca-custom';
     protected static ?string $navigationGroup = 'Reports';
 
+    // public static function getNavigationUrl(): string
+    // {
+    //     return static::getUrl(['tab' => 'detail']);
+    // }
+
     public ?array $data = [];
 
     public function mount(): void
@@ -32,6 +37,11 @@ class NeracaCustom extends Page
         $this->form->fill([
             'as_of_date' => now()->endOfMonth()->toDateString(),
         ]);
+
+        // Default tab to Bulanan: redirect to resource list unless explicitly asking for detail.
+        if ($this->shouldRedirectToBulanan()) {
+            $this->redirect(LaporanNeracaResource::getUrl('index'));
+        }
     }
 
     protected function getForms(): array
@@ -285,5 +295,12 @@ class NeracaCustom extends Page
     {
         $asOfInput = $this->data['as_of_date'] ?? null;
         return filled($asOfInput) ? Carbon::parse($asOfInput)->endOfDay() : now()->endOfMonth();
+    }
+
+    protected function shouldRedirectToBulanan(): bool
+    {
+        $tab = request()->query('tab');
+
+        return blank($tab) || $tab === 'bulanan';
     }
 }

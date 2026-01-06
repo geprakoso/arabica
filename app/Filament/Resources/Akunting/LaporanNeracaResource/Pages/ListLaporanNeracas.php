@@ -9,7 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListLaporanNeracas extends ListRecords
 {
     protected static string $resource = LaporanNeracaResource::class;
-    protected static string $view = 'filament.resources.laporan-neraca.list';
+    // protected static string $view = 'filament.resources.laporan-neraca.list';
 
     protected function getHeaderActions(): array
     {
@@ -27,6 +27,11 @@ class ListLaporanNeracas extends ListRecords
             'bulanan' => Tab::make()->label('Bulanan'),
             'detail' => Tab::make()->label('Detail'),
         ];
+    }
+
+    public function getDefaultActiveTab(): string | int | null
+    {
+        return 'bulanan';
     }
 
     public function getNeracaDetailData(): array

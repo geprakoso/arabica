@@ -60,6 +60,7 @@ class AkuntingPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
                 \App\Filament\Pages\PengaturanAkunting::class,
+                \App\Filament\Pages\NeracaCustom::class,
             ])
             ->widgets([
                 OpenWeatherWidget::class,
