@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Araabica Deployment Script
+# Usage: ./deploy.sh
+
+echo "🚀 Starting Deployment..."
+
+# 1. Pull latest changes
+echo "📥 Pulling latest changes from git..."
+git pull origin main
+
+# 2. Build and start containers (without local db)
+echo "🐳 Building and starting Docker containers..."
+docker compose up -d --build --remove-orphans
+
+# 3. Optimize Laravel
+echo "🧹 Optimizing Laravel application..."
+docker exec arabica-app php artisan optimize:clear
+docker exec arabica-app php artisan optimize
+docker exec arabica-app php artisan view:cache
+docker exec arabica-app php artisan config:cache
+
+# 4. Run Migrations
+echo "📦 Running database migrations..."
+docker exec arabica-app php artisan migrate --force
+
+# 5. Restart Queue Worker
+echo "🔄 Restarting Queue Worker..."
+docker exec arabica-app php artisan queue:restart
+
+echo "✅ Deployment Completed Successfully!"

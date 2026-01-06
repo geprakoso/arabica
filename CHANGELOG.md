@@ -15,6 +15,18 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - Memperbarui **config/livewire.php**: meningkatkan `max_upload_time` dari 5 menit menjadi 30 menit untuk mendukung upload file besar.
 - Menambahkan **public/.user.ini** untuk konfigurasi PHP upload pada development server lokal.
 
+### Migrasi Infrastruktur Database & Perbaikan Bug (New)
+- **Migrasi Database**: Memindahkan database aplikasi dari container Docker MySQL ke layanan MariaDB aaPanel host untuk menghemat memori (~400MB) dan menyatukan manajemen database.
+- **Standarisasi Environment**:
+  - Memperbarui `docker-compose.yml` dengan `profiles: ["local"]` agar file yang sama dapat digunakan untuk development (dengan DB container) dan production (tanpa DB container).
+  - Menambahkan script automatisasi deployment `deploy.sh` yang menangani pull code, build container, migrasi database, dan pembersihan cache secara aman.
+- **Perbaikan Koneksi Redis/Cache**:
+  - Mengubah driver cache dari `database` ke `file` pada `.env` untuk mencegah error koneksi jaringan saat proses deployment/booting awal container.
+- **Perbaikan Keamanan & Kompatibilitas**:
+  - Menambahkan middleware autentikasi (`web`, `auth`) pada upload file Livewire untuk mencegah error 401 saat impor database.
+  - Menghapus opsi `--skip-ssl` yang tidak didukung pada perintah backup/restore database untuk kompatibilitas dengan MariaDB client terbaru.
+- **Konfigurasi Firewall**: Menambahkan aturan firewall (iptables & ufw) untuk mengizinkan komunikasi aman antara Docker container dan MariaDB host.
+
 ### Konfigurasi Docker untuk Production
 - Memperbarui **Dockerfile**:
   - Menambahkan paket `default-mysql-client` untuk mengaktifkan perintah `mysqldump` dan `mysql` yang dibutuhkan fitur export/import database.

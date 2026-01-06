@@ -67,7 +67,7 @@ return [
         'disk' => 'local',     // Explicitly use local disk for Docker compatibility
         'rules' => ['file', 'max:102400'], // 100MB limit (Default is 12MB)
         'directory' => 'livewire-tmp',   // Explicit temp directory
-        'middleware' => 'throttle:60,1',  // Explicit throttle middleware
+        'middleware' => ['web', 'auth', 'throttle:60,1'],  // Authentication + throttle for Filament uploads
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
             'mov', 'avi', 'wmv', 'mp3', 'm4a',

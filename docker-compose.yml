@@ -9,6 +9,8 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - arabica-network
 
@@ -32,6 +34,7 @@ services:
     image: mysql:8.0
     container_name: arabica-db
     restart: unless-stopped
+    profiles: ["local"] # Only start this service when using --profile local
     # Reduce memory usage for low-RAM servers
     command: --innodb-buffer-pool-size=128M --innodb-log-file-size=48M
     environment:
@@ -41,7 +44,7 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     ports:
-      - "127.0.0.1:3307:3306" # <-- TAMBAHKAN INI
+      - "127.0.0.1:3307:3306"
     volumes:
       - dbdata:/var/lib/mysql
     networks:
@@ -59,16 +62,17 @@ services:
     command: php artisan queue:work --verbose --tries=3 --timeout=90
     volumes:
       - ./:/var/www
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - arabica-network
     depends_on:
       - app
-      - db
 
 networks:
   arabica-network:
     driver: bridge
 
-volumes:
-  dbdata:
-    driver: local
+# volumes:
+#   dbdata:
+#     driver: local

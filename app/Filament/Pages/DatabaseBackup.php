@@ -174,7 +174,6 @@ class DatabaseBackup extends Page
                 "--user=\"{$username}\"",
                 "--host=\"{$host}\"",
                 "--port=\"{$port}\"",
-                "--skip-ssl", // Bypass SSL for Docker MySQL
             ];
 
             if (!empty($password)) {
