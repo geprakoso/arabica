@@ -40,6 +40,7 @@ class PosPanelProvider extends PanelProvider
             ->id('pos')
             ->path('pos')
             ->login()
+            ->authGuard('web')
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()
             ->colors([
@@ -79,7 +80,7 @@ class PosPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                \App\Http\Middleware\SimpleFilamentAuth::class,
             ])
             ->plugin(FilamentShieldPlugin::make())
 
