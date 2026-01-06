@@ -52,6 +52,7 @@ class JadwalKalenderWidget extends CalendarWidget
         $liburCutis = LiburCuti::query()
             ->select([
                 'id',
+                'user_id',
                 'keperluan',
                 'mulai_tanggal',
                 'sampai_tanggal',

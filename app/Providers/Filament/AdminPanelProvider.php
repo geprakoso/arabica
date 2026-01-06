@@ -35,8 +35,8 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            // ->registration()
             ->brandName('Haen Komputer')
+            // ->registration()
             // ->brandLogoUrl('/images/logo.png')
             // ->topbar()
             // ->topNavigation()
@@ -84,7 +84,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                \App\Http\Middleware\SimpleFilamentAuth::class,
             ])
             ->plugin(ShieldPlugin::make())
             ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())

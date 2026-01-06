@@ -15,8 +15,7 @@ class AbsensiPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_absensi')
-            || $user->can('view_limit_absensi');
+        return $user->can('view_any_absensi::laporan::absensi');
     }
 
     /**
@@ -24,7 +23,7 @@ class AbsensiPolicy
      */
     public function view(User $user, Absensi $absensi): bool
     {
-        return $user->can('view_absensi');
+        return $user->can('view_absensi::laporan::absensi');
     }
 
     /**
@@ -32,7 +31,7 @@ class AbsensiPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_absensi');
+        return $user->can('create_absensi::laporan::absensi');
     }
 
     /**
@@ -40,7 +39,7 @@ class AbsensiPolicy
      */
     public function update(User $user, Absensi $absensi): bool
     {
-        return $user->can('update_absensi');
+        return $user->can('update_absensi::laporan::absensi');
     }
 
     /**
@@ -48,7 +47,7 @@ class AbsensiPolicy
      */
     public function delete(User $user, Absensi $absensi): bool
     {
-        return $user->can('delete_absensi');
+        return $user->can('delete_absensi::laporan::absensi');
     }
 
     /**
@@ -56,7 +55,7 @@ class AbsensiPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_absensi');
+        return $user->can('delete_any_absensi::laporan::absensi');
     }
 
     /**
@@ -64,7 +63,7 @@ class AbsensiPolicy
      */
     public function forceDelete(User $user, Absensi $absensi): bool
     {
-        return $user->can('force_delete_absensi');
+        return $user->can('force_delete_absensi::laporan::absensi');
     }
 
     /**
@@ -72,7 +71,7 @@ class AbsensiPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_absensi');
+        return $user->can('force_delete_any_absensi::laporan::absensi');
     }
 
     /**
@@ -80,7 +79,7 @@ class AbsensiPolicy
      */
     public function restore(User $user, Absensi $absensi): bool
     {
-        return $user->can('restore_absensi');
+        return $user->can('restore_absensi::laporan::absensi');
     }
 
     /**
@@ -88,7 +87,7 @@ class AbsensiPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_absensi');
+        return $user->can('restore_any_absensi::laporan::absensi');
     }
 
     /**
@@ -96,7 +95,7 @@ class AbsensiPolicy
      */
     public function replicate(User $user, Absensi $absensi): bool
     {
-        return $user->can('replicate_absensi');
+        return $user->can('replicate_absensi::laporan::absensi');
     }
 
     /**
@@ -104,6 +103,6 @@ class AbsensiPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_absensi');
+        return $user->can('reorder_absensi::laporan::absensi');
     }
 }

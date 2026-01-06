@@ -11,30 +11,11 @@ class LiburCutiPolicy
     use HandlesAuthorization;
 
     /**
-     * Helper: cek izin format baru (underscore) dan lama (::).
-     */
-    protected function hasAny(User $user, array $abilities): bool
-    {
-        foreach ($abilities as $ability) {
-            if ($user->can($ability)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $this->hasAny($user, [
-            'view_any_libur_cuti',
-            'view_any_absensi::libur::cuti',
-            'view_limit_libur_cuti',
-            'view_limit_absensi::libur::cuti',
-        ]);
+        return $user->can('view_any_absensi::libur::cuti');
     }
 
     /**
@@ -42,10 +23,7 @@ class LiburCutiPolicy
      */
     public function view(User $user, LiburCuti $liburCuti): bool
     {
-        return $this->hasAny($user, [
-            'view_libur_cuti',
-            'view_absensi::libur::cuti',
-        ]);
+        return $user->can('view_absensi::libur::cuti');
     }
 
     /**
@@ -53,10 +31,7 @@ class LiburCutiPolicy
      */
     public function create(User $user): bool
     {
-        return $this->hasAny($user, [
-            'create_libur_cuti',
-            'create_absensi::libur::cuti',
-        ]);
+        return $user->can('create_absensi::libur::cuti');
     }
 
     /**
@@ -64,10 +39,7 @@ class LiburCutiPolicy
      */
     public function update(User $user, LiburCuti $liburCuti): bool
     {
-        return $this->hasAny($user, [
-            'update_libur_cuti',
-            'update_absensi::libur::cuti',
-        ]);
+        return $user->can('update_absensi::libur::cuti');
     }
 
     /**
@@ -75,10 +47,7 @@ class LiburCutiPolicy
      */
     public function delete(User $user, LiburCuti $liburCuti): bool
     {
-        return $this->hasAny($user, [
-            'delete_libur_cuti',
-            'delete_absensi::libur::cuti',
-        ]);
+        return $user->can('delete_absensi::libur::cuti');
     }
 
     /**
@@ -86,10 +55,7 @@ class LiburCutiPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $this->hasAny($user, [
-            'delete_any_libur_cuti',
-            'delete_any_absensi::libur::cuti',
-        ]);
+        return $user->can('delete_any_absensi::libur::cuti');
     }
 
     /**
@@ -97,10 +63,7 @@ class LiburCutiPolicy
      */
     public function forceDelete(User $user, LiburCuti $liburCuti): bool
     {
-        return $this->hasAny($user, [
-            'force_delete_libur_cuti',
-            'force_delete_absensi::libur::cuti',
-        ]);
+        return $user->can('force_delete_absensi::libur::cuti');
     }
 
     /**
@@ -108,10 +71,7 @@ class LiburCutiPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $this->hasAny($user, [
-            'force_delete_any_libur_cuti',
-            'force_delete_any_absensi::libur::cuti',
-        ]);
+        return $user->can('force_delete_any_absensi::libur::cuti');
     }
 
     /**
@@ -119,10 +79,7 @@ class LiburCutiPolicy
      */
     public function restore(User $user, LiburCuti $liburCuti): bool
     {
-        return $this->hasAny($user, [
-            'restore_libur_cuti',
-            'restore_absensi::libur::cuti',
-        ]);
+        return $user->can('restore_absensi::libur::cuti');
     }
 
     /**
@@ -130,10 +87,7 @@ class LiburCutiPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $this->hasAny($user, [
-            'restore_any_libur_cuti',
-            'restore_any_absensi::libur::cuti',
-        ]);
+        return $user->can('restore_any_absensi::libur::cuti');
     }
 
     /**
@@ -141,10 +95,7 @@ class LiburCutiPolicy
      */
     public function replicate(User $user, LiburCuti $liburCuti): bool
     {
-        return $this->hasAny($user, [
-            'replicate_libur_cuti',
-            'replicate_absensi::libur::cuti',
-        ]);
+        return $user->can('replicate_absensi::libur::cuti');
     }
 
     /**
@@ -152,9 +103,6 @@ class LiburCutiPolicy
      */
     public function reorder(User $user): bool
     {
-        return $this->hasAny($user, [
-            'reorder_libur_cuti',
-            'reorder_absensi::libur::cuti',
-        ]);
+        return $user->can('reorder_absensi::libur::cuti');
     }
 }
