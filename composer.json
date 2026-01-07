@@ -31,7 +31,6 @@
         "laravel/tinker": "^2.10.1",
         "laravolt/indonesia": "^0.38.0",
         "mokhosh/filament-kanban": "^2.11",
-        "monzer/filament-chatify-integration": "^1.0",
         "nuxtifyts/dash-stack-theme": "^1.3",
         "oriondevelops/filament-greeter": "^0.2.2",
         "shanerbaner82/panel-roles": "^0.0.3",

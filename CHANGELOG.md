@@ -2,6 +2,20 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.07
+### Fitur Cetak Service & Perbaikan Sistem
+- **Cetak Invoice Service**:
+  - Membuat tampilan cetak (**print view**) yang rapi ala invoice untuk `PenjadwalanService`, lengkap dengan informasi dinamis perusahaan (Haen Komputer).
+  - Menghapus kolom harga/subtotal untuk menyederhanakan tampilan (hanya perangkat & layanan), serta menyelaraskan teks "Nama Perangkat" ke kiri.
+  - Menambahkan tombol aksi cetak praktis pada halaman *List* dan *View* service.
+- **Perbaikan Bug & Environment**:
+  - Mengatasi error `stty: invalid argument` saat menjalankan `php artisan shield:generate` dengan menambahkan flag `--panel=admin`. Gunakan php `artisan shield:generate --minimal --panel=admin`.
+  - Memperbaiki error `SvgNotFound` pada **Filament Shield** yang disebabkan oleh isu *case-sensitivity* pada Linux (`APP_LOCALE=ID` vs folder `id`).
+  - Menambahkan konfigurasi ketahanan (`resilience`) pada `config/app.php` untuk otomatis memaksa locale menjadi lowercase, sehingga memperbaiki error translasi global (dashboard, media manager).
+- **Lokalisasi**:
+  - Menambahkan file translasi Bahasa Indonesia manual untuk **Filament Media Manager** guna memperbaiki tampilan menu yang sebelumnya menampilkan kode raw (`Filament-media-manager::messages...`).
+  - Mengubah grup navigasi **Shield/Peran** dari "Pelindung" menjadi "**Master Data**" melalui penyesuaian file translasi.
+
 ## 2026.01.06
 ### Perbaikan Fitur Database Backup & Restore
 - Memperbaiki bug upload file database backup berukuran besar (>2MB) yang menyebabkan error "Upload gagal".

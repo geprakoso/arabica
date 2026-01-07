@@ -35,8 +35,8 @@ class PenjadwalanServiceResource extends BaseResource
     protected static ?string $model = PenjadwalanService::class;
 
     protected static ?string $navigationIcon = 'hugeicons-service';
-    protected static ?string $navigationGroup = 'Penjadwalan';
-    protected static ?string $navigationLabel = 'Service';
+    protected static ?string $navigationGroup = 'Transaksi';
+    protected static ?string $navigationLabel = 'Penerimaan Service';
 
     public static function form(Form $form): Form
     {
@@ -240,6 +240,12 @@ class PenjadwalanServiceResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('print')
+                    ->label('Cetak Invoice')
+                    ->icon('heroicon-m-printer')
+                    ->color('success')
+                    ->url(fn (PenjadwalanService $record) => route('penjadwalan-service.print', $record))
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

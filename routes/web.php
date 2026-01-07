@@ -45,3 +45,12 @@ Route::get('/pos/receipt/{penjualan}', function (\App\Models\Penjualan $penjuala
         'penjualan' => $penjualan->load(['items.produk', 'items.pembelianItem', 'karyawan']),
     ]);
 })->name('pos.receipt');
+
+// Service invoice print
+Route::get('/penjadwalan-service/print/{record}', function (\App\Models\PenjadwalanService $record) {
+    $profile = \App\Models\ProfilePerusahaan::first();
+    return view('filament.resources.penjadwalan-service.print', [
+        'record' => $record,
+        'profile' => $profile,
+    ]);
+})->name('penjadwalan-service.print');

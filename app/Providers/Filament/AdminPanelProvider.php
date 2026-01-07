@@ -8,7 +8,7 @@ use Filament\Widgets;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
-use App\Filament\Pages\ChatRoomPage;
+// use App\Filament\Pages\ChatRoomPage;
 use App\Filament\Pages\MasterDatas;
 use App\Filament\Pages\AppDashboard;
 use Filament\Navigation\NavigationGroup;
@@ -16,7 +16,7 @@ use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
-use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
+// use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -87,7 +87,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Http\Middleware\SimpleFilamentAuth::class,
             ])
             ->plugin(ShieldPlugin::make())
-            ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
+            // ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
                     ->allowSubFolders()

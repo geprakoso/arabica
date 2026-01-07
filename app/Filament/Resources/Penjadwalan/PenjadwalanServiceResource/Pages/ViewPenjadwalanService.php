@@ -14,6 +14,12 @@ class ViewPenjadwalanService extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Actions\Action::make('print')
+                ->label('Cetak Invoice')
+                ->icon('heroicon-m-printer')
+                ->color('success')
+                ->url(fn ($record) => route('penjadwalan-service.print', $record))
+                ->openUrlInNewTab(),
         ];
     }
 }

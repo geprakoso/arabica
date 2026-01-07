@@ -9,7 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListPenjadwalanServices extends ListRecords
 {
     protected static string $resource = PenjadwalanServiceResource::class;
-    protected static ?string $title = 'Penjadwalan Service';
+    protected static ?string $title = 'Penerimaan Service';
 
     protected function getHeaderActions(): array
     {
