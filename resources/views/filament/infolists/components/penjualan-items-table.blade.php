@@ -14,7 +14,9 @@
     <table class="lr-table min-w-[66rem] w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
-                <th class="w-[22rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Produk</th>
+                <th class="w-[18rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Produk</th>
+                <th class="w-[10rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">SN</th>
+                <th class="w-[8rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Garansi</th>
                 <th class="w-[10rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Batch (No. PO)</th>
                 <th class="w-[8rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Tgl Batch</th>
                 <th class="w-[8rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Kondisi</th>
@@ -56,9 +58,26 @@
 
                 <tr class="lr-row border-b border-gray-200 transition bg-white dark:border-gray-700 dark:bg-transparent hover:bg-gray-100 hover:[&>td]:bg-gray-100 dark:hover:bg-gray-900/50 dark:hover:[&>td]:bg-gray-900/50">
                     <td class="px-4 py-3">
-                        <div class="max-w-[22rem] truncate font-medium text-gray-800 dark:text-gray-100">
+                        <div class="max-w-[18rem] truncate font-medium text-gray-800 dark:text-gray-100">
                             {{ data_get($item, 'produk.nama_produk') ?? '-' }}
                         </div>
+                    </td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                        @php
+                            $serials = data_get($item, 'serials');
+                            $serialList = is_array($serials) ? collect($serials)->pluck('sn')->filter()->values() : collect();
+                            $snLabel = $serialList->isNotEmpty() ? $serialList->implode(', ') : (data_get($item, 'produk.sn') ?? '-');
+                        @endphp
+                        {{ $snLabel }}
+                    </td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                        @php
+                            $garansiList = is_array($serials ?? null) ? collect($serials)->pluck('garansi')->filter()->values() : collect();
+                            $garansiLabel = $garansiList->isNotEmpty()
+                                ? $garansiList->implode(', ')
+                                : (data_get($item, 'produk.garansi') ? data_get($item, 'produk.garansi') : '-');
+                        @endphp
+                        {{ $garansiLabel }}
                     </td>
                     <td class="px-4 py-3 text-gray-800 dark:text-gray-100 whitespace-nowrap">
                         {{ $batchPo ? "#{$batchPo}" : '-' }}
@@ -83,7 +102,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="9" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
                         Belum ada item penjualan.
                     </td>
                 </tr>

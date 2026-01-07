@@ -156,6 +156,15 @@ class ProdukResource extends BaseResource
                                     ->readOnly() // Lebih aman readonly daripada disabled jika masih mau disubmit
                                     ->required()
                                     ->unique(ignoreRecord: true),
+                                Forms\Components\TextInput::make('sn')
+                                    ->label('SN (Serial Number)')
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255)
+                                    ->placeholder('Kosongkan jika tidak ada'),
+                                Forms\Components\TextInput::make('garansi')
+                                    ->label('Garansi')
+                                    ->maxLength(255)
+                                    ->placeholder('Contoh: 12 bulan / 1 tahun'),
 
                                 Forms\Components\Select::make('kategori_id')
                                     ->relationship('kategori', 'nama_kategori')
@@ -199,6 +208,15 @@ class ProdukResource extends BaseResource
                                     ->weight('bold')
                                     ->size(TextEntrySize::Large)
                                     ->columnSpanFull(),
+                                InfolistGrid::make(2)
+                                    ->schema([
+                                        TextEntry::make('sn')
+                                            ->label('SN')
+                                            ->placeholder('-'),
+                                        TextEntry::make('garansi')
+                                            ->label('Garansi')
+                                            ->placeholder('-'),
+                                    ]),
 
                                 TextEntry::make('deskripsi')
                                     ->label('Deskripsi')

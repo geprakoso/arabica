@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\AkunTransaksi;
+use App\Models\PenjualanPembayaran;
 
 class Penjualan extends Model
 {
@@ -26,8 +28,10 @@ class Penjualan extends Model
         'diskon_total',
         'grand_total',
         'metode_bayar',
+        'akun_transaksi_id',
         'tunai_diterima',
         'kembalian',
+        'status_pembayaran',
         'gudang_id',
         'sumber_transaksi',
     ];
@@ -79,6 +83,16 @@ class Penjualan extends Model
         return $this->belongsTo(Karyawan::class, 'id_karyawan');
     }
 
+    public function akunTransaksi()
+    {
+        return $this->belongsTo(AkunTransaksi::class, 'akun_transaksi_id');
+    }
+
+    public function pembayaran()
+    {
+        return $this->hasMany(PenjualanPembayaran::class, 'id_penjualan', 'id_penjualan');
+    }
+
     public function member()
     {
         return $this->belongsTo(Member::class, 'id_member');
@@ -101,6 +115,22 @@ class Penjualan extends Model
         $this->forceFill([
             'total' => $total,
             'grand_total' => $grandTotal,
+        ])->saveQuietly();
+    }
+
+    public function recalculatePaymentStatus(): void
+    {
+        $totalPaid = (float) ($this->pembayaran()->sum('jumlah') ?? 0);
+
+        if ($totalPaid <= 0) {
+            return;
+        }
+
+        $grandTotal = (float) ($this->grand_total ?? 0);
+        $status = $grandTotal > 0 && $totalPaid >= $grandTotal ? 'lunas' : 'belum_lunas';
+
+        $this->forceFill([
+            'status_pembayaran' => $status,
         ])->saveQuietly();
     }
 

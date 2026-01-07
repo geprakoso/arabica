@@ -2039,47 +2039,6 @@ select {
   margin-bottom: 0;
 }
 
-/* Stretch Filament dashboard widgets so siblings in the same row share the same height */
-
-.fi-wi {
-  align-items: stretch;
-}
-
-.fi-wi-widget {
-  height: 100%;
-}
-
-.fi-wi-widget > .fi-section {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.fi-wi-widget > .fi-section .fi-section-content-ctn {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-}
-
-.fi-wi-widget > .fi-section .fi-section-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-}
-
-.fi-wi-widget .fi-ta {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.fi-wi-widget .fi-ta-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -2193,6 +2152,10 @@ select {
 
 .end-6 {
   inset-inline-end: 1.5rem;
+}
+
+.left-0 {
+  left: 0px;
 }
 
 .left-3 {
@@ -2789,6 +2752,10 @@ select {
   width: 100vw;
 }
 
+.w-\[18rem\] {
+  width: 18rem;
+}
+
 .min-w-0 {
   min-width: 0px;
 }
@@ -2986,6 +2953,10 @@ select {
 
 .max-w-xs {
   max-width: 20rem;
+}
+
+.max-w-\[18rem\] {
+  max-width: 18rem;
 }
 
 .flex-1 {
@@ -3607,6 +3578,11 @@ select {
   border-bottom-left-radius: 0.75rem;
 }
 
+.rounded-t-lg {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
 .rounded-t-xl {
   border-top-left-radius: 0.75rem;
   border-top-right-radius: 0.75rem;
@@ -3825,8 +3801,8 @@ select {
   background-color: rgb(255 255 255 / 0);
 }
 
-.bg-white\/10 {
-  background-color: rgb(255 255 255 / 0.1);
+.bg-white\/5 {
+  background-color: rgb(255 255 255 / 0.05);
 }
 
 .bg-white\/80 {
@@ -4889,10 +4865,6 @@ select {
   --tw-ring-color: rgba(var(--primary-600), var(--tw-ring-opacity, 1));
 }
 
-.focus-visible\:ring-offset-1:focus-visible {
-  --tw-ring-offset-width: 1px;
-}
-
 .enabled\:cursor-wait:enabled {
   cursor: wait;
 }
@@ -5433,10 +5405,6 @@ select {
 .dark\:focus-visible\:ring-primary-500:focus-visible:is(.dark *) {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgba(var(--primary-500), var(--tw-ring-opacity, 1));
-}
-
-.dark\:focus-visible\:ring-offset-gray-900:focus-visible:is(.dark *) {
-  --tw-ring-offset-color: rgba(var(--gray-900), 1);
 }
 
 .dark\:disabled\:bg-transparent:disabled:is(.dark *) {

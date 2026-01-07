@@ -8,6 +8,7 @@ use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -30,7 +31,7 @@ class ItemsRelationManager extends RelationManager
         return $form->schema([
             Select::make('id_produk')
                 ->label('Produk')
-                ->options(fn () => PenjualanResource::getAvailableProductOptions())
+                ->options(fn() => PenjualanResource::getAvailableProductOptions())
                 ->searchable()
                 ->preload()
                 ->required()
@@ -55,7 +56,7 @@ class ItemsRelationManager extends RelationManager
                 }),
             Select::make('kondisi')
                 ->label('Kondisi')
-                ->options(fn (Get $get): array => $this->getConditionOptions((int) ($get('id_produk') ?? 0)))
+                ->options(fn(Get $get): array => $this->getConditionOptions((int) ($get('id_produk') ?? 0)))
                 ->native(false)
                 ->reactive()
                 ->placeholder(function (Get $get): string {
@@ -81,16 +82,12 @@ class ItemsRelationManager extends RelationManager
                 ->label('Qty')
                 ->numeric()
                 ->minValue(1)
-                ->required(),
-            TextInput::make('hpp')
-                ->label('HPP')
-                ->disabled()
-                ->numeric()
-                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
-                ->stripCharacters([',', '.', 'Rp', ' '])
-                ->minValue(0)
-                ->helperText('Otomatis mengikuti batch terpilih.')
-                ->required(),
+                ->required()
+                ->reactive()
+                ->afterStateUpdated(function (Set $set, Get $get, ?int $state): void {
+                    $qty = (int) ($state ?? 0);
+                    $set('serials', $this->normalizeSerials($get('serials'), $qty));
+                }),
             TextInput::make('harga_jual')
                 ->label('Harga Jual')
                 ->numeric()
@@ -100,6 +97,28 @@ class ItemsRelationManager extends RelationManager
                 ->prefix('Rp ')
                 ->helperText('Kosongkan untuk mengikuti harga batch tertua.')
                 ->nullable(),
+            TableRepeater::make('serials')
+                ->label('SN & Garansi')
+                ->childComponents([
+                    TextInput::make('sn')
+                        ->label('SN')
+                        ->maxLength(255),
+                    TextInput::make('garansi')
+                        ->label('Garansi')
+                        ->maxLength(255),
+                ])
+                ->columns(2)
+                ->dehydrated()
+                ->defaultItems(0)
+                ->disableItemCreation()
+                ->disableItemDeletion()
+                ->disableItemMovement()
+                ->reactive()
+                ->afterStateHydrated(function (Set $set, Get $get): void {
+                    $qty = (int) ($get('qty') ?? 0);
+                    $set('serials', $this->normalizeSerials($get('serials'), $qty));
+                })
+                ->visible(fn(Get $get) => (int) ($get('qty') ?? 0) > 0),
         ])->columns(2);
     }
 
@@ -111,6 +130,33 @@ class ItemsRelationManager extends RelationManager
                     ->label('Produk')
                     ->searchable()
                     ->wrap(),
+                TextColumn::make('serials_sn')
+                    ->label('SN')
+                    ->state(function (PenjualanItem $record): string {
+                        $serials = is_array($record->serials ?? null) ? $record->serials : [];
+                        $snList = collect($serials)->pluck('sn')->filter()->values();
+
+                        if ($snList->isNotEmpty()) {
+                            return $snList->implode(', ');
+                        }
+
+                        return $record->produk?->sn ?? '-';
+                    })
+                    ->wrap(),
+                TextColumn::make('serials_garansi')
+                    ->label('Garansi')
+                    ->state(function (PenjualanItem $record): string {
+                        $serials = is_array($record->serials ?? null) ? $record->serials : [];
+                        $garansiList = collect($serials)->pluck('garansi')->filter()->values();
+
+                        if ($garansiList->isNotEmpty()) {
+                            return $garansiList->map(fn($val) => $val)->implode(', ');
+                        }
+
+                        $garansi = $record->produk?->garansi;
+
+                        return $garansi ?: '-';
+                    }),
                 TextColumn::make('pembelianItem.pembelian.no_po')
                     ->label('No. PO')
                     ->placeholder('-'),
@@ -123,7 +169,7 @@ class ItemsRelationManager extends RelationManager
                     ->numeric(),
                 TextColumn::make('harga_jual')
                     ->label('Harga Jual')
-                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format((int) ($state ?? 0), 0, ',', '.')),
+                    ->formatStateUsing(fn($state) => 'Rp ' . number_format((int) ($state ?? 0), 0, ',', '.')),
                 TextColumn::make('kondisi')
                     ->label('Kondisi')
                     ->badge(),
@@ -131,7 +177,7 @@ class ItemsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Produk')
-                    ->using(fn (array $data): PenjualanItem => $this->createItemWithAutoBatch($data)),
+                    ->using(fn(array $data): PenjualanItem => $this->createItemWithAutoBatch($data)),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -165,9 +211,16 @@ class ItemsRelationManager extends RelationManager
         $customPrice = $data['harga_jual'] ?? null;
         $customPrice = ($customPrice === '' || $customPrice === null) ? null : (int) $customPrice;
         $condition = $data['kondisi'] ?? null;
+        $serials = is_array($data['serials'] ?? null) ? $data['serials'] : [];
 
-        return DB::transaction(function () use ($penjualan, $productId, $qty, $customPrice, $condition): PenjualanItem {
-            $created = $this->fulfillUsingFifo($penjualan, $productId, $qty, $customPrice, $condition);
+        if (! empty($serials) && count($serials) !== $qty) {
+            throw ValidationException::withMessages([
+                'serials' => 'Jumlah SN harus sama dengan Qty.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($penjualan, $productId, $qty, $customPrice, $condition, $serials): PenjualanItem {
+            $created = $this->fulfillUsingFifo($penjualan, $productId, $qty, $customPrice, $condition, $serials);
 
             if ($created->isEmpty()) {
                 throw ValidationException::withMessages([
@@ -179,7 +232,7 @@ class ItemsRelationManager extends RelationManager
         });
     }
 
-    protected function fulfillUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?int $customPrice, ?string $condition): Collection
+    protected function fulfillUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?int $customPrice, ?string $condition, array $serials = []): Collection
     {
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
@@ -195,7 +248,7 @@ class ItemsRelationManager extends RelationManager
         }
 
         $batches = $batchesQuery->get();
-        $available = (int) $batches->sum(fn (PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
+        $available = (int) $batches->sum(fn(PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
 
         if ($available < $qty) {
             throw ValidationException::withMessages([
@@ -205,6 +258,7 @@ class ItemsRelationManager extends RelationManager
 
         $remaining = $qty;
         $created = collect();
+        $serials = array_values($serials);
 
         foreach ($batches as $batch) {
             if ($remaining <= 0) {
@@ -219,6 +273,11 @@ class ItemsRelationManager extends RelationManager
 
             $takeQty = min($remaining, $batchAvailable);
 
+            $takeSerials = [];
+            if (! empty($serials)) {
+                $takeSerials = array_splice($serials, 0, $takeQty);
+            }
+
             $record = PenjualanItem::query()->create([
                 'id_penjualan' => $penjualan->getKey(),
                 'id_produk' => $productId,
@@ -226,6 +285,7 @@ class ItemsRelationManager extends RelationManager
                 'qty' => $takeQty,
                 'harga_jual' => $customPrice,
                 'kondisi' => $condition,
+                'serials' => empty($takeSerials) ? null : $takeSerials,
             ]);
 
             $created->push($record);
@@ -233,6 +293,23 @@ class ItemsRelationManager extends RelationManager
         }
 
         return $created;
+    }
+
+    private function normalizeSerials($serials, int $qty): array
+    {
+        $list = is_array($serials) ? array_values($serials) : [];
+
+        if ($qty < 1) {
+            return [];
+        }
+
+        $normalized = array_slice($list, 0, $qty);
+
+        while (count($normalized) < $qty) {
+            $normalized[] = ['sn' => null, 'garansi' => null];
+        }
+
+        return $normalized;
     }
 
     protected function getConditionOptions(int $productId): array
@@ -250,7 +327,7 @@ class ItemsRelationManager extends RelationManager
             ->pluck('kondisi')
             ->filter()
             ->unique()
-            ->mapWithKeys(fn (string $condition): array => [$condition => ucfirst(strtolower($condition))])
+            ->mapWithKeys(fn(string $condition): array => [$condition => ucfirst(strtolower($condition))])
             ->toArray();
     }
 
@@ -273,7 +350,7 @@ class ItemsRelationManager extends RelationManager
         return PembelianItem::query()
             ->where($productColumn, $productId)
             ->where($qtyColumn, '>', 0)
-            ->when($condition, fn ($query) => $query->where('kondisi', $condition))
+            ->when($condition, fn($query) => $query->where('kondisi', $condition))
             ->orderBy('id_pembelian_item')
             ->first();
     }

@@ -45,3 +45,18 @@ Route::get('/pos/receipt/{penjualan}', function (\App\Models\Penjualan $penjuala
         'penjualan' => $penjualan->load(['items.produk', 'items.pembelianItem', 'karyawan']),
     ]);
 })->name('pos.receipt');
+
+Route::get('/penjualan/invoice/{penjualan}', function (\App\Models\Penjualan $penjualan) {
+    return view('penjualan.invoice', [
+        'penjualan' => $penjualan->load([
+            'items.produk',
+            'items.pembelianItem.pembelian',
+            'jasaItems.jasa',
+            'member',
+            'karyawan',
+            'akunTransaksi',
+            'pembayaran.akunTransaksi',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjualan.invoice');

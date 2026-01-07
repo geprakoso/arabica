@@ -22,11 +22,13 @@ class PenjualanItem extends Model
         'hpp',
         'harga_jual',
         'kondisi',
+        'serials',
     ];
 
     protected $casts = [
         'hpp' => 'decimal:2',
         'harga_jual' => 'decimal:2',
+        'serials' => 'array',
     ];
 
     protected static function booted(): void
