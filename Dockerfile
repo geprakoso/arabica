@@ -4,7 +4,10 @@ FROM php:8.4-fpm
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
     libpng-dev \
+    libwebp-dev \
     libonig-dev \
     libxml2-dev \
     zip \
@@ -17,7 +20,8 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions (Filament butuh intl, gd, zip)
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip opcache
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip opcache
 
 # Configure PHP for large file uploads (database backup)
 RUN echo "upload_max_filesize = 128M" >> /usr/local/etc/php/conf.d/uploads.ini \

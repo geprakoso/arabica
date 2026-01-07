@@ -1,8 +1,12 @@
 @php
-    $rows = $rows ?? (isset($getState) ? $getState() : []);
+    $rows = $rows ?? (isset($getState) ? ($getState() ?? []) : []);
 
     if ($rows instanceof \Illuminate\Support\Collection) {
         $rows = $rows->all();
+    }
+
+    if (! is_iterable($rows)) {
+        $rows = [];
     }
 @endphp
 

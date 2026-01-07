@@ -13,7 +13,11 @@ git pull origin main
 echo "🐳 Building and starting Docker containers..."
 docker compose up -d --build --remove-orphans
 
-# 3. Optimize Laravel
+# 3. Install Dependencies (Ensure vendor is synced)
+echo "📦 Installing Dependencies..."
+docker exec arabica-app composer install --no-dev --optimize-autoloader --no-scripts
+
+# 4. Optimize Laravel
 echo "🧹 Optimizing Laravel application..."
 docker exec arabica-app php artisan optimize:clear
 docker exec arabica-app php artisan optimize

@@ -26,6 +26,12 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
   - Menambahkan middleware autentikasi (`web`, `auth`) pada upload file Livewire untuk mencegah error 401 saat impor database.
   - Menghapus opsi `--skip-ssl` yang tidak didukung pada perintah backup/restore database untuk kompatibilitas dengan MariaDB client terbaru.
 - **Konfigurasi Firewall**: Menambahkan aturan firewall (iptables & ufw) untuk mengizinkan komunikasi aman antara Docker container dan MariaDB host.
+- **Fixed (Prioritas)**: Mengatasi 500 Error pada pembuatan `Pembelian` (Error `Grid::isContained`) dengan memperbarui paket Filament ke `v3.3.46` dan menambahkan langkah `composer install` pada `deploy.sh` untuk memastikan sinkronisasi library.
+  - Menghapus view publish yang usang `resources/views/vendor/filament/components/loading-section.blade.php` yang menyebabkan konflik.
+
+### Perbaikan Stabilitas & Coding (Update Terlupakan)
+- **WebpUpload**: Menambahkan *failsafe mechanism* dan logging. Jika konversi gambar ke WebP gagal, sistem otomatis menggunakan file asli (fallback) agar upload tidak gagal total.
+- **JadwalKalenderWidget**: Memperbaiki query event dengan menambahkan `user_id` (select) untuk memastikan validasi kepemilikan data berjalan benar.
 
 ### Konfigurasi Docker untuk Production
 - Memperbarui **Dockerfile**:

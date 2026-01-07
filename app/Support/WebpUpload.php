@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Filament\Forms\Components\BaseFileUpload;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Spatie\Image\Image;
@@ -41,6 +42,13 @@ class WebpUpload
 
             return $path;
         } catch (Throwable $exception) {
+            Log::warning('WebpUpload::store conversion failed; falling back to original upload.', [
+                'error' => $exception->getMessage(),
+                'file_name' => $component->getUploadedFileNameForStorage($file),
+                'directory' => $component->getDirectory(),
+                'disk' => $component->getDiskName(),
+            ]);
+
             $storeMethod = $component->getVisibility() === 'public' ? 'storePubliclyAs' : 'storeAs';
 
             return $file->{$storeMethod}(
@@ -87,6 +95,13 @@ class WebpUpload
 
             return $path;
         } catch (Throwable $exception) {
+            Log::warning('WebpUpload::storeBase64 conversion failed; falling back to jpg.', [
+                'error' => $exception->getMessage(),
+                'disk' => $disk,
+                'directory' => $directory,
+                'visibility' => $visibility,
+            ]);
+
             $fileName = Str::uuid() . '.jpg';
             $path = $directory ? trim($directory . '/' . $fileName, '/') : $fileName;
 

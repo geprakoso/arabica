@@ -134,59 +134,59 @@ class PembelianResource extends BaseResource
                                     ->required(fn(callable $get) => $get('jenis_pembayaran') === 'tempo'),
                             ])
                             ->columns(2),
-                        Tab::make('Produk Dibeli')
-                            ->schema([
-                                TableRepeater::make('items')
-                                    ->relationship('items')
-                                    ->label('Daftar Produk')
-                                    ->minItems(1)
-                                    ->schema([
-                                        Select::make('id_produk')
-                                            ->label('Produk')
-                                            ->relationship('produk', 'nama_produk')
-                                            ->searchable()
-                                            ->preload()
-                                            ->required()
-                                            ->native(false),
-                                        TextInput::make('hpp')
-                                            ->label('HPP')
-                                            ->numeric()
-                                            ->prefix('Rp ')
-                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2) // format pemisah uang
-                                            ->minValue(0)
-                                            ->required(),
-                                        TextInput::make('harga_jual')
-                                            ->label('Harga Jual')
-                                            ->numeric()
-                                            ->prefix('Rp ')
-                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2) // format pemisah uang
-                                            ->minValue(0)
-                                            ->required(),
-                                        TextInput::make('qty')
-                                            ->label('Qty')
-                                            ->numeric()
-                                            ->minValue(1)
-                                            ->required(),
-                                        Select::make('kondisi')
-                                            ->label('Kondisi')
-                                            ->options([
-                                                'baru' => 'Baru',
-                                                'bekas' => 'Bekas',
-                                            ])
-                                            ->default('baru')
-                                            ->required()
-                                            ->native(false),
-                                    ])
-                                    ->colStyles([
-                                        'hpp' => 'width: 180px;',
-                                        'harga_jual' => 'width: 180px;',
-                                        'qty' => 'width: 80px;',
-                                        'kondisi' => 'width: 150px;',
-                                    ]) // format kolom size dan alignment
-                                    ->columns(5)
-                                    ->cloneable()
-                                    ->reorderable(false),
-                            ]),
+                        // Tab::make('Produk Dibeli')
+                            // ->schema([
+                            //     TableRepeater::make('items')
+                            //         ->relationship('items')
+                            //         ->label('Daftar Produk')
+                            //         ->minItems(1)
+                            //         ->schema([
+                            //             Select::make('id_produk')
+                            //                 ->label('Produk')
+                            //                 ->relationship('produk', 'nama_produk')
+                            //                 ->searchable()
+                            //                 ->preload()
+                            //                 ->required()
+                            //                 ->native(false),
+                            //             TextInput::make('hpp')
+                            //                 ->label('HPP')
+                            //                 ->numeric()
+                            //                 ->prefix('Rp ')
+                            //                 ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2) // format pemisah uang
+                            //                 ->minValue(0)
+                            //                 ->required(),
+                            //             TextInput::make('harga_jual')
+                            //                 ->label('Harga Jual')
+                            //                 ->numeric()
+                            //                 ->prefix('Rp ')
+                            //                 ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2) // format pemisah uang
+                            //                 ->minValue(0)
+                            //                 ->required(),
+                            //             TextInput::make('qty')
+                            //                 ->label('Qty')
+                            //                 ->numeric()
+                            //                 ->minValue(1)
+                            //                 ->required(),
+                            //             Select::make('kondisi')
+                            //                 ->label('Kondisi')
+                            //                 ->options([
+                            //                     'baru' => 'Baru',
+                            //                     'bekas' => 'Bekas',
+                            //                 ])
+                            //                 ->default('baru')
+                            //                 ->required()
+                            //                 ->native(false),
+                            //         ])
+                            //         ->colStyles([
+                            //             'hpp' => 'width: 180px;',
+                            //             'harga_jual' => 'width: 180px;',
+                            //             'qty' => 'width: 80px;',
+                            //             'kondisi' => 'width: 150px;',
+                            //         ]) // format kolom size dan alignment
+                            //         ->columns(5)
+                            //         ->cloneable()
+                            //         ->reorderable(false),
+                            // ]),
                         ]),
                     ]),
 
@@ -209,9 +209,10 @@ class PembelianResource extends BaseResource
                                     ->preload()
                                     ->required()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems() // Mencegah duplikasi produk
-                                    ->afterStateUpdated(function (Set $set): void {
-                                        $set('hpp', null);
-                                        $set('harga_jual', null);
+                                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                        $pricing = self::getLastRecordedPricingForProduct((int) ($state ?? 0));
+                                        $set('hpp', $pricing['hpp']);
+                                        $set('harga_jual', $pricing['harga_jual']);
                                     })
                                     ->columnSpan([
                                         'md' => 4, // Lebar sedang
@@ -572,5 +573,41 @@ class PembelianResource extends BaseResource
             ->toArray();
 
         return empty($tags) ? null : implode(', ', $tags);
+    }
+
+    protected static function getLastRecordedPricingForProduct(int $productId): array
+    {
+        if ($productId < 1) {
+            return ['hpp' => null, 'harga_jual' => null];
+        }
+
+        $itemTable = (new PembelianItem())->getTable();
+        $purchaseTable = (new Pembelian())->getTable();
+        $productColumn = PembelianItem::productForeignKey();
+        $primaryKey = PembelianItem::primaryKeyColumn();
+
+        $lastItem = PembelianItem::query()
+            ->leftJoin($purchaseTable, $purchaseTable . '.id_pembelian', '=', $itemTable . '.id_pembelian')
+            ->where($itemTable . '.' . $productColumn, $productId)
+            ->orderByDesc($purchaseTable . '.tanggal')
+            ->orderByDesc($itemTable . '.' . $primaryKey)
+            ->select([
+                $itemTable . '.' . $primaryKey,
+                $itemTable . '.hpp',
+                $itemTable . '.harga_jual',
+            ])
+            ->first();
+
+        if (! $lastItem) {
+            return ['hpp' => null, 'harga_jual' => null];
+        }
+
+        $hpp = $lastItem->hpp;
+        $hargaJual = $lastItem->harga_jual;
+
+        return [
+            'hpp' => is_null($hpp) ? null : (int) $hpp,
+            'harga_jual' => is_null($hargaJual) ? null : (int) $hargaJual,
+        ];
     }
 }
