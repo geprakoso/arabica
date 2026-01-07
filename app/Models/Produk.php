@@ -20,6 +20,8 @@ class Produk extends Model
         'kategori_id',
         'brand_id',
         'sku',
+        'sn',
+        'garansi',
         'berat',
         'panjang',
         'lebar',

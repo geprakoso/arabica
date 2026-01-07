@@ -46,11 +46,17 @@ Route::get('/pos/receipt/{penjualan}', function (\App\Models\Penjualan $penjuala
     ]);
 })->name('pos.receipt');
 
-// Service invoice print
-Route::get('/penjadwalan-service/print/{record}', function (\App\Models\PenjadwalanService $record) {
-    $profile = \App\Models\ProfilePerusahaan::first();
-    return view('filament.resources.penjadwalan-service.print', [
-        'record' => $record,
-        'profile' => $profile,
+Route::get('/penjualan/invoice/{penjualan}', function (\App\Models\Penjualan $penjualan) {
+    return view('penjualan.invoice', [
+        'penjualan' => $penjualan->load([
+            'items.produk',
+            'items.pembelianItem.pembelian',
+            'jasaItems.jasa',
+            'member',
+            'karyawan',
+            'akunTransaksi',
+            'pembayaran.akunTransaksi',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
-})->name('penjadwalan-service.print');
+})->name('penjualan.invoice');

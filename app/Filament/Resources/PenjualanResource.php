@@ -10,12 +10,16 @@ use Filament\Tables\Table;
 use App\Models\PembelianItem;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Get;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Set;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\Action;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
@@ -72,7 +76,7 @@ class PenjualanResource extends BaseResource
                             ->relationship('karyawan', 'nama_karyawan')
                             ->searchable()
                             ->preload()
-                            ->default(fn () => auth()->user()->karyawan?->id)
+                            ->default(fn() => auth()->user()->karyawan?->id)
                             ->required()
                             ->native(false),
                         Select::make('id_member')
@@ -83,7 +87,7 @@ class PenjualanResource extends BaseResource
                             ->nullable()
                             ->native(false)
                             ->createOptionModalHeading('Tambah Member')
-                            ->createOptionAction(fn ($action) => $action->label('Tambah Member'))
+                            ->createOptionAction(fn($action) => $action->label('Tambah Member'))
                             ->createOptionForm([
                                 TextInput::make('nama_member')
                                     ->label('Nama Lengkap')
@@ -113,6 +117,47 @@ class PenjualanResource extends BaseResource
                                     TextInput::make('kecamatan')->label('Kecamatan')->nullable(),
                                 ]),
                             ]),
+                        TextInput::make('diskon_total')
+                            ->label('Diskon')
+                            ->prefix('Rp')
+                            ->numeric()
+                            ->default(0)
+                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0),
+                        TableRepeater::make('pembayaran')
+                            ->label('Pembayaran (Split)')
+                            ->relationship('pembayaran')
+                            ->minItems(0)
+                            ->addActionLabel('Tambah Pembayaran')
+                            ->colStyles([
+                                'metode_bayar' => 'width: 20%;',
+                                'akun_transaksi_id' => 'width: 30%;',
+                                'jumlah' => 'width: 50%;',
+                            ])
+                            ->childComponents([
+                                Select::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->options([
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                    ])
+                                    ->native(false)
+                                    ->required()
+                                    ->reactive(),
+                                Select::make('akun_transaksi_id')
+                                    ->label('Akun Transaksi')
+                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
+                                    ->searchable()
+                                    ->preload()
+                                    ->native(false)
+                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                TextInput::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->required(),
+                            ])
+                            ->columns(4),
                         RichEditor::make('catatan')
                             ->label('Catatan')
                             ->columnSpanFull(),
@@ -124,7 +169,10 @@ class PenjualanResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'jasaItems'])->withCount('items'))
+            ->modifyQueryUsing(fn(Builder $query) => $query
+                ->with(['items', 'jasaItems'])
+                ->withCount(['items', 'jasaItems'])
+                ->withSum('pembayaran', 'jumlah'))
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
@@ -156,10 +204,36 @@ class PenjualanResource extends BaseResource
                 TextColumn::make('items_count')
                     ->label('Item & Jasa')
                     ->badge()
+                    ->toggleable()
                     ->icon('heroicon-m-shopping-cart')
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
+                TextColumn::make('status_pembayaran')
+                    ->label('Status Pembayaran')
+                    ->badge()
+                    ->copyable()
+                    ->state(function (Penjualan $record): string {
+                        $grandTotal = (float) ($record->grand_total ?? 0);
+                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
+                        $sisa = max(0, $grandTotal - $totalPaid);
+
+                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                    })
+                    ->color(fn(string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                    ->alignCenter(),
+                TextColumn::make('sisa_bayar_display')
+                    ->label('Sisa Bayar')
+                    ->alignRight()
+                    ->state(function (Penjualan $record): string {
+                        $grandTotal = (float) ($record->grand_total ?? 0);
+                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
+
+                        $sisa = max(0, $grandTotal - $totalPaid);
+
+                        return self::formatCurrency((int) $sisa);
+                    })
+                    ->copyable(),
                 TextColumn::make('grand_total_display')
                     ->label('Grand Total')
                     ->weight('bold')
@@ -195,6 +269,12 @@ class PenjualanResource extends BaseResource
                     ->placeholder('Semua'),
             ])
             ->actions([
+                Action::make('invoice')
+                    ->label('Invoice')
+                    ->icon('heroicon-m-printer')
+                    ->color('primary')
+                    ->url(fn(Penjualan $record) => route('penjualan.invoice', $record))
+                    ->openUrlInNewTab(),
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make()
                         ->icon('heroicon-m-eye')
@@ -206,7 +286,18 @@ class PenjualanResource extends BaseResource
                     Tables\Actions\DeleteAction::make()
                         ->icon('heroicon-m-trash'),
                 ])
-                    ->hidden(fn(Penjualan $record): bool => $record->items()->exists() || $record->jasaItems()->exists())
+                    ->hidden(function (Penjualan $record): bool {
+                        $hasLines = $record->items()->exists() || $record->jasaItems()->exists();
+                        $grandTotal = (float) ($record->grand_total ?? 0);
+                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
+                        $isUnpaid = $totalPaid < $grandTotal;
+
+                        if ($isUnpaid || $grandTotal <= 0) {
+                            return false;
+                        }
+
+                        return $hasLines && $grandTotal > 0;
+                    })
                     ->label('Aksi')
                     ->tooltip('Aksi'),
             ])
@@ -260,24 +351,31 @@ class PenjualanResource extends BaseResource
                                     ->label('Metode Bayar')
                                     ->badge()
                                     ->placeholder('-')
-                                    ->formatStateUsing(function ($state): ?string {
+                                    ->state(function (Penjualan $record): ?string {
+                                        $methods = $record->pembayaran
+                                            ? $record->pembayaran->pluck('metode_bayar')->filter()->map('strval')->unique()->values()
+                                            : collect();
+
+                                        if ($methods->isNotEmpty()) {
+                                            $labels = $methods->map(function (string $method): string {
+                                                return match ($method) {
+                                                    'cash' => 'Tunai',
+                                                    'transfer' => 'Transfer',
+                                                    default => strtoupper($method),
+                                                };
+                                            });
+
+                                            return $labels->implode(' + ');
+                                        }
+
+                                        $state = $record->metode_bayar;
                                         if (! $state) {
                                             return null;
                                         }
 
                                         return method_exists($state, 'label') ? $state->label() : (string) $state;
                                     })
-                                    ->color(function ($state): string {
-                                        $value = method_exists($state, 'value') ? $state->value : $state;
-
-                                        return match ($value) {
-                                            'cash' => 'success',
-                                            'transfer' => 'info',
-                                            'card' => 'warning',
-                                            'ewallet' => 'primary',
-                                            default => 'gray',
-                                        };
-                                    }),
+                                    ->color('primary'),
 
                                 TextEntry::make('grand_total')
                                     ->label('Grand Total')
@@ -309,7 +407,7 @@ class PenjualanResource extends BaseResource
                         ViewEntry::make('items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.penjualan-items-table')
-                            ->state(fn (Penjualan $record) => $record->items()->with(['produk', 'pembelianItem.pembelian'])->get()),
+                            ->state(fn(Penjualan $record) => $record->items()->with(['produk', 'pembelianItem.pembelian'])->get()),
                     ]),
 
                 InfoSection::make('Daftar Jasa')
@@ -317,7 +415,7 @@ class PenjualanResource extends BaseResource
                         ViewEntry::make('jasa_items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.penjualan-jasa-table')
-                            ->state(fn (Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
+                            ->state(fn(Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
                     ]),
 
                 // === BAGIAN BAWAH: CATATAN & RINGKASAN ===
@@ -333,6 +431,37 @@ class PenjualanResource extends BaseResource
                             ]),
 
                             InfoGroup::make([
+                                TextEntry::make('total_dibayar')
+                                    ->label('Total Dibayar')
+                                    ->money('IDR')
+                                    ->state(function (Penjualan $record): float {
+                                        return (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                                    })
+                                    ->extraAttributes([
+                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
+                                    ])
+                                    ->placeholder('-'),
+                                TextEntry::make('sisa_bayar')
+                                    ->label('Sisa Bayar')
+                                    ->money('IDR')
+                                    ->state(function (Penjualan $record): float {
+                                        $subtotalProduk = (float) ($record->items()
+                                            ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
+                                            ->value('total') ?? 0);
+                                        $subtotalJasa = (float) ($record->jasaItems()
+                                            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                                            ->value('total') ?? 0);
+                                        $diskon = (float) ($record->diskon_total ?? 0);
+                                        $grandTotal = max(0, ($subtotalProduk + $subtotalJasa) - $diskon);
+
+                                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                        return max(0, $grandTotal - $totalPaid);
+                                    })
+                                    ->extraAttributes([
+                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
+                                    ])
+                                    ->placeholder('-'),
                                 TextEntry::make('total')
                                     ->label('Subtotal')
                                     ->money('IDR')
@@ -366,7 +495,7 @@ class PenjualanResource extends BaseResource
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
                                     ])
                                     ->placeholder('-')
-                                    ->visible(fn (Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
+                                    ->visible(fn(Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
 
                                 TextEntry::make('kembalian')
                                     ->label('Kembalian')
@@ -375,7 +504,7 @@ class PenjualanResource extends BaseResource
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
                                     ])
                                     ->placeholder('-')
-                                    ->visible(fn (Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
+                                    ->visible(fn(Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
                             ])->grow(false),
                         ])->from('md'),
                     ]),
@@ -479,14 +608,15 @@ class PenjualanResource extends BaseResource
     }
 
     /**
-     * Hitung grand total gabungan dari produk dan jasa.
+     * Hitung grand total gabungan dari produk dan jasa setelah diskon.
      */
     protected static function calculateGrandTotal(Penjualan $record): int
     {
         $totalProduk = $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
         $totalJasa = $record->jasaItems->sum(fn($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
+        $diskon = (int) ($record->diskon_total ?? 0);
 
-        return $totalProduk + $totalJasa;
+        return max(0, ($totalProduk + $totalJasa) - $diskon);
     }
 
     protected static function formatCurrency(int $value): string
