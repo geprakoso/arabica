@@ -60,3 +60,10 @@ Route::get('/penjualan/invoice/{penjualan}', function (\App\Models\Penjualan $pe
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('penjualan.invoice');
+
+Route::get('/penjadwalan-service/print/{record}', function (\App\Models\PenjadwalanService $record) {
+    return view('filament.resources.penjadwalan-service.print', [
+        'record' => $record->load(['member', 'technician', 'jasa']),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjadwalan-service.print');
