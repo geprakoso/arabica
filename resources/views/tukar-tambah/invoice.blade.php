@@ -118,6 +118,19 @@
             padding: 16px;
         }
 
+        .info-label {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+
         .info-card h3 {
             margin: 0 0 8px;
             font-size: 13px;
@@ -161,6 +174,17 @@
         tbody td {
             padding: 12px 14px;
             border-bottom: 1px solid #e2e8f0;
+            font-weight: 700;
+
+        }
+
+
+        td:nth-child(2),
+        td:nth-child(3),
+        td:nth-child(4),
+        td:nth-child(5),
+        td:nth-child(6) {
+            font-weight: 400;
         }
 
         .text-right {
@@ -214,18 +238,20 @@
 
         .summary-value {
             font-size: 16px;
-            font-weight: 700;
+            font-weight: 500;
             color: #0f172a;
         }
 
-        .summary-row:nth-child(2) .summary-label,
-        .summary-row:nth-child(2) .summary-value {
+        .summary-row:nth-child(3) .summary-label,
+        .summary-row:nth-child(3) .summary-value {
             color: #dc2626;
         }
 
+
+
         .summary-row:last-child .summary-label {
             color: #1d4ed8;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .summary-row:last-child .summary-value {
@@ -310,6 +336,10 @@
                 box-shadow: none;
                 border-radius: 0;
             }
+
+            .actions {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -368,8 +398,15 @@
                 </div>
             </div>
             <div class="info-card">
-                <h3>Karyawan</h3>
-                <p>{{ $tukarTambah->karyawan?->nama_karyawan ?? '-' }}</p>
+                <h3>Metode Pembayaran</h3>
+                <div class="info-row">
+                    <span class="info-label">Kasir</span>
+                    <span class="info-value">{{ $tukarTambah->karyawan?->nama_karyawan ?? '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status Bayar</span>
+                    <span class="info-value">Lunas</span>
+                </div>
             </div>
             {{-- <div class="info-card">
                 <h3>Supplier</h3>
@@ -464,15 +501,15 @@
             <div class="summary-card">
                 <h4>Ringkasan Pembayaran</h4>
                 <div class="summary-row">
-                    <span class="summary-label">Total Penjualan</span>
+                    <span class="summary-label">Total Pembelian</span>
                     <span class="summary-value">Rp {{ number_format((int) $subtotalPenjualan, 0, ',', '.') }}</span>
                 </div>
                 <div class="summary-row">
-                    <span class="summary-label">Total Pembelian</span>
+                    <span class="summary-label">Total Penjualan</span>
                     <span class="summary-value">- Rp {{ number_format((int) $subtotalPembelian, 0, ',', '.') }}</span>
                 </div>
                 <div class="summary-row">
-                    <span class="summary-label">T</span>
+                    <span class="summary-label">Total Bayar</span>
                     <span class="summary-value">Rp {{ number_format((int) $selisihTotal, 0, ',', '.') }}</span>
                 </div>
             </div>
