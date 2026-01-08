@@ -58,6 +58,7 @@ class PembelianRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+
                 Tables\Actions\Action::make('edit')
                     ->label('Edit')
                     ->icon('heroicon-m-pencil-square')

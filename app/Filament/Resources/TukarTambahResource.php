@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TukarTambahResource\Pages;
+use App\Filament\Resources\TukarTambahResource\RelationManagers\PembelianRelationManager;
+use App\Filament\Resources\TukarTambahResource\RelationManagers\PenjualanRelationManager;
 use App\Models\AkunTransaksi;
 use App\Models\Jasa;
 use App\Models\Member;
@@ -10,7 +12,6 @@ use App\Models\Pembelian;
 use App\Models\Penjualan;
 use App\Models\Supplier;
 use App\Models\TukarTambah;
-use Filament\Forms\Form;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
@@ -19,8 +20,8 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Split;
@@ -28,10 +29,10 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
-use App\Filament\Resources\TukarTambahResource\RelationManagers\PembelianRelationManager;
-use App\Filament\Resources\TukarTambahResource\RelationManagers\PenjualanRelationManager;
+use Filament\Tables\Table;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class TukarTambahResource extends BaseResource
 {
@@ -412,6 +413,12 @@ class TukarTambahResource extends BaseResource
                     ->copyable(),
             ])
             ->actions([
+                Action::make('invoice')
+                    ->label('Invoice')
+                    ->icon('heroicon-m-printer')
+                    ->color('primary')
+                    ->url(fn(TukarTambah $record) => route('tukar-tambah.invoice', $record))
+                    ->openUrlInNewTab(),
                 \Filament\Tables\Actions\ViewAction::make(),
                 \Filament\Tables\Actions\EditAction::make(),
                 \Filament\Tables\Actions\DeleteAction::make(),

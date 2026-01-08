@@ -79,6 +79,14 @@
             line-height: 1.5;
         }
 
+        footer {
+            background: linear-gradient(90deg, #0f172a 0%, #1d4ed8 50%, #22c55e 100%);
+            color: #e2e8f0;
+            padding: 20px 32px;
+            text-align: center;
+            font-size: 13px;
+        }
+
         .invoice-meta {
             text-align: right;
             font-size: 14px;
@@ -158,6 +166,7 @@
         .text-right {
             text-align: right;
         }
+
 
         .summary {
             display: grid;
@@ -245,6 +254,33 @@
             letter-spacing: 1px;
         }
 
+        .actions {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 100;
+        }
+
+        .btn-print {
+            background-color: #0f172a;
+            color: #ffffff;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            box-shadow: 0 12px 20px -8px rgba(15, 23, 42, 0.4);
+            transition: transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-print:hover {
+            transform: translateY(-2px);
+        }
+
         .info-row {
             display: flex;
             justify-content: space-between;
@@ -279,6 +315,18 @@
 </head>
 
 <body>
+
+    <div class="actions">
+        <button class="btn-print" onclick="window.print()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Cetak Invoice
+        </button>
+    </div>
     <div class="invoice-container">
         <div class="top-bar"></div>
         <header>
@@ -305,10 +353,19 @@
 
         <div class="info-grid">
             <div class="info-card">
-                <h3>Pelanggan</h3>
-                <p>{{ $memberName }}</p>
-                <p>{{ $penjualan?->member?->no_hp ?? '-' }}</p>
-                <p>{{ $penjualan?->member?->alamat ?? '-' }}</p>
+                <h3>Informasi Pelanggan</h3>
+                <div class="info-row">
+                    <span class="info-label">Nama</span>
+                    <span class="info-value">{{ $memberName }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">No. HP</span>
+                    <span class="info-value">{{ $penjualan->member?->no_hp ?? '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Alamat</span>
+                    <span class="info-value">{{ $penjualan->member?->alamat ?? '-' }}</span>
+                </div>
             </div>
             <div class="info-card">
                 <h3>Karyawan</h3>
@@ -421,9 +478,9 @@
             </div>
         </div>
 
-        <div class="footer-note">
-            Ringkasan dihitung dari total penjualan (produk + jasa) dikurangi total pembelian.
-        </div>
+        <footer>
+            Terima kasih telah berbelanja. Simpan invoice ini sebagai bukti pembayaran yang sah.
+        </footer>
     </div>
 </body>
 

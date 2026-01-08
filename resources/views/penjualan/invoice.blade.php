@@ -307,6 +307,22 @@
             z-index: 100;
         }
 
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(220px, 1fr));
+            gap: 16px;
+            padding: 0 40px 32px;
+        }
+
+        .summary-card {
+            background-color: #f8fafc;
+            border-radius: 14px;
+            margin-top: 24px;
+            justify-self: end;
+            padding: 20px;
+            min-width: 320px;
+        }
+
         .btn-print {
             background-color: #0f172a;
             color: #ffffff;
@@ -549,8 +565,8 @@
             </table>
         </div>
 
-        <div class="totals-section">
-            <div class="totals-box">
+        <div class="summary">
+            <div class="summary-card">
                 <div class="total-row">
                     <span>Subtotal</span>
                     <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
