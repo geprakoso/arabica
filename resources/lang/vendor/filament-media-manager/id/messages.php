@@ -20,7 +20,7 @@ return [
             'password' => 'Kata Sandi',
             'password_confirmation' => 'Konfirmasi Kata Sandi',
         ],
-        'group' => 'Konten',
+        'group' => 'Master Data',
     ],
     'media' => [
         'title' => 'Media',

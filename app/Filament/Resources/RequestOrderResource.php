@@ -36,7 +36,7 @@ class RequestOrderResource extends BaseResource
 {
     protected static ?string $model = RequestOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Logistik & Inventori';
     protected static ?string $recordTitleAttribute = 'no_ro';
     protected static ?string $pluralLabel = 'Request Order';
     protected static ?int $navigationSort = 3;

@@ -28,7 +28,7 @@ class LaporanPengajuanCutiResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'Laporan';
 
     protected static ?string $navigationLabel = 'Laporan Pengajuan Cuti';
 

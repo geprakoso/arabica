@@ -32,7 +32,7 @@ class PosActivityResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-receipt-refund';
 
-    protected static ?string $navigationGroup = 'POS';
+    protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?string $modelLabel = 'Aktivitas';
 

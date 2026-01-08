@@ -94,16 +94,13 @@ class AdminPanelProvider extends PanelProvider
 
             )
             ->navigationGroups([
-                NavigationGroup::make('Master Data'),
-                NavigationGroup::make('Inventory'),
-                NavigationGroup::make('Absensi'),
-                NavigationGroup::make('Penjadwalan'),
-                NavigationGroup::make('Keuangan'),
-                NavigationGroup::make('Pengaturan'),
-                NavigationGroup::make('Laporan'),
-                NavigationGroup::make('Reports'),
-                NavigationGroup::make('Content'),
-
+                NavigationGroup::make('Master Data')->collapsed(),
+                NavigationGroup::make('Transaksi')->collapsed(),
+                NavigationGroup::make('Logistik & Inventori')->collapsed(),
+                NavigationGroup::make('Keuangan')->collapsed(),
+                NavigationGroup::make('Kepegawaian')->collapsed(),
+                NavigationGroup::make('Laporan')->collapsed(),
+                NavigationGroup::make('Pengaturan')->collapsed(),
             ])
             ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class,])
             ->renderHook(
@@ -112,7 +109,7 @@ class AdminPanelProvider extends PanelProvider
                     <style>
                         /* --- 0. SIDEBAR SETTINGS --- */
                         :root {
-                            --sidebar-width: 13rem;
+                            --sidebar-width: 20rem;
                         }
 
                         /* --- 1. SIDEBAR BACKGROUND & BORDER --- */
@@ -378,7 +375,7 @@ class AdminPanelProvider extends PanelProvider
                             const sidebar = document.querySelector('.fi-sidebar');
                             
                             // Ambil ukuran tersimpan atau default 13rem
-                            let sidebarWidth = localStorage.getItem('filament-sidebar-width') || '13rem';
+                            let sidebarWidth = localStorage.getItem('filament-sidebar-width') || '20rem';
                             
                             // Set ukuran awal
                             document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
@@ -437,6 +434,36 @@ class AdminPanelProvider extends PanelProvider
                         }
                     </style>
                 HTML)
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn(): string => <<<'HTML'
+                    <script>
+                        document.addEventListener('click', function (event) {
+                            // Ensure it's a real user click
+                            if (!event.isTrusted) return;
+
+                            const button = event.target.closest('.fi-sidebar-group-button');
+                            if (!button) return;
+
+                            // Use setTimeout to run this check AFTER Alpine has processed the click 
+                            // and updated the 'aria-expanded' state.
+                            setTimeout(() => {
+                                // If the clicked group is now OPEN, we close others.
+                                // If it's closed (user just closed it), we do nothing.
+                                if (button.getAttribute('aria-expanded') === 'true') {
+                                    document.querySelectorAll('.fi-sidebar-group-button').forEach(otherButton => {
+                                        if (otherButton === button) return;
+                                        
+                                        if (otherButton.getAttribute('aria-expanded') === 'true') {
+                                            otherButton.click();
+                                        }
+                                    });
+                                }
+                            }, 50);
+                        });
+                    </script>
+                HTML
             );
     }
 }

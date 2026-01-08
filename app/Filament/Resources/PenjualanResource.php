@@ -42,7 +42,7 @@ class PenjualanResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?string $navigationLabel = 'Penjualan';
 

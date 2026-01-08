@@ -25,7 +25,7 @@ class KalenderEventResource extends Resource
 {
     protected static ?string $model = KalenderEvent::class;
 
-    protected static ?string $navigationGroup = 'Penjadwalan';
+    protected static ?string $navigationGroup = 'Kepegawaian';
     protected static ?string $navigationLabel = 'Kalender Event';
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?int $navigationSort = 2;

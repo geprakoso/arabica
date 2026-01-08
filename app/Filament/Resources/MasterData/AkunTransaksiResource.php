@@ -27,7 +27,7 @@ class AkunTransaksiResource extends BaseResource
     protected static ?string $navigationLabel = "Akun Transaksi";
     // protected static ?string $navigationParentItem = 'Master Data';
     // protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
-    protected static ?string $navigationGroup = "Master Data";
+    protected static ?string $navigationGroup = 'Keuangan';
     protected static ?int $navigationSort = 12;
 
     public static function form(Form $form): Form

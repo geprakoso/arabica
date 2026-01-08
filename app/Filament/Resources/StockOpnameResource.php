@@ -27,7 +27,7 @@ class StockOpnameResource extends BaseResource
 
     protected static ?string $navigationLabel = 'Stock Opname';
     // protected static ?string $navigationParentItem = 'Inventory & Stock';
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Logistik & Inventori';
     // protected static ?string $navigationParentItem = 'Inventory';
 
     protected static ?string $pluralLabel = 'Stock Opname';

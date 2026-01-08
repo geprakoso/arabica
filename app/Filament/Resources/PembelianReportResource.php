@@ -28,7 +28,7 @@ class PembelianReportResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'Laporan Pembelian';
 
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'Laporan';
 
     protected static ?int $navigationSort = 2;
 

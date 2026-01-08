@@ -31,7 +31,7 @@ class LiburCutiResource extends BaseResource
 
     protected static ?string $navigationIcon = 'hugeicons-sailboat-offshore';
 
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Kepegawaian';
 
     protected static ?string $navigationLabel = 'Libur & Cuti';
 

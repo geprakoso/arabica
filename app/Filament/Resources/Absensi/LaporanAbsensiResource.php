@@ -21,7 +21,7 @@ class LaporanAbsensiResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Laporan';
 
     protected static ?string $navigationLabel = 'Laporan Absensi';
 

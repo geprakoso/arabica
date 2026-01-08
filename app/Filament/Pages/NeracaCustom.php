@@ -23,7 +23,11 @@ class NeracaCustom extends Page
     protected static ?string $navigationIcon = 'heroicon-o-scale';
     protected static ?string $title = 'Laporan Neraca';
     protected static string $view = 'filament.pages.neraca-custom';
-    protected static ?string $navigationGroup = 'Reports';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
     // public static function getNavigationUrl(): string
     // {

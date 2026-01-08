@@ -20,7 +20,7 @@ class PenjualanReportResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'Laporan';
 
     protected static ?string $navigationLabel = 'Laporan Penjualan';
 
