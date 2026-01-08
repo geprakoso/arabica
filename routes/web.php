@@ -67,3 +67,20 @@ Route::get('/penjadwalan-service/print/{record}', function (\App\Models\Penjadwa
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('penjadwalan-service.print');
+
+Route::get('/tukar-tambah/invoice/{tukarTambah}', function (\App\Models\TukarTambah $tukarTambah) {
+    return view('tukar-tambah.invoice', [
+        'tukarTambah' => $tukarTambah->load([
+            'karyawan',
+            'penjualan.items.produk',
+            'penjualan.jasaItems.jasa',
+            'penjualan.member',
+            'penjualan.karyawan',
+            'penjualan.pembayaran.akunTransaksi',
+            'pembelian.items.produk',
+            'pembelian.supplier',
+            'pembelian.karyawan',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('tukar-tambah.invoice');

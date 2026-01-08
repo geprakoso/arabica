@@ -139,6 +139,11 @@ class Penjualan extends Model
         return $this->hasMany(PenjualanJasa::class, 'id_penjualan', 'id_penjualan');
     }
 
+    public function tukarTambah()
+    {
+        return $this->hasOne(TukarTambah::class, 'penjualan_id', 'id_penjualan');
+    }
+
     public function scopePosOnly(Builder $query): Builder
     {
         return $query->where(function (Builder $query): void {

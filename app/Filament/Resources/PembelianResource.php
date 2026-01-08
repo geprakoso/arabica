@@ -378,6 +378,16 @@ class PembelianResource extends BaseResource
                                 TextEntry::make('karyawan.nama_karyawan')
                                     ->label('PIC Internal')
                                     ->icon('heroicon-m-user'),
+
+                                TextEntry::make('tukar_tambah_link')
+                                    ->label('Tukar Tambah')
+                                    ->state(fn(Pembelian $record): ?string => $record->tukarTambah?->kode)
+                                    ->icon('heroicon-m-arrows-right-left')
+                                    ->url(fn(Pembelian $record) => $record->tukarTambah
+                                        ? TukarTambahResource::getUrl('view', ['record' => $record->tukarTambah])
+                                        : null)
+                                    ->openUrlInNewTab()
+                                    ->placeholder('-'),
                             ]),
 
                             // Kanan: Status & Pembayaran

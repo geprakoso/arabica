@@ -70,4 +70,9 @@ class Pembelian extends Model
     {
         return $this->hasMany(PembelianItem::class, 'id_pembelian', 'id_pembelian');
     }
+
+    public function tukarTambah()
+    {
+        return $this->hasOne(TukarTambah::class, 'pembelian_id', 'id_pembelian');
+    }
 }

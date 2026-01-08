@@ -343,6 +343,16 @@ class PenjualanResource extends BaseResource
                                     ->label('Kasir / Karyawan')
                                     ->icon('heroicon-m-user')
                                     ->placeholder('-'),
+
+                                TextEntry::make('tukar_tambah_link')
+                                    ->label('Tukar Tambah')
+                                    ->state(fn(Penjualan $record): ?string => $record->tukarTambah?->kode)
+                                    ->icon('heroicon-m-arrows-right-left')
+                                    ->url(fn(Penjualan $record) => $record->tukarTambah
+                                        ? TukarTambahResource::getUrl('view', ['record' => $record->tukarTambah])
+                                        : null)
+                                    ->openUrlInNewTab()
+                                    ->placeholder('-'),
                             ]),
 
                             // Kanan: Pembayaran (opsional)
