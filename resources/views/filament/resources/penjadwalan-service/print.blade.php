@@ -1,6 +1,8 @@
 @php
     // $jasa = $record->jasa;
     // $harga = $jasa?->harga ?? 0;
+    // Ensure profile variable doesn't crash if missing (though it appears used in existing code)
+    // $profile = $profile ?? null;
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -443,6 +445,8 @@
                 </tbody>
             </table>
         </div>
+
+
 
         <!-- Totals Removed per user request -->
 

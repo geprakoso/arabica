@@ -1,12 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 use App\Filament\Pages\AppDashboard;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/test-auth', function () {
     $user = Auth::user();
+
     return response()->json([
         'is_logged_in' => Auth::check(),
         'user_id' => $user->id ?? null,
@@ -84,3 +85,9 @@ Route::get('/tukar-tambah/invoice/{tukarTambah}', function (\App\Models\TukarTam
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('tukar-tambah.invoice');
+Route::get('/penjadwalan-service/print-crosscheck/{record}', function (\App\Models\PenjadwalanService $record) {
+    return view('filament.resources.penjadwalan-service.print-crosscheck', [
+        'record' => $record->load(['member', 'technician', 'jasa', 'crosschecks', 'listAplikasis', 'listGames', 'listOs']),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjadwalan-service.print-crosscheck');

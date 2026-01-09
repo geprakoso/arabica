@@ -44,7 +44,7 @@ class PembelianResource extends BaseResource
     protected static ?string $navigationIcon = 'heroicon-o-receipt-refund';
     protected static ?string $navigationLabel = 'Pembelian';
     protected static ?string $pluralLabel = 'Pembelian';
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Transaksi';
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form

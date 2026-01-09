@@ -34,7 +34,7 @@ class PosSaleResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static ?string $navigationGroup = 'POS';
+    protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?string $modelLabel = 'POS';
 

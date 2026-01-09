@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
 class LaporanNeracaResource extends BaseResource
 {
     protected static ?string $model = LaporanNeraca::class;
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'Laporan';
     protected static ?string $navigationLabel = 'Neraca';
     protected static ?string $pluralLabel = 'Neraca';
     protected static ?string $navigationIcon = 'heroicon-o-scale';

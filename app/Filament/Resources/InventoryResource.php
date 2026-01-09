@@ -41,7 +41,7 @@ class InventoryResource extends BaseResource
 {
     protected static ?string $model = Produk::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Logistik & Inventori';
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Inventory';
     protected static ?string $pluralLabel = 'Inventory';

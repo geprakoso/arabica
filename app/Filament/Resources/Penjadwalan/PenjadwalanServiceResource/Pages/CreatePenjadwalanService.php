@@ -32,4 +32,54 @@ class CreatePenjadwalanService extends CreateRecord
     {
         return static::$title ?? parent::getBreadcrumb();
     }
+
+    protected array $pendingRelations = [];
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $relations = ['crosschecks', 'listAplikasis', 'listGames', 'listOs'];
+        
+        foreach ($relations as $relation) {
+            $ids = [];
+            
+            // Collect keys to remove to avoid modification during iteration issues
+            $keysToRemove = [];
+
+            foreach ($data as $key => $value) {
+                // Check for Parent Checkbox
+                if (preg_match('/^attr_' . $relation . '_(\d+)_parent$/', $key, $matches)) {
+                    $parentId = $matches[1];
+                    if ($value) { 
+                        $ids[] = $parentId;
+                    }
+                    $keysToRemove[] = $key;
+                }
+                // Check for Children CheckboxList
+                if (preg_match('/^attr_' . $relation . '_(\d+)_children$/', $key, $matches)) {
+                    if (is_array($value)) {
+                        $ids = array_merge($ids, $value);
+                    }
+                    $keysToRemove[] = $key;
+                }
+            }
+
+            // Cleanup $data
+            foreach ($keysToRemove as $key) {
+                unset($data[$key]);
+            }
+
+            $this->pendingRelations[$relation] = array_unique($ids);
+        }
+        
+        return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        foreach ($this->pendingRelations as $relation => $ids) {
+            if (method_exists($this->record, $relation)) {
+                $this->record->{$relation}()->sync($ids);
+            }
+        }
+    }
 }

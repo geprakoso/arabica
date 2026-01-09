@@ -45,7 +45,7 @@ class AbsensiResource extends BaseResource
     protected static ?string $model = Absensi::class;
 
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Kepegawaian';
     protected static ?string $pluralLabel = 'Absensi';
     protected static ?string $navigationLabel = 'Absen';
 

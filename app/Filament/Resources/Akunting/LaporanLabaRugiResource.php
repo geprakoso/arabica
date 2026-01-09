@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\DB;
 class LaporanLabaRugiResource extends BaseResource
 {
     protected static ?string $model = LaporanLabaRugi::class;
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'Laporan';
     protected static ?string $navigationLabel = 'Laba Rugi';
     protected static ?string $pluralLabel = 'Laba Rugi';
     protected static ?string $navigationIcon = 'hugeicons-pie-chart';

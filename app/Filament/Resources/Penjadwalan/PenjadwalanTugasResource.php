@@ -35,7 +35,7 @@ class PenjadwalanTugasResource extends BaseResource
     protected static ?string $model = PenjadwalanTugas::class;
 
     protected static ?string $navigationIcon = 'hugeicons-task-daily-01';
-    protected static ?string $navigationGroup = 'Penjadwalan';
+    protected static ?string $navigationGroup = 'Kepegawaian';
     protected static ?string $navigationLabel = 'Tugas';
 
     public static function form(Form $form): Form

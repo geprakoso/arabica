@@ -25,6 +25,7 @@ class PenjadwalanService extends Model
         'technician_id',
         'jasa_id',
         'estimasi_selesai',
+        'has_crosscheck',
     ];
 
     protected $casts = [
@@ -44,5 +45,25 @@ class PenjadwalanService extends Model
     public function jasa()
     {
         return $this->belongsTo(Jasa::class);
+    }
+
+    public function crosschecks()
+    {
+        return $this->belongsToMany(Crosscheck::class, 'penjadwalan_service_crosscheck');
+    }
+
+    public function listAplikasis()
+    {
+        return $this->belongsToMany(ListAplikasi::class, 'penjadwalan_service_list_aplikasi');
+    }
+
+    public function listGames()
+    {
+        return $this->belongsToMany(ListGame::class, 'penjadwalan_service_list_game');
+    }
+
+    public function listOs()
+    {
+        return $this->belongsToMany(ListOs::class, 'penjadwalan_service_list_os');
     }
 }

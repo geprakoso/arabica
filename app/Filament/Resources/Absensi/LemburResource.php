@@ -37,7 +37,7 @@ class LemburResource extends BaseResource
     protected static ?string $model = Lembur::class;
 
     protected static ?string $navigationIcon = 'hugeicons-clock-05';
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Kepegawaian';
     protected static ?string $navigationLabel = 'Lembur';
 
     public static function canViewAny(): bool

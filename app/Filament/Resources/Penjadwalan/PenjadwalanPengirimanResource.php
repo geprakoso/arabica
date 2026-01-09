@@ -42,7 +42,7 @@ class PenjadwalanPengirimanResource extends BaseResource
 
     protected static ?string $navigationIcon = 'hugeicons-shipping-truck-01';
     protected static ?string $navigationLabel = 'Pengiriman';
-    protected static ?string $navigationGroup = 'Penjadwalan';
+    protected static ?string $navigationGroup = 'Kepegawaian';
 
     public static function form(Form $form): Form
     {

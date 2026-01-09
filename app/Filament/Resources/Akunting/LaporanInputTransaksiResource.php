@@ -46,7 +46,7 @@ class LaporanInputTransaksiResource extends BaseResource
     protected static ?string $pluralModelLabel = 'Laporan Input Transaksi';
     protected static ?string $slug = 'laporan-input-transaksi';
     protected static ?int $navigationSort = 2;
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'Laporan';
 
     // Matikan fitur Tambah Data (Create) karena ini hanya laporan view-only
     public static function canCreate(): bool

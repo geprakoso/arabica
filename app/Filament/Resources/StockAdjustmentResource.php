@@ -32,7 +32,7 @@ class StockAdjustmentResource extends BaseResource
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
     protected static ?string $navigationLabel = 'Penyesuaian Stok';
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Logistik & Inventori';
     protected static ?int $navigationSort = 51;
 
     protected static ?string $pluralLabel = 'Penyesuaian Stok';
