@@ -20,6 +20,13 @@ class ViewPenjadwalanService extends ViewRecord
                 ->color('success')
                 ->url(fn ($record) => route('penjadwalan-service.print', $record))
                 ->openUrlInNewTab(),
+            Actions\Action::make('print_crosscheck')
+                ->label('Cetak Checklist')
+                ->icon('heroicon-m-clipboard-document-check')
+                ->color('info')
+                ->visible(fn ($record) => $record->has_crosscheck)
+                ->url(fn ($record) => route('penjadwalan-service.print-crosscheck', $record))
+                ->openUrlInNewTab(),
         ];
     }
 }

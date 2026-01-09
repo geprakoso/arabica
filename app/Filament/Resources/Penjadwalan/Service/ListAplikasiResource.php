@@ -18,17 +18,32 @@ class ListAplikasiResource extends Resource
     protected static ?string $model = ListAplikasi::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
-    protected static ?string $navigationGroup = 'Transaksi';
-    protected static ?string $navigationParentItem = 'Penerimaan Service';
+    
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-            ]);
+            ->schema(static::getFormSchema());
+    }
+
+    public static function getFormSchema(): array
+    {
+        return [
+            Forms\Components\Select::make('parent_id')
+                ->label('Induk (Parent)')
+                ->relationship('parent', 'name')
+                ->searchable()
+                ->preload()
+                ->helperText('Pilih jika ini adalah sub-item'),
+            Forms\Components\TextInput::make('name')
+                ->required()
+                ->maxLength(255)
+                ->label('Nama Aplikasi'),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -36,7 +51,15 @@ class ListAplikasiResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Nama')
+                    ->searchable()
+                    ->sortable(),
+                // Tables\Columns\TextColumn::make('parent.name')
+                //     ->label('Induk')
+                //     ->sortable()
+                //     ->badge()
+                //     ->color('gray')
+                //     ->description(fn ($record) => $record->parent ? 'Sub-item' : 'Main Item'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -47,10 +70,24 @@ class ListAplikasiResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('parent_id')
+                    ->relationship('parent', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Filter Induk'),
             ])
+            ->groups([
+                Tables\Grouping\Group::make('parent.name')
+                    ->label('Parent')
+                    ->collapsible(),
+            ])
+            ->defaultGroup('parent.name')
+            ->defaultSort('name')
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->form(static::getFormSchema())
+                    ->modalWidth('md'),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

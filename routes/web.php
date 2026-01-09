@@ -67,3 +67,10 @@ Route::get('/penjadwalan-service/print/{record}', function (\App\Models\Penjadwa
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('penjadwalan-service.print');
+
+Route::get('/penjadwalan-service/print-crosscheck/{record}', function (\App\Models\PenjadwalanService $record) {
+    return view('filament.resources.penjadwalan-service.print-crosscheck', [
+        'record' => $record->load(['member', 'technician', 'jasa', 'crosschecks', 'listAplikasis', 'listGames', 'listOs']),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjadwalan-service.print-crosscheck');

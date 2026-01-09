@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerimaan Service {{ $record->no_resi }}</title>
+    <title>Checklist Service {{ $record->no_resi }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -73,7 +73,7 @@
         }
 
         .invoice-title-badge {
-            background-color: #2563eb; /* Blue badge */
+            background-color: #4338ca; /* Indigo badge */
             color: white;
             padding: 6px 16px;
             border-radius: 20px;
@@ -163,101 +163,72 @@
             font-weight: 500;
         }
 
-        /* Table */
-        .table-section {
+        /* Checklist Section */
+        .checklist-section {
             padding: 0 40px;
             margin-bottom: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .section-box {
+            background-color: #ffffff; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 8px; 
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
-        thead th {
-            background-color: #1d4ed8; /* Strong Blue */
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
+        .section-header-title {
+            font-weight: 800;
+            font-size: 14px;
+            color: #111827;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
             text-transform: uppercase;
-            padding: 12px 16px;
-            text-align: left;
             letter-spacing: 0.5px;
         }
-        
-        thead th:first-child { border-top-left-radius: 6px; }
-        thead th:last-child { border-top-right-radius: 6px; text-align: left; }
 
-        tbody td {
-            padding: 16px;
-            font-size: 14px;
-            border-bottom: 1px solid #f3f4f6;
-            color: #374151; /* gray-700 */
-            vertical-align: top;
-        }
-
-        /* tbody td:nth-child(2) { text-align: center; } */
-        /* tbody td:last-child { text-align: right; } */
-        tbody td:last-child { text-align: left; }
-
-        .section-header td {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-weight: 700;
-            font-size: 12px;
-            text-transform: uppercase;
-            padding: 10px 16px;
-        }
-
-        .item-name {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 4px;
-            color: #111827; /* gray-900 */
-        }
-        
-        .item-desc {
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.4;
-        }
-
-        /* Totals */
-        .totals-container {
-            display: flex;
-            justify-content: flex-end;
-            padding: 20px 40px;
-        }
-
-        /* Notes & Footer Grid */
-        .bottom-grid {
+        .checklist-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 0 40px 40px;
-            margin-top: 10px;
+            gap: 40px;
         }
 
-        .note-box {
-            border: 1px solid #f3f4f6;
-            border-radius: 12px;
-            padding: 24px;
-            min-height: 100px;
-            background-color: #f9fafb; /* Consistent background */
+        .category-title {
+            font-weight: 700; 
+            font-size: 12px; 
+            color: #1f2937; 
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
         }
 
-        .note-header {
-            font-size: 11px;
-            font-weight: 700;
+        .category-title span.icon {
+            margin-right: 6px;
+            color: #6b7280;
+        }
+
+        .tags-container {
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tag {
+            background-color: #f3f4f6; 
+            border: 1px solid #d1d5db; 
+            color: #374151; 
+            font-size: 12px; 
+            padding: 4px 10px; 
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .tag.empty {
             color: #9ca3af;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-        }
-
-        .note-content {
-            font-size: 13px;
-            color: #4b5563;
-            line-height: 1.5;
+            background-color: transparent;
+            border: 1px dashed #d1d5db;
         }
 
         /* Signatures */
@@ -317,10 +288,10 @@
                 margin: 0;
             }
             .no-print { display: none; }
-            .info-card, .note-box { border: 1px solid #e5e7eb; }
+            .info-card, .note-box, .section-box { border: 1px solid #e5e7eb; }
             
             /* Reset padding for print to save space */
-            header, .cards-grid, .table-section, .bottom-grid, .signatures { padding-left: 20px; padding-right: 20px; }
+            header, .cards-grid, .checklist-section, .signatures { padding-left: 20px; padding-right: 20px; }
             header { padding-top: 10px; padding-bottom: 10px; }
             
             @page { 
@@ -361,10 +332,10 @@
                 <p>Telp: {{ $profile->phone ?? '-' }} | Email: {{ $profile->email ?? '-' }}</p>
             </div>
             <div class="invoice-info">
-                <div class="invoice-title-badge">INVOICE SERVICE</div>
+                <div class="invoice-title-badge">CHECKLIST UNIT</div>
                 <div class="detail-row">No. Nota: <span>#{{ $record->no_resi }}</span></div>
                 <div class="detail-row">Tanggal: <span>{{ $record->created_at->format('d/m/Y') }}</span></div>
-                <div class="detail-row">Kasir: <span>{{ Auth::user()->name }}</span></div>
+                <div class="detail-row">Teknisi: <span>{{ Auth::user()->name }}</span></div>
             </div>
         </header>
 
@@ -381,108 +352,93 @@
                     <label>No. HP</label>
                     <span>{{ $record->member->no_hp }}</span>
                 </div>
-                <div class="customer-detail">
-                    <label>Alamat</label>
-                    <span style="text-align: right; max-width: 60%;">{{ $record->member->alamat ?? '-' }}</span>
-                </div>
             </div>
 
-            <!-- Rincian Layanan / Metode Bayar -->
+            <!-- Rincian Unit -->
             <div class="info-card">
-                <div class="card-title">Informasi Layanan</div>
-                <div class="customer-detail">
-                    <label>Teknisi</label>
-                    <span>{{ $record->technician ? explode(' ', $record->technician->name)[0] : '-' }}</span>
+                <div class="card-title">Informasi Unit</div>
+                <div class="customer-name">
+                    {{ $record->nama_perangkat }}
                 </div>
                 <div class="customer-detail">
-                    <label>Estimasi Selesai</label>
-                    <span>{{ $record->estimasi_selesai ? $record->estimasi_selesai->format('d/m/Y') : '-' }}</span>
-                </div>
-                <div class="customer-detail">
-                    <label>Status</label>
-                    @php
-                        $statusLabel = match($record->status) {
-                            'pending' => 'Menunggu Antrian',
-                            'diagnosa' => 'Sedang Diagnosa',
-                            'waiting_part' => 'Menunggu Sparepart',
-                            'progress' => 'Sedang Dikerjakan',
-                            'done' => 'Selesai',
-                            'cancel' => 'Dibatalkan',
-                            default => $record->status,
-                        };
-                    @endphp
-                    <span style="font-weight: 700; color: #2563eb;">{{ $statusLabel }}</span>
+                    <label>Kelengkapan</label>
+                    <span>{{ $record->kelengkapan }}</span>
                 </div>
             </div>
         </div>
 
-        <div class="table-section">
-            <table>
-                <thead>
-                    <tr>
-                        <th width="100%">Nama Perangkat Service</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Section: Unit (Listed) -->
-                    <tr>
-                        <td>
-                            <span class="item-name" style="margin-bottom: 4px;">{{ $record->nama_perangkat }}</span>
-                            <span class="item-desc">{{ $record->kelengkapan }}</span>
-                        </td>
-                    </tr>
+        <div class="checklist-section">
+            <div class="section-box">
+                <div class="section-header-title">Detail Kelengkapan & Crosscheck</div>
+                
+                @if($record->has_crosscheck)
+                    <!-- Grid 2 Kolom -->
+                    <div class="checklist-grid">
+                        
+                        <!-- Col 1 -->
+                        <div>
+                            <!-- Crosscheck -->
+                            <div class="category-title">
+                                <span>Kondisi Fisik / Crosscheck</span>
+                            </div>
+                            <div class="tags-container">
+                                @forelse($record->crosschecks as $item)
+                                    <span class="tag">{{ $item->name }}</span>
+                                @empty
+                                    <span class="tag empty">Tidak ada data</span>
+                                @endforelse
+                            </div>
 
-                    <!-- Section: Jasa -->
-                    <tr class="section-header">
-                        <td style="background-color: #f8fafc; color: #64748b; font-weight: 700; font-size: 12px; text-transform: uppercase; padding: 8px 15px;">Layanan Diambil</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <span class="item-name">{{ $record->jasa->nama_jasa ?? 'Service Umum' }}</span>
-                            <span class="item-desc">{{ $record->jasa->sku ?? '' }}</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                            <!-- OS -->
+                            <div class="category-title">
+                                <span>Sistem Operasi</span>
+                            </div>
+                            <div class="tags-container">
+                                @forelse($record->listOs as $item)
+                                    <span class="tag">{{ $item->name }}</span>
+                                @empty
+                                    <span class="tag empty">Tidak ada data</span>
+                                @endforelse
+                            </div>
+                        </div>
 
+                        <!-- Col 2 -->
+                        <div>
+                            <!-- Aplikasi -->
+                            <div class="category-title">
+                                <span>Aplikasi</span>
+                            </div>
+                            <div class="tags-container">
+                                @forelse($record->listAplikasis as $item)
+                                    <span class="tag">{{ $item->name }}</span>
+                                @empty
+                                    <span class="tag empty">Tidak ada data</span>
+                                @endforelse
+                            </div>
 
+                            <!-- Game -->
+                            <div class="category-title">
+                                <span>Game</span>
+                            </div>
+                            <div class="tags-container">
+                                @forelse($record->listGames as $item)
+                                    <span class="tag">{{ $item->name }}</span>
+                                @empty
+                                    <span class="tag empty">Tidak ada data</span>
+                                @endforelse
+                            </div>
+                        </div>
 
-        <!-- Totals Removed per user request -->
-
-        <div class="bottom-grid">
-            <div class="note-box">
-                <div class="note-header">CATATAN / KELUHAN</div>
-                <div class="note-content">
-                    {{ $record->keluhan ?? 'Tidak ada catatan tambahan.' }}
-                    @if($record->catatan_teknisi)
-                    <br><br>
-                    <strong>Catatan Teknisi:</strong><br>
-                    {{ $record->catatan_teknisi }}
-                    @endif
-                </div>
+                    </div>
+                @else
+                    <div style="text-align: center; color: #6b7280; font-style: italic; padding: 40px;">
+                        Data Crosscheck tidak diaktifkan untuk layanan ini.
+                    </div>
+                @endif
             </div>
-            
-            <!-- <div class="note-box" style="border: none;"> -->
-                <!-- Placeholder for QR or extra info -->
-            <!-- </div> -->
-        </div>
-
-        <div class="signatures">
-            <div class="sig-box">
-                <div class="sig-title">Tanda Tangan Kasir</div>
-                <div class="sig-space"></div>
-                <div class="sig-name">{{ Auth::user()->name }}</div>
-            </div>
-            <div class="sig-box">
-                <div class="sig-title">Tanda Tangan Pelanggan</div>
-                <div class="sig-space"></div>
-                <div class="sig-name">{{ $record->member->nama_member }}</div>
-            </div>
-        </div>
 
         <div class="bottom-bar">
-            Terima kasih telah mempercayakan service kepada kami. Simpan invoice ini sebagai bukti pengambilan.
+            Dokumen ini adalah bukti pengecekan resmi unit sebelum/sesudah pengerjaan.
         </div>
     </div>
 
