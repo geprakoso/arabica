@@ -2,6 +2,21 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.09
+### Peningkatan Modul Penjadwalan Service (Service Center)
+- **Fitur Crosscheck & Kelengkapan Unit**:
+  - Mengimplementasikan sistem input checklist bertingkat (**Parent-Child**). Jika item induk dicentang, sub-item akan muncul.
+  - Memisahkan atribut menjadi 4 kategori tab: **Crosscheck** (Fisik), **Aplikasi**, **Game**, dan **OS**.
+  - Menambahkan halaman manajemen master data terpusat **"Atribut Crosscheck"** di bawah menu Penerimaan Service.
+- **Import Data Pelanggan**:
+  - Menambahkan fitur **"Import dari Nota Penjualan"** pada form service. User dapat mencari nomor nota, dan sistem otomatis mengisi data pelanggan (Nama, HP, Alamat) tanpa mengetik ulang.
+- **Pencetakan Dokumen (Print Views)**:
+  - **Pemisahan Dokumen**: Memisahkan "Cetak Invoice" (Tanda Terima untuk customer) dan "Cetak Checklist" (Lembar kerja teknisi/detail).
+  - **Cetak Checklist**: Layout khusus A4 yang menampilkan seluruh detail item yang dicentang (Apps, Game, Kondisi fisik) dengan tampilan grid yang rapi.
+- **Perbaikan UI/UX**:
+  - **Grouped Actions**: Mengelompokkan tombol aksi tabel (View, Edit, Print) ke dalam satu menu dropdown (**Menu**) agar tampilan tabel lebih ringkas.
+  - **Custom Saving Logic**: Mengimplementasikan logika penyimpanan relasi many-to-many kustom pada `Create` dan `Edit` page untuk menangani form dinamis.
+
 ## 2026.01.07
 ### Fitur Cetak Service & Perbaikan Sistem
 - **Cetak Invoice Service**:
