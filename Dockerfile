@@ -21,7 +21,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions (Filament butuh intl, gd, zip)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip opcache
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip opcache dom
 
 # Configure PHP for large file uploads (database backup)
 RUN echo "upload_max_filesize = 128M" >> /usr/local/etc/php/conf.d/uploads.ini \

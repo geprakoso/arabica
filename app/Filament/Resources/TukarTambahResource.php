@@ -38,7 +38,7 @@ class TukarTambahResource extends BaseResource
 {
     protected static ?string $model = TukarTambah::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Inventori';
     protected static ?string $navigationLabel = 'Tukar Tambah';
     protected static ?string $pluralLabel = 'Tukar Tambah';
     protected static ?int $navigationSort = 4;
