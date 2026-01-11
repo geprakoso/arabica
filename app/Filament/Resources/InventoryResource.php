@@ -2,51 +2,53 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Tables;
-use App\Models\Produk;
-use Filament\Forms\Form;
 use Akaunting\Money\Money;
-use Filament\Tables\Table;
-use Illuminate\Support\Str;
-use App\Models\PembelianItem;
-use Filament\Infolists\Infolist;
-use App\Filament\Resources\BaseResource;
-use Filament\Actions\StaticAction;
-use Illuminate\Support\HtmlString;
-use Filament\Tables\Actions\Action;
-use Illuminate\Support\Facades\Auth;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Filters\SelectFilter;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ViewEntry;
-use App\Filament\Exports\InventoryOpnameExporter;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use App\Filament\Resources\InventoryResource\Pages;
-use Filament\Tables\Columns\Layout\Grid as TableGrid;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
-use Filament\Tables\Columns\Layout\Split as TableSplit;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Group;
+use App\Models\PembelianItem;
+use App\Models\Produk;
+use Filament\Actions\StaticAction;
+use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontFamily;
 use Filament\Support\Enums\FontWeight;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\Layout\Grid as TableGrid;
+use Filament\Tables\Columns\Layout\Split as TableSplit;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class InventoryResource extends BaseResource
 {
     protected static ?string $model = Produk::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+
     protected static ?string $navigationGroup = 'Inventori';
+
     // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
-    protected static ?string $navigationLabel = 'Inventory';
-    protected static ?string $pluralLabel = 'Inventory';
+    protected static ?string $navigationLabel = 'Stock Ready';
+
+    protected static ?string $pluralLabel = 'Stock Ready';
+
     protected static ?string $modelLabel = 'Inventory';
+
     protected static ?string $pluralModelLabel = 'Inventory';
+
     public static function form(Form $form): Form
     {
         return $form->schema([]);
@@ -71,9 +73,9 @@ class InventoryResource extends BaseResource
                         ]),
                     Stack::make([
                         TextColumn::make('nama_produk')
-                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
+                            ->description(fn (Produk $record) => new HtmlString('<span class="font-mono">SKU: '.e($record->sku ?? '-').'</span>'))
                             ->label('Produk')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->searchable()
                             ->weight('bold')
                             ->size(TextColumnSize::Large)
@@ -81,7 +83,7 @@ class InventoryResource extends BaseResource
                             ->wrap(),
                         TextColumn::make('brand.nama_brand')
                             ->label('Brand')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-o-tag')
@@ -90,7 +92,7 @@ class InventoryResource extends BaseResource
                             ->wrap(),
                         TextColumn::make('kategori.nama_kategori')
                             ->label('Kategori')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->badge()
                             ->color('warning')
                             ->icon('heroicon-o-rectangle-stack')
@@ -100,16 +102,16 @@ class InventoryResource extends BaseResource
                         TableGrid::make(10)->schema([
                             TextColumn::make('total_qty')
                                 ->label('Stok')
-                                ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0))
+                                ->state(fn (Produk $record) => (int) ($record->total_qty ?? 0))
                                 ->badge()
-                                ->color(fn($state) => $state > 10 ? 'success' : ($state > 3 ? 'warning' : 'danger'))
+                                ->color(fn ($state) => $state > 10 ? 'success' : ($state > 3 ? 'warning' : 'danger'))
                                 ->icon('heroicon-o-archive-box')
-                                ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
+                                ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.'))
                                 ->columnSpan(2)
                                 ->sortable(),
                             TextColumn::make('batch_count')
                                 ->label('Batch')
-                                ->state(fn(Produk $record) => (int) ($record->batch_count ?? 0))
+                                ->state(fn (Produk $record) => (int) ($record->batch_count ?? 0))
                                 ->badge()
                                 ->icon('heroicon-o-clipboard-document-list')
                                 ->color('primary')
@@ -122,16 +124,16 @@ class InventoryResource extends BaseResource
                         TextColumn::make('latest_batch.hpp')
                             ->label('HPP')
                             ->weight('bold')
-                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
-                            ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
+                            ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null)
+                            ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
                             ->alignEnd()
                             ->size(TextColumnSize::Large)
                             ->icon('heroicon-o-currency-dollar')
                             ->color('gray'),
                         TextColumn::make('latest_batch.harga_jual')
                             ->label('Harga Jual Terkini')
-                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
-                            ->formatStateUsing(fn($state) => is_null($state) ? '-' : self::formatCurrency($state))
+                            ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null)
+                            ->formatStateUsing(fn ($state) => is_null($state) ? '-' : self::formatCurrency($state))
                             ->weight('bold')
                             ->size(TextColumnSize::Large)
                             ->alignEnd()
@@ -158,7 +160,7 @@ class InventoryResource extends BaseResource
                     ->label('Download')
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('success')
-                    ->fileName('Stok Opname ' . '_' . date('d M Y'))
+                    ->fileName('Stok Opname '.'_'.date('d M Y'))
                     ->defaultFormat('pdf')
                     ->disableTableColumns()
                     ->modalHeading(false)
@@ -173,19 +175,19 @@ class InventoryResource extends BaseResource
                             ->label('Kategori'),
                         TextColumn::make('total_qty')
                             ->label('Stok Sistem')
-                            ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0)),
+                            ->state(fn (Produk $record) => (int) ($record->total_qty ?? 0)),
                         TextColumn::make('latest_batch.hpp')
                             ->label('HPP Terkini')
-                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null),
+                            ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['hpp'] ?? null),
                         TextColumn::make('latest_batch.harga_jual')
                             ->label('Harga Jual Terkini')
-                            ->state(fn(Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null),
+                            ->state(fn (Produk $record) => self::getInventorySnapshot($record)['latest_batch']['harga_jual'] ?? null),
                         TextColumn::make('stok_opname')
                             ->label('Stok Opname')
-                            ->state(fn() => null),
+                            ->state(fn () => null),
                         TextColumn::make('selisih')
                             ->label('Selisih')
-                            ->state(fn() => null),
+                            ->state(fn () => null),
                     ])
                     ->extraViewData([
                         'title' => 'Haen Komputer',
@@ -195,7 +197,7 @@ class InventoryResource extends BaseResource
                         'sort_key' => 'kategori.nama_kategori',
                         'group_by' => 'kategori.nama_kategori',
                         'group_label' => 'Kategori',
-                    ])
+                    ]),
 
             ])
             ->actions([
@@ -208,8 +210,8 @@ class InventoryResource extends BaseResource
                         ->modalWidth('6xl')
                         ->modalHeading('Detail Inventory')
                         ->modalSubmitAction(false)
-                        ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
-                        ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
+                        ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+                        ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
                 ])
                     ->tooltip('Aksi'),
             ])
@@ -233,7 +235,6 @@ class InventoryResource extends BaseResource
     {
         return self::applyInventoryScopes(parent::getEloquentQuery());
     }
-
 
     public static function infolist(Infolist $infolist): Infolist
     {
@@ -304,9 +305,9 @@ class InventoryResource extends BaseResource
                                     ->state(fn (Produk $record) => self::getInventorySnapshot($record)['batch_count'])
                                     ->badge()
                                     ->color('success')
-                                    ->formatStateUsing(fn ($state) => $state . ' Batch'),
+                                    ->formatStateUsing(fn ($state) => $state.' Batch'),
                             ]),
-                        
+
                         // Opsional: Section Info Tambahan (jika ada)
                         Section::make('Metadata')
                             ->compact()
@@ -324,19 +325,19 @@ class InventoryResource extends BaseResource
 
     protected static function applyInventoryScopes(Builder $query): Builder
     {
-        $produkTable = (new Produk())->getTable();
+        $produkTable = (new Produk)->getTable();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems', fn($q) => $q->where($qtySisaColumn, '>', 0))
+            ->whereHas('pembelianItems', fn ($q) => $q->where($qtySisaColumn, '>', 0))
             ->with([
                 'brand',
                 'kategori',
-                'pembelianItems' => fn($q) => $q->with('pembelian'),
+                'pembelianItems' => fn ($q) => $q->with('pembelian'),
             ])
-            ->withSum(['pembelianItems as total_qty' => fn($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
-            ->withCount(['pembelianItems as batch_count' => fn($q) => $q->where($qtySisaColumn, '>', 0)]);
+            ->withSum(['pembelianItems as total_qty' => fn ($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
+            ->withCount(['pembelianItems as batch_count' => fn ($q) => $q->where($qtySisaColumn, '>', 0)]);
 
         return $query;
     }
@@ -355,7 +356,6 @@ class InventoryResource extends BaseResource
      * Hasil disimpan dalam cache statis agar tidak perlu menghitung ulang
      * dalam satu siklus request yang sama.
      *
-     * @param  \App\Models\Produk  $record
      * @return array{
      *     qty: int,
      *     batch_count: int,
@@ -382,11 +382,11 @@ class InventoryResource extends BaseResource
                 ->get();
         }
 
-        $totalQty = $items->sum(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0));
+        $totalQty = $items->sum(fn ($item) => (int) ($item->{$qtySisaColumn} ?? 0));
 
         $activeBatches = $items
-            ->filter(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
-            ->sortBy(fn($item) => $item->pembelian?->tanggal ?? $item->created_at)
+            ->filter(fn ($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
+            ->sortBy(fn ($item) => $item->pembelian?->tanggal ?? $item->created_at)
             ->values();
 
         $formattedBatches = $activeBatches->map(function ($item) use ($qtySisaColumn) {
@@ -399,6 +399,7 @@ class InventoryResource extends BaseResource
             $rawHargaJual = $item->harga_jual;
             $hpp = is_null($rawHpp) ? null : (int) $rawHpp;
             $hargaJual = is_null($rawHargaJual) ? null : (int) $rawHargaJual;
+
             return [
                 'no_po' => $purchase->no_po ?? '-',
                 'tanggal' => $tanggal,
@@ -444,7 +445,7 @@ class InventoryResource extends BaseResource
 
         foreach ($batches as $index => $batch) {
             $label = trim((string) ($batch['no_po'] ?? ''));
-            $label = $label !== '' && $label !== '-' ? $label : 'Batch ' . ($index + 1);
+            $label = $label !== '' && $label !== '-' ? $label : 'Batch '.($index + 1);
 
             if (! empty($batch['tanggal']) && $batch['tanggal'] !== '-') {
                 $label .= " ({$batch['tanggal']})";
@@ -452,19 +453,19 @@ class InventoryResource extends BaseResource
 
             $segments = [
                 $label,
-                'Qty: ' . self::formatNumber($batch['qty'] ?? 0),
+                'Qty: '.self::formatNumber($batch['qty'] ?? 0),
             ];
 
             if (! empty($batch['hpp'])) {
-                $segments[] = 'HPP: ' . self::formatCurrency($batch['hpp']);
+                $segments[] = 'HPP: '.self::formatCurrency($batch['hpp']);
             }
 
             if (! empty($batch['harga_jual'])) {
-                $segments[] = 'Harga: ' . self::formatCurrency($batch['harga_jual']);
+                $segments[] = 'Harga: '.self::formatCurrency($batch['harga_jual']);
             }
 
             if (! empty($batch['kondisi']) && $batch['kondisi'] !== '-') {
-                $segments[] = 'Kondisi: ' . $batch['kondisi'];
+                $segments[] = 'Kondisi: '.$batch['kondisi'];
             }
 
             $summaries[] = implode(' · ', $segments);

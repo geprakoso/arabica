@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\Absensi;
 
+use App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages;
+use App\Filament\Resources\BaseResource;
+use App\Models\Absensi;
 use Awcodes\FilamentBadgeableColumn\Components\Badge;
 use Awcodes\FilamentBadgeableColumn\Components\BadgeableColumn;
-use App\Filament\Resources\Absensi\LaporanAbsensiResource\Pages;
-use App\Models\Absensi;
 use Carbon\Carbon;
-use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -29,8 +29,7 @@ class LaporanAbsensiResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'Laporan Absensi';
 
-    protected static ?int $navigationSort = 3;
-
+    protected static ?int $navigationSort = 5;
 
     public static function table(Tables\Table $table): Tables\Table
     {
@@ -66,7 +65,7 @@ class LaporanAbsensiResource extends BaseResource
                 TextColumn::make('user.name')
                     ->label('Karyawan')
                     ->weight('bold')
-                    ->description(fn(Model $record) => $record->user->email ?? '-')
+                    ->description(fn (Model $record) => $record->user->email ?? '-')
                     ->icon('heroicon-m-user')
                     ->sortable()
                     ->searchable(),
@@ -76,21 +75,21 @@ class LaporanAbsensiResource extends BaseResource
                     ->badge()
                     ->color('success')
                     ->icon('heroicon-m-check-circle')
-                    ->visible(fn(HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
                 TextColumn::make('total_izin')
                     ->label('Izin')
                     ->numeric()
                     ->badge()
                     ->color('warning')
                     ->icon('heroicon-m-document-text')
-                    ->visible(fn(HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
                 TextColumn::make('total_sakit')
                     ->label('Sakit')
                     ->numeric()
                     ->badge()
                     ->color('danger')
                     ->icon('heroicon-m-face-frown')
-                    ->visible(fn(HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
                 TextColumn::make('total_absen')
                     ->label('Total Absen')
                     ->badge()
@@ -98,56 +97,56 @@ class LaporanAbsensiResource extends BaseResource
                     ->icon('heroicon-m-calculator')
                     ->numeric()
                     ->sortable()
-                    ->visible(fn(HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => ! self::isDetailTabActive($livewire)),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
-                    ->description(fn(Model $record) => $record->tanggal->locale('id')->translatedFormat('l'))
+                    ->description(fn (Model $record) => $record->tanggal->locale('id')->translatedFormat('l'))
                     ->icon('heroicon-m-calendar')
                     ->sortable()
-                    ->visible(fn(HasTable $livewire): bool => self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire)),
                 BadgeableColumn::make('jam_masuk')
                     ->label('Jam Kehadiran')
                     ->iconColor('success')
-                    ->visible(fn(HasTable $livewire): bool => self::isDetailTabActive($livewire))
-                    ->formatStateUsing(fn(?string $state): string => self::getJamMasukMeta($state)['display'])
-                    ->color(fn(?string $state): string => self::getJamMasukMeta($state)['color'] ?? 'white')
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire))
+                    ->formatStateUsing(fn (?string $state): string => self::getJamMasukMeta($state)['display'])
+                    ->color(fn (?string $state): string => self::getJamMasukMeta($state)['color'] ?? 'white')
                     ->icon('heroicon-m-arrow-right-end-on-rectangle')
-                    ->suffixBadges(fn(Model $record): array => self::getTelatBadges($record->jam_masuk)),
+                    ->suffixBadges(fn (Model $record): array => self::getTelatBadges($record->jam_masuk)),
                 TextColumn::make('jam_keluar')
                     ->label('Jam Keluar')
                     ->iconColor('danger')
-                    ->visible(fn(HasTable $livewire): bool => self::isDetailTabActive($livewire))
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire))
                     ->date('H:i')
                     ->icon('heroicon-m-arrow-left-start-on-rectangle')
-                    ->formatStateUsing(fn(?string $state): string => $state ? Carbon::createFromFormat('H:i:s', $state)->format('H:i') : '-')
+                    ->formatStateUsing(fn (?string $state): string => $state ? Carbon::createFromFormat('H:i:s', $state)->format('H:i') : '-')
                     ->placeholder('-'),
                 TextColumn::make('jam_kerja')
                     ->label('Durasi Kerja')
                     ->icon('heroicon-m-clock')
-                    ->visible(fn(HasTable $livewire): bool => self::isDetailTabActive($livewire))
-                    ->state(fn(Model $record): string => self::formatJamKerjaLabel($record->jam_masuk, $record->jam_keluar)),
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire))
+                    ->state(fn (Model $record): string => self::formatJamKerjaLabel($record->jam_masuk, $record->jam_keluar)),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn(?string $state): string => str($state ?? '-')->title())
+                    ->formatStateUsing(fn (?string $state): string => str($state ?? '-')->title())
                     ->colors([
                         'success' => 'hadir',
                         'warning' => 'izin',
                         'danger' => 'sakit',
                         'gray' => 'alpha',
                     ])
-                    ->icon(fn(string $state): string => match ($state) {
+                    ->icon(fn (string $state): string => match ($state) {
                         'hadir' => 'heroicon-m-check-circle',
                         'izin' => 'heroicon-m-document-text',
                         'sakit' => 'heroicon-m-plus-circle',
                         default => 'heroicon-m-question-mark-circle',
                     })
-                    ->visible(fn(HasTable $livewire): bool => self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire)),
                 TextColumn::make('keterangan')
                     ->label('Keterangan')
                     ->limit(40)
-                    ->visible(fn(HasTable $livewire): bool => self::isDetailTabActive($livewire)),
+                    ->visible(fn (HasTable $livewire): bool => self::isDetailTabActive($livewire)),
             ])
             ->filters([
                 SelectFilter::make('bulan')
@@ -287,7 +286,6 @@ class LaporanAbsensiResource extends BaseResource
 
         return "{$hours} jam {$minutes} menit";
     }
-
 
     protected static function monthOptions(): array
     {

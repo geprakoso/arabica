@@ -25,9 +25,9 @@ class AkunTransaksiResource extends BaseResource
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-wallet-01';
     protected static ?string $navigationLabel = "Akun Transaksi";
-    // protected static ?string $navigationParentItem = 'Master Data';
+    protected static ?string $navigationParentItem = 'Akun Keuangan';
     // protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
-    protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 12;
 
     public static function form(Form $form): Form

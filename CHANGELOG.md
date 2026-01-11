@@ -19,6 +19,7 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - **Perbaikan Sistem**:
   - Mengatasi masalah routing `MethodNotAllowedHttpException` pada login dengan pembersihan cache menyeluruh.
   - Mengoptimalkan struktur navigasi dengan menyembunyikan resource karyawan yang redundan.
+  - **Fix Navigasi Filament Shield**: Memperbaiki menu **Roles** yang tersangkut di grup "Master Data". Masalah disebabkan oleh file terjemahan Indonesia (`resources/lang/vendor/filament-shield/id/filament-shield.php`) yang meng-override konfigurasi utama. Solusi: update file lang ke 'Pengaturan'.
 
 ## 2026.01.09
 ### Peningkatan Modul Penjadwalan Service (Service Center)

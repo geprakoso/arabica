@@ -2,22 +2,20 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\StockOpname;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables\Actions\Action;
-use Illuminate\Support\Facades\Auth;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\StockOpnameResource\Pages;
 use App\Filament\Resources\StockOpnameResource\RelationManagers\ItemsRelationManager;
+use App\Models\StockOpname;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class StockOpnameResource extends BaseResource
 {
@@ -26,13 +24,14 @@ class StockOpnameResource extends BaseResource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $navigationLabel = 'Stock Opname';
+
     // protected static ?string $navigationParentItem = 'Inventory & Stock';
     protected static ?string $navigationGroup = 'Inventori';
     // protected static ?string $navigationParentItem = 'Inventory';
 
     protected static ?string $pluralLabel = 'Stock Opname';
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -45,7 +44,7 @@ class StockOpnameResource extends BaseResource
                         ->label('Kode Referensi')
                         ->prefixIcon('heroicon-o-tag')
                         ->disabled()
-                        ->default(fn() => StockOpname::generateKode())
+                        ->default(fn () => StockOpname::generateKode())
                         ->dehydrated()
                         ->helperText('Kode akan digenerate otomatis oleh sistem'),
                     DatePicker::make('tanggal')
@@ -104,7 +103,7 @@ class StockOpnameResource extends BaseResource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->icon(fn(string $state): string => match ($state) {
+                    ->icon(fn (string $state): string => match ($state) {
                         'draft' => 'heroicon-m-pencil-square',
                         'posted' => 'heroicon-m-check-circle',
                         default => 'heroicon-m-question-mark-circle',
@@ -119,11 +118,11 @@ class StockOpnameResource extends BaseResource
                 Action::make('post')
                     ->button()
                     ->color('success')
-                    ->visible(fn(StockOpname $record) => ! $record->isPosted())
+                    ->visible(fn (StockOpname $record) => ! $record->isPosted())
                     ->icon('heroicon-m-paper-airplane')
                     ->label('Posting')
                     ->requiresConfirmation()
-                    ->action(fn(StockOpname $record) => $record->post(Auth::user()))
+                    ->action(fn (StockOpname $record) => $record->post(Auth::user()))
                     ->successNotificationTitle('Stock opname berhasil diposting.')
                     ->color('success'),
                 Tables\Actions\DeleteAction::make()
@@ -132,14 +131,14 @@ class StockOpnameResource extends BaseResource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->label('Hapus')
-                    ->visible(fn(StockOpname $record) => ! $record->isPosted()),
+                    ->visible(fn (StockOpname $record) => ! $record->isPosted()),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
                         ->color('warning'),
                     Tables\Actions\ViewAction::make(),
                 ])
                     ->label('Aksi')
-                    ->visible(fn(StockOpname $record) => ! $record->isPosted())
+                    ->visible(fn (StockOpname $record) => ! $record->isPosted())
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->tooltip('Menu Aksi'),
             ])

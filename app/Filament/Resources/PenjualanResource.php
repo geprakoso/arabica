@@ -2,39 +2,37 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Tables;
-use App\Models\Produk;
-use Filament\Forms\Form;
-use App\Models\Penjualan;
-use Filament\Tables\Table;
+use App\Filament\Resources\PenjualanResource\Pages;
+use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
+use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
+use App\Models\Member;
 use App\Models\PembelianItem;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\FontWeight;
-use Filament\Forms\Get;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Set;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\Action;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Filament\Tables\Actions\ActionGroup;
+use App\Models\Penjualan;
+use App\Models\Produk;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\RichEditor;
-use Filament\Infolists\Infolist;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\Member;
-use App\Filament\Resources\PenjualanResource\Pages;
-use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
-use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
 
 class PenjualanResource extends BaseResource
 {
@@ -44,11 +42,11 @@ class PenjualanResource extends BaseResource
 
     protected static ?string $navigationGroup = 'Transaksi';
 
-    protected static ?string $navigationLabel = 'Penjualan';
+    protected static ?string $navigationLabel = 'Input Penjualan';
 
-    protected static ?string $pluralLabel = 'Penjualan';
+    protected static ?string $pluralLabel = 'Input Penjualan';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -58,7 +56,7 @@ class PenjualanResource extends BaseResource
                     ->schema([
                         TextInput::make('no_nota')
                             ->label('No. Nota')
-                            ->default(fn() => Penjualan::generateNoNota())
+                            ->default(fn () => Penjualan::generateNoNota())
                             ->disabled()
                             ->prefixIcon('heroicon-s-tag')
                             ->unique(ignoreRecord: true)
@@ -76,7 +74,7 @@ class PenjualanResource extends BaseResource
                             ->relationship('karyawan', 'nama_karyawan')
                             ->searchable()
                             ->preload()
-                            ->default(fn() => auth()->user()->karyawan?->id)
+                            ->default(fn () => auth()->user()->karyawan?->id)
                             ->required()
                             ->native(false),
                         Select::make('id_member')
@@ -87,7 +85,7 @@ class PenjualanResource extends BaseResource
                             ->nullable()
                             ->native(false)
                             ->createOptionModalHeading('Tambah Member')
-                            ->createOptionAction(fn($action) => $action->label('Tambah Member'))
+                            ->createOptionAction(fn ($action) => $action->label('Tambah Member'))
                             ->createOptionForm([
                                 TextInput::make('nama_member')
                                     ->label('Nama Lengkap')
@@ -98,7 +96,7 @@ class PenjualanResource extends BaseResource
                                         ->label('Nomor WhatsApp / HP')
                                         ->tel()
                                         ->required()
-                                        ->unique(table: (new Member())->getTable(), column: 'no_hp'),
+                                        ->unique(table: (new Member)->getTable(), column: 'no_hp'),
 
                                     TextInput::make('email')
                                         ->label('Alamat Email')
@@ -145,11 +143,11 @@ class PenjualanResource extends BaseResource
                                     ->reactive(),
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi')
-                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
+                                    ->relationship('akunTransaksi', 'nama_akun', fn (Builder $query) => $query->where('is_active', true))
                                     ->searchable()
                                     ->preload()
                                     ->native(false)
-                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                    ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
                                 TextInput::make('jumlah')
                                     ->label('Jumlah')
                                     ->numeric()
@@ -169,7 +167,7 @@ class PenjualanResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query
+            ->modifyQueryUsing(fn (Builder $query) => $query
                 ->with(['items', 'jasaItems'])
                 ->withCount(['items', 'jasaItems'])
                 ->withSum('pembayaran', 'jumlah'))
@@ -220,7 +218,7 @@ class PenjualanResource extends BaseResource
 
                         return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
                     })
-                    ->color(fn(string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                     ->alignCenter(),
                 TextColumn::make('sisa_bayar_display')
                     ->label('Sisa Bayar')
@@ -239,7 +237,7 @@ class PenjualanResource extends BaseResource
                     ->weight('bold')
                     ->color('success')
                     ->alignRight()
-                    ->state(fn(Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
+                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
             ])
             ->filters([
                 Tables\Filters\Filter::make('periode')
@@ -256,8 +254,8 @@ class PenjualanResource extends BaseResource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
-                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
+                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
                     }),
                 Tables\Filters\SelectFilter::make('sumber_transaksi')
                     ->label('Sumber Transaksi')
@@ -273,7 +271,7 @@ class PenjualanResource extends BaseResource
                     ->label('Invoice')
                     ->icon('heroicon-m-printer')
                     ->color('primary')
-                    ->url(fn(Penjualan $record) => route('penjualan.invoice', $record))
+                    ->url(fn (Penjualan $record) => route('penjualan.invoice', $record))
                     ->openUrlInNewTab(),
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make()
@@ -346,9 +344,9 @@ class PenjualanResource extends BaseResource
 
                                 TextEntry::make('tukar_tambah_link')
                                     ->label('Tukar Tambah')
-                                    ->state(fn(Penjualan $record): ?string => $record->tukarTambah?->kode)
+                                    ->state(fn (Penjualan $record): ?string => $record->tukarTambah?->kode)
                                     ->icon('heroicon-m-arrows-right-left')
-                                    ->url(fn(Penjualan $record) => $record->tukarTambah
+                                    ->url(fn (Penjualan $record) => $record->tukarTambah
                                         ? TukarTambahResource::getUrl('view', ['record' => $record->tukarTambah])
                                         : null)
                                     ->openUrlInNewTab()
@@ -417,7 +415,7 @@ class PenjualanResource extends BaseResource
                         ViewEntry::make('items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.penjualan-items-table')
-                            ->state(fn(Penjualan $record) => $record->items()->with(['produk', 'pembelianItem.pembelian'])->get()),
+                            ->state(fn (Penjualan $record) => $record->items()->with(['produk', 'pembelianItem.pembelian'])->get()),
                     ]),
 
                 InfoSection::make('Daftar Jasa')
@@ -425,7 +423,7 @@ class PenjualanResource extends BaseResource
                         ViewEntry::make('jasa_items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.penjualan-jasa-table')
-                            ->state(fn(Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
+                            ->state(fn (Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
                     ]),
 
                 // === BAGIAN BAWAH: CATATAN & RINGKASAN ===
@@ -505,7 +503,7 @@ class PenjualanResource extends BaseResource
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
                                     ])
                                     ->placeholder('-')
-                                    ->visible(fn(Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
+                                    ->visible(fn (Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
 
                                 TextEntry::make('kembalian')
                                     ->label('Kembalian')
@@ -514,7 +512,7 @@ class PenjualanResource extends BaseResource
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
                                     ])
                                     ->placeholder('-')
-                                    ->visible(fn(Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
+                                    ->visible(fn (Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
                             ])->grow(false),
                         ])->from('md'),
                     ]),
@@ -546,7 +544,7 @@ class PenjualanResource extends BaseResource
      * Hanya item dengan sisa stok positif yang akan diambil.
      * Setiap item kemudian diubah menjadi teks yang mudah dibaca, berisi nomor batch, sisa stok, dan HPP (Harga Pokok Penjualan).
      *
-     * @param int|null $idProduk ID produk yang ingin dicari batch-nya.
+     * @param  int|null  $idProduk  ID produk yang ingin dicari batch-nya.
      * @return array Daftar batch dalam bentuk array, di mana kunci adalah ID PembelianItem dan nilai adalah teks deskripsi batch.
      */
     public static function getBatchOptions(?int $productId): array
@@ -564,7 +562,7 @@ class PenjualanResource extends BaseResource
             ->with('pembelian')
             ->orderBy($qtyColumn, 'desc')
             ->get()
-            ->mapWithKeys(fn(PembelianItem $item) => [
+            ->mapWithKeys(fn (PembelianItem $item) => [
                 $item->id_pembelian_item => self::formatBatchLabel($item, $qtyColumn),
             ]);
 
@@ -577,8 +575,8 @@ class PenjualanResource extends BaseResource
      * Mengambil data item pembelian lalu menghasilkan teks label yang mudah dibaca.
      * Label ini berisi nomor batch, jumlah sisa stok, dan HPP (harga pokok penjualan).
      *
-     * @param \App\Models\PembelianItem|null $item Data item pembelian yang akan dibuat labelnya.
-     * @param string $qtyColumn Nama kolom di database yang menyimpan jumlah sisa stok.
+     * @param  \App\Models\PembelianItem|null  $item  Data item pembelian yang akan dibuat labelnya.
+     * @param  string  $qtyColumn  Nama kolom di database yang menyimpan jumlah sisa stok.
      * @return string|null Teks label batch yang sudah diformat, atau null jika item tidak ada.
      */
     public static function formatBatchLabel(?PembelianItem $item, string $qtyColumn): ?string
@@ -587,11 +585,11 @@ class PenjualanResource extends BaseResource
             return null;
         }
 
-        //membuat label batch untuk item pembelian
+        // membuat label batch untuk item pembelian
         $labelParts = [
-            $item->pembelian?->no_po ? '#' . $item->pembelian->no_po : 'Batch ' . $item->getKey(),
-            'Qty: ' . number_format((int) ($item->{$qtyColumn} ?? 0), 0, ',', '.'),
-            'HPP: Rp ' . number_format((int) ($item->hpp ?? 0), 0, ',', '.'),
+            $item->pembelian?->no_po ? '#'.$item->pembelian->no_po : 'Batch '.$item->getKey(),
+            'Qty: '.number_format((int) ($item->{$qtyColumn} ?? 0), 0, ',', '.'),
+            'HPP: Rp '.number_format((int) ($item->hpp ?? 0), 0, ',', '.'),
         ];
 
         return implode(' | ', array_filter($labelParts));
@@ -611,7 +609,7 @@ class PenjualanResource extends BaseResource
         $productColumn = PembelianItem::productForeignKey();
 
         return Produk::query()
-            ->whereHas('pembelianItems', fn(Builder $query) => $query->where($qtyColumn, '>', 0))
+            ->whereHas('pembelianItems', fn (Builder $query) => $query->where($qtyColumn, '>', 0))
             ->orderBy('nama_produk')
             ->pluck('nama_produk', 'id')
             ->all();
@@ -622,8 +620,8 @@ class PenjualanResource extends BaseResource
      */
     protected static function calculateGrandTotal(Penjualan $record): int
     {
-        $totalProduk = $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
-        $totalJasa = $record->jasaItems->sum(fn($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
+        $totalProduk = $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0));
+        $totalJasa = $record->jasaItems->sum(fn ($jasa) => (int) ($jasa->harga ?? 0) * (int) ($jasa->qty ?? 0));
         $diskon = (int) ($record->diskon_total ?? 0);
 
         return max(0, ($totalProduk + $totalJasa) - $diskon);
@@ -631,6 +629,6 @@ class PenjualanResource extends BaseResource
 
     protected static function formatCurrency(int $value): string
     {
-        return 'Rp ' . number_format($value, 0, ',', '.');
+        return 'Rp '.number_format($value, 0, ',', '.');
     }
 }

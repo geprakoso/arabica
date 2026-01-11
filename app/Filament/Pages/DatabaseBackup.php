@@ -2,18 +2,15 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use Filament\Actions\Action;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Process;
-use Filament\Notifications\Notification;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Storage;
 use Livewire\WithFileUploads;
-use Illuminate\Contracts\View\View;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class DatabaseBackup extends Page
 {
@@ -27,6 +24,8 @@ class DatabaseBackup extends Page
     protected static ?string $navigationGroup = 'Pengaturan';
 
     protected static ?string $title = 'Backup & Restore Database';
+
+    protected static ?int $navigationSort = 2;
 
     public ?array $data = [];
 
@@ -47,21 +46,21 @@ class DatabaseBackup extends Page
                             ->label('File Backup (.sql, .zip, .gzip)')
                             ->maxSize(1024 * 100) // 100 MB
                             ->required()
-                            ->disk('local') 
+                            ->disk('local')
                             ->directory('temp-backups')
                             ->visibility('private'),
-                    ])
+                    ]),
             ]);
     }
 
     public function export()
     {
         try {
-            $filename = 'backup-' . date('Y-m-d-H-i-s') . '.sql';
-            $path = storage_path('app/' . $filename);
-            
+            $filename = 'backup-'.date('Y-m-d-H-i-s').'.sql';
+            $path = storage_path('app/'.$filename);
+
             // Ensure directory exists
-            if (!file_exists(dirname($path))) {
+            if (! file_exists(dirname($path))) {
                 mkdir(dirname($path), 0755, true);
             }
 
@@ -77,27 +76,27 @@ class DatabaseBackup extends Page
                 "--user=\"{$username}\"",
                 "--host=\"{$host}\"",
                 "--port=\"{$port}\"",
-                "--no-tablespaces",
-                "--skip-ssl", // Bypass SSL for Docker MySQL
+                '--no-tablespaces',
+                '--skip-ssl', // Bypass SSL for Docker MySQL
             ];
 
-            if (!empty($password)) {
+            if (! empty($password)) {
                 $cmdParts[] = "--password=\"{$password}\"";
             }
 
             // Fix database name quoting: remove unwanted curly braces and spaces
-            $cmdParts[] = "\"{$database}\""; 
+            $cmdParts[] = "\"{$database}\"";
             $cmdParts[] = "> \"{$path}\"";
 
             $command = implode(' ', $cmdParts);
-            
+
             $result = Process::run($command);
 
             if ($result->successful()) {
                 if (file_exists($path) && filesize($path) > 0) {
-                     return response()->download($path)->deleteFileAfterSend(true);
+                    return response()->download($path)->deleteFileAfterSend(true);
                 } else {
-                     Notification::make()
+                    Notification::make()
                         ->title('Export Gagal')
                         ->body('File backup kosong atau tidak berhasil dibuat.')
                         ->danger()
@@ -126,41 +125,41 @@ class DatabaseBackup extends Page
             // Get validated data from form state
             $data = $this->form->getState();
             $uploadedFilePath = $data['backupFile'];
-            
+
             // Convert storage path to absolute system path
             $path = Storage::disk('local')->path($uploadedFilePath);
 
-            if (!file_exists($path)) {
-                 throw new \Exception('File backup tidak ditemukan di storage: ' . $path);
+            if (! file_exists($path)) {
+                throw new \Exception('File backup tidak ditemukan di storage: '.$path);
             }
 
             // Manual Validation for File Extension (since we removed strict rules on frontend)
             $allowedExtensions = ['sql', 'txt', 'zip', 'gz', 'gzip'];
             $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-            
-            if (!in_array($extension, $allowedExtensions)) {
-                 // Try to check mime content type if extension is missing or weird, 
-                 // but for now let's just enforce extension as it's what users expect.
-                 // Clean up the invalid file
-                 Storage::disk('local')->delete($uploadedFilePath);
-                 throw new \Exception('Tipe file tidak valid. Harap upload file .sql, .zip, atau .gzip.');
+
+            if (! in_array($extension, $allowedExtensions)) {
+                // Try to check mime content type if extension is missing or weird,
+                // but for now let's just enforce extension as it's what users expect.
+                // Clean up the invalid file
+                Storage::disk('local')->delete($uploadedFilePath);
+                throw new \Exception('Tipe file tidak valid. Harap upload file .sql, .zip, atau .gzip.');
             }
-            
+
             // Handle Compression
             $extension = pathinfo($path, PATHINFO_EXTENSION);
             $sqlPath = $path;
-            
+
             if (in_array(strtolower($extension), ['zip'])) {
-                 $sqlPath = dirname($path) . '/' . pathinfo($path, PATHINFO_FILENAME) . '.extracted.sql';
-                 // Unzip and pipe to file (simplest way assuming single sql file or using the first one)
-                 // unzip -p prints to stdout
-                 $unzipCmd = "unzip -p \"{$path}\" > \"{$sqlPath}\"";
-                 Process::run($unzipCmd);
+                $sqlPath = dirname($path).'/'.pathinfo($path, PATHINFO_FILENAME).'.extracted.sql';
+                // Unzip and pipe to file (simplest way assuming single sql file or using the first one)
+                // unzip -p prints to stdout
+                $unzipCmd = "unzip -p \"{$path}\" > \"{$sqlPath}\"";
+                Process::run($unzipCmd);
             } elseif (in_array(strtolower($extension), ['gz', 'gzip'])) {
-                 $sqlPath = dirname($path) . '/' . pathinfo($path, PATHINFO_FILENAME) . '.extracted.sql';
-                 // gunzip -c writes to stdout
-                 $gunzipCmd = "gunzip -c \"{$path}\" > \"{$sqlPath}\"";
-                 Process::run($gunzipCmd);
+                $sqlPath = dirname($path).'/'.pathinfo($path, PATHINFO_FILENAME).'.extracted.sql';
+                // gunzip -c writes to stdout
+                $gunzipCmd = "gunzip -c \"{$path}\" > \"{$sqlPath}\"";
+                Process::run($gunzipCmd);
             }
 
             $username = config('database.connections.mysql.username');
@@ -176,7 +175,7 @@ class DatabaseBackup extends Page
                 "--port=\"{$port}\"",
             ];
 
-            if (!empty($password)) {
+            if (! empty($password)) {
                 $cmdParts[] = "--password=\"{$password}\"";
             }
 
@@ -184,7 +183,7 @@ class DatabaseBackup extends Page
             $cmdParts[] = "< \"{$sqlPath}\"";
 
             $command = implode(' ', $cmdParts);
-            
+
             Notification::make()
                 ->title('Proses Import')
                 ->body('Sedang memproses database...')
@@ -192,7 +191,7 @@ class DatabaseBackup extends Page
                 ->send();
 
             $result = Process::run($command);
-            
+
             // Cleanup extracted file if it was compressed
             if ($sqlPath !== $path && file_exists($sqlPath)) {
                 @unlink($sqlPath);
@@ -204,7 +203,7 @@ class DatabaseBackup extends Page
                     ->body('Database telah berhasil dipulihkan.')
                     ->success()
                     ->send();
-                
+
                 // Clear form
                 $this->form->fill();
             } else {

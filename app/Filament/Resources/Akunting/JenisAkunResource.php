@@ -24,10 +24,10 @@ class JenisAkunResource extends BaseResource
     protected static ?string $model = JenisAkun::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $navigationParentItem = 'Input Transaksi Toko';
-    protected static ?string $navigationLabel = '2. Jenis Akun';
+    protected static ?string $navigationParentItem = 'Akun Keuangan';
+    protected static ?string $navigationLabel = 'Jenis Akun';
     protected static ?string $pluralLabel = 'Jenis Akun';
-    protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 2;
     public static function shouldRegisterNavigation(): bool
     {

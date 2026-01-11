@@ -41,17 +41,88 @@ class Produk extends Model
     protected static function booted()
     {
         static::creating(function (Produk $produk) {
-            $produk->sku ??= self::generateSku();
+            $produk->sku ??= $produk->generateSmartSku();
         });
     }
 
-    public static function generateSku(): string
+    public function generateSmartSku(): string
+    {
+        // Ensure relations are loaded or available
+        $kategori = $this->kategori;
+        $brand = $this->brand;
+
+        // Fallback to legacy/default generation if data missing
+        if (! $kategori || ! $brand) {
+            return $this->generateDefaultSku();
+        }
+
+        // On-the-fly backfill if codes are missing
+        if (blank($kategori->kode)) {
+            $kategori->kode = Kategori::generateKode($kategori->nama_kategori);
+            $kategori->saveQuietly();
+        }
+        if (blank($brand->kode)) {
+            $brand->kode = Brand::generateKode($brand->nama_brand);
+            $brand->saveQuietly();
+        }
+
+        $prefix = $kategori->kode . $brand->kode;
+        $prefixLen = strlen($prefix);
+
+        // Get max sequence for this prefix
+        $maxNum = self::where('sku', 'like', $prefix . '%')
+            ->selectRaw("MAX(CAST(SUBSTRING(sku, ?) AS UNSIGNED)) as max_num", [$prefixLen + 1])
+            ->value('max_num') ?? 0;
+            
+        return $prefix . ($maxNum + 1);
+    }
+
+    public static function generateDefaultSku(): string
     {
         $lastNumber = self::where('sku', 'like', 'MD%')
             ->selectRaw('MAX(CAST(SUBSTRING(sku, 4) AS UNSIGNED)) as max_num')
             ->value('max_num') ?? 0;
 
         return 'MDP' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    // Alias for backward compatibility if needed, or for default value
+    public static function generateSku(): string
+    {
+        return self::generateDefaultSku();
+    }
+
+    public static function calculateSmartSku($kategoriId, $brandId): ?string
+    {
+        if (! $kategoriId || ! $brandId) {
+            return null;
+        }
+        
+        $kategori = Kategori::find($kategoriId);
+        $brand = Brand::find($brandId);
+        
+        if (! $kategori || ! $brand) {
+            return null;
+        }
+
+        // On-the-fly backfill
+        if (blank($kategori->kode)) {
+            $kategori->kode = Kategori::generateKode($kategori->nama_kategori);
+            $kategori->saveQuietly();
+        }
+        if (blank($brand->kode)) {
+            $brand->kode = Brand::generateKode($brand->nama_brand);
+            $brand->saveQuietly();
+        }
+
+        $prefix = $kategori->kode . $brand->kode;
+        $prefixLen = strlen($prefix);
+
+        $maxNum = self::where('sku', 'like', $prefix . '%')
+            ->selectRaw("MAX(CAST(SUBSTRING(sku, ?) AS UNSIGNED)) as max_num", [$prefixLen + 1])
+            ->value('max_num') ?? 0;
+
+        return $prefix . ($maxNum + 1);
     }
 
     public function kategori()

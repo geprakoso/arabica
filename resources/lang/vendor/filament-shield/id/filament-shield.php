@@ -31,7 +31,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'nav.group' => 'Master Data',
+    'nav.group' => 'Pengaturan',
     'nav.role.label' => 'Role',
     'nav.role.icon' => 'heroicon-o-shield-check',
     'resource.label.role' => 'Role',

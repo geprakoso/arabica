@@ -5,17 +5,16 @@ namespace App\Filament\Resources\Akunting;
 use App\Enums\KategoriAkun;
 use App\Enums\KelompokNeraca;
 use App\Filament\Resources\Akunting\LaporanNeracaResource\Pages;
+use App\Filament\Resources\BaseResource;
 use App\Models\InputTransaksiToko;
 use App\Models\JenisAkun;
 use App\Models\KodeAkun;
 use App\Models\LaporanNeraca;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
-use Filament\Facades\Filament;
-use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\ViewEntry;
-use App\Filament\Resources\BaseResource;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -26,11 +25,19 @@ use Illuminate\Support\Carbon;
 class LaporanNeracaResource extends BaseResource
 {
     protected static ?string $model = LaporanNeraca::class;
+
     protected static ?string $navigationGroup = 'Laporan';
+
     protected static ?string $navigationLabel = 'Neraca';
+
     protected static ?string $pluralLabel = 'Neraca';
+
     protected static ?string $navigationIcon = 'heroicon-o-scale';
+
     protected static ?string $slug = 'laporan-neraca';
+
+    protected static ?int $navigationSort = 2;
+
     protected static array $kelompokNeracaMapping = [
         // Mapping manual: 'kode_akun' => KelompokNeraca::...
         // Contoh:
@@ -40,7 +47,7 @@ class LaporanNeracaResource extends BaseResource
         '12' => KelompokNeraca::AsetTidakLancar,
         '21' => KelompokNeraca::LiabilitasJangkaPendek,
         '22' => KelompokNeraca::LiabilitasJangkaPanjang,
-        
+
     ];
 
     // public static function shouldRegisterNavigation(): bool
@@ -87,7 +94,7 @@ class LaporanNeracaResource extends BaseResource
                             return $query;
                         }
 
-                        $reportTable = (new LaporanNeraca())->getTable();
+                        $reportTable = (new LaporanNeraca)->getTable();
 
                         return $query->whereRaw("YEAR({$reportTable}.month_start) = ?", [$data['value']]);
                     }),
@@ -128,8 +135,8 @@ class LaporanNeracaResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $reportTable = (new LaporanNeraca())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $reportTable = (new LaporanNeraca)->getTable();
 
         $monthsSub = InputTransaksiToko::query()
             ->selectRaw("DATE_FORMAT({$transaksiTable}.tanggal_transaksi, '%Y-%m-01') as month_start")
@@ -188,9 +195,9 @@ class LaporanNeracaResource extends BaseResource
         KategoriAkun $kategori,
         array $kelompokList,
     ): Builder {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $jenisAkunTable = (new JenisAkun())->getTable();
-        $kodeAkunTable = (new KodeAkun())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $jenisAkunTable = (new JenisAkun)->getTable();
+        $kodeAkunTable = (new KodeAkun)->getTable();
 
         $kodeAkunList = self::getKodeAkunByKelompok($kelompokList);
 
@@ -262,9 +269,9 @@ class LaporanNeracaResource extends BaseResource
         KategoriAkun $kategori,
         KelompokNeraca $kelompok,
     ): array {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $jenisAkunTable = (new JenisAkun())->getTable();
-        $kodeAkunTable = (new KodeAkun())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $jenisAkunTable = (new JenisAkun)->getTable();
+        $kodeAkunTable = (new KodeAkun)->getTable();
         $kodeAkunList = self::getKodeAkunByKelompok([$kelompok]);
 
         return InputTransaksiToko::query()
@@ -305,7 +312,7 @@ class LaporanNeracaResource extends BaseResource
     }
 
     /**
-     * @param array<int, KelompokNeraca> $kelompokList
+     * @param  array<int, KelompokNeraca>  $kelompokList
      * @return array<int, string>
      */
     protected static function getKodeAkunByKelompok(array $kelompokList): array
@@ -323,8 +330,8 @@ class LaporanNeracaResource extends BaseResource
 
     protected static function totalInventoryHpp(Carbon $asOf): float
     {
-        $pembelianItemTable = (new PembelianItem())->getTable();
-        $pembelianTable = (new Pembelian())->getTable();
+        $pembelianItemTable = (new PembelianItem)->getTable();
+        $pembelianTable = (new Pembelian)->getTable();
         $qtyColumn = PembelianItem::qtySisaColumn();
 
         $total = PembelianItem::query()
@@ -381,7 +388,7 @@ class LaporanNeracaResource extends BaseResource
 
         $monthLabel = $months[$date->month] ?? $date->format('F');
 
-        return $date->format('d') . ' ' . $monthLabel . ' ' . $date->year;
+        return $date->format('d').' '.$monthLabel.' '.$date->year;
     }
 
     /**
@@ -389,7 +396,7 @@ class LaporanNeracaResource extends BaseResource
      */
     protected static function yearOptions(): array
     {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
 
         $years = InputTransaksiToko::query()
             ->selectRaw("YEAR({$transaksiTable}.tanggal_transaksi) as tahun")

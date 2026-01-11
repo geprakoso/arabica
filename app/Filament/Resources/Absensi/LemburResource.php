@@ -4,41 +4,37 @@ namespace App\Filament\Resources\Absensi;
 
 use App\Enums\StatusPengajuan;
 use App\Filament\Resources\Absensi\LemburResource\Pages;
-use App\Filament\Resources\Absensi\LemburResource\RelationManagers;
+use App\Filament\Resources\BaseResource;
 use App\Models\Lembur;
 use Filament\Forms;
-use Filament\Forms\Get;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use App\Filament\Resources\BaseResource;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Carbon;
-use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Carbon;
 
 class LemburResource extends BaseResource
 {
     protected static ?string $model = Lembur::class;
 
     protected static ?string $navigationIcon = 'hugeicons-clock-05';
-    protected static ?string $navigationGroup = 'Kepegawaian';
+
+    protected static ?string $navigationGroup = 'Personalia';
+
     protected static ?string $navigationLabel = 'Lembur';
+
+    protected static ?int $navigationSort = 2;
 
     public static function canViewAny(): bool
     {
@@ -112,7 +108,7 @@ class LemburResource extends BaseResource
                                 Forms\Components\DatePicker::make('tanggal')
                                     ->label('Tanggal Lembur')
                                     ->native(false) // Tampilan kalender modern
-                                    ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->locale('id')->translatedFormat('d F Y') : '-')
+                                    ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->locale('id')->translatedFormat('d F Y') : '-')
                                     ->default(now())
                                     ->required()
                                     ->columnSpanFull(), // Tanggal full width di atas jam
@@ -155,7 +151,7 @@ class LemburResource extends BaseResource
                                     ->label('Catatan Supervisor')
                                     ->placeholder('Alasan diterima/ditolak...')
                                     ->rows(4)
-                                    ->visible(fn(Get $get) => in_array($get('status'), [
+                                    ->visible(fn (Get $get) => in_array($get('status'), [
                                         StatusPengajuan::Diterima->value,
                                         StatusPengajuan::Ditolak->value,
                                         // Pastikan value ini sesuai dengan Enum kamu (misal: 'diterima', 'ditolak' atau 1, 2)
@@ -200,7 +196,7 @@ class LemburResource extends BaseResource
                                     ->schema([
                                         TextEntry::make('tanggal')
                                             ->label('Tanggal')
-                                            ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->locale('id')->translatedFormat('d F Y') : '-') // Format tanggal Indonesia friendly
+                                            ->formatStateUsing(fn ($state) => $state ? Carbon::parse($state)->locale('id')->translatedFormat('d F Y') : '-') // Format tanggal Indonesia friendly
                                             ->icon('heroicon-m-calendar'),
 
                                         TextEntry::make('jam_mulai')
@@ -247,7 +243,7 @@ class LemburResource extends BaseResource
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Karyawan')
-                    ->description(fn(Lembur $record) => $record->user->email ?? '-')
+                    ->description(fn (Lembur $record) => $record->user->email ?? '-')
                     ->icon('heroicon-m-user')
                     ->searchable()
                     ->sortable(),
@@ -255,24 +251,24 @@ class LemburResource extends BaseResource
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
-                    ->description(fn(Lembur $record) => $record->tanggal->locale('id')->translatedFormat('l')) // Hari
+                    ->description(fn (Lembur $record) => $record->tanggal->locale('id')->translatedFormat('l')) // Hari
                     ->icon('heroicon-m-calendar')
                     ->sortable(),
 
                 TextColumn::make('jam_mulai')
                     ->label('Waktu')
                     ->icon('heroicon-m-clock')
-                    ->formatStateUsing(fn(Lembur $record) => Carbon::parse($record->jam_mulai)->format('H:i') . ' - ' . ($record->jam_selesai ? Carbon::parse($record->jam_selesai)->format('H:i') : '?')),
+                    ->formatStateUsing(fn (Lembur $record) => Carbon::parse($record->jam_mulai)->format('H:i').' - '.($record->jam_selesai ? Carbon::parse($record->jam_selesai)->format('H:i') : '?')),
 
                 TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->formatStateUsing(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getLabel()
                         : (filled($state) ? StatusPengajuan::from($state)->getLabel() : null))
-                    ->color(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->color(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getColor()
                         : (filled($state) ? StatusPengajuan::from($state)->getColor() : null))
-                    ->icon(fn(StatusPengajuan|string|null $state) => match ($state instanceof StatusPengajuan ? $state->value : $state) {
+                    ->icon(fn (StatusPengajuan|string|null $state) => match ($state instanceof StatusPengajuan ? $state->value : $state) {
                         'diterima', 1, '1' => 'heroicon-m-check-circle',
                         'ditolak', 2, '2' => 'heroicon-m-x-circle',
                         default => 'heroicon-m-clock',

@@ -2,17 +2,16 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use App\Models\Pembelian;
 use Akaunting\Money\Money;
-use Filament\Tables\Table;
-use App\Filament\Resources\BaseResource;
-use Illuminate\Support\Facades\Auth;
-use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PembelianReportResource\Pages;
+use App\Models\Pembelian;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class PembelianReportResource extends BaseResource
 {
@@ -30,7 +29,7 @@ class PembelianReportResource extends BaseResource
 
     protected static ?string $navigationGroup = 'Laporan';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -40,7 +39,7 @@ class PembelianReportResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
             ->defaultSort('tanggal', 'desc')
             ->columns([
                 TextColumn::make('no_po')
@@ -71,21 +70,21 @@ class PembelianReportResource extends BaseResource
                     ->label('Total Qty')
                     ->badge()
                     ->color('info')
-                    ->state(fn(Pembelian $record) => $record->items->sum('qty')), //menghitung total qty dari relasi items
+                    ->state(fn (Pembelian $record) => $record->items->sum('qty')), // menghitung total qty dari relasi items
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
-                    ->state(fn(Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
-                    )) //menghitung total HPP dari relasi items
+                    ->state(fn (Pembelian $record) => self::formatCurrency(
+                        $record->items->sum(fn ($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
+                    )) // menghitung total HPP dari relasi items
                     ->color('gray')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('total_harga_jual')
                     ->label('Total Pembelian')
                     ->weight('bold')
                     ->color('success')
-                    ->state(fn(Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
-                    )), //menghitung total harga jual dari relasi items
+                    ->state(fn (Pembelian $record) => self::formatCurrency(
+                        $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
+                    )), // menghitung total harga jual dari relasi items
             ])
             ->filters([
                 Tables\Filters\Filter::make('periode')
@@ -98,14 +97,14 @@ class PembelianReportResource extends BaseResource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal', '>=', $date))
-                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal', '<=', $date));
+                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal', '<=', $date));
                     }),
             ])
             ->headerActions([
                 \AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction::make('export')
                     ->label('Download')
-                    ->filename('Laporan Pembelian' . '_' . date('d M Y'))
+                    ->filename('Laporan Pembelian'.'_'.date('d M Y'))
                     ->defaultFormat('pdf')
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('success')
@@ -114,7 +113,7 @@ class PembelianReportResource extends BaseResource
                         'title' => 'Haen Komputer',
                         'subtitle' => 'Laporan Pembelian',
                         'tanggal' => now()->format('d-m-Y'),
-                    ])
+                    ]),
             ])
             ->actions([])
             ->bulkActions([]);
@@ -130,16 +129,12 @@ class PembelianReportResource extends BaseResource
     //     return Auth::user()->can('view Laporan Pembelian');
     // }
 
-
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListPembelianReports::route('/'),
         ];
     }
-
-
-
 
     protected static function formatCurrency(int $value): string
     {

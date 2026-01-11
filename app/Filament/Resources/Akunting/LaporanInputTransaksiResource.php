@@ -2,37 +2,36 @@
 
 namespace App\Filament\Resources\Akunting;
 
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use App\Enums\KategoriAkun;
 use App\Filament\Resources\Akunting\LaporanInputTransaksiResource\Pages;
+use App\Filament\Resources\BaseResource;
 use App\Models\InputTransaksiToko;
-use Filament\Facades\Filament;
 use Filament\Actions\StaticAction;
-use Filament\Forms\Components\Grid as FormsGrid;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid as FormsGrid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Get;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
-use App\Filament\Resources\BaseResource;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Contracts\Support\Htmlable;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 
 class LaporanInputTransaksiResource extends BaseResource
 {
@@ -41,11 +40,17 @@ class LaporanInputTransaksiResource extends BaseResource
 
     // Konfigurasi Navigasi & Label
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
-    protected static ?string $navigationLabel = 'Input Transaksi';
+
+    protected static ?string $navigationLabel = 'Laporan Transaksi';
+
     protected static ?string $modelLabel = 'Laporan Input Transaksi';
-    protected static ?string $pluralModelLabel = 'Laporan Input Transaksi';
-    protected static ?string $slug = 'laporan-input-transaksi';
-    protected static ?int $navigationSort = 2;
+
+    protected static ?string $pluralModelLabel = 'Laporan Transaksi';
+
+    protected static ?string $slug = 'laporan-transaksi';
+
+    protected static ?int $navigationSort = 7;
+
     protected static ?string $navigationGroup = 'Laporan';
 
     // Matikan fitur Tambah Data (Create) karena ini hanya laporan view-only
@@ -131,7 +136,7 @@ class LaporanInputTransaksiResource extends BaseResource
                             ->label('Kategori')
                             ->options(KategoriAkun::class)
                             ->columnSpan(2)
-                            ->native(false)
+                            ->native(false),
                     ])->columns(2)
                     ->query(function (Builder $query, array $data): Builder {
                         $range = $data['range'] ?? '1m';
@@ -164,7 +169,7 @@ class LaporanInputTransaksiResource extends BaseResource
                                 $data['kategori_transaksi'],
                                 fn (Builder $query, $kategori): Builder => $query->where('kategori_transaksi', $kategori),
                             );
-                    })
+                    }),
             ], layout: FiltersLayout::Dropdown)
             ->filtersTriggerAction(
                 fn (Action $action) => $action
@@ -266,6 +271,7 @@ class LaporanInputTransaksiResource extends BaseResource
                                             ->size(TextEntrySize::Medium)
                                             ->color(function ($state) {
                                                 $enum = $state instanceof KategoriAkun ? $state : KategoriAkun::tryFrom($state);
+
                                                 return $enum?->getColor() ?? 'gray';
                                             }),
                                     ]),

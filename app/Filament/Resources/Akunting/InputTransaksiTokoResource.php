@@ -2,43 +2,48 @@
 
 namespace App\Filament\Resources\Akunting;
 
+use App\Enums\KategoriAkun;
+use App\Filament\Forms\Components\MediaManagerPicker;
 use App\Filament\Resources\Akunting\InputTransaksiTokoResource\Pages;
-use App\Models\InputTransaksiToko;
-use Filament\Forms\Form;
-use Filament\Facades\Filament;
 use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use App\Enums\KategoriAkun; // Sesuaikan namespace Enum
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Hidden;
+use App\Models\InputTransaksiToko;
+use App\Models\JenisAkun;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\DatePicker; // Sesuaikan namespace Enum
 use Filament\Forms\Components\Grid as FormsGrid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Group;
-use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
-use App\Models\JenisAkun;
-use App\Filament\Forms\Components\MediaManagerPicker;
 
 class InputTransaksiTokoResource extends BaseResource
 {
     protected static ?string $model = InputTransaksiToko::class;
-    protected static ?string $navigationLabel = 'Input Transaksi Toko';
-    protected static ?string $pluralLabel = 'Input Transaksi Toko';
+
+    protected static ?string $navigationLabel = 'Input Transaksi';
+
+    protected static ?string $pluralLabel = 'Input Transaksi';
+
     protected static ?string $navigationIcon = 'hugeicons-wallet-add-01';
-    protected static ?string $navigationGroup = 'Keuangan';
+
+    protected static ?string $navigationGroup = 'Transaksi';
+
+    protected static ?int $navigationSort = 2;
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -54,7 +59,7 @@ class InputTransaksiTokoResource extends BaseResource
                     ->description('Input detail pemasukan atau pengeluaran kas.')
                     ->icon('heroicon-m-banknotes')
                     ->schema([
-                        
+
                         // --- BARIS 1: Waktu & Klasifikasi ---
                         FormsGrid::make(2)
                             ->schema([
@@ -89,6 +94,7 @@ class InputTransaksiTokoResource extends BaseResource
                                     ->afterStateUpdated(function (Set $set, ?string $state) {
                                         if (blank($state)) {
                                             $set('kategori_transaksi', null);
+
                                             return;
                                         }
 
@@ -457,14 +463,14 @@ class InputTransaksiTokoResource extends BaseResource
             $badge = sprintf(
                 '<span class="%s shrink-0" %s>%s</span>',
                 e($badgeClasses),
-                $badgeStyle ? 'style="' . e($badgeStyle) . '"' : '',
+                $badgeStyle ? 'style="'.e($badgeStyle).'"' : '',
                 e($kategoriLabel)
             );
 
             return new HtmlString(
-                '<span class="flex items-center justify-between gap-2">' .
-                    '<span class="min-w-0 truncate">' . e($label) . '</span>' .
-                    $badge .
+                '<span class="flex items-center justify-between gap-2">'.
+                    '<span class="min-w-0 truncate">'.e($label).'</span>'.
+                    $badge.
                 '</span>'
             );
         }
