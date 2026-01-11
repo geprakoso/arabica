@@ -2,6 +2,24 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.11
+### Integrasi Gudang & Absensi Berbasis Lokasi
+- **Manajemen Lokasi Gudang (`GudangResource`)**:
+  - Mengimplementasikan **Interactive Map Picker** (Leaflet/OSM) untuk pemilihan lokasi visual.
+  - Menambahkan fitur **Reverse Geocoding** otomatis dan dropdown wilayah Indonesia (Provinsi s/d Kelurahan).
+  - Menambahkan pengaturan **Radius** (km) untuk toleransi jarak absensi.
+- **Manajemen Karyawan (`UserResource`)**:
+  - Menggabungkan fungsionalitas `KaryawanResource` ke dalam `UserResource` untuk manajemen terpusat.
+  - Menambahkan fitur **Penugasan Gudang** (`gudang_id`) untuk menetapkan lokasi kerja karyawan.
+  - Memperbaiki tombol "Tambah Karyawan" agar tampil inline di header halaman list.
+  - **Fix Foto Profil**: Memperbaiki masalah gambar tidak tampil saat edit dengan menambahkan `visibility('public')` dan logika ekstraksi path JSON yang robust.
+- **Validasi Absensi Geofencing**:
+  - Mengimplementasikan validasi lokasi ketat pada `AbsensiResource` menggunakan koordinat gudang yang ditugaskan.
+  - Menggunakan formula **Haversine** untuk perhitungan jarak akurat dan menolak absensi di luar radius gudang.
+- **Perbaikan Sistem**:
+  - Mengatasi masalah routing `MethodNotAllowedHttpException` pada login dengan pembersihan cache menyeluruh.
+  - Mengoptimalkan struktur navigasi dengan menyembunyikan resource karyawan yang redundan.
+
 ## 2026.01.09
 ### Peningkatan Modul Penjadwalan Service (Service Center)
 - **Fitur Crosscheck & Kelengkapan Unit**:

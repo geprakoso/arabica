@@ -61,16 +61,27 @@ class CreateAbsensi extends CreateRecord
             return $data;
         }
 
-        // Radius maksimal (meter) dari titik kantor untuk validasi absensi
-        $radiusMeter = 100;
+        // Ambil data karyawan dan gudang yang ditetapkan
+        $user = Auth::user();
+        $karyawan = $user?->karyawan;
+        $gudang = $karyawan?->gudang;
 
-        // Ambil titik kantor dari Profil Perusahaan
-        $kantor = ProfilePerusahaan::first();
-
-        if (!$kantor || !$kantor->lat_perusahaan || !$kantor->long_perusahaan) {
+        // Validasi: Karyawan harus punya gudang yang ditetapkan
+        if (!$gudang) {
             Notification::make()
-                ->title('Koordinat kantor belum diset')
-                ->body('Setel Latitude/Longitude di Profil Perusahaan terlebih dahulu.')
+                ->title('Gudang belum ditetapkan')
+                ->body('Anda belum memiliki lokasi gudang yang ditetapkan. Hubungi admin untuk mengatur lokasi gudang Anda.')
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+
+        // Validasi: Gudang harus punya koordinat
+        if (!$gudang->latitude || !$gudang->longitude) {
+            Notification::make()
+                ->title('Koordinat gudang belum diset')
+                ->body("Koordinat untuk gudang \"{$gudang->nama_gudang}\" belum diatur. Hubungi admin.")
                 ->danger()
                 ->send();
 
@@ -91,19 +102,32 @@ class CreateAbsensi extends CreateRecord
             $this->halt();
         }
 
-        // Hitung jarak dari pengguna ke titik kantor
-        $jarak = $this->hitungJarak($kantor->lat_perusahaan, $kantor->long_perusahaan, $userLat, $userLong);
+        // Ambil radius dari gudang (default 50 meter jika tidak diset)
+        $radiusMeter = $gudang->radius_km ?? 50;
+
+        // Hitung jarak dari pengguna ke titik gudang
+        $jarak = $this->hitungJarak(
+            $gudang->latitude,
+            $gudang->longitude,
+            $userLat,
+            $userLong
+        );
 
         // Tolak jika di luar radius
         if ($jarak > $radiusMeter) {
             Notification::make()
-                ->title('Gagal Absen')
-                ->body("Anda berada {$jarak} meter dari titik kantor. Maksimal jarak adalah {$radiusMeter} meter.")
+                ->title('Gagal Absen - Di Luar Jangkauan')
+                ->body("Anda berada **{$jarak} meter** dari {$gudang->nama_gudang}. Maksimal jarak adalah **{$radiusMeter} meter**.")
                 ->danger()
+                ->persistent()
                 ->send();
 
             $this->halt();
         }
+
+        // Sukses! Tambahkan info jarak ke data (optional, untuk logging)
+        $data['jarak_dari_gudang'] = $jarak;
+        $data['nama_gudang'] = $gudang->nama_gudang;
 
         return $data;
     }

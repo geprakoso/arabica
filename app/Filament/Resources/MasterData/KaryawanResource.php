@@ -2,63 +2,71 @@
 
 namespace App\Filament\Resources\MasterData;
 
-use Dom\Text;
+use App\Filament\Resources\BaseResource;
+use App\Filament\Resources\MasterData\KaryawanResource\Pages;
+use App\Models\Karyawan;
+use App\Support\WebpUpload;
 use Filament\Forms;
-use App\Models\User;
-use Filament\Tables;
+use Filament\Forms\Components\BaseFileUpload;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use App\Models\Karyawan;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
-use App\Filament\Resources\BaseResource;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\BaseFileUpload;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Section;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
-use Illuminate\Support\Str; // Import Str
-use Filament\Infolists\Components\TextEntry;
-use Illuminate\Support\Facades\Hash; // Import Hash
-use Illuminate\Support\Facades\Storage;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use App\Filament\Forms\Components\MediaManagerPicker;
-use App\Filament\Resources\MasterData\KaryawanResource\Pages;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry; // Import Str
 use Filament\Infolists\Components\Section as InfolistSection;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use App\Support\WebpUpload;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Components\TextEntry; // Import Hash
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Laravolt\Indonesia\Models\City;
 use Laravolt\Indonesia\Models\District;
 use Laravolt\Indonesia\Models\Province;
 use Laravolt\Indonesia\Models\Village;
-
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class KaryawanResource extends BaseResource
 {
     protected static ?string $model = Karyawan::class;
+
     protected static ?string $recordRouteKeyName = 'slug';
 
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-ai-user';
+
     protected static ?string $navigationGroup = 'Master Data';
+
     protected static ?string $navigationParentItem = 'User & Supplier';
+
     protected static ?string $navigationLabel = 'Karyawan';
+
     protected static ?string $pluralModelLabel = 'Karyawan';
+
     protected static ?int $navigationSort = 11;
 
+    /**
+     * Hide this resource from navigation.
+     * Karyawan data is now managed via UserResource.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
@@ -77,19 +85,19 @@ class KaryawanResource extends BaseResource
                             ->icon('heroicon-m-user')
                             ->schema([
                                 Forms\Components\TextInput::make('nama_karyawan')
-                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
+                                    ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                     ->label('Nama Lengkap')
                                     ->required()
                                     ->placeholder('Nama sesuai KTP')
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
+                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
                                     ->columnSpanFull(),
 
                                 Forms\Components\Grid::make(2)
                                     ->schema([
                                         Forms\Components\TextInput::make('slug')
                                             ->label('Slug')
-                                            ->dehydrateStateUsing(fn($state) => Str::slug($state))
+                                            ->dehydrateStateUsing(fn ($state) => Str::slug($state))
                                             ->required()
                                             ->unique(Karyawan::class, 'slug', ignoreRecord: true)
                                             ->readOnly()
@@ -109,7 +117,7 @@ class KaryawanResource extends BaseResource
                             ->schema([
                                 Forms\Components\Textarea::make('alamat')
                                     ->label('Alamat Lengkap')
-                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
+                                    ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                     ->rows(3)
                                     ->placeholder('Jalan, RT/RW, Nomor Rumah...')
                                     ->columnSpanFull(),
@@ -120,7 +128,7 @@ class KaryawanResource extends BaseResource
                                             ->label('Provinsi')
                                             ->searchable()
                                             ->preload()
-                                            ->options(fn() => Province::query()
+                                            ->options(fn () => Province::query()
                                                 ->orderBy('name')
                                                 ->pluck('name', 'name')
                                                 ->all())
@@ -137,7 +145,7 @@ class KaryawanResource extends BaseResource
                                             ->preload()
                                             ->options(function (Get $get): array {
                                                 $provinceName = $get('provinsi');
-                                                if (!$provinceName) {
+                                                if (! $provinceName) {
                                                     return [];
                                                 }
 
@@ -145,7 +153,7 @@ class KaryawanResource extends BaseResource
                                                     ->where('name', $provinceName)
                                                     ->value('code');
 
-                                                if (!$provinceCode) {
+                                                if (! $provinceCode) {
                                                     return [];
                                                 }
 
@@ -167,7 +175,7 @@ class KaryawanResource extends BaseResource
                                             ->preload()
                                             ->options(function (Get $get): array {
                                                 $cityName = $get('kota');
-                                                if (!$cityName) {
+                                                if (! $cityName) {
                                                     return [];
                                                 }
 
@@ -175,7 +183,7 @@ class KaryawanResource extends BaseResource
                                                     ->where('name', $cityName)
                                                     ->value('code');
 
-                                                if (!$cityCode) {
+                                                if (! $cityCode) {
                                                     return [];
                                                 }
 
@@ -196,7 +204,7 @@ class KaryawanResource extends BaseResource
                                             ->preload()
                                             ->options(function (Get $get): array {
                                                 $districtName = $get('kecamatan');
-                                                if (!$districtName) {
+                                                if (! $districtName) {
                                                     return [];
                                                 }
 
@@ -204,7 +212,7 @@ class KaryawanResource extends BaseResource
                                                     ->where('name', $districtName)
                                                     ->value('code');
 
-                                                if (!$districtCode) {
+                                                if (! $districtCode) {
                                                     return [];
                                                 }
 
@@ -229,7 +237,7 @@ class KaryawanResource extends BaseResource
                                     ->addActionLabel('Tambah Dokumen')
                                     ->reorderableWithButtons()
                                     ->collapsible() // Bisa dilipat agar tidak memakan tempat
-                                    ->itemLabel(fn(array $state): ?string => $state['jenis_dokumen'] ?? 'Dokumen Baru')
+                                    ->itemLabel(fn (array $state): ?string => $state['jenis_dokumen'] ?? 'Dokumen Baru')
                                     ->schema([
                                         Forms\Components\Grid::make(2)
                                             ->schema([
@@ -272,7 +280,7 @@ class KaryawanResource extends BaseResource
                                     ->disk('public')
                                     ->directory('karyawan/foto')
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_karyawan') ?? 'karyawan') . '.' . $file->getClientOriginalExtension())
+                                        fn (TemporaryUploadedFile $file, Get $get) => (now()->format('ymd').'-'.Str::slug($get('nama_karyawan') ?? 'karyawan').'.'.$file->getClientOriginalExtension())
                                     )
                                     ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames()
@@ -301,10 +309,10 @@ class KaryawanResource extends BaseResource
                                     ->preload()
                                     ->required()
                                     ->disabled(false),
-                                    // Kita bisa kunci juga Role-nya jika mau
-                                    // ->disabled(fn (Get $get, string $operation) => 
-                                    //     $operation === 'edit' && ! $get('ubah_akses_login')
-                                    // ),
+                                // Kita bisa kunci juga Role-nya jika mau
+                                // ->disabled(fn (Get $get, string $operation) =>
+                                //     $operation === 'edit' && ! $get('ubah_akses_login')
+                                // ),
 
                                 // 2. Toggle Pemicu "Ubah Email" (Hanya muncul saat Mode Edit)
                                 Forms\Components\Toggle::make('ubah_email_login')
@@ -325,7 +333,7 @@ class KaryawanResource extends BaseResource
                                     ->helperText('Aktifkan ini jika ingin mengubah email atau password user.')
                                     ->live() // PENTING: Agar form langsung bereaksi saat diklik
                                     ->dehydrated(false) // PENTING: Field ini tidak akan disimpan ke database
-                                    ->visible(fn(string $operation) => $operation === 'edit') // Hanya muncul pas Edit
+                                    ->visible(fn (string $operation) => $operation === 'edit') // Hanya muncul pas Edit
                                     ->default(false),
 
                                 // 3. Email Login
@@ -339,30 +347,17 @@ class KaryawanResource extends BaseResource
                                     })
                                     // Logic: Disable jika sedang Edit DAN Toggle belum dinyalakan
                                     ->disabled(
-                                        fn(Get $get, string $operation) =>
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                        fn (Get $get, string $operation) => $operation === 'edit' && ! $get('ubah_akses_login')
                                     )
                                     ->dehydrated(fn (Get $get, string $operation) => $operation === 'create' || $get('ubah_email_login'))
                                     // Validasi Unique yang Diperbaiki
                                     ->rules(function ($record) {
                                         $userId = $record?->user_id; // Ambil user_id dari relasi karyawan
+
                                         return [
                                             Rule::unique('users', 'email')->ignore($userId),
                                         ];
                                     }),
-
-                                // 4. Role Selection
-                                Forms\Components\Select::make('role_id')
-                                    ->label('Role / Jabatan')
-                                    ->relationship('role', 'name')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required()
-                                    // Kita bisa kunci juga Role-nya jika mau
-                                    ->disabled(
-                                        fn(Get $get, string $operation) =>
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
-                                    ),
 
                                 // 5. Password
                                 Forms\Components\TextInput::make('password')
@@ -372,14 +367,13 @@ class KaryawanResource extends BaseResource
                                     ->autocomplete('new-password')
                                     // Logic Disable sama seperti Email
                                     ->disabled(
-                                        fn(Get $get, string $operation) =>
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                        fn (Get $get, string $operation) => $operation === 'edit' && ! $get('ubah_akses_login')
                                     )
                                     // Hanya required saat Create (Saat edit boleh kosong jika tidak ingin ubah password)
-                                    ->required(fn(string $operation) => $operation === 'create')
+                                    ->required(fn (string $operation) => $operation === 'create')
                                     // Simpan hanya jika ada isinya
-                                    ->dehydrated(fn($state) => filled($state))
-                                    ->dehydrateStateUsing(fn($state) => Hash::make($state)),
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
 
                                 // 6. Password Confirmation
                                 Forms\Components\TextInput::make('password_confirmation')
@@ -389,11 +383,10 @@ class KaryawanResource extends BaseResource
                                     ->same('password')
                                     // Logic Disable sama
                                     ->disabled(
-                                        fn(Get $get, string $operation) =>
-                                        $operation === 'edit' && ! $get('ubah_akses_login')
+                                        fn (Get $get, string $operation) => $operation === 'edit' && ! $get('ubah_akses_login')
                                     )
                                     // Wajib jika password utama diisi
-                                    ->required(fn(Get $get) => filled($get('password'))),
+                                    ->required(fn (Get $get) => filled($get('password'))),
                             ]),
                     ]),
             ]);
@@ -426,7 +419,7 @@ class KaryawanResource extends BaseResource
                                             ->label('Kontak')
                                             ->icon('heroicon-m-device-phone-mobile')
                                             ->copyable()
-                                            ->url(fn($record) => $record->telepon ? 'https://wa.me/' . $record->telepon : null, true)
+                                            ->url(fn ($record) => $record->telepon ? 'https://wa.me/'.$record->telepon : null, true)
                                             ->color('success'),
                                     ]),
 
@@ -440,12 +433,11 @@ class KaryawanResource extends BaseResource
                                 TextEntry::make('wilayah_lengkap')
                                     ->label('Detail Wilayah')
                                     ->state(
-                                        fn($record) =>
-                                        implode(', ', array_filter([
+                                        fn ($record) => implode(', ', array_filter([
                                             $record->kelurahan,
                                             $record->kecamatan,
                                             $record->kota,
-                                            $record->provinsi
+                                            $record->provinsi,
                                         ]))
                                     )
                                     ->icon('heroicon-m-map')
@@ -469,8 +461,8 @@ class KaryawanResource extends BaseResource
 
                                                 TextEntry::make('file_path')
                                                     ->label('File')
-                                                    ->formatStateUsing(fn() => 'Unduh / Lihat File')
-                                                    ->url(fn($state) => Storage::url($state)) // Link ke file public
+                                                    ->formatStateUsing(fn () => 'Unduh / Lihat File')
+                                                    ->url(fn ($state) => Storage::url($state)) // Link ke file public
                                                     ->openUrlInNewTab()
                                                     ->icon('heroicon-m-arrow-down-tray')
                                                     ->color('info')
@@ -545,7 +537,7 @@ class KaryawanResource extends BaseResource
                 TextColumn::make('nama_karyawan')
                     ->label('Karyawan')
                     ->icon('heroicon-m-identification')
-                    ->description(fn(Karyawan $record) => $record->role?->name)
+                    ->description(fn (Karyawan $record) => $record->role?->name)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('telepon')
@@ -553,7 +545,7 @@ class KaryawanResource extends BaseResource
                     ->icon('heroicon-m-device-phone-mobile')
                     ->copyable()
                     ->color('success')
-                    ->url(fn(Karyawan $record) => $record->telepon ? 'https://wa.me/' . $record->telepon : null, true)
+                    ->url(fn (Karyawan $record) => $record->telepon ? 'https://wa.me/'.$record->telepon : null, true)
                     ->searchable()
                     ->sortable()
                     ->toggleable(),

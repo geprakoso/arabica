@@ -29,6 +29,7 @@ class Karyawan extends Model implements HasMedia
         'image_url',
         'user_id',
         'role_id',
+        'gudang_id',
         'is_active',
     ];
 
@@ -79,6 +80,11 @@ class Karyawan extends Model implements HasMedia
     public function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function gudang()
+    {
+        return $this->belongsTo(Gudang::class);
     }
 
     public function requestOrders()

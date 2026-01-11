@@ -2,51 +2,53 @@
 
 namespace App\Filament\Resources\Absensi;
 
-use Filament\Forms;
-use Filament\Tables;
-use App\Models\Absensi;
-use Filament\Forms\Get;
-use App\Models\Karyawan;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Facades\Filament;
-use Illuminate\Support\Carbon;
-use Filament\Infolists\Infolist;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Filters\Filter;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Filters\SelectFilter;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Forms\Components\Actions\Action as FormAction;
 use App\Filament\Resources\Absensi\AbsensiResource\Pages;
-use Filament\Infolists\Components\Group;
-use Filament\Infolists\Components\Split;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Forms\Components\Section;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\HtmlString;
+use App\Filament\Resources\BaseResource;
+use App\Models\Absensi;
 use App\Support\WebpUpload;
 use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
+use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class AbsensiResource extends BaseResource
 {
     protected static ?string $model = Absensi::class;
 
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
+
     protected static ?string $navigationGroup = 'Kepegawaian';
+
     protected static ?string $pluralLabel = 'Absensi';
+
     protected static ?string $navigationLabel = 'Absen';
 
     public static function canViewAny(): bool
@@ -87,18 +89,18 @@ class AbsensiResource extends BaseResource
                                         ->label('Jenis Absensi')
                                         ->options([
                                             'hadir' => 'Hadir',
-                                            'izin'  => 'Izin',
+                                            'izin' => 'Izin',
                                             'sakit' => 'Sakit',
                                             // Alpha tidak ditampilkan sesuai request
                                         ])
                                         ->icons([
                                             'hadir' => 'heroicon-o-map-pin',
-                                            'izin'  => 'heroicon-o-document-text',
+                                            'izin' => 'heroicon-o-document-text',
                                             'sakit' => 'heroicon-o-face-frown',
                                         ])
                                         ->colors([
                                             'hadir' => 'success',
-                                            'izin'  => 'warning',
+                                            'izin' => 'warning',
                                             'sakit' => 'danger',
                                         ])
                                         ->default('hadir')
@@ -114,7 +116,7 @@ class AbsensiResource extends BaseResource
                     Wizard\Step::make('Bukti Foto')
                         ->icon('heroicon-o-camera')
                         ->description('Ambil foto selfie di lokasi')
-                        ->visible(fn(Get $get) => $get('status') === 'hadir') // Logic Skenario A & B
+                        ->visible(fn (Get $get) => $get('status') === 'hadir') // Logic Skenario A & B
                         ->schema([
                             Section::make('Foto Selfie')
                                 ->description('Pastikan wajah terlihat jelas dan berada di lokasi.')
@@ -144,13 +146,14 @@ class AbsensiResource extends BaseResource
 
                                             if ($component->getTargetField() && $component->getTargetField() !== $component->getName()) {
                                                 $set($component->getTargetField(), $path);
+
                                                 return null;
                                             }
 
                                             return $path;
                                         })
                                         ->shouldDeleteOnEdit(false)
-                                        ->required(fn(Get $get) => $get('status') === 'hadir') // Wajib jika Hadir
+                                        ->required(fn (Get $get) => $get('status') === 'hadir') // Wajib jika Hadir
                                         ->columnSpanFull(),
                                 ]),
                         ]),
@@ -192,7 +195,7 @@ class AbsensiResource extends BaseResource
 
                             // System Fields
                             Hidden::make('user_id')->default(Auth::id()),
-                            Hidden::make('tanggal')->default(fn() => now()->toDateString()),
+                            Hidden::make('tanggal')->default(fn () => now()->toDateString()),
                             Hidden::make('jam_masuk')->default(now()->format('H:i')),
                         ]),
                 ])
@@ -209,8 +212,7 @@ class AbsensiResource extends BaseResource
                         )
                     ))
                     ->previousAction(
-                        fn(FormAction $action) =>
-                        $action
+                        fn (FormAction $action) => $action
                             ->label('Sebelumnya')
                             ->color('secondary')
                             ->icon('heroicon-m-arrow-left')
@@ -239,19 +241,19 @@ class AbsensiResource extends BaseResource
                                     ])
                                     ->columnSpanFull()
                                     ->defaultImageUrl(url('/images/placeholder-image.jpg')) // Optional placeholder
-                                    ->visible(fn($record) => $record->camera_test !== null),
+                                    ->visible(fn ($record) => $record->camera_test !== null),
 
                                 TextEntry::make('status')
                                     ->label('Status Kehadiran')
                                     ->badge()
                                     ->size('lg')
-                                    ->color(fn(string $state): string => match ($state) {
+                                    ->color(fn (string $state): string => match ($state) {
                                         'hadir' => 'success',
                                         'izin' => 'warning',
                                         'sakit' => 'danger',
                                         default => 'gray',
                                     })
-                                    ->icon(fn(string $state): string => match ($state) {
+                                    ->icon(fn (string $state): string => match ($state) {
                                         'hadir' => 'heroicon-m-check-circle',
                                         'izin' => 'heroicon-m-document-text',
                                         'sakit' => 'heroicon-m-plus-circle',
@@ -296,11 +298,11 @@ class AbsensiResource extends BaseResource
                                         TextEntry::make('lat_absen')
                                             ->label('Latitude')
                                             ->icon('heroicon-m-map-pin')
-                                            ->visible(fn($record) => $record->lat_absen),
+                                            ->visible(fn ($record) => $record->lat_absen),
                                         TextEntry::make('long_absen')
                                             ->label('Longitude')
                                             ->icon('heroicon-m-map-pin')
-                                            ->visible(fn($record) => $record->long_absen),
+                                            ->visible(fn ($record) => $record->long_absen),
                                     ])
                                     ->columns(2),
 
@@ -326,7 +328,7 @@ class AbsensiResource extends BaseResource
                 TextColumn::make('user.name')
                     ->label('Karyawan')
                     ->weight('bold')
-                    ->description(fn(Absensi $record) => $record->user->email ?? '-')
+                    ->description(fn (Absensi $record) => $record->user->email ?? '-')
                     ->icon('heroicon-m-user')
                     ->searchable()
                     ->sortable(),
@@ -334,7 +336,7 @@ class AbsensiResource extends BaseResource
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
-                    ->description(fn(Absensi $record) => $record->tanggal->translatedFormat('l')) // Hari
+                    ->description(fn (Absensi $record) => $record->tanggal->translatedFormat('l')) // Hari
                     ->icon('heroicon-m-calendar')
                     ->sortable(),
 
@@ -352,29 +354,30 @@ class AbsensiResource extends BaseResource
                         if (in_array($record->status, ['izin', 'sakit', 'alpha', 'alpa'], true)) {
                             return '-';
                         }
+
                         return $state ? Carbon::parse($state)->format('H:i') : 'Belum Pulang';
                     })
-                    ->icon(fn($state) => $state ? 'heroicon-m-arrow-left-start-on-rectangle' : null)
-                    ->color(fn($state) => $state ? 'danger' : 'gray')
-                    ->description(fn($state, Absensi $record) => $record->status === 'hadir' && !$state ? 'Sedang bekerja' : null),
+                    ->icon(fn ($state) => $state ? 'heroicon-m-arrow-left-start-on-rectangle' : null)
+                    ->color(fn ($state) => $state ? 'danger' : 'gray')
+                    ->description(fn ($state, Absensi $record) => $record->status === 'hadir' && ! $state ? 'Sedang bekerja' : null),
 
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'hadir' => 'success',
                         'izin' => 'warning',
                         'sakit' => 'danger',
                         'alpha', 'alpa' => 'gray',
                         default => 'gray',
                     })
-                    ->icon(fn(string $state): string => match ($state) {
+                    ->icon(fn (string $state): string => match ($state) {
                         'hadir' => 'heroicon-m-check-circle',
                         'izin' => 'heroicon-m-document-text',
                         'sakit' => 'heroicon-m-plus-circle',
                         'alpha', 'alpa' => 'heroicon-m-x-circle',
                         default => 'heroicon-m-question-mark-circle',
                     })
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -385,8 +388,8 @@ class AbsensiResource extends BaseResource
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['dari_tanggal'], fn($q) => $q->whereDate('tanggal', '>=', $data['dari_tanggal']))
-                            ->when($data['sampai_tanggal'], fn($q) => $q->whereDate('tanggal', '<=', $data['sampai_tanggal']));
+                            ->when($data['dari_tanggal'], fn ($q) => $q->whereDate('tanggal', '>=', $data['dari_tanggal']))
+                            ->when($data['sampai_tanggal'], fn ($q) => $q->whereDate('tanggal', '<=', $data['sampai_tanggal']));
                     }),
                 SelectFilter::make('status')
                     ->options([
@@ -408,7 +411,7 @@ class AbsensiResource extends BaseResource
                         ->modalWidth('5xl')
                         ->modalSubmitAction(false)
                         ->slideOver()
-                        ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
+                        ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
                 ])

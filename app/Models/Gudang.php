@@ -13,6 +13,13 @@ class Gudang extends Model
     protected $fillable = [
         'nama_gudang',
         'lokasi_gudang',
+        'provinsi',
+        'kota',
+        'kecamatan',
+        'kelurahan',
+        'latitude',
+        'longitude',
+        'radius_km',
         'is_active',
     ];
 }
