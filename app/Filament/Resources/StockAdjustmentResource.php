@@ -2,28 +2,25 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Tables;
+use App\Filament\Resources\StockAdjustmentResource\Pages;
+use App\Models\StockAdjustment;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\StockAdjustment;
-use App\Filament\Resources\BaseResource;
-use Filament\Forms\Components\Grid;
+use Filament\Tables;
 use Filament\Tables\Actions\Action;
-use Filament\Forms\Components\Group;
-use Illuminate\Support\Facades\Auth;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Placeholder;
-use App\Filament\Resources\PenjualanResource;
-use App\Filament\Resources\StockAdjustmentResource\Pages;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class StockAdjustmentResource extends BaseResource
 {
@@ -32,8 +29,10 @@ class StockAdjustmentResource extends BaseResource
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
     protected static ?string $navigationLabel = 'Penyesuaian Stok';
-    protected static ?string $navigationGroup = 'Logistik & Inventori';
-    protected static ?int $navigationSort = 51;
+
+    protected static ?string $navigationGroup = 'Inventori';
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $pluralLabel = 'Penyesuaian Stok';
 
@@ -82,20 +81,20 @@ class StockAdjustmentResource extends BaseResource
                                         ->schema([
                                             Select::make('produk_id')
                                                 ->label('Produk')
-                                                ->options(fn() => PenjualanResource::getAvailableProductOptions())
+                                                ->options(fn () => PenjualanResource::getAvailableProductOptions())
                                                 ->searchable()
                                                 ->preload()
                                                 ->required()
                                                 ->reactive()
                                                 ->native(false)
-                                                ->afterStateUpdated(fn(Set $set) => $set('pembelian_item_id', null))
+                                                ->afterStateUpdated(fn (Set $set) => $set('pembelian_item_id', null))
                                                 ->columnSpan(2),
                                             Select::make('pembelian_item_id')
                                                 ->label('Batch')
-                                                ->options(fn(Get $get) => PenjualanResource::getBatchOptions($get('produk_id') ? (int) $get('produk_id') : null))
+                                                ->options(fn (Get $get) => PenjualanResource::getBatchOptions($get('produk_id') ? (int) $get('produk_id') : null))
                                                 ->required()
                                                 ->native(false)
-                                                ->disabled(fn(Get $get) => ! $get('produk_id'))
+                                                ->disabled(fn (Get $get) => ! $get('produk_id'))
                                                 ->columnSpan(1),
                                             TextInput::make('qty')
                                                 ->label('Qty (+/-)')
@@ -113,9 +112,9 @@ class StockAdjustmentResource extends BaseResource
                                         ->defaultItems(1)
                                         ->addActionLabel('Tambah Item')
                                         ->collapseAllAction(
-                                            fn($action) => $action->label('Tutup Semua'),
+                                            fn ($action) => $action->label('Tutup Semua'),
                                         )
-                                        ->itemLabel(fn(array $state): ?string => $state['produk_id'] ?? null ? (PenjualanResource::getAvailableProductOptions()[$state['produk_id']] ?? 'Item') : 'Item Baru'),
+                                        ->itemLabel(fn (array $state): ?string => $state['produk_id'] ?? null ? (PenjualanResource::getAvailableProductOptions()[$state['produk_id']] ?? 'Item') : 'Item Baru'),
                                 ]),
                         ])
                         ->columnSpan(['lg' => 2]),
@@ -130,7 +129,7 @@ class StockAdjustmentResource extends BaseResource
                                         ->label('Kode Referensi')
                                         ->prefixIcon('heroicon-o-tag')
                                         ->disabled()
-                                        ->default(fn() => StockAdjustment::generateKode())
+                                        ->default(fn () => StockAdjustment::generateKode())
                                         ->dehydrated()
                                         ->readOnly(),
 
@@ -139,13 +138,13 @@ class StockAdjustmentResource extends BaseResource
                                         ->prefixIcon('heroicon-o-pencil')
                                         ->default('draft')
                                         ->disabled()
-                                        ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                                        ->formatStateUsing(fn (string $state): string => ucfirst($state)),
 
                                     // Placeholder for created_at if we want to show it on edit
                                     Placeholder::make('created_at')
                                         ->label('Dibuat Pada')
-                                        ->visible(fn($record) => $record !== null)
-                                        ->content(fn($record) => $record?->created_at?->toFormattedDateString()),
+                                        ->visible(fn ($record) => $record !== null)
+                                        ->content(fn ($record) => $record?->created_at?->toFormattedDateString()),
                                 ])
                                 ->columnSpan(['lg' => 1]),
                         ])
@@ -183,7 +182,7 @@ class StockAdjustmentResource extends BaseResource
                         'warning' => 'draft',
                         'success' => 'posted',
                     ])
-                    ->icon(fn(string $state): string => match ($state) {
+                    ->icon(fn (string $state): string => match ($state) {
                         'draft' => 'heroicon-m-pencil',
                         'posted' => 'heroicon-m-check-circle',
                         default => 'heroicon-m-question-mark-circle',
@@ -211,12 +210,12 @@ class StockAdjustmentResource extends BaseResource
                     ->button()
                     ->icon('heroicon-m-paper-airplane')
                     ->color('success')
-                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted())
+                    ->visible(fn (StockAdjustment $record) => ! $record->isPosted())
                     ->requiresConfirmation()
                     ->modalHeading('Posting Penyesuaian Stok')
                     ->modalDescription('Apakah Anda yakin ingin memposting penyesuaian ini? Stok akan diperbarui secara permanen.')
                     ->modalSubmitActionLabel('Ya, Posting')
-                    ->action(fn(StockAdjustment $record) => $record->post(Auth::user()))
+                    ->action(fn (StockAdjustment $record) => $record->post(Auth::user()))
                     ->successNotificationTitle('Penyesuaian stok berhasil diposting.'),
                 Tables\Actions\DeleteAction::make()
                     ->label('Hapus')
@@ -224,7 +223,7 @@ class StockAdjustmentResource extends BaseResource
                     ->color('danger')
                     ->icon('heroicon-m-trash')
                     ->requiresConfirmation()
-                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted()),
+                    ->visible(fn (StockAdjustment $record) => ! $record->isPosted()),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
                         ->color('primary'),
@@ -233,7 +232,7 @@ class StockAdjustmentResource extends BaseResource
                     ->label('Aksi')
                     ->tooltip('Menu Aksi')
                     ->icon('heroicon-o-ellipsis-vertical')
-                    ->visible(fn(StockAdjustment $record) => ! $record->isPosted()),
+                    ->visible(fn (StockAdjustment $record) => ! $record->isPosted()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

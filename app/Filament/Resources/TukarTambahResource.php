@@ -37,10 +37,17 @@ use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 class TukarTambahResource extends BaseResource
 {
     protected static ?string $model = TukarTambah::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
-    protected static ?string $navigationGroup = 'Inventory';
+
+    protected static ?string $navigationGroup = 'Transaksi';
+
     protected static ?string $navigationLabel = 'Tukar Tambah';
+
     protected static ?string $pluralLabel = 'Tukar Tambah';
+
+    protected static ?string $navigationParentItem = 'Input Penjualan';
+
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
@@ -52,7 +59,7 @@ class TukarTambahResource extends BaseResource
                     ->schema([
                         TextInput::make('no_nota')
                             ->label('No. Nota')
-                            ->default(fn() => TukarTambah::generateNoNota())
+                            ->default(fn () => TukarTambah::generateNoNota())
                             ->disabled()
                             ->dehydrated()
                             ->unique(ignoreRecord: true)
@@ -71,7 +78,7 @@ class TukarTambahResource extends BaseResource
                             ->relationship('karyawan', 'nama_karyawan')
                             ->searchable()
                             ->preload()
-                            ->default(fn() => auth()->user()?->karyawan?->id)
+                            ->default(fn () => auth()->user()?->karyawan?->id)
                             ->required()
                             ->native(false)
                             ->prefixIcon('heroicon-o-user')
@@ -97,14 +104,14 @@ class TukarTambahResource extends BaseResource
                                     ->schema([
                                         TextInput::make('no_nota')
                                             ->label('No. Nota Penjualan')
-                                            ->default(fn() => Penjualan::generateNoNota())
+                                            ->default(fn () => Penjualan::generateNoNota())
                                             ->disabled()
                                             ->dehydrated()
                                             ->required()
                                             ->prefixIcon('heroicon-o-hashtag'),
                                         Select::make('id_member')
                                             ->label('Pelanggan / Member')
-                                            ->options(fn() => Member::query()->orderBy('nama_member')->pluck('nama_member', 'id')->all())
+                                            ->options(fn () => Member::query()->orderBy('nama_member')->pluck('nama_member', 'id')->all())
                                             ->searchable()
                                             ->preload()
                                             ->nullable()
@@ -113,7 +120,7 @@ class TukarTambahResource extends BaseResource
                                             ->placeholder('Pilih pelanggan atau kosongkan untuk umum'),
                                         Select::make('id_karyawan')
                                             ->label('Petugas Penjualan')
-                                            ->options(fn() => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
+                                            ->options(fn () => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
                                             ->searchable()
                                             ->preload()
                                             ->nullable()
@@ -157,7 +164,7 @@ class TukarTambahResource extends BaseResource
                                                     ->reactive(),
                                                 Select::make('akun_transaksi_id')
                                                     ->label('Akun Transaksi')
-                                                    ->options(fn() => AkunTransaksi::query()
+                                                    ->options(fn () => AkunTransaksi::query()
                                                         ->where('is_active', true)
                                                         ->orderBy('nama_akun')
                                                         ->pluck('nama_akun', 'id')
@@ -165,7 +172,7 @@ class TukarTambahResource extends BaseResource
                                                     ->searchable()
                                                     ->preload()
                                                     ->native(false)
-                                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                                    ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
                                                 TextInput::make('jumlah')
                                                     ->label('Jumlah')
                                                     ->numeric()
@@ -191,7 +198,7 @@ class TukarTambahResource extends BaseResource
                                             ->schema([
                                                 Select::make('id_produk')
                                                     ->label('Produk')
-                                                    ->options(fn() => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
+                                                    ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
                                                     ->searchable()
                                                     ->preload()
                                                     ->required()
@@ -245,7 +252,7 @@ class TukarTambahResource extends BaseResource
                                             ->schema([
                                                 Select::make('jasa_id')
                                                     ->label('Jasa')
-                                                    ->options(fn() => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
+                                                    ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
                                                     ->searchable()
                                                     ->preload()
                                                     ->required()
@@ -279,20 +286,20 @@ class TukarTambahResource extends BaseResource
                                     ->schema([
                                         TextInput::make('no_po')
                                             ->label('No. PO')
-                                            ->default(fn() => Pembelian::generatePO())
+                                            ->default(fn () => Pembelian::generatePO())
                                             ->disabled()
                                             ->dehydrated()
                                             ->required(),
                                         Select::make('id_supplier')
                                             ->label('Supplier')
-                                            ->options(fn() => Supplier::query()->orderBy('nama_supplier')->pluck('nama_supplier', 'id')->all())
+                                            ->options(fn () => Supplier::query()->orderBy('nama_supplier')->pluck('nama_supplier', 'id')->all())
                                             ->searchable()
                                             ->preload()
                                             ->nullable()
                                             ->native(false),
                                         Select::make('id_karyawan')
                                             ->label('Karyawan Pembelian')
-                                            ->options(fn() => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
+                                            ->options(fn () => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
                                             ->searchable()
                                             ->preload()
                                             ->nullable()
@@ -317,8 +324,8 @@ class TukarTambahResource extends BaseResource
                                         DatePicker::make('tgl_tempo')
                                             ->label('Tanggal Tempo')
                                             ->native(false)
-                                            ->visible(fn(Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                            ->required(fn(Get $get) => $get('jenis_pembayaran') === 'tempo'),
+                                            ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
+                                            ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo'),
                                         Textarea::make('catatan')
                                             ->label('Catatan Pembelian')
                                             ->rows(2)
@@ -331,7 +338,7 @@ class TukarTambahResource extends BaseResource
                                             ->schema([
                                                 Select::make('id_produk')
                                                     ->label('Produk')
-                                                    ->options(fn() => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
+                                                    ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
                                                     ->searchable()
                                                     ->preload()
                                                     ->required()
@@ -383,7 +390,7 @@ class TukarTambahResource extends BaseResource
             ->columns([
                 TextColumn::make('id_tukar_tambah')
                     ->label('Kode')
-                    ->state(fn(TukarTambah $record): string => $record->kode)
+                    ->state(fn (TukarTambah $record): string => $record->kode)
                     ->weight('bold')
                     ->copyable()
                     ->sortable(),
@@ -417,7 +424,7 @@ class TukarTambahResource extends BaseResource
                     ->label('Invoice')
                     ->icon('heroicon-m-printer')
                     ->color('primary')
-                    ->url(fn(TukarTambah $record) => route('tukar-tambah.invoice', $record))
+                    ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice', $record))
                     ->openUrlInNewTab(),
                 \Filament\Tables\Actions\ViewAction::make(),
                 \Filament\Tables\Actions\EditAction::make(),
@@ -440,7 +447,7 @@ class TukarTambahResource extends BaseResource
                                     ->icon('heroicon-m-document-text'),
                                 TextEntry::make('id_tukar_tambah')
                                     ->label('Kode')
-                                    ->state(fn(TukarTambah $record): string => $record->kode)
+                                    ->state(fn (TukarTambah $record): string => $record->kode)
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->icon('heroicon-m-arrows-right-left'),
@@ -458,7 +465,7 @@ class TukarTambahResource extends BaseResource
                                 TextEntry::make('penjualan.no_nota')
                                     ->label('Nota Penjualan')
                                     ->icon('heroicon-m-receipt-percent')
-                                    ->url(fn(TukarTambah $record) => $record->penjualan
+                                    ->url(fn (TukarTambah $record) => $record->penjualan
                                         ? PenjualanResource::getUrl('edit', ['record' => $record->penjualan])
                                         : null)
                                     ->openUrlInNewTab()
@@ -466,7 +473,7 @@ class TukarTambahResource extends BaseResource
                                 TextEntry::make('pembelian.no_po')
                                     ->label('Nota Pembelian')
                                     ->icon('heroicon-m-document-text')
-                                    ->url(fn(TukarTambah $record) => $record->pembelian
+                                    ->url(fn (TukarTambah $record) => $record->pembelian
                                         ? PembelianResource::getUrl('edit', ['record' => $record->pembelian])
                                         : null)
                                     ->openUrlInNewTab()

@@ -2,17 +2,16 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use App\Models\Penjualan;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\DatePicker;
-use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\PenjualanReportResource\Pages;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
+use App\Filament\Resources\PenjualanReportResource\Pages;
+use App\Models\Penjualan;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PenjualanReportResource extends Resource
 {
@@ -30,7 +29,7 @@ class PenjualanReportResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Laporan Penjualan';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -40,7 +39,7 @@ class PenjualanReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'jasaItems', 'member', 'karyawan'])) // eager loading data relasi 
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['items', 'jasaItems', 'member', 'karyawan'])) // eager loading data relasi
             ->defaultSort('tanggal_penjualan', 'desc') // default sort
             ->columns([
                 TextColumn::make('no_nota')
@@ -71,11 +70,11 @@ class PenjualanReportResource extends Resource
                     ->label('Total Qty')
                     ->badge()
                     ->color('info')
-                    ->state(fn(Penjualan $record) => $record->items->sum('qty')) //menghitung total qty dari relasi items
+                    ->state(fn (Penjualan $record) => $record->items->sum('qty')) // menghitung total qty dari relasi items
                     ->sortable(),
                 TextColumn::make('total_jasa')
                     ->label('Total Jasa')
-                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                    ->state(fn (Penjualan $record) => self::formatCurrency(
                         self::calculateServiceTotal($record)
                     ))
                     ->color('warning')
@@ -85,13 +84,13 @@ class PenjualanReportResource extends Resource
                     ->label('Total Penjualan')
                     ->weight('bold')
                     ->color('success')
-                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                    ->state(fn (Penjualan $record) => self::formatCurrency(
                         self::calculateProductTotal($record) + self::calculateServiceTotal($record)
                     )) // format currency
                     ->sortable(),
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
-                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                    ->state(fn (Penjualan $record) => self::formatCurrency(
                         self::calculateHppTotal($record)
                     )) // format currency
                     ->color('danger')
@@ -99,7 +98,7 @@ class PenjualanReportResource extends Resource
                     ->sortable(),
                 TextColumn::make('total_margin')
                     ->label('Margin')
-                    ->state(fn(Penjualan $record) => self::formatCurrency(
+                    ->state(fn (Penjualan $record) => self::formatCurrency(
                         (self::calculateProductTotal($record) - self::calculateHppTotal($record)) + self::calculateServiceTotal($record)
                     )) // format currency
                     ->color('success')
@@ -121,8 +120,8 @@ class PenjualanReportResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
-                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
+                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
                     }),
                 Tables\Filters\SelectFilter::make('sumber_transaksi')
                     ->label('Sumber Transaksi')
@@ -137,7 +136,7 @@ class PenjualanReportResource extends Resource
                 FilamentExportHeaderAction::make('export')
                     ->label('Download')
                     ->defaultFormat('pdf')
-                    ->filename('Laporan Penjualan' . '_' . date('d M Y'))
+                    ->filename('Laporan Penjualan'.'_'.date('d M Y'))
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('success')
                     ->modalHeading(false)
@@ -145,7 +144,7 @@ class PenjualanReportResource extends Resource
                         'title' => 'Haen Komputer',
                         'subtitle' => 'Laporan Penjualan',
                         'tanggal' => now()->format('d-m-Y'),
-                    ])
+                    ]),
             ])
             ->actions([])
             ->bulkActions([]);
@@ -162,10 +161,11 @@ class PenjualanReportResource extends Resource
             'index' => Pages\ListPenjualanReports::route('/'),
         ];
     }
-    // format currency 
+
+    // format currency
     protected static function formatCurrency(int $value): string
     {
-        return 'Rp ' . number_format($value, 0, ',', '.');
+        return 'Rp '.number_format($value, 0, ',', '.');
     }
 
     protected static function calculateProductTotal(Penjualan $record): int

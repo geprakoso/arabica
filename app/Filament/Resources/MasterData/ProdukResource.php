@@ -2,48 +2,41 @@
 
 namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\MasterData\ProdukResource\Pages;
-use App\Filament\Exports\ProdukExporter;
-use App\Models\Produk;
-use Filament\Forms;
-// use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Form;
-use Filament\Forms\Components\BaseFileUpload;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Split;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Get;
-// use Filament\Resources\Set;
 use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\Layout\Split as TableSplit;
-use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
-// use Laravel\Pail\File;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Filament\Resources\MasterData\ProdukResource\Pages;
+use App\Models\Produk;
+// use Filament\Forms\Components\Fieldset;
 use App\Support\WebpUpload;
-use Illuminate\Support\Str; // Import Str
-use Closure; // Import Closure for callable type hint
-use Filament\Actions\Exports\Models\Export;
-use Filament\Tables\Actions\ExportAction;
-use Filament\Infolists\Infolist;
+use Closure;
+use Filament\Forms;
+use Filament\Forms\Components\BaseFileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
+// use Filament\Resources\Set;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+// use Laravel\Pail\File;
+use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontFamily;
+use Filament\Tables; // Import Str
+use Filament\Tables\Columns\ImageColumn; // Import Closure for callable type hint
+use Filament\Tables\Columns\Layout\Split as TableSplit;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
-
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 // use Laravel\SerializableClosure\Serializers\Native;
 
@@ -52,11 +45,16 @@ class ProdukResource extends BaseResource
     protected static ?string $model = Produk::class;
 
     protected static ?string $navigationIcon = 'hugeicons-package';
+
     protected static ?string $navigationGroup = 'Master Data';
+
     protected static ?string $navigationParentItem = 'Produk & Kategori';
+
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationLabel = 'Produk';
+
     protected static ?string $pluralModelLabel = 'Produk';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -89,7 +87,7 @@ class ProdukResource extends BaseResource
                                         'orderedList',
                                         'link',
                                         'h2',
-                                        'h3'
+                                        'h3',
                                     ]) // Toolbar minimalis agar clean
                                     ->columnSpanFull(),
                             ]),
@@ -137,9 +135,9 @@ class ProdukResource extends BaseResource
                                     ->image()
                                     ->imageEditor() // Fitur crop bawaan filament
                                     ->disk('public')
-                                    ->directory('produks/' . now()->format('Y/m/d'))
+                                    ->directory('produks/'.now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
+                                        fn (TemporaryUploadedFile $file, Get $get) => (now()->format('ymd').'-'.Str::slug($get('nama_produk') ?? 'produk').'.'.$file->getClientOriginalExtension())
                                     )
                                     ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->openable()
@@ -151,25 +149,21 @@ class ProdukResource extends BaseResource
                             ->schema([
                                 Forms\Components\TextInput::make('sku')
                                     ->label('SKU (Kode Stok)')
-                                    ->default(fn() => Produk::generateSku())
+                                    ->placeholder('Otomatis generated setelah pilih Kategori & Brand')
                                     ->dehydrated()
                                     ->readOnly() // Lebih aman readonly daripada disabled jika masih mau disubmit
                                     ->required()
                                     ->unique(ignoreRecord: true),
-                                Forms\Components\TextInput::make('sn')
-                                    ->label('SN (Serial Number)')
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(255)
-                                    ->placeholder('Kosongkan jika tidak ada'),
-                                Forms\Components\TextInput::make('garansi')
-                                    ->label('Garansi')
-                                    ->maxLength(255)
-                                    ->placeholder('Contoh: 12 bulan / 1 tahun'),
 
                                 Forms\Components\Select::make('kategori_id')
                                     ->relationship('kategori', 'nama_kategori')
                                     ->searchable()
                                     ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(function (Get $get, Set $set) {
+                                        $sku = Produk::calculateSmartSku($get('kategori_id'), $get('brand_id'));
+                                        if ($sku) $set('sku', $sku);
+                                    })
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nama_kategori')->required(),
                                     ])
@@ -179,6 +173,11 @@ class ProdukResource extends BaseResource
                                     ->relationship('brand', 'nama_brand')
                                     ->searchable()
                                     ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(function (Get $get, Set $set) {
+                                        $sku = Produk::calculateSmartSku($get('kategori_id'), $get('brand_id'));
+                                        if ($sku) $set('sku', $sku);
+                                    })
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nama_brand')->required(),
                                     ])
@@ -242,18 +241,20 @@ class ProdukResource extends BaseResource
                                             ->state(function (Produk $record) {
                                                 // Rumus: (P x L x T) / 4000
                                                 // Asumsi input P,L,T dalam cm. Hasil biasanya dalam Kg atau Gram tergantung kurir.
-                                                // Umumnya rumus dibagi 4000/6000 menghasilkan Kg. 
+                                                // Umumnya rumus dibagi 4000/6000 menghasilkan Kg.
                                                 // Mari kita anggap hasilnya Kg.
 
                                                 $p = $record->panjang ?? 0;
                                                 $l = $record->lebar ?? 0;
                                                 $t = $record->tinggi ?? 0;
 
-                                                if ($p == 0 || $l == 0 || $t == 0) return '-';
+                                                if ($p == 0 || $l == 0 || $t == 0) {
+                                                    return '-';
+                                                }
 
                                                 $volumetric = ($p * $l * $t) / 4000;
 
-                                                return number_format($volumetric, 2) . ' Kg';
+                                                return number_format($volumetric, 2).' Kg';
                                             })
                                             ->icon('heroicon-m-calculator')
                                             ->color('warning') // Pembeda visual bahwa ini hitungan sistem
@@ -336,9 +337,9 @@ class ProdukResource extends BaseResource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->size(TextColumnSize::Large)
-                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
+                            ->description(fn (Produk $record) => new HtmlString('<span class="font-mono">SKU: '.e($record->sku ?? '-').'</span>'))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('kategori.nama_kategori')
@@ -346,7 +347,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-m-tag')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('brand.nama_brand')
@@ -354,7 +355,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-m-building-office-2')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                     ])->space(2),

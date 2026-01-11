@@ -23,11 +23,11 @@ use Illuminate\Support\Collection;
 class KodeAkunResource extends BaseResource
 {
     protected static ?string $model = KodeAkun::class;
-    protected static ?string $navigationLabel = '1. Kode Akun';
+    protected static ?string $navigationLabel = 'Kode Akun';
     protected static ?string $pluralLabel = 'Kode Akun';
     protected static ?string $navigationIcon = 'hugeicons-bar-code-02';
-    protected static ?string $navigationParentItem = 'Input Transaksi Toko';
-    protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?string $navigationParentItem = 'Akun Keuangan';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 1;
     
     public static function shouldRegisterNavigation(): bool

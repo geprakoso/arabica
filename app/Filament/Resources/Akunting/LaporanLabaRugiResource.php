@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Akunting;
 
 use App\Enums\KategoriAkun;
-use App\Filament\Resources\Akunting\InputTransaksiTokoResource;
 use App\Filament\Resources\Akunting\LaporanLabaRugiResource\Pages;
+use App\Filament\Resources\BaseResource;
 use App\Models\InputTransaksiToko;
 use App\Models\JenisAkun;
 use App\Models\KodeAkun;
@@ -15,17 +15,16 @@ use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -33,10 +32,16 @@ use Illuminate\Support\Facades\DB;
 class LaporanLabaRugiResource extends BaseResource
 {
     protected static ?string $model = LaporanLabaRugi::class;
+
     protected static ?string $navigationGroup = 'Laporan';
+
     protected static ?string $navigationLabel = 'Laba Rugi';
+
     protected static ?string $pluralLabel = 'Laba Rugi';
+
     protected static ?string $navigationIcon = 'hugeicons-pie-chart';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -52,7 +57,7 @@ class LaporanLabaRugiResource extends BaseResource
             ->columns([
                 TextColumn::make('month_start')
                     ->label('Bulan')
-                    ->formatStateUsing(fn(?string $state) => self::formatMonthLabel($state)),
+                    ->formatStateUsing(fn (?string $state) => self::formatMonthLabel($state)),
                 TextColumn::make('total_penjualan')
                     ->label('Pendapatan')
                     ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
@@ -93,7 +98,7 @@ class LaporanLabaRugiResource extends BaseResource
                     ->schema([
                         TextEntry::make('month_start')
                             ->label('Bulan')
-                            ->formatStateUsing(fn(?string $state) => self::formatMonthLabel($state)),
+                            ->formatStateUsing(fn (?string $state) => self::formatMonthLabel($state)),
                         TextEntry::make('total_penjualan')
                             ->label('Pendapatan')
                             ->formatStateUsing(fn ($state) => money($state, 'IDR')->formatWithoutZeroes()),
@@ -156,15 +161,15 @@ class LaporanLabaRugiResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        $pembelianTable = (new Pembelian())->getTable();
-        $itemsTable = (new PembelianItem())->getTable();
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $jenisAkunTable = (new JenisAkun())->getTable();
-        $kodeAkunTable = (new KodeAkun())->getTable();
-        $penjualanTable = (new Penjualan())->getTable();
-        $penjualanItemsTable = (new PenjualanItem())->getTable();
-        $penjualanJasaTable = (new PenjualanJasa())->getTable();
-        $reportTable = (new LaporanLabaRugi())->getTable();
+        $pembelianTable = (new Pembelian)->getTable();
+        $itemsTable = (new PembelianItem)->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $jenisAkunTable = (new JenisAkun)->getTable();
+        $kodeAkunTable = (new KodeAkun)->getTable();
+        $penjualanTable = (new Penjualan)->getTable();
+        $penjualanItemsTable = (new PenjualanItem)->getTable();
+        $penjualanJasaTable = (new PenjualanJasa)->getTable();
+        $reportTable = (new LaporanLabaRugi)->getTable();
 
         $hppSub = Pembelian::query()
             ->selectRaw("DATE_FORMAT({$pembelianTable}.tanggal, '%Y-%m-01') as month_start")
@@ -229,9 +234,9 @@ class LaporanLabaRugiResource extends BaseResource
             ->orderByDesc("{$reportTable}.month_start");
     }
 
-    public static function resolveRecordRouteBinding(int | string $key): ?\Illuminate\Database\Eloquent\Model
+    public static function resolveRecordRouteBinding(int|string $key): ?\Illuminate\Database\Eloquent\Model
     {
-        $reportTable = (new LaporanLabaRugi())->getTable();
+        $reportTable = (new LaporanLabaRugi)->getTable();
 
         return static::getEloquentQuery()
             ->where("{$reportTable}.month_key", $key)
@@ -270,9 +275,9 @@ class LaporanLabaRugiResource extends BaseResource
      */
     protected static function yearOptions(): array
     {
-        $pembelianTable = (new Pembelian())->getTable();
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $penjualanTable = (new Penjualan())->getTable();
+        $pembelianTable = (new Pembelian)->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $penjualanTable = (new Penjualan)->getTable();
 
         $pembelianYears = Pembelian::query()
             ->selectRaw("YEAR({$pembelianTable}.tanggal) as tahun")
@@ -297,6 +302,6 @@ class LaporanLabaRugiResource extends BaseResource
             ->sortDesc()
             ->values();
 
-        return $years->mapWithKeys(fn($year) => [(string) $year => (string) $year])->all();
+        return $years->mapWithKeys(fn ($year) => [(string) $year => (string) $year])->all();
     }
 }

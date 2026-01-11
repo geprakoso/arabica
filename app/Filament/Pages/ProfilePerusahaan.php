@@ -3,34 +3,35 @@
 namespace App\Filament\Pages;
 
 use App\Models\ProfilePerusahaan as ProfilePerusahaanModel;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\FileUpload;
-use Filament\Actions\Action;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class ProfilePerusahaan extends Page implements HasForms
 {
-    use InteractsWithForms;
     use HasPageShield;
+    use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationGroup = 'Master Data';
 
     protected static ?string $navigationLabel = 'Profil Perusahaan';
+
+    protected static ?int $navigationSort = 1;
 
     // View Default Filament
     protected static string $view = 'filament.pages.profile-perusahaan';
 
-    //Property untuk menampung data form
+    // Property untuk menampung data form
     public ?array $data = [];
 
     public function mount(): void
@@ -66,7 +67,7 @@ class ProfilePerusahaan extends Page implements HasForms
                         Textarea::make('address')
                             ->columnSpanFull(),
                     ])->columns(2),
-                    
+
                 Section::make('Branding')
                     ->schema([
                         FileUpload::make('logo')
@@ -87,7 +88,7 @@ class ProfilePerusahaan extends Page implements HasForms
     // Definisikan action form save di header atau di form
     protected function getFormActions(): array
     {
-        return[
+        return [
             Action::make('save')
                 ->label(__('Simpan perubahan'))
                 ->submit('save'),
@@ -106,7 +107,7 @@ class ProfilePerusahaan extends Page implements HasForms
 
         Notification::make()
             ->success()
-            ->title("Berhasil disimpan")
+            ->title('Berhasil disimpan')
             ->send();
     }
 }

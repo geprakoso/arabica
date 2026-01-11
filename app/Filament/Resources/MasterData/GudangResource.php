@@ -35,7 +35,7 @@ class GudangResource extends BaseResource
 
     protected static ?string $navigationLabel = 'Gudang';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

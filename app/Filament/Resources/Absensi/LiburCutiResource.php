@@ -2,27 +2,26 @@
 
 namespace App\Filament\Resources\Absensi;
 
-use App\Filament\Resources\Absensi\LiburCutiResource\Pages;
-use App\Models\LiburCuti;
-use App\Models\Karyawan;
 use App\Enums\Keperluan;
 use App\Enums\StatusPengajuan;
-use Filament\Forms\Form;
+use App\Filament\Resources\Absensi\LiburCutiResource\Pages;
+use App\Filament\Resources\BaseResource;
+use App\Models\Karyawan;
+use App\Models\LiburCuti;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use App\Filament\Resources\BaseResource;
+use Filament\Forms\Form;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Illuminate\Database\Eloquent\Relations\Relation;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class LiburCutiResource extends BaseResource
@@ -31,9 +30,11 @@ class LiburCutiResource extends BaseResource
 
     protected static ?string $navigationIcon = 'hugeicons-sailboat-offshore';
 
-    protected static ?string $navigationGroup = 'Kepegawaian';
+    protected static ?string $navigationGroup = 'Personalia';
 
     protected static ?string $navigationLabel = 'Libur & Cuti';
+
+    protected static ?int $navigationSort = 3;
 
     public static function canViewAny(): bool
     {
@@ -107,8 +108,8 @@ class LiburCutiResource extends BaseResource
                                     })
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn() => Auth::id())
-                                    ->disabled(fn() => Auth::user()?->hasRole('karyawan'))
+                                    ->default(fn () => Auth::id())
+                                    ->disabled(fn () => Auth::user()?->hasRole('karyawan'))
                                     ->required()
                                     ->columnSpanFull(),
 
@@ -163,15 +164,15 @@ class LiburCutiResource extends BaseResource
                     ->label('Karyawan')
                     ->icon('heroicon-m-user')
                     ->weight('bold')
-                    ->description(fn(LiburCuti $record) => $record->user->email ?? '-')
+                    ->description(fn (LiburCuti $record) => $record->user->email ?? '-')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('keperluan')
                     ->badge()
-                    ->formatStateUsing(fn(Keperluan|string|null $state) => $state instanceof Keperluan
+                    ->formatStateUsing(fn (Keperluan|string|null $state) => $state instanceof Keperluan
                         ? $state->getLabel()
                         : (filled($state) ? Keperluan::from($state)->getLabel() : null))
-                    ->color(fn(Keperluan|string|null $state) => $state instanceof Keperluan
+                    ->color(fn (Keperluan|string|null $state) => $state instanceof Keperluan
                         ? $state->getColor()
                         : (filled($state) ? Keperluan::from($state)->getColor() : null))
                     ->sortable(),
@@ -189,10 +190,10 @@ class LiburCutiResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('status_pengajuan')
                     ->badge()
-                    ->formatStateUsing(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->formatStateUsing(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getLabel()
                         : (filled($state) ? StatusPengajuan::from($state)->getLabel() : null))
-                    ->color(fn(StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
+                    ->color(fn (StatusPengajuan|string|null $state) => $state instanceof StatusPengajuan
                         ? $state->getColor()
                         : (filled($state) ? StatusPengajuan::from($state)->getColor() : null))
                     ->sortable(),
@@ -207,14 +208,14 @@ class LiburCutiResource extends BaseResource
                     ->native(false)
                     ->options(
                         collect(Keperluan::cases())
-                            ->mapWithKeys(fn(Keperluan $case) => [$case->value => $case->getLabel()])
+                            ->mapWithKeys(fn (Keperluan $case) => [$case->value => $case->getLabel()])
                             ->all()
                     ),
                 SelectFilter::make('status_pengajuan')
                     ->native(false)
                     ->options(
                         collect(StatusPengajuan::cases())
-                            ->mapWithKeys(fn(StatusPengajuan $case) => [$case->value => $case->getLabel()])
+                            ->mapWithKeys(fn (StatusPengajuan $case) => [$case->value => $case->getLabel()])
                             ->all()
                     ),
                 Filter::make('periode')
@@ -232,8 +233,8 @@ class LiburCutiResource extends BaseResource
                     ])
                     ->query(function (Builder $query, array $data) {
                         return $query
-                            ->when($data['mulai'] ?? null, fn($q, $date) => $q->whereDate('mulai_tanggal', '>=', $date))
-                            ->when($data['sampai'] ?? null, fn($q, $date) => $q->whereDate('mulai_tanggal', '<=', $date));
+                            ->when($data['mulai'] ?? null, fn ($q, $date) => $q->whereDate('mulai_tanggal', '>=', $date))
+                            ->when($data['sampai'] ?? null, fn ($q, $date) => $q->whereDate('mulai_tanggal', '<=', $date));
                     }),
 
                 SelectFilter::make('user_id')
@@ -256,8 +257,6 @@ class LiburCutiResource extends BaseResource
                 ]),
             ]);
     }
-
-
 
     public static function getRelations(): array
     {

@@ -2,44 +2,35 @@
 
 namespace App\Filament\Resources;
 
-use App\Models\Produk;
-use App\Models\PembelianItem;
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\RequestOrder;
-use App\Models\Kategori;
-use App\Filament\Resources\BaseResource;
-use Filament\Forms\Components\Split as FormsSplit;
-use Filament\Forms\Components\Section;
-use Filament\Tables\Columns\TextColumn;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\RequestOrderResource\Pages;
+use App\Models\RequestOrder;
+use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Split as FormsSplit;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Infolists\Components\Group;
-use Filament\Infolists\Components\Grid;
-use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class RequestOrderResource extends BaseResource
 {
     protected static ?string $model = RequestOrder::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationGroup = 'Logistik & Inventori';
+
+    protected static ?string $navigationGroup = 'Transaksi';
+
     protected static ?string $recordTitleAttribute = 'no_ro';
+
     protected static ?string $pluralLabel = 'Request Order';
-    protected static ?int $navigationSort = 3;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -57,7 +48,7 @@ class RequestOrderResource extends BaseResource
                                 ->label('Nomor RO')
                                 ->prefixIcon('heroicon-o-hashtag')
                                 ->required()
-                                ->default(fn() => RequestOrder::generateRO())
+                                ->default(fn () => RequestOrder::generateRO())
                                 ->disabled()
                                 ->dehydrated()
                                 ->unique(ignoreRecord: true),
@@ -95,7 +86,7 @@ class RequestOrderResource extends BaseResource
                                 ->placeholder('Tuliskan alasan atau catatan penting lainnya...')
                                 ->columnSpanFull()
                                 ->nullable(),
-                        ])
+                        ]),
                 ])
                     ->columnSpanFull(),
 
@@ -124,6 +115,7 @@ class RequestOrderResource extends BaseResource
                                         if (! $state) {
                                             $set('kategori_nama', null);
                                             $set('brand_nama', null);
+
                                             return;
                                         }
                                         $product = \App\Models\Produk::with(['kategori', 'brand'])->find($state);

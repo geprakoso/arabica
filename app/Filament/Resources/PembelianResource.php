@@ -2,50 +2,52 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Tables;
-use Filament\Forms\Form;
+use App\Filament\Resources\PembelianResource\Pages;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
-use Filament\Tables\Table;
 use App\Models\RequestOrder;
-use App\Filament\Resources\BaseResource;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section as FormsSection;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DatePicker as FormsDatePicker;
 use Filament\Forms\Components\Grid as FormsGrid;
 use Filament\Forms\Components\Group as FormsGroup;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section as FormsSection;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker as FormsDatePicker;
-use App\Filament\Resources\PembelianResource\Pages;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Grid as InfoGrid;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Split;
-use Filament\Support\Enums\FontWeight;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
-use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Illuminate\Database\Eloquent\Builder;
 
 class PembelianResource extends BaseResource
 {
     protected static ?string $model = Pembelian::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-receipt-refund';
-    protected static ?string $navigationLabel = 'Pembelian';
-    protected static ?string $pluralLabel = 'Pembelian';
+
+    protected static ?string $navigationLabel = 'Input Pembelian';
+
+    protected static ?string $pluralLabel = 'Input Pembelian';
+
     protected static ?string $navigationGroup = 'Transaksi';
-    protected static ?int $navigationSort = 2;
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -62,12 +64,12 @@ class PembelianResource extends BaseResource
                                     ->label('No. PO')
                                     ->prefixIcon('heroicon-s-tag')
                                     ->required()
-                                    ->default(fn() => Pembelian::generatePO()) //generate no_po otomatis
+                                    ->default(fn () => Pembelian::generatePO()) // generate no_po otomatis
                                     ->disabled()
                                     ->dehydrated()
                                     ->required()
                                     ->prefixIcon('heroicon-m-document-text'),
-                                
+
                                 FormsDatePicker::make('tanggal')
                                     ->label('Tanggal Transaksi')
                                     ->default(now())
@@ -130,11 +132,11 @@ class PembelianResource extends BaseResource
                                 DatePicker::make('tgl_tempo')
                                     ->label('Tanggal Tempo')
                                     ->native(false)
-                                    ->visible(fn(callable $get) => $get('jenis_pembayaran') === 'tempo')
-                                    ->required(fn(callable $get) => $get('jenis_pembayaran') === 'tempo'),
+                                    ->visible(fn (callable $get) => $get('jenis_pembayaran') === 'tempo')
+                                    ->required(fn (callable $get) => $get('jenis_pembayaran') === 'tempo'),
                             ])
-                            ->columns(2),
-                        // Tab::make('Produk Dibeli')
+                                ->columns(2),
+                            // Tab::make('Produk Dibeli')
                             // ->schema([
                             //     TableRepeater::make('items')
                             //         ->relationship('items')
@@ -257,7 +259,7 @@ class PembelianResource extends BaseResource
                                             return null;
                                         }
 
-                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
+                                        return 'Rp '.number_format((int) $value, 0, ',', '.');
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         if (filled($state)) {
@@ -285,7 +287,7 @@ class PembelianResource extends BaseResource
                                             return null;
                                         }
 
-                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
+                                        return 'Rp '.number_format((int) $value, 0, ',', '.');
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         if (filled($state)) {
@@ -333,10 +335,10 @@ class PembelianResource extends BaseResource
                                         ->columnSpan(fn (Get $get) => $get('jenis_pembayaran') === 'tempo' ? 1 : 2),
 
                                     FormsDatePicker::make('tgl_tempo')
-                                    ->label('Jatuh Tempo')
-                                    ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                    ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                    ->native(false),
+                                        ->label('Jatuh Tempo')
+                                        ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
+                                        ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
+                                        ->native(false),
                                 ]),
                             ]),
                         ]),
@@ -359,7 +361,7 @@ class PembelianResource extends BaseResource
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->icon('heroicon-m-document-text'),
-                                
+
                                 TextEntry::make('tanggal')
                                     ->label('Tanggal Transaksi')
                                     ->date('d F Y')
@@ -381,9 +383,9 @@ class PembelianResource extends BaseResource
 
                                 TextEntry::make('tukar_tambah_link')
                                     ->label('Tukar Tambah')
-                                    ->state(fn(Pembelian $record): ?string => $record->tukarTambah?->kode)
+                                    ->state(fn (Pembelian $record): ?string => $record->tukarTambah?->kode)
                                     ->icon('heroicon-m-arrows-right-left')
-                                    ->url(fn(Pembelian $record) => $record->tukarTambah
+                                    ->url(fn (Pembelian $record) => $record->tukarTambah
                                         ? TukarTambahResource::getUrl('view', ['record' => $record->tukarTambah])
                                         : null)
                                     ->openUrlInNewTab()
@@ -438,7 +440,7 @@ class PembelianResource extends BaseResource
                                         ->placeholder('Tidak ada catatan'),
                                 ]),
 
-                                        // Kanan: Info Tempo (Jika ada)
+                                // Kanan: Info Tempo (Jika ada)
                                 InfoGroup::make([
                                     TextEntry::make('tempo_label')
                                         ->state('Jatuh Tempo Pembayaran')
@@ -464,7 +466,7 @@ class PembelianResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with('requestOrders'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('requestOrders'))
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
@@ -490,8 +492,8 @@ class PembelianResource extends BaseResource
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-m-hashtag')
-                    ->state(fn(Pembelian $record) => $record->requestOrders
-                        ->map(fn($ro) => '#' . $ro->no_ro)
+                    ->state(fn (Pembelian $record) => $record->requestOrders
+                        ->map(fn ($ro) => '#'.$ro->no_ro)
                         ->toArray())
                     ->separator(',')
                     ->toggleable(),
@@ -504,7 +506,7 @@ class PembelianResource extends BaseResource
                 TextColumn::make('tipe_pembelian')
                     ->label('Tipe')
                     ->badge()
-                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'ppn',
                         'gray' => 'non_ppn',
@@ -512,7 +514,7 @@ class PembelianResource extends BaseResource
                 TextColumn::make('jenis_pembayaran')
                     ->label('Pembayaran')
                     ->badge()
-                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'lunas',
                         'danger' => 'tempo',
@@ -568,7 +570,7 @@ class PembelianResource extends BaseResource
     {
         $ids = collect($requestOrderIds)
             ->filter()
-            ->map(fn($id) => (int) $id)
+            ->map(fn ($id) => (int) $id)
             ->unique();
 
         if ($ids->isEmpty()) {
@@ -579,7 +581,7 @@ class PembelianResource extends BaseResource
             ->whereIn('id', $ids)
             ->pluck('no_ro')
             ->filter()
-            ->map(fn($noRo) => "#{$noRo}")
+            ->map(fn ($noRo) => "#{$noRo}")
             ->toArray();
 
         return empty($tags) ? null : implode(', ', $tags);
@@ -591,20 +593,20 @@ class PembelianResource extends BaseResource
             return ['hpp' => null, 'harga_jual' => null];
         }
 
-        $itemTable = (new PembelianItem())->getTable();
-        $purchaseTable = (new Pembelian())->getTable();
+        $itemTable = (new PembelianItem)->getTable();
+        $purchaseTable = (new Pembelian)->getTable();
         $productColumn = PembelianItem::productForeignKey();
         $primaryKey = PembelianItem::primaryKeyColumn();
 
         $lastItem = PembelianItem::query()
-            ->leftJoin($purchaseTable, $purchaseTable . '.id_pembelian', '=', $itemTable . '.id_pembelian')
-            ->where($itemTable . '.' . $productColumn, $productId)
-            ->orderByDesc($purchaseTable . '.tanggal')
-            ->orderByDesc($itemTable . '.' . $primaryKey)
+            ->leftJoin($purchaseTable, $purchaseTable.'.id_pembelian', '=', $itemTable.'.id_pembelian')
+            ->where($itemTable.'.'.$productColumn, $productId)
+            ->orderByDesc($purchaseTable.'.tanggal')
+            ->orderByDesc($itemTable.'.'.$primaryKey)
             ->select([
-                $itemTable . '.' . $primaryKey,
-                $itemTable . '.hpp',
-                $itemTable . '.harga_jual',
+                $itemTable.'.'.$primaryKey,
+                $itemTable.'.hpp',
+                $itemTable.'.harga_jual',
             ])
             ->first();
 

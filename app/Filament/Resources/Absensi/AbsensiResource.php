@@ -45,11 +45,13 @@ class AbsensiResource extends BaseResource
 
     protected static ?string $navigationIcon = 'hugeicons-clock-01';
 
-    protected static ?string $navigationGroup = 'Kepegawaian';
+    protected static ?string $navigationGroup = 'Personalia';
 
     protected static ?string $pluralLabel = 'Absensi';
 
-    protected static ?string $navigationLabel = 'Absen';
+    protected static ?string $navigationLabel = 'Absensi';
+
+    protected static ?int $navigationSort = 1;
 
     public static function canViewAny(): bool
     {

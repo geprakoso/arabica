@@ -2,30 +2,23 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Pages;
-use Filament\Panel;
-use Filament\Widgets;
-use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
-use BezhanSalleh\PanelSwitch\PanelSwitch;
-// use App\Filament\Pages\ChatRoomPage;
-use App\Filament\Pages\MasterDatas;
 use App\Filament\Pages\AppDashboard;
-use Filament\Navigation\NavigationGroup;
-use Filament\Http\Middleware\Authenticate;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Cookie\Middleware\EncryptCookies;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
-// use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
+// use App\Filament\Pages\ChatRoomPage;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Filament\Navigation\NavigationGroup;
+use Filament\Panel;
+use Filament\PanelProvider;
+// use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
+use Filament\Support\Colors\Color;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin as ShieldPlugin;
-use Filament\Support\Enums\MaxWidth;
-use Illuminate\Support\Facades\Blade;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -102,10 +95,10 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Laporan')->collapsed(),
                 NavigationGroup::make('Pengaturan')->collapsed(),
             ])
-            ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class,])
+            ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class])
             ->renderHook(
                 'panels::head.end',
-                fn(): string => <<<HTML
+                fn (): string => <<<'HTML'
                     <style>
                         /* --- 0. SIDEBAR SETTINGS --- */
                         :root {
@@ -360,14 +353,14 @@ class AdminPanelProvider extends PanelProvider
 
             ->renderHook(
                 'panels::body.end',
-                fn() => view('filament.hooks.absensi-geolocation-script')
+                fn () => view('filament.hooks.absensi-geolocation-script')
 
             )
 
             // --- 5. DRAGGABLE SIDEBAR LOGIC (NEW) ---
             ->renderHook(
                 'panels::body.end',
-                fn(): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
+                fn (): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
                     <div id="sidebar-resizer" class="hidden md:block"></div>
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {
@@ -437,7 +430,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 'panels::body.end',
-                fn(): string => <<<'HTML'
+                fn (): string => <<<'HTML'
                     <script>
                         document.addEventListener('click', function (event) {
                             // Ensure it's a real user click
