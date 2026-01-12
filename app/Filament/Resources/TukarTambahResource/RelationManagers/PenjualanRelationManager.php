@@ -13,11 +13,14 @@ class PenjualanRelationManager extends RelationManager
 {
     protected static string $relationship = 'penjualan';
 
-    protected static ?string $title = 'Penjualan';
+    protected static ?string $title = 'Penjualan (Barang Keluar)';
+
+    protected static ?string $icon = 'heroicon-m-arrow-up-tray';
 
     public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('no_nota')
             ->modifyQueryUsing(fn($query) => $query
                 ->with(['items', 'jasaItems'])
                 ->withSum('pembayaran', 'jumlah'))
@@ -25,76 +28,78 @@ class PenjualanRelationManager extends RelationManager
             ->openRecordUrlInNewTab()
             ->columns([
                 TextColumn::make('no_nota')
-                    ->label('No. Nota')
+                    ->label('Nota')
                     ->icon('heroicon-m-receipt-percent')
                     ->weight('bold')
+                    ->color('primary')
                     ->copyable()
-                    ->sortable(),
-                TextColumn::make('tanggal_penjualan')
-                    ->label('Tanggal')
-                    ->date('d M Y')
-                    ->icon('heroicon-m-calendar')
-                    ->color('gray')
-                    ->sortable(),
+                    ->description(fn(Penjualan $record) => $record->tanggal_penjualan ? $record->tanggal_penjualan->translatedFormat('d F Y') : '-'),
+
                 TextColumn::make('member.nama_member')
                     ->label('Member')
-                    ->placeholder('-')
-                    ->sortable(),
+                    ->icon('heroicon-m-user')
+                    ->weight('medium')
+                    ->placeholder('-'),
+
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
-                    ->placeholder('-')
-                    ->sortable(),
+                    ->icon('heroicon-m-user-circle')
+                    ->color('gray')
+                    ->placeholder('-'),
 
                 TextColumn::make('status_pembayaran')
-                    ->label('Status Pembayaran')
+                    ->label('Status')
                     ->badge()
-                    ->state(function (Penjualan $record): string {
-                        $grandTotal = (float) ($record->grand_total ?? 0);
-                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
-                        $sisa = max(0, $grandTotal - $totalPaid);
-
-                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'lunas' => 'Lunas',
+                        'belum_lunas' => 'Belum Lunas',
+                        default => $state,
                     })
-                    ->color(fn(string $state): string => $state === 'Lunas' ? 'success' : 'danger'),
+                    ->color(fn(string $state): string => match ($state) {
+                        'lunas' => 'success',
+                        'belum_lunas' => 'danger',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('sisa_bayar_display')
-                    ->label('Sisa Bayar')
+                    ->label('Sisa Tagihan')
                     ->alignRight()
+                    ->color('danger')
                     ->state(function (Penjualan $record): string {
                         $grandTotal = (float) ($record->grand_total ?? 0);
                         $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
 
                         $sisa = max(0, $grandTotal - $totalPaid);
+                        if ($sisa <= 0) return '-';
 
                         return 'Rp ' . number_format((int) $sisa, 0, ',', '.');
                     }),
+
                 TextColumn::make('grand_total_display')
-                    ->label('Grand Total')
+                    ->label('Total Akhir')
                     ->weight('bold')
                     ->color('success')
                     ->alignRight()
                     ->state(function (Penjualan $record): string {
-                        $subtotalProduk = (float) ($record->items
-                            ? $record->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
-                            : 0);
-                        $subtotalJasa = (float) ($record->jasaItems
-                            ? $record->jasaItems->sum(fn($item) => (int) ($item->harga ?? 0) * (int) ($item->qty ?? 0))
-                            : 0);
-                        $diskon = (float) ($record->diskon_total ?? 0);
-                        $grandTotal = max(0, $subtotalProduk + $subtotalJasa - $diskon);
-
+                        $grandTotal = (float) ($record->grand_total ?? 0);
                         return 'Rp ' . number_format((int) $grandTotal, 0, ',', '.');
                     }),
             ])
+            ->striped()
+            ->defaultSort('tanggal_penjualan', 'desc')
             ->actions([
+                Tables\Actions\Action::make('view')
+                    ->label('Lihat')
+                    ->icon('heroicon-m-eye')
+                    ->color('info')
+                    ->url(fn(Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
+
                 Tables\Actions\Action::make('edit')
                     ->label('Edit')
                     ->icon('heroicon-m-pencil-square')
+                    ->color('warning')
                     ->url(fn(Penjualan $record) => PenjualanResource::getUrl('edit', ['record' => $record]))
-                    ->openUrlInNewTab(),
-                Tables\Actions\Action::make('view')
-                    ->label('Show')
-                    ->icon('heroicon-m-eye')
-                    ->url(fn(Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
             ]);
     }
