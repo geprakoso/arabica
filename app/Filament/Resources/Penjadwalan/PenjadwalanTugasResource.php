@@ -3,40 +3,43 @@
 namespace App\Filament\Resources\Penjadwalan;
 
 use App\Enums\StatusTugas;
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource\Pages;
 use App\Models\PenjadwalanTugas;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid as FormsGrid;
+use Filament\Forms\Components\Group as FormsGroup;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section as FormsSection;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Grid as FormsGrid;
-use Filament\Forms\Components\Group as FormsGroup;
-use Filament\Forms\Components\Section as FormsSection;
 use Filament\Forms\Get;
-use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\Group as InfolistGroup;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
-
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 
 class PenjadwalanTugasResource extends BaseResource
 {
     protected static ?string $model = PenjadwalanTugas::class;
 
     protected static ?string $navigationIcon = 'hugeicons-task-daily-01';
-    protected static ?string $navigationGroup = 'Kepegawaian';
-    protected static ?string $navigationLabel = 'Tugas';
+
+    protected static ?string $navigationGroup = 'Tugas';
+
+    protected static ?string $navigationLabel = 'Tugas Harian';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -44,119 +47,119 @@ class PenjadwalanTugasResource extends BaseResource
             ->schema([
                 // tambahkan field sesuai kebutuhan
                 FormsGrid::make(3) // Membagi layar menjadi 3 kolom grid
-                ->schema([
-                    
-                    // --- KOLOM KIRI (UTAMA) ---
-                    // Mengambil 2 bagian dari 3 kolom (2/3 layar)
-                    FormsGroup::make()
-                        ->schema([
-                            FormsSection::make('Detail Tugas')
-                                ->description('Informasi utama mengenai tugas yang diberikan.')
-                                ->icon('heroicon-o-document-text')
-                                ->schema([
-                                    TextInput::make('judul')
-                                        ->label('Judul Tugas')
-                                        ->placeholder('Contoh: Perbaikan Stok Gudang A')
-                                        ->required()
-                                        ->maxLength(255)
-                                        ->columnSpanFull(),
+                    ->schema([
 
-                                    RichEditor::make('deskripsi')
-                                        ->label('Deskripsi Lengkap')
-                                        ->toolbarButtons([
-                                            'bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3'
-                                        ])
-                                        ->required()
-                                        ->columnSpanFull(),
-                                ]),
-                        ])
-                        ->columnSpan(['lg' => 2]), 
+                        // --- KOLOM KIRI (UTAMA) ---
+                        // Mengambil 2 bagian dari 3 kolom (2/3 layar)
+                        FormsGroup::make()
+                            ->schema([
+                                FormsSection::make('Detail Tugas')
+                                    ->description('Informasi utama mengenai tugas yang diberikan.')
+                                    ->icon('heroicon-o-document-text')
+                                    ->schema([
+                                        TextInput::make('judul')
+                                            ->label('Judul Tugas')
+                                            ->placeholder('Contoh: Perbaikan Stok Gudang A')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->columnSpanFull(),
 
-                    // --- KOLOM KANAN (SIDEBAR) ---
-                    // Mengambil 1 bagian dari 3 kolom (1/3 layar)
-                    FormsGroup::make()
-                        ->schema([
-                            
-                            // Section 1: Status & Prioritas (Paling sering diubah)
-                            FormsSection::make('Status & Urgensi')
-                                ->icon('heroicon-o-flag')
-                                ->schema([
-                                    Select::make('status')
-                                        ->label('Status Pengerjaan')
-                                        ->options(StatusTugas::class) // Pastikan Enum ini sudah ada
-                                        ->default(StatusTugas::Pending)
-                                        ->required()
-                                        ->native(false),
+                                        RichEditor::make('deskripsi')
+                                            ->label('Deskripsi Lengkap')
+                                            ->toolbarButtons([
+                                                'bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3',
+                                            ])
+                                            ->required()
+                                            ->columnSpanFull(),
+                                    ]),
+                            ])
+                            ->columnSpan(['lg' => 2]),
 
-                                    ToggleButtons::make('prioritas')
-                                        ->label('Prioritas')
-                                        ->options([
-                                            'rendah' => 'Rendah',
-                                            'sedang' => 'Sedang',
-                                            'tinggi' => 'Tinggi',
-                                        ])
-                                        ->colors([
-                                            'rendah' => 'success',
-                                            'sedang' => 'info',
-                                            'tinggi' => 'danger', // Warning biasanya kuning, Danger merah (lebih cocok untuk tinggi)
-                                        ])
-                                        ->icons([
-                                            'rendah' => 'heroicon-o-arrow-down',
-                                            'sedang' => 'heroicon-o-minus',
-                                            'tinggi' => 'heroicon-o-arrow-up',
-                                        ])
-                                        ->inline()
-                                        ->required(),
-                                ]),
+                        // --- KOLOM KANAN (SIDEBAR) ---
+                        // Mengambil 1 bagian dari 3 kolom (1/3 layar)
+                        FormsGroup::make()
+                            ->schema([
 
-                            // Section 2: Penugasan (Orang)
-                            FormsSection::make('Penugasan')
-                                ->icon('heroicon-o-users')
-                                ->schema([
-                                    Select::make('karyawan_id')
-                                        ->label('Ditugaskan Kepada')
-                                        ->relationship(
-                                            name: 'karyawan', // Pastikan relasi di model Task bernama 'karyawan'
-                                            titleAttribute: 'name',
-                                            modifyQueryUsing: fn ($query) => $query->whereHas('roles', function ($q) {
-                                                // Opsional: Filter user yang punya role tertentu saja jika perlu
-                                                // $q->where('name', 'staff');
-                                            })
-                                        )
-                                        ->searchable()
-                                        ->preload()
-                                        ->required(),
+                                // Section 1: Status & Prioritas (Paling sering diubah)
+                                FormsSection::make('Status & Urgensi')
+                                    ->icon('heroicon-o-flag')
+                                    ->schema([
+                                        Select::make('status')
+                                            ->label('Status Pengerjaan')
+                                            ->options(StatusTugas::class) // Pastikan Enum ini sudah ada
+                                            ->default(StatusTugas::Pending)
+                                            ->required()
+                                            ->native(false),
 
-                                    Select::make('created_by')
-                                        ->label('Pemberi Tugas')
-                                        ->relationship('creator', 'name')
-                                        ->default(fn () => Filament::auth()->id())
-                                        ->disabled()
-                                        ->visible(false)
-                                        ->dehydrated()
-                                        ->required(),
-                                ]),
+                                        ToggleButtons::make('prioritas')
+                                            ->label('Prioritas')
+                                            ->options([
+                                                'rendah' => 'Rendah',
+                                                'sedang' => 'Sedang',
+                                                'tinggi' => 'Tinggi',
+                                            ])
+                                            ->colors([
+                                                'rendah' => 'success',
+                                                'sedang' => 'info',
+                                                'tinggi' => 'danger', // Warning biasanya kuning, Danger merah (lebih cocok untuk tinggi)
+                                            ])
+                                            ->icons([
+                                                'rendah' => 'heroicon-o-arrow-down',
+                                                'sedang' => 'heroicon-o-minus',
+                                                'tinggi' => 'heroicon-o-arrow-up',
+                                            ])
+                                            ->inline()
+                                            ->required(),
+                                    ]),
 
-                            // Section 3: Waktu (Tanggal)
-                            FormsSection::make('Durasi Pengerjaan')
-                                ->icon('heroicon-o-calendar')
-                                ->schema([
-                                    DatePicker::make('tanggal_mulai')
-                                        ->label('Tanggal Mulai')
-                                        ->native(false)
-                                        ->displayFormat('d M Y')
-                                        ->required()
-                                        ->default(now()),
-                                    DatePicker::make('deadline')
-                                        ->label('Tenggat Waktu')
-                                        ->native(false)
-                                        ->displayFormat('d M Y')
-                                        ->minDate(fn (Get $get) => $get('tanggal_mulai')) // Validasi UX: Deadline tidak boleh sebelum tanggal mulai
-                                        ->required(),
-                                ]),
-                        ])
-                        ->columnSpan(['lg' => 1]),
-                            ]),
+                                // Section 2: Penugasan (Orang)
+                                FormsSection::make('Penugasan')
+                                    ->icon('heroicon-o-users')
+                                    ->schema([
+                                        Select::make('karyawan_id')
+                                            ->label('Ditugaskan Kepada')
+                                            ->relationship(
+                                                name: 'karyawan', // Pastikan relasi di model Task bernama 'karyawan'
+                                                titleAttribute: 'name',
+                                                modifyQueryUsing: fn ($query) => $query->whereHas('roles', function ($q) {
+                                                    // Opsional: Filter user yang punya role tertentu saja jika perlu
+                                                    // $q->where('name', 'staff');
+                                                })
+                                            )
+                                            ->searchable()
+                                            ->preload()
+                                            ->required(),
+
+                                        Select::make('created_by')
+                                            ->label('Pemberi Tugas')
+                                            ->relationship('creator', 'name')
+                                            ->default(fn () => Filament::auth()->id())
+                                            ->disabled()
+                                            ->visible(false)
+                                            ->dehydrated()
+                                            ->required(),
+                                    ]),
+
+                                // Section 3: Waktu (Tanggal)
+                                FormsSection::make('Durasi Pengerjaan')
+                                    ->icon('heroicon-o-calendar')
+                                    ->schema([
+                                        DatePicker::make('tanggal_mulai')
+                                            ->label('Tanggal Mulai')
+                                            ->native(false)
+                                            ->displayFormat('d M Y')
+                                            ->required()
+                                            ->default(now()),
+                                        DatePicker::make('deadline')
+                                            ->label('Tenggat Waktu')
+                                            ->native(false)
+                                            ->displayFormat('d M Y')
+                                            ->minDate(fn (Get $get) => $get('tanggal_mulai')) // Validasi UX: Deadline tidak boleh sebelum tanggal mulai
+                                            ->required(),
+                                    ]),
+                            ])
+                            ->columnSpan(['lg' => 1]),
+                    ]),
             ]);
     }
 
@@ -229,7 +232,7 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->weight(FontWeight::Bold)
                                             ->size(TextEntrySize::Large)
                                             ->icon('heroicon-m-document-text'),
-                                        
+
                                         TextEntry::make('deskripsi')
                                             ->hiddenLabel()
                                             ->html() // Penting karena inputnya RichEditor
@@ -242,7 +245,7 @@ class PenjadwalanTugasResource extends BaseResource
                         // --- KOLOM KANAN (SIDEBAR - 1/3) ---
                         InfolistGroup::make()
                             ->schema([
-                                
+
                                 // Section 1: Status (Card Kecil)
                                 InfolistSection::make('Status & Urgensi')
                                     ->icon('heroicon-m-flag')
@@ -280,7 +283,7 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->label('Ditugaskan Ke')
                                             ->icon('heroicon-m-user-circle')
                                             ->weight(FontWeight::Medium),
-                                            
+
                                         TextEntry::make('creator.name')
                                             ->label('Pemberi Tugas')
                                             ->icon('heroicon-m-check-badge')
@@ -302,7 +305,7 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->date('d M Y')
                                             ->icon('heroicon-m-stop')
                                             ->color('danger'), // Merah biar eye-catching
-                                            
+
                                         TextEntry::make('created_at')
                                             ->label('Dibuat Pada')
                                             ->since() // Tampil "2 hours ago"

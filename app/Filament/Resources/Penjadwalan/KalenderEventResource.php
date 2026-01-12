@@ -25,10 +25,13 @@ class KalenderEventResource extends Resource
 {
     protected static ?string $model = KalenderEvent::class;
 
-    protected static ?string $navigationGroup = 'Kepegawaian';
+    protected static ?string $navigationGroup = 'Tugas';
+
     protected static ?string $navigationLabel = 'Kalender Event';
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?int $navigationSort = 2;
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

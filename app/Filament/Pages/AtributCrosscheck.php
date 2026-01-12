@@ -2,12 +2,8 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\AtributCrosscheck\CrosscheckTable;
-use App\Filament\Widgets\AtributCrosscheck\ListAplikasiTable;
-use App\Filament\Widgets\AtributCrosscheck\ListGameTable;
-use App\Filament\Widgets\AtributCrosscheck\ListOsTable;
-use Filament\Pages\Page;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Pages\Page;
 
 class AtributCrosscheck extends Page
 {
@@ -18,10 +14,11 @@ class AtributCrosscheck extends Page
     protected static string $view = 'filament.pages.atribut-crosscheck';
 
     protected static ?string $navigationLabel = 'Atribut Crosscheck';
-    
+
     protected static ?string $title = 'Atribut Crosscheck';
 
-    protected static ?string $navigationGroup = 'Transaksi';
+    protected static ?string $navigationGroup = 'Tugas';
+
     protected static ?string $navigationParentItem = 'Penerimaan Service';
 
     public ?string $activeTab = 'crosscheck';
@@ -46,7 +43,7 @@ class AtributCrosscheck extends Page
     protected function getHeaderWidgets(): array
     {
         return [
-           // We will use the view to render widgets conditionally
+            // We will use the view to render widgets conditionally
         ];
     }
 }

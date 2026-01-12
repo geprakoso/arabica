@@ -208,9 +208,7 @@ class LaporanInputTransaksiResource extends BaseResource
                     ->formatStates([
                         'nominal_transaksi' => fn (InputTransaksiToko $record) => (int) $record->nominal_transaksi,
                     ])
-                    ->columnFormats([
-                        'nominal_transaksi' => '[$Rp-421] #,##0.00',
-                    ])
+
                     ->disableAdditionalColumns()
                     ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
             ])
@@ -236,9 +234,7 @@ class LaporanInputTransaksiResource extends BaseResource
                         ->formatStates([
                             'nominal_transaksi' => fn (InputTransaksiToko $record) => (int) $record->nominal_transaksi,
                         ])
-                        ->columnFormats([
-                            'nominal_transaksi' => '[$Rp-421] #,##0.00',
-                        ])
+
                         ->disableAdditionalColumns()
                         ->filterColumnsFieldLabel('Pilih kolom untuk diexport'),
                 ]),

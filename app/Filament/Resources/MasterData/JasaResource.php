@@ -2,40 +2,37 @@
 
 namespace App\Filament\Resources\MasterData;
 
-use App\Filament\Resources\MasterData\JasaResource\Pages;
+use App\Filament\Resources\BaseResource;
 // use App\Filament\Resources\MasterData\JasaResource\RelationManagers;
+use App\Filament\Resources\MasterData\JasaResource\Pages;
 use App\Models\Jasa;
+use App\Support\WebpUpload;
+// use Filament\Forms\Components\Fieldset;
 use Carbon\Carbon;
 use Filament\Forms;
-// use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Split;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\BaseFileUpload;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
 use Filament\Forms\Get;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Forms\Components\TimePicker;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
 // use Illuminate\Database\Eloquent\Builder;
 // use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Str; // Import Str
+use Filament\Infolists\Components\IconEntry; // Import Str
 // use Closure; // Import Closure for callable type hint
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use App\Support\WebpUpload;
-use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontFamily;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class JasaResource extends BaseResource
 {
@@ -43,11 +40,15 @@ class JasaResource extends BaseResource
 
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-tools';
+
     protected static ?string $navigationGroup = 'Master Data';
+
     // protected static ?string $navigationParentItem = 'Produk & Jasa';
     protected static ?string $pluralModelLabel = 'Jasa';
+
     protected static ?string $navigationLabel = 'Jasa';
-    protected static ?int $navigationSort = 2;
+
+    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {
@@ -67,7 +68,7 @@ class JasaResource extends BaseResource
                             ->schema([
                                 Forms\Components\TextInput::make('nama_jasa')
                                     ->label('Nama Jasa')
-                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
+                                    ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                     ->required()
                                     ->placeholder('Contoh: Service AC Split 1PK')
                                     ->unique(ignoreRecord: true)
@@ -85,7 +86,7 @@ class JasaResource extends BaseResource
                                         'orderedList',
                                         'h3',
                                         'undo',
-                                        'redo'
+                                        'redo',
                                     ]) // Toolbar minimalis
                                     ->columnSpanFull(),
                             ]),
@@ -114,8 +115,8 @@ class JasaResource extends BaseResource
                                         '04:00',
                                         '05:00',
                                     ])
-                                    ->dehydrateStateUsing(fn(?string $state) => $state ? Carbon::parse($state)->hour : null)
-                                    ->afterStateHydrated(fn($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
+                                    ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::parse($state)->hour : null)
+                                    ->afterStateHydrated(fn ($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
                             ]),
                     ]),
 
@@ -133,11 +134,12 @@ class JasaResource extends BaseResource
                                     ->image()
                                     ->imageEditor()
                                     ->disk('public')
-                                    ->directory(fn() => 'jasas/' . now()->format('Y/m/d'))
+                                    ->directory(fn () => 'jasas/'.now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
                                         $datePrefix = now()->format('ymd');
                                         $slug = Str::slug($get('nama_jasa') ?? 'jasa');
                                         $extension = $file->getClientOriginalExtension();
+
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
                                     ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
@@ -149,7 +151,7 @@ class JasaResource extends BaseResource
                             ->schema([
                                 Forms\Components\TextInput::make('sku')
                                     ->label('Kode SKU')
-                                    ->default(fn() => Jasa::generateSku())
+                                    ->default(fn () => Jasa::generateSku())
                                     ->disabled() // Tetap disabled
                                     ->dehydrated() // Agar tetap tersimpan ke DB
                                     ->required()
@@ -261,7 +263,7 @@ class JasaResource extends BaseResource
                     ->color('primary')
                     ->weight('bold')
                     ->icon('heroicon-m-wrench-screwdriver')
-                    ->description(fn(Jasa $record) => $record->sku)
+                    ->description(fn (Jasa $record) => $record->sku)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('harga_formatted')

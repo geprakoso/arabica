@@ -113,11 +113,11 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-user'),
             ])
             ->navigationGroups([
+                NavigationGroup::make('Tugas')->collapsed(),
                 NavigationGroup::make('Master Data')->collapsed(),
                 NavigationGroup::make('Transaksi')->collapsed(),
-                NavigationGroup::make('Logistik & Inventori')->collapsed(),
-                NavigationGroup::make('Keuangan')->collapsed(),
-                NavigationGroup::make('Kepegawaian')->collapsed(),
+                NavigationGroup::make('Inventori')->collapsed(),
+                NavigationGroup::make('Personalia')->collapsed(),
                 NavigationGroup::make('Laporan')->collapsed(),
                 NavigationGroup::make('Pengaturan')->collapsed(),
             ])

@@ -19,7 +19,7 @@ class ProdukJasa extends Page
 
     protected static ?string $navigationGroup = 'Master Data';
 
-    protected static ?int $navigationSort = 5; // Urutan di sidebar
+    protected static ?int $navigationSort = 4; // Urutan di sidebar
 
     protected static bool $shouldRegisterNavigation = true;
 
