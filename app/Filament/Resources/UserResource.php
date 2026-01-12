@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\Karyawan;
 use App\Models\User;
+use App\Support\WebpUpload;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Group;
@@ -35,6 +36,7 @@ use Laravolt\Indonesia\Models\City;
 use Laravolt\Indonesia\Models\District;
 use Laravolt\Indonesia\Models\Province;
 use Laravolt\Indonesia\Models\Village;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class UserResource extends BaseResource
 {
@@ -277,7 +279,7 @@ class UserResource extends BaseResource
                         Section::make('Foto Profil')
                             ->icon('heroicon-m-camera')
                             ->schema([
-                                Forms\Components\FileUpload::make('karyawan.image_url')
+                                Forms\Components\FileUpload::make('avatar_url')
                                     ->label('Foto Wajah')
                                     ->image()
                                     ->avatar()
@@ -289,7 +291,7 @@ class UserResource extends BaseResource
                                     ->getUploadedFileNameForStorageUsing(
                                         fn (TemporaryUploadedFile $file, Get $get) => (now()->format('ymd').'-'.Str::slug($get('karyawan.nama_karyawan') ?? 'karyawan').'.'.$file->getClientOriginalExtension())
                                     )
-                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                                    ->saveUploadedFileUsing(fn (Forms\Components\FileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->columnSpanFull()
                                     ->alignCenter(),
                             ]),
@@ -480,7 +482,7 @@ class UserResource extends BaseResource
                         // Section 3: Foto
                         InfolistSection::make('Foto Profil')
                             ->schema([
-                                ImageEntry::make('karyawan.image_url')
+                                ImageEntry::make('avatar_url')
                                     ->label('')
                                     ->hiddenLabel()
                                     ->disk('public')
@@ -533,7 +535,7 @@ class UserResource extends BaseResource
     {
         return $table
             ->columns([
-                ImageColumn::make('karyawan.image_url')
+                ImageColumn::make('avatar_url')
                     ->label('')
                     ->disk('public')
                     ->circular()

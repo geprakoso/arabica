@@ -28,6 +28,7 @@
         "filament/filament": "^3.3",
         "guava/calendar": "*",
         "icetalker/filament-table-repeater": "^1.4",
+        "joaopaulolndev/filament-edit-profile": "^1.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "laravolt/indonesia": "^0.38.0",
