@@ -39,6 +39,10 @@ docker compose exec app php artisan config:cache
 echo "📦 Running database migrations..."
 docker compose exec app php artisan migrate --force
 
+# 7b. Fix Avatar Locations (Private -> Public)
+echo "🖼️  Fixing Avatar Locations..."
+docker compose exec app php artisan fix:publish-avatars
+
 # 8. Publish Filament assets (if updated)
 echo "🎨 Publishing Filament assets..."
 docker compose exec app php artisan filament:assets
