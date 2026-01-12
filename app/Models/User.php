@@ -13,16 +13,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
-use App\Models\Karyawan;
-use App\Models\ChatGroup;
-
-
 
 // User Model
 class User extends Authenticatable implements HasAvatar
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -34,10 +30,18 @@ class User extends Authenticatable implements HasAvatar
         'email',
         'password',
         'avatar',
+        'avatar_url', // Actual column, also mapped to karyawan.image_url
         'messenger_color',
         'dark_mode',
         'active_status',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -61,6 +65,7 @@ class User extends Authenticatable implements HasAvatar
             'password' => 'hashed',
             'dark_mode' => 'boolean',
             'active_status' => 'boolean',
+            'avatar_url' => 'string',
         ];
     }
 
@@ -89,12 +94,38 @@ class User extends Authenticatable implements HasAvatar
 
     public function getFilamentAvatarUrl(): ?string
     {
-        $path = $this->karyawan?->image_url;
+        $path = $this->avatar_url;
 
         if (! $path) {
             return null;
         }
 
         return Storage::disk('public')->url($path);
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (User $user) {
+            // Check if avatar_url was changed
+            if ($user->wasChanged('avatar_url')) {
+                // Sync to karyawan record
+                if (! $user->karyawan) {
+                    $user->karyawan()->create([
+                        'nama_karyawan' => $user->name,
+                        'slug' => \Illuminate\Support\Str::slug($user->name),
+                        'image_url' => $user->avatar_url,
+                        'is_active' => true,
+                    ]);
+                    // Refresh the relationship
+                    $user->load('karyawan');
+                } else {
+                    $user->karyawan->image_url = $user->avatar_url;
+                    $user->karyawan->save();
+                }
+            }
+        });
     }
 }

@@ -1,3 +1,11 @@
+## 2026.01.12
+- Menambahkan **My Profile** dengan fitur upload avatar yang tersinkronisasi.
+- Perbaikan **Upload Avatar**: Memindahkan penyimpanan ke disk `public` untuk mengatasi error 403 Forbidden.
+- Refactoring **User Model**: Menggunakan observer untuk sinkronisasi otomatis avatar antara tabel `users` dan `karyawan`.
+- Migrasi Database: Menambahkan kolom `avatar_url` pada tabel `users`.
+- Konfigurasi Plugin: Memaksa `edit-profile` plugin menggunakan disk `public`.
+- Dokumentasi teknis perbaikan tersedia di `/docs/perbaikan_sinkronisasi_avatar.md`.
+
 # Catatan Perubahan (Changelog)
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.

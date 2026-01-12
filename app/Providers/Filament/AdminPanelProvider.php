@@ -8,10 +8,11 @@ use Filament\Http\Middleware\AuthenticateSession;
 // use App\Filament\Pages\ChatRoomPage;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
-use Filament\PanelProvider;
 // use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
+use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -19,6 +20,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
+use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -84,8 +87,31 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
                     ->allowSubFolders()
-
             )
+            ->plugins([
+                FilamentEditProfilePlugin::make()
+                    ->slug('my-profile')
+                    ->setTitle('My Profile')
+                    ->setNavigationLabel('My Profile')
+                    ->setNavigationGroup('Group Profile')
+                    ->setIcon('heroicon-o-user')
+                    ->setSort(10)
+                    ->shouldRegisterNavigation(false)
+                    ->shouldShowEmailForm()
+                    ->shouldShowDeleteAccountForm(false)
+                    ->shouldShowBrowserSessionsForm()
+                    ->shouldShowAvatarForm(
+                        value: true,
+                        directory: 'karyawan/foto',
+                        rules: 'mimes:jpeg,png,webp|max:2048'
+                    ),
+            ])
+            ->userMenuItems([
+                MenuItem::make('My Profile')
+                    ->label('My Profile')
+                    ->url(fn (): string => EditProfilePage::getUrl())
+                    ->icon('heroicon-o-user'),
+            ])
             ->navigationGroups([
                 NavigationGroup::make('Master Data')->collapsed(),
                 NavigationGroup::make('Transaksi')->collapsed(),
