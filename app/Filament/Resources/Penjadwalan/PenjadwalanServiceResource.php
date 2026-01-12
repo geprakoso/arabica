@@ -36,7 +36,7 @@ class PenjadwalanServiceResource extends BaseResource
 
     protected static ?string $navigationIcon = 'hugeicons-service';
 
-    protected static ?string $navigationGroup = 'Transaksi';
+    protected static ?string $navigationGroup = 'Tugas';
 
     protected static ?string $navigationLabel = 'Penerimaan Service';
 
