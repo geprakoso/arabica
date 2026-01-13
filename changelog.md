@@ -1,11 +1,3 @@
-## 2026.01.12
-- Menambahkan **My Profile** dengan fitur upload avatar yang tersinkronisasi.
-- Perbaikan **Upload Avatar**: Memindahkan penyimpanan ke disk `public` untuk mengatasi error 403 Forbidden.
-- Refactoring **User Model**: Menggunakan observer untuk sinkronisasi otomatis avatar antara tabel `users` dan `karyawan`.
-- Migrasi Database: Menambahkan kolom `avatar_url` pada tabel `users`.
-- Konfigurasi Plugin: Memaksa `edit-profile` plugin menggunakan disk `public`.
-- Dokumentasi teknis perbaikan tersedia di `/docs/perbaikan_sinkronisasi_avatar.md`.
-
 # Catatan Perubahan (Changelog)
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
@@ -27,6 +19,31 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - **Filter Absensi**:
   - Menambahkan filter tanggal canggih pada `AbsensiResource` dengan opsi preset: Hari Ini (Default), Kemarin, 2 Hari Lalu, 3 Hari Lalu, dan Custom Range.
   - Menambahkan indikator visual (badge) pada filter aktif.
+- **Peningkatan Penjadwalan Tugas**:
+  - **Multi-Assignee**: Mengubah sistem penugasan dari 1 karyawan menjadi **Banyak Karyawan** sekaligus (Many-to-Many).
+  - **Selector Durasi Cerdas**: Menambahkan pilihan cepat durasi (1 Hari, 2 Hari, 3 Hari) yang otomatis mengatur tanggal dan menyembunyikan input manual.
+  - **Validasi Server-Side**: Memastikan logika tanggal tersimpan akurat (Today -> Today) menggunakan *mutation hooks*, mencegah bug pada input tersembunyi.
+  - **Tombol Status Cepat**: Menambahkan tombol aksi **Proses**, **Selesai**, dan **Batal** pada halaman detail tugas untuk mempercepat workflow status.
+  - **Sistem Komentar Native**: Menambahkan fitur diskusi interaktif pada detail tugas.
+    - **Indikator Pesan Baru**: Badge notifikasi (Hijau) pada list tugas jika ada komentar yang belum dibaca.
+    - **Integrasi Notifikasi**: Notifikasi in-app kepada Creator & Assignees saat ada komentar baru.
+    - **Smart Navigation Badge**:
+      - Indikator personal (hanya untuk tugas terkait).
+      - Split Info: **New 🆕** (Belum dilihat) dan **Chat 💬** (Komentar baru).
+    - **Optimasi Performa**: Eager Loading untuk mencegah N+1 Query pada indikator diskusi.
+    - Terintegrasi langsung di halaman View (Infolist).
+    - Keamanan akses: Hanya Creator dan Assignee yang bisa berkomentar.
+    - Menggunakan teknologi Livewire untuk pengalaman pengguna yang responsif.
+- **Kompatibilitas iPhone**:
+  - Menambahkan dukungan format **HEIC/HEIF** pada upload bukti lembur.
+
+## 2026.01.12
+- Menambahkan **My Profile** dengan fitur upload avatar yang tersinkronisasi.
+- Perbaikan **Upload Avatar**: Memindahkan penyimpanan ke disk `public` untuk mengatasi error 403 Forbidden.
+- Refactoring **User Model**: Menggunakan observer untuk sinkronisasi otomatis avatar antara tabel `users` dan `karyawan`.
+- Migrasi Database: Menambahkan kolom `avatar_url` pada tabel `users`.
+- Konfigurasi Plugin: Memaksa `edit-profile` plugin menggunakan disk `public`.
+- Dokumentasi teknis perbaikan tersedia di `/docs/perbaikan_sinkronisasi_avatar.md`.
 
 ## 2026.01.11
 ### Integrasi Gudang & Absensi Berbasis Lokasi

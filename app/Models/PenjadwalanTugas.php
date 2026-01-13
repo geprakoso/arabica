@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PenjadwalanTugas extends Model
 {
     protected $fillable = [
-        'karyawan_id',
         'created_by',
         'judul',
         'deskripsi',
@@ -25,13 +24,33 @@ class PenjadwalanTugas extends Model
         'status' => StatusTugas::class,
     ];
 
-    public function karyawan(): BelongsTo
+    public function karyawan(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsTo(User::class, 'karyawan_id');
+        return $this->belongsToMany(User::class, 'penjadwalan_tugas_user');
     }
 
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function comments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TaskComment::class);
+    }
+
+    public function views(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TaskView::class);
+    }
+
+    public function latestComment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TaskComment::class)->latestOfMany();
+    }
+
+    public function currentUserView(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TaskView::class)->where('user_id', auth()->id());
     }
 }
