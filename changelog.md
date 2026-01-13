@@ -24,6 +24,16 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
   - **Selector Durasi Cerdas**: Menambahkan pilihan cepat durasi (1 Hari, 2 Hari, 3 Hari) yang otomatis mengatur tanggal dan menyembunyikan input manual.
   - **Validasi Server-Side**: Memastikan logika tanggal tersimpan akurat (Today -> Today) menggunakan *mutation hooks*, mencegah bug pada input tersembunyi.
   - **Tombol Status Cepat**: Menambahkan tombol aksi **Proses**, **Selesai**, dan **Batal** pada halaman detail tugas untuk mempercepat workflow status.
+  - **Sistem Komentar Native**: Menambahkan fitur diskusi interaktif pada detail tugas.
+    - **Indikator Pesan Baru**: Badge notifikasi (Hijau) pada list tugas jika ada komentar yang belum dibaca.
+    - **Integrasi Notifikasi**: Notifikasi in-app kepada Creator & Assignees saat ada komentar baru.
+    - **Smart Navigation Badge**:
+      - Indikator personal (hanya untuk tugas terkait).
+      - Split Info: **New 🆕** (Belum dilihat) dan **Chat 💬** (Komentar baru).
+    - **Optimasi Performa**: Eager Loading untuk mencegah N+1 Query pada indikator diskusi.
+    - Terintegrasi langsung di halaman View (Infolist).
+    - Keamanan akses: Hanya Creator dan Assignee yang bisa berkomentar.
+    - Menggunakan teknologi Livewire untuk pengalaman pengguna yang responsif.
 - **Kompatibilitas iPhone**:
   - Menambahkan dukungan format **HEIC/HEIF** pada upload bukti lembur.
 

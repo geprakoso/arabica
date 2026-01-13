@@ -41,6 +41,86 @@ class PenjadwalanTugasResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->withCount('comments')
+            ->with(['latestComment', 'currentUserView']);
+    }
+
+    protected static ?array $badgeCounts = null;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $userId = auth()->id();
+
+        if (static::$badgeCounts === null) {
+            $baseQuery = static::getEloquentQuery()
+                ->where(function ($query) use ($userId) {
+                    $query->where('created_by', $userId)
+                        ->orWhereHas('karyawan', fn ($q) => $q->where('users.id', $userId));
+                });
+
+            $newRecords = (clone $baseQuery)
+                ->whereDoesntHave('views', fn ($q) => $q->where('user_id', $userId))
+                ->count();
+
+            $unreadComments = (clone $baseQuery)
+                ->whereHas('comments', function ($q) use ($userId) {
+                    $q->where('created_at', '>', function ($sub) use ($userId) {
+                        $sub->select('last_viewed_at')
+                            ->from('task_views')
+                            ->whereColumn('task_views.penjadwalan_tugas_id', 'penjadwalan_tugas.id')
+                            ->where('task_views.user_id', $userId)
+                            ->limit(1);
+                    });
+                })
+                ->count();
+
+            static::$badgeCounts = [
+                'new' => $newRecords,
+                'comments' => $unreadComments,
+            ];
+        }
+
+        $new = static::$badgeCounts['new'];
+        $comments = static::$badgeCounts['comments'];
+
+        if ($new > 0 && $comments > 0) {
+            return "{$new} 🆕 | {$comments} 💬";
+        }
+
+        if ($new > 0) {
+            return "{$new} 🆕";
+        }
+        if ($comments > 0) {
+            return "{$comments} 💬";
+        }
+
+        return null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        // Trigger calculation if not done yet
+        if (static::$badgeCounts === null) {
+            static::getNavigationBadge();
+        }
+
+        $new = static::$badgeCounts['new'] ?? 0;
+        $comments = static::$badgeCounts['comments'] ?? 0;
+
+        if ($new > 0) {
+            return 'info'; // Blue for New Records
+        }
+
+        if ($comments > 0) {
+            return 'success'; // Green for New Comments
+        }
+
+        return null;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -48,7 +128,6 @@ class PenjadwalanTugasResource extends BaseResource
                 // tambahkan field sesuai kebutuhan
                 FormsGrid::make(3) // Membagi layar menjadi 3 kolom grid
                     ->schema([
-
                         // --- KOLOM KIRI (UTAMA) ---
                         // Mengambil 2 bagian dari 3 kolom (2/3 layar)
                         FormsGroup::make()
@@ -59,21 +138,76 @@ class PenjadwalanTugasResource extends BaseResource
                                     ->schema([
                                         TextInput::make('judul')
                                             ->label('Judul Tugas')
-                                            ->placeholder('Contoh: Perbaikan Stok Gudang A')
                                             ->required()
                                             ->maxLength(255)
+                                            ->placeholder('Contoh: Perbaikan Bug Login')
                                             ->columnSpanFull(),
 
                                         RichEditor::make('deskripsi')
-                                            ->label('Deskripsi Lengkap')
-                                            ->toolbarButtons([
-                                                'bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3',
-                                            ])
-                                            ->validationMessages([
-                                                'required' => 'Deskripsi belum ditambahkan',
-                                            ])
+                                            ->label('Deskripsi Tugas')
                                             ->required()
                                             ->columnSpanFull(),
+
+                                        Select::make('durasi_pengerjaan')
+                                            ->label('Durasi')
+                                            ->options([
+                                                '1' => '1 Hari (Hari Ini)',
+                                                '2' => '2 Hari',
+                                                '3' => '3 Hari',
+                                                'custom' => 'Lainnya (Manual)',
+                                            ])
+                                            ->default('1')
+                                            ->required()
+                                            ->live()
+                                            ->afterStateHydrated(function ($component, $state, $record, $set) {
+                                                if (! $record) {
+                                                    return;
+                                                }
+
+                                                $start = $record->tanggal_mulai;
+                                                $end = $record->deadline;
+
+                                                if (! $start || ! $end) {
+                                                    $set('durasi_pengerjaan', 'custom');
+
+                                                    return;
+                                                }
+
+                                                $start = \Illuminate\Support\Carbon::parse($start);
+                                                $end = \Illuminate\Support\Carbon::parse($end);
+
+                                                $diff = $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
+                                                $isToday = $start->format('Y-m-d') === now()->format('Y-m-d');
+
+                                                if ($diff === 1 && $isToday) {
+                                                    $set('durasi_pengerjaan', '1');
+                                                } elseif ($diff === 2) {
+                                                    $set('durasi_pengerjaan', '2');
+                                                } elseif ($diff === 3) {
+                                                    $set('durasi_pengerjaan', '3');
+                                                } else {
+                                                    $set('durasi_pengerjaan', 'custom');
+                                                }
+                                            })
+                                            ->dehydrated(),
+
+                                        DatePicker::make('tanggal_mulai')
+                                            ->label('Tanggal Mulai')
+                                            ->native(false)
+                                            ->displayFormat('d M Y')
+                                            ->required()
+                                            ->default(now())
+                                            ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
+                                            ->dehydrated(),
+
+                                        DatePicker::make('deadline')
+                                            ->label('Tenggat Waktu')
+                                            ->native(false)
+                                            ->displayFormat('d M Y')
+                                            ->minDate(fn (Get $get) => $get('tanggal_mulai'))
+                                            ->required()
+                                            ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
+                                            ->dehydrated(),
                                     ]),
                             ])
                             ->columnSpan(['lg' => 2]),
@@ -270,6 +404,33 @@ class PenjadwalanTugasResource extends BaseResource
                     ->label('Deadline')
                     ->date('d M Y')
                     ->sortable(),
+                TextColumn::make('unread_comments')
+                    ->label('Diskusi')
+                    ->icon('heroicon-m-chat-bubble-left-right')
+                    ->state(fn (?PenjadwalanTugas $record) => ($record?->comments_count ?? 0) > 0 ? $record->comments_count : null)
+                    ->badge()
+                    ->color(function (?PenjadwalanTugas $record) {
+                        if (! $record) {
+                            return 'gray';
+                        }
+
+                        $lastComment = $record->latestComment;
+
+                        if (! $lastComment) {
+                            return 'gray';
+                        }
+
+                        // Check when User last viewed this task (Eager Loaded)
+                        $lastView = $record->currentUserView;
+
+                        if (! $lastView) {
+                            // Never viewed but has content -> New
+                            return 'success';
+                        }
+
+                        // If new comment is newer than last view
+                        return $lastComment->created_at->gt($lastView->last_viewed_at) ? 'success' : 'gray';
+                    }),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -293,7 +454,7 @@ class PenjadwalanTugasResource extends BaseResource
             ->schema([
                 InfolistGrid::make(3)
                     ->schema([
-                        // --- KOLOM KIRI (KONTEN UTAMA - 2/3) ---
+                        // ... existing grid ...
                         InfolistGroup::make()
                             ->schema([
                                 InfolistSection::make()
@@ -310,13 +471,15 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->prose() // Agar styling teks (list, bold, h1) terlihat rapi
                                             ->markdown(), // Opsional, jaga-jaga jika tersimpan sebagai markdown
                                     ]),
+                                \Filament\Infolists\Components\ViewEntry::make('comments')
+                                    ->view('filament.infolists.entries.task-comments'),
                             ])
                             ->columnSpan(['lg' => 2]),
 
                         // --- KOLOM KANAN (SIDEBAR - 1/3) ---
                         InfolistGroup::make()
                             ->schema([
-
+                                // ... existing sidebar ...
                                 // Section 1: Status (Card Kecil)
                                 InfolistSection::make('Status & Urgensi')
                                     ->icon('heroicon-m-flag')
@@ -389,6 +552,7 @@ class PenjadwalanTugasResource extends BaseResource
                             ])
                             ->columnSpan(['lg' => 1]),
                     ]),
+
             ]);
     }
 

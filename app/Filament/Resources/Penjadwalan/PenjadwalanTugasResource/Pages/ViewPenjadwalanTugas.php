@@ -42,4 +42,19 @@ class ViewPenjadwalanTugas extends ViewRecord
             Actions\EditAction::make(),
         ];
     }
+
+    public function mount(int | string $record): void
+    {
+        parent::mount($record);
+
+        \App\Models\TaskView::updateOrCreate(
+            [
+                'user_id' => auth()->id(),
+                'penjadwalan_tugas_id' => $this->record->id,
+            ],
+            [
+                'last_viewed_at' => now(),
+            ]
+        );
+    }
 }

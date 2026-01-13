@@ -33,4 +33,24 @@ class PenjadwalanTugas extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function comments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TaskComment::class);
+    }
+
+    public function views(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TaskView::class);
+    }
+
+    public function latestComment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TaskComment::class)->latestOfMany();
+    }
+
+    public function currentUserView(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TaskView::class)->where('user_id', auth()->id());
+    }
 }
