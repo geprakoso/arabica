@@ -13,6 +13,10 @@ class ViewTukarTambah extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('edit')
+                ->label('Ubah')
+                ->icon('heroicon-m-pencil')
+                ->openUrlInNewTab(),
             Action::make('invoice')
                 ->label('Invoice')
                 ->icon('heroicon-m-printer')

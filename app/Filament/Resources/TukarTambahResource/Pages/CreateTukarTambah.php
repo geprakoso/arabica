@@ -27,7 +27,7 @@ class CreateTukarTambah extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return TukarTambahResource::getUrl('edit', ['record' => $this->record]);
+        return TukarTambahResource::getUrl('index');
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -99,9 +99,15 @@ class CreateTukarTambah extends CreateRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getCreateFormAction()->formId('form'),
-            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
-            $this->getCancelFormAction(),
+            $this->getCreateFormAction()
+                ->label('Buat')
+                ->icon('heroicon-o-plus')
+                ->formId('form'),
+            $this->getCancelFormAction()
+                ->label('Batal')
+                ->formId('form')
+                ->color('danger')
+                ->icon('heroicon-o-x-mark'),
         ];
     }
 

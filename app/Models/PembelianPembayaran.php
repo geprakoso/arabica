@@ -22,6 +22,17 @@ class PembelianPembayaran extends Model
         'jumlah' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (PembelianPembayaran $payment): void {
+            $payment->pembelian?->recalculatePaymentStatus();
+        });
+
+        static::deleted(function (PembelianPembayaran $payment): void {
+            $payment->pembelian?->recalculatePaymentStatus();
+        });
+    }
+
     public function pembelian()
     {
         return $this->belongsTo(Pembelian::class, 'id_pembelian', 'id_pembelian');

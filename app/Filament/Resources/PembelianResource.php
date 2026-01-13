@@ -7,9 +7,11 @@ use App\Models\Jasa;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\RequestOrder;
-use Filament\Forms\Components\DatePicker;
+use App\Models\Supplier;
 use Filament\Forms\Components\DatePicker as FormsDatePicker;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid as FormsGrid;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Group as FormsGroup;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section as FormsSection;
@@ -35,6 +37,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class PembelianResource extends BaseResource
 {
@@ -88,6 +92,26 @@ class PembelianResource extends BaseResource
                                     ->searchable()
                                     ->preload()
                                     ->prefixIcon('heroicon-m-building-storefront')
+                                    ->createOptionModalHeading('Tambah Supplier')
+                                    ->createOptionAction(fn($action) => $action->label('Tambah Supplier'))
+                                    ->createOptionForm([
+                                        Grid::make(2)->schema([
+                                            TextInput::make('nama_supplier')
+                                                ->label('Nama Supplier / PT')
+                                                ->required()
+                                                ->unique(table: (new Supplier)->getTable(), column: 'nama_supplier'),
+                                            TextInput::make('no_hp')
+                                                ->label('No. Handphone / WA')
+                                                ->tel()
+                                                ->required()
+                                                ->unique(table: (new Supplier)->getTable(), column: 'no_hp'),
+
+                                        ]),
+                                        TextInput::make('alamat')
+                                            ->label('Alamat')
+                                            ->nullable(),
+                                    ])
+                                    ->createOptionUsing(fn(array $data): int => (int) Supplier::query()->create($data)->getKey())
                                     ->required()
                                     ->native(false),
 
@@ -96,7 +120,7 @@ class PembelianResource extends BaseResource
                                     ->relationship('karyawan', 'nama_karyawan')
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn() => auth()->user()->karyawan?->id)
+                                    ->default(fn() => Auth::user()->karyawan?->id)
                                     ->prefixIcon('heroicon-m-user')
                                     ->required()
                                     ->native(false),
@@ -124,23 +148,6 @@ class PembelianResource extends BaseResource
                                         'ppn' => 'PPN (11%)',
                                     ])
                                     ->default('non_ppn')
-                                    ->native(false),
-                                Select::make('jenis_pembayaran')
-                                    ->label('Metode Bayar')
-                                    ->options([
-                                        'lunas' => 'Lunas',
-                                        'tempo' => 'Tempo',
-                                    ])
-                                    ->default('lunas')
-                                    ->live()
-                                    ->afterStateUpdated(fn(Set $set, $state) => $state !== 'tempo' ? $set('tgl_tempo', null) : null)
-                                    ->native(false)
-                                    ->required(),
-
-                                FormsDatePicker::make('tgl_tempo')
-                                    ->label('Jatuh Tempo')
-                                    ->visible(fn(Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                    ->required(fn(Get $get) => $get('jenis_pembayaran') === 'tempo')
                                     ->native(false),
                             ])
                                 ->columns(2),
@@ -237,7 +244,7 @@ class PembelianResource extends BaseResource
                                     ->label('Jumlah')
                                     ->numeric()
                                     ->prefix('Rp')
-                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)->live(onBlur: true)
                                     ->required(),
                             ])
                             ->columns(4),
@@ -356,11 +363,11 @@ class PembelianResource extends BaseResource
                             ->cloneable()
                             ->itemLabel(fn(array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null)
                             ->colStyles([
-                                'id_produk' => '40%',
-                                'kondisi' => '10%',
-                                'qty' => '5%',
-                                'hpp' => '20%',
-                                'harga_jual' => '25%',
+                                'id_produk' => 'width:37%',
+                                'kondisi' => 'width:15%',
+                                'qty' => 'width:8%',
+                                'hpp' => 'width:20%',
+                                'harga_jual' => 'width:25%',
                             ])
 
                     ]),
@@ -482,6 +489,38 @@ class PembelianResource extends BaseResource
                                     ->formatStateUsing(fn(string $state): string => $state === 'ppn' ? 'PPN' : 'Non-PPN'),
                             ])->grow(false), // Agar kolom kanan tidak terlalu lebar
                         ])->from('md'), // Split hanya aktif di layar medium ke atas
+                    ]),
+
+                InfoSection::make('Pembayaran')
+                    ->schema([
+                        Split::make([
+                            InfoGroup::make([
+                                TextEntry::make('total_pembayaran')
+                                    ->label('Total Pembayaran')
+                                    ->color('success')
+                                    ->state(fn(Pembelian $record): float => $record->calculateTotalPembelian())
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large),
+                            ]),
+                            InfoGroup::make([
+                                TextEntry::make('total_dibayar')
+                                    ->label('Total Dibayar')
+                                    ->state(fn(Pembelian $record): float => (float) ($record->pembayaran()->sum('jumlah') ?? 0))
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
+                            ]),
+                            InfoGroup::make([
+                                TextEntry::make('sisa_bayar')
+                                    ->label('Sisa Bayar')
+                                    ->state(function (Pembelian $record): float {
+                                        $total = $record->calculateTotalPembelian();
+                                        $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                        return max(0, $total - $dibayar);
+                                    })
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
+                            ])->grow(false),
+                        ])->from('md'),
                     ]),
 
                 // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===

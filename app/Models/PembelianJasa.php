@@ -26,6 +26,17 @@ class PembelianJasa extends Model
         'harga' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (PembelianJasa $item): void {
+            $item->pembelian?->recalculatePaymentStatus();
+        });
+
+        static::deleted(function (PembelianJasa $item): void {
+            $item->pembelian?->recalculatePaymentStatus();
+        });
+    }
+
     public function pembelian()
     {
         return $this->belongsTo(Pembelian::class, 'id_pembelian', 'id_pembelian');

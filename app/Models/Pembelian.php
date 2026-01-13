@@ -85,4 +85,31 @@ class Pembelian extends Model
     {
         return $this->hasOne(TukarTambah::class, 'pembelian_id', 'id_pembelian');
     }
+
+    public function calculateTotalPembelian(): float
+    {
+        $itemsTotal = (float) ($this->items()
+            ->selectRaw('COALESCE(SUM(qty * hpp), 0) as total')
+            ->value('total') ?? 0);
+        $jasaTotal = (float) ($this->jasaItems()
+            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+            ->value('total') ?? 0);
+
+        return $itemsTotal + $jasaTotal;
+    }
+
+    public function recalculatePaymentStatus(): void
+    {
+        $total = $this->calculateTotalPembelian();
+        $totalPaid = (float) ($this->pembayaran()->sum('jumlah') ?? 0);
+        $status = $total <= 0 || $totalPaid >= $total ? 'lunas' : 'tempo';
+
+        if ($this->jenis_pembayaran === $status) {
+            return;
+        }
+
+        $this->forceFill([
+            'jenis_pembayaran' => $status,
+        ])->saveQuietly();
+    }
 }

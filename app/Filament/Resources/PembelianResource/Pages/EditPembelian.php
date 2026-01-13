@@ -12,9 +12,21 @@ class EditPembelian extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getSaveFormAction()->formId('form'),
-            $this->getCancelFormAction(),
+            $this->getSaveFormAction()
+                ->label('Simpan')
+                ->icon('heroicon-o-check-circle')
+                ->formId('form'),
+            $this->getCancelFormAction()
+                ->label('Batal')
+                ->icon('heroicon-o-x-mark')
+                ->formId('form')
+                ->color('danger'),
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     protected function getFormActions(): array

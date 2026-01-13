@@ -430,21 +430,12 @@ class TukarTambahResource extends BaseResource
                                                             ->disabled()
                                                             ->dehydrated(),
                                                     ]),
-                                                Grid::make(3)
+                                                Grid::make(2)
                                                     ->schema([
                                                         Select::make('tipe_pembelian')
                                                             ->label('Pajak')
                                                             ->options(['non_ppn' => 'Non PPN', 'ppn' => 'PPN (11%)'])
                                                             ->default('non_ppn'),
-                                                        Select::make('jenis_pembayaran')
-                                                            ->label('Pembayaran')
-                                                            ->options(['lunas' => 'Lunas', 'tempo' => 'Tempo'])
-                                                            ->default('lunas')
-                                                            ->reactive(),
-                                                        DatePicker::make('tgl_tempo')
-                                                            ->label('Jatuh Tempo')
-                                                            ->visible(fn(Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                                            ->required(fn(Get $get) => $get('jenis_pembayaran') === 'tempo'),
                                                     ]),
                                             ])
                                             ->compact(),
@@ -457,6 +448,7 @@ class TukarTambahResource extends BaseResource
                                                     ->addActionLabel('+ Tambah Barang')
                                                     ->minItems(1)
                                                     ->schema([
+                                                        \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
                                                         Select::make('id_produk')
                                                             ->label('Produk')
                                                             ->options(fn() => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
@@ -484,7 +476,14 @@ class TukarTambahResource extends BaseResource
                                                             ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                                             ->required(),
                                                     ])
-                                                    ->columns(6),
+                                                    ->columns(6)
+                                                    ->colStyles([
+                                                        'id_produk' => 'width:37%',
+                                                        'kondisi' => 'width:15%',
+                                                        'qty' => 'width:8%',
+                                                        'hpp' => 'width:20%',
+                                                        'harga_jual' => 'width:25%',
+                                                    ]),
                                             ]),
                                         Section::make('Pembayaran')
                                             ->icon('heroicon-m-banknotes')
@@ -501,8 +500,7 @@ class TukarTambahResource extends BaseResource
                                                         Select::make('akun_transaksi_id')
                                                             ->label('Ke Akun')
                                                             ->options(fn() => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
-                                                            ->required(fn (Get $get) => $get('metode_bayar') === 'transfer')
-                                                            ->visible(fn (Get $get) => $get('metode_bayar') === 'transfer'),
+                                                            ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
                                                         TextInput::make('jumlah')
                                                             ->label('Nominal')
                                                             ->prefix('Rp')
