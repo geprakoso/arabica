@@ -71,6 +71,11 @@ class Pembelian extends Model
         return $this->hasMany(PembelianItem::class, 'id_pembelian', 'id_pembelian');
     }
 
+    public function pembayaran()
+    {
+        return $this->hasMany(PembelianPembayaran::class, 'id_pembelian', 'id_pembelian');
+    }
+
     public function jasaItems()
     {
         return $this->hasMany(PembelianJasa::class, 'id_pembelian', 'id_pembelian');

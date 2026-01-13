@@ -65,7 +65,7 @@ class PembelianResource extends BaseResource
                                     ->label('No. PO')
                                     ->prefixIcon('heroicon-s-tag')
                                     ->required()
-                                    ->default(fn () => Pembelian::generatePO()) // generate no_po otomatis
+                                    ->default(fn() => Pembelian::generatePO()) // generate no_po otomatis
                                     ->disabled()
                                     ->dehydrated()
                                     ->required()
@@ -96,7 +96,7 @@ class PembelianResource extends BaseResource
                                     ->relationship('karyawan', 'nama_karyawan')
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn () => auth()->user()->karyawan?->id)
+                                    ->default(fn() => auth()->user()->karyawan?->id)
                                     ->prefixIcon('heroicon-m-user')
                                     ->required()
                                     ->native(false),
@@ -124,17 +124,24 @@ class PembelianResource extends BaseResource
                                         'ppn' => 'PPN (11%)',
                                     ])
                                     ->default('non_ppn')
+                                    ->native(false),
+                                Select::make('jenis_pembayaran')
+                                    ->label('Metode Bayar')
+                                    ->options([
+                                        'lunas' => 'Lunas',
+                                        'tempo' => 'Tempo',
+                                    ])
+                                    ->default('lunas')
+                                    ->live()
+                                    ->afterStateUpdated(fn(Set $set, $state) => $state !== 'tempo' ? $set('tgl_tempo', null) : null)
                                     ->native(false)
-                                    ->afterStateUpdated(function (callable $set, ?string $state): void {
-                                        if ($state !== 'tempo') {
-                                            $set('tgl_tempo', null);
-                                        }
-                                    }),
-                                DatePicker::make('tgl_tempo')
-                                    ->label('Tanggal Tempo')
-                                    ->native(false)
-                                    ->visible(fn (callable $get) => $get('jenis_pembayaran') === 'tempo')
-                                    ->required(fn (callable $get) => $get('jenis_pembayaran') === 'tempo'),
+                                    ->required(),
+
+                                FormsDatePicker::make('tgl_tempo')
+                                    ->label('Jatuh Tempo')
+                                    ->visible(fn(Get $get) => $get('jenis_pembayaran') === 'tempo')
+                                    ->required(fn(Get $get) => $get('jenis_pembayaran') === 'tempo')
+                                    ->native(false),
                             ])
                                 ->columns(2),
                             // Tab::make('Produk Dibeli')
@@ -193,13 +200,55 @@ class PembelianResource extends BaseResource
                         ]),
                     ]),
 
+                FormsSection::make('Pembayaran')
+                    ->icon('heroicon-o-credit-card')
+                    ->description('pembayaran split bisa transfer dan tunai')
+                    ->schema([
+                        TableRepeater::make('pembayaran')
+                            ->label('')
+                            ->relationship('pembayaran')
+                            ->minItems(0)
+                            ->addActionLabel('Tambah Pembayaran')
+                            ->colStyles([
+                                'metode_bayar' => 'width: 20%;',
+                                'akun_transaksi_id' => 'width: 30%;',
+                                'jumlah' => 'width: 50%;',
+                            ])
+                            ->childComponents([
+                                Select::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->placeholder('pilih')
+                                    ->options([
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                    ])
+                                    ->native(false)
+                                    ->required()
+                                    ->reactive(),
+                                Select::make('akun_transaksi_id')
+                                    ->label('Akun Transaksi')
+                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
+                                    ->searchable()
+                                    ->placeholder('pilih')
+                                    ->preload()
+                                    ->native(false)
+                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                TextInput::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->required(),
+                            ])
+                            ->columns(4),
+                    ]),
+
                 // === BAGIAN 2: DAFTAR BARANG (REPEATER) ===
                 FormsSection::make('Item Barang')
-                    ->headerActions([
-                        // Opsional: Tombol aksi di header section jika dibutuhkan
-                    ])
+                    ->icon('heroicon-o-shopping-cart')
+                    ->description('Daftar barang yang dibeli')
                     ->schema([
-                        Repeater::make('items')
+                        TableRepeater::make('items')
                             ->relationship('items')
                             ->hiddenLabel() // Hilangkan label "Items" agar lebih clean
                             ->minItems(0)
@@ -260,7 +309,7 @@ class PembelianResource extends BaseResource
                                             return null;
                                         }
 
-                                        return 'Rp '.number_format((int) $value, 0, ',', '.');
+                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         if (filled($state)) {
@@ -269,7 +318,7 @@ class PembelianResource extends BaseResource
 
                                         return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp'];
                                     })
-                                    ->required(fn (Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp']))
+                                    ->required(fn(Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp']))
                                     ->columnSpan([
                                         'md' => 2,
                                         'xl' => 2,
@@ -288,7 +337,7 @@ class PembelianResource extends BaseResource
                                             return null;
                                         }
 
-                                        return 'Rp '.number_format((int) $value, 0, ',', '.');
+                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         if (filled($state)) {
@@ -297,17 +346,28 @@ class PembelianResource extends BaseResource
 
                                         return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual'];
                                     })
-                                    ->required(fn (Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
+                                    ->required(fn(Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
                                     ->columnSpan([
                                         'md' => 3, // Sisa kolom
                                         'xl' => 3,
                                     ]),
+
                             ])
                             ->cloneable()
-                            ->itemLabel(fn (array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null),
+                            ->itemLabel(fn(array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null)
+                            ->colStyles([
+                                'id_produk' => '40%',
+                                'kondisi' => '10%',
+                                'qty' => '5%',
+                                'hpp' => '20%',
+                                'harga_jual' => '25%',
+                            ])
+
                     ]),
 
                 FormsSection::make('Item Jasa')
+                    ->description('Daftar jasa yang di beli')
+                    ->icon('hugeicons-tools')
                     ->schema([
                         TableRepeater::make('jasaItems')
                             ->relationship('jasaItems')
@@ -355,43 +415,9 @@ class PembelianResource extends BaseResource
                             ->cloneable(),
                     ]),
 
-                // === BAGIAN 3: PEMBAYARAN & CATATAN (Footer Layout) ===
-                FormsSection::make()
-                    ->schema([
-                        FormsGrid::make(2)->schema([
-                            // Kolom Kiri: Catatan
-                            FormsGroup::make()->schema([
-                                Textarea::make('catatan')
-                                    ->label('Catatan / Keterangan')
-                                    ->rows(3)
-                                    ->placeholder('Catatan tambahan...'),
-                            ]),
+                // === BAGIAN 3: PEMBAYARAN (GRID KIRI KANAN) ===
 
-                            // Kolom Kanan: Termin Pembayaran
-                            FormsGroup::make()->schema([
-                                FormsGrid::make(2)->schema([
-                                    Select::make('jenis_pembayaran')
-                                        ->label('Metode Bayar')
-                                        ->options([
-                                            'lunas' => 'Lunas (Cash/Transfer)',
-                                            'tempo' => 'Tempo (Hutang)',
-                                        ])
-                                        ->default('lunas')
-                                        ->live()
-                                        ->afterStateUpdated(fn (Set $set, $state) => $state !== 'tempo' ? $set('tgl_tempo', null) : null)
-                                        ->native(false)
-                                        ->required()
-                                        ->columnSpan(fn (Get $get) => $get('jenis_pembayaran') === 'tempo' ? 1 : 2),
 
-                                    FormsDatePicker::make('tgl_tempo')
-                                        ->label('Jatuh Tempo')
-                                        ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                        ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                        ->native(false),
-                                ]),
-                            ]),
-                        ]),
-                    ]),
             ]);
     }
 
@@ -432,9 +458,9 @@ class PembelianResource extends BaseResource
 
                                 TextEntry::make('tukar_tambah_link')
                                     ->label('Tukar Tambah')
-                                    ->state(fn (Pembelian $record): ?string => $record->tukarTambah?->kode)
+                                    ->state(fn(Pembelian $record): ?string => $record->tukarTambah?->kode)
                                     ->icon('heroicon-m-arrows-right-left')
-                                    ->url(fn (Pembelian $record) => $record->tukarTambah
+                                    ->url(fn(Pembelian $record) => $record->tukarTambah
                                         ? TukarTambahResource::getUrl('view', ['record' => $record->tukarTambah])
                                         : null)
                                     ->openUrlInNewTab()
@@ -446,14 +472,14 @@ class PembelianResource extends BaseResource
                                 TextEntry::make('jenis_pembayaran')
                                     ->label('Pembayaran')
                                     ->badge()
-                                    ->color(fn (string $state): string => $state === 'lunas' ? 'success' : 'warning')
-                                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                                    ->color(fn(string $state): string => $state === 'lunas' ? 'success' : 'warning')
+                                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
 
                                 TextEntry::make('tipe_pembelian')
                                     ->label('Tipe Pajak')
                                     ->badge()
                                     ->color('gray')
-                                    ->formatStateUsing(fn (string $state): string => $state === 'ppn' ? 'PPN' : 'Non-PPN'),
+                                    ->formatStateUsing(fn(string $state): string => $state === 'ppn' ? 'PPN' : 'Non-PPN'),
                             ])->grow(false), // Agar kolom kanan tidak terlalu lebar
                         ])->from('md'), // Split hanya aktif di layar medium ke atas
                     ]),
@@ -465,7 +491,7 @@ class PembelianResource extends BaseResource
                         ViewEntry::make('items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.pembelian-items-table')
-                            ->state(fn (Pembelian $record) => $record->items()->with('produk')->get()),
+                            ->state(fn(Pembelian $record) => $record->items()->with('produk')->get()),
                     ]),
 
                 InfoSection::make('Daftar Jasa')
@@ -473,7 +499,7 @@ class PembelianResource extends BaseResource
                         ViewEntry::make('jasa_items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.pembelian-jasa-table')
-                            ->state(fn (Pembelian $record) => $record->jasaItems()->with('jasa')->get()),
+                            ->state(fn(Pembelian $record) => $record->jasaItems()->with('jasa')->get()),
                     ]),
 
                 // === BAGIAN BAWAH: FOOTER & CATATAN ===
@@ -489,12 +515,6 @@ class PembelianResource extends BaseResource
                                         ->icon('heroicon-m-paper-clip')
                                         ->color('gray')
                                         ->placeholder('-'),
-
-                                    TextEntry::make('catatan')
-                                        ->label('Catatan Tambahan')
-                                        ->markdown()
-                                        ->prose()
-                                        ->placeholder('Tidak ada catatan'),
                                 ]),
 
                                 // Kanan: Info Tempo (Jika ada)
@@ -512,9 +532,9 @@ class PembelianResource extends BaseResource
                                         ->color('danger')
                                         ->size(TextEntrySize::Large)
                                         ->weight(FontWeight::Bold)
-                                        ->visible(fn ($record) => $record->jenis_pembayaran === 'tempo')
+                                        ->visible(fn($record) => $record->jenis_pembayaran === 'tempo')
                                         ->alignRight(),
-                                ])->visible(fn ($record) => $record->jenis_pembayaran === 'tempo'),
+                                ])->visible(fn($record) => $record->jenis_pembayaran === 'tempo'),
                             ]),
                     ]),
             ]);
@@ -523,7 +543,7 @@ class PembelianResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('requestOrders'))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with('requestOrders'))
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
@@ -549,8 +569,8 @@ class PembelianResource extends BaseResource
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-m-hashtag')
-                    ->state(fn (Pembelian $record) => $record->requestOrders
-                        ->map(fn ($ro) => '#'.$ro->no_ro)
+                    ->state(fn(Pembelian $record) => $record->requestOrders
+                        ->map(fn($ro) => '#' . $ro->no_ro)
                         ->toArray())
                     ->separator(',')
                     ->toggleable(),
@@ -563,7 +583,7 @@ class PembelianResource extends BaseResource
                 TextColumn::make('tipe_pembelian')
                     ->label('Tipe')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'ppn',
                         'gray' => 'non_ppn',
@@ -571,7 +591,7 @@ class PembelianResource extends BaseResource
                 TextColumn::make('jenis_pembayaran')
                     ->label('Pembayaran')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'lunas',
                         'danger' => 'tempo',
@@ -627,7 +647,7 @@ class PembelianResource extends BaseResource
     {
         $ids = collect($requestOrderIds)
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique();
 
         if ($ids->isEmpty()) {
@@ -638,7 +658,7 @@ class PembelianResource extends BaseResource
             ->whereIn('id', $ids)
             ->pluck('no_ro')
             ->filter()
-            ->map(fn ($noRo) => "#{$noRo}")
+            ->map(fn($noRo) => "#{$noRo}")
             ->toArray();
 
         return empty($tags) ? null : implode(', ', $tags);
@@ -656,14 +676,14 @@ class PembelianResource extends BaseResource
         $primaryKey = PembelianItem::primaryKeyColumn();
 
         $lastItem = PembelianItem::query()
-            ->leftJoin($purchaseTable, $purchaseTable.'.id_pembelian', '=', $itemTable.'.id_pembelian')
-            ->where($itemTable.'.'.$productColumn, $productId)
-            ->orderByDesc($purchaseTable.'.tanggal')
-            ->orderByDesc($itemTable.'.'.$primaryKey)
+            ->leftJoin($purchaseTable, $purchaseTable . '.id_pembelian', '=', $itemTable . '.id_pembelian')
+            ->where($itemTable . '.' . $productColumn, $productId)
+            ->orderByDesc($purchaseTable . '.tanggal')
+            ->orderByDesc($itemTable . '.' . $primaryKey)
             ->select([
-                $itemTable.'.'.$primaryKey,
-                $itemTable.'.hpp',
-                $itemTable.'.harga_jual',
+                $itemTable . '.' . $primaryKey,
+                $itemTable . '.hpp',
+                $itemTable . '.harga_jual',
             ])
             ->first();
 

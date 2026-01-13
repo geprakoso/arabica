@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TukarTambahResource\Pages;
 use App\Filament\Resources\TukarTambahResource;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
+use App\Models\PembelianPembayaran;
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
@@ -65,6 +66,7 @@ class CreateTukarTambah extends CreateRecord
             $this->createPenjualanJasaItems($penjualan, $penjualanPayload['jasa_items'] ?? []);
             $this->createPembelianItems($pembelian, $pembelianPayload['items'] ?? []);
             $this->createPenjualanPembayaran($penjualan, $penjualanPayload['pembayaran'] ?? []);
+            $this->createPembelianPembayaran($pembelian, $pembelianPayload['pembayaran'] ?? []);
 
             return TukarTambah::query()->create([
                 'tanggal' => $tanggal,
@@ -257,6 +259,30 @@ class CreateTukarTambah extends CreateRecord
 
             PenjualanPembayaran::query()->create([
                 'id_penjualan' => $penjualan->getKey(),
+                'metode_bayar' => $metode,
+                'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
+                'jumlah' => (int) $jumlah,
+                'catatan' => $item['catatan'] ?? null,
+            ]);
+        }
+    }
+
+    protected function createPembelianPembayaran(Pembelian $pembelian, array $items): void
+    {
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $metode = $item['metode_bayar'] ?? null;
+            $jumlah = $item['jumlah'] ?? null;
+
+            if (! $metode || $jumlah === null || $jumlah === '') {
+                continue;
+            }
+
+            PembelianPembayaran::query()->create([
+                'id_pembelian' => $pembelian->getKey(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,
