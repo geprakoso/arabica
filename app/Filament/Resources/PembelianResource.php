@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PembelianResource\Pages;
+use App\Models\Jasa;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\RequestOrder;
@@ -201,7 +202,7 @@ class PembelianResource extends BaseResource
                         Repeater::make('items')
                             ->relationship('items')
                             ->hiddenLabel() // Hilangkan label "Items" agar lebih clean
-                            ->minItems(1)
+                            ->minItems(0)
                             ->columns(12) // Menggunakan grid 12 kolom agar presisi
                             ->schema([
                                 Select::make('id_produk')
@@ -304,6 +305,54 @@ class PembelianResource extends BaseResource
                             ])
                             ->cloneable()
                             ->itemLabel(fn (array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null),
+                    ]),
+
+                FormsSection::make('Item Jasa')
+                    ->schema([
+                        TableRepeater::make('jasaItems')
+                            ->relationship('jasaItems')
+                            ->label('Pembelian Jasa')
+                            ->addActionLabel('+ Tambah Jasa')
+                            ->schema([
+                                Select::make('jasa_id')
+                                    ->label('Jasa')
+                                    ->prefixIcon('hugeicons-tools')
+                                    ->relationship('jasa', 'nama_jasa')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                        $set('harga', $state ? (int) (Jasa::query()->find($state)?->harga ?? 0) : null);
+                                    })
+                                    ->columnSpan(2),
+                                TextInput::make('qty')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->minValue(1)
+                                    ->required(),
+                                TextInput::make('harga')
+                                    ->label('Tarif')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->required(),
+                                TextInput::make('catatan')
+                                    ->label('Catatan')
+                                    ->placeholder('Opsional')
+                                    ->columnSpan(2),
+                            ])
+                            ->colStyles([
+                                'jasa_id' => 'width: 35%;',
+                                'qty' => 'width: 10%;',
+                                'harga' => 'width: 20%;',
+                                'catatan' => 'width: 35%;',
+                            ])
+                            ->columns(6)
+                            ->defaultItems(0)
+                            ->collapsible()
+                            ->cloneable(),
                     ]),
 
                 // === BAGIAN 3: PEMBAYARAN & CATATAN (Footer Layout) ===
@@ -417,6 +466,14 @@ class PembelianResource extends BaseResource
                             ->hiddenLabel()
                             ->view('filament.infolists.components.pembelian-items-table')
                             ->state(fn (Pembelian $record) => $record->items()->with('produk')->get()),
+                    ]),
+
+                InfoSection::make('Daftar Jasa')
+                    ->schema([
+                        ViewEntry::make('jasa_items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.pembelian-jasa-table')
+                            ->state(fn (Pembelian $record) => $record->jasaItems()->with('jasa')->get()),
                     ]),
 
                 // === BAGIAN BAWAH: FOOTER & CATATAN ===
