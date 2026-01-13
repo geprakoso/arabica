@@ -17,6 +17,7 @@ class Lembur extends Model
         'jam_mulai',
         'jam_selesai',
         'keperluan',
+        'bukti',
         'status',
         'catatan',
     ];
