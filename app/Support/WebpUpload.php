@@ -35,8 +35,21 @@ class WebpUpload
 
             $diskPath = $disk->path($path);
 
-            Image::load($file->getRealPath())
-                ->format('webp')
+            $image = Image::load($file->getRealPath());
+
+            // Resize only if larger than Full HD (1920x1080)
+            $width = $image->getWidth();
+            $height = $image->getHeight();
+            $maxWidth = 1920;
+            $maxHeight = 1080;
+
+            if ($width > $maxWidth || $height > $maxHeight) {
+                // Resize to fit within max dimensions while maintaining aspect ratio
+                // fit(Fit::Max, w, h) works well for this
+                $image->fit(\Spatie\Image\Enums\Fit::Max, $maxWidth, $maxHeight);
+            }
+
+            $image->format('webp')
                 ->quality($quality)
                 ->save($diskPath);
 

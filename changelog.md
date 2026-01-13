@@ -10,6 +10,24 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.13
+### Peningkatan UI/UX Lembur & Filter Absensi
+- **Redesign UI Lembur (`LemburResource`)**:
+  - Mengubah layout Form dan Infolist menjadi **Standard Enterprise Card Layout** yang lebih profesional dan rapi.
+  - Mengganti gaya tombol aksi menjadi **Solid Colors** ("Buat Lembur" biru, "Selesai" hijau, "Terima" hijau, "Tolak" merah) untuk kejelasan visual.
+  - Menyederhanakan tombol Edit & Delete menjadi gaya minimalis berwarna netral (gray/white).
+  - Menambahkan kolom preview gambar (square) pada tabel list untuk "Bukti". 
+- **Fitur Upload Bukti Lembur**:
+  - Menambahkan kolom upload gambar "Bukti" dengan konversi otomatis ke format **WebP** dan *resize* (max Full HD) untuk optimasi penyimpanan.
+  - Memperbaiki validasi upload agar menerima `jpeg`, `png`, dan `webp` dengan benar.
+- **Logika & Workflow**:
+  - Menambahkan fitur **Redirect** otomatis ke halaman *List* setelah berhasil membuat record baru (Create -> Redirect -> List).
+  - Mengimplementasikan logika tombol dinamis pada header list: Tombol "Selesai Lembur" hanya muncul jika user memiliki lembur aktif hari ini.
+  - Menambahkan validasi tombol Approval (Terima/Tolak) yang hanya muncul untuk Admin pada status Pending.
+- **Filter Absensi**:
+  - Menambahkan filter tanggal canggih pada `AbsensiResource` dengan opsi preset: Hari Ini (Default), Kemarin, 2 Hari Lalu, 3 Hari Lalu, dan Custom Range.
+  - Menambahkan indikator visual (badge) pada filter aktif.
+
 ## 2026.01.11
 ### Integrasi Gudang & Absensi Berbasis Lokasi
 - **Manajemen Lokasi Gudang (`GudangResource`)**:

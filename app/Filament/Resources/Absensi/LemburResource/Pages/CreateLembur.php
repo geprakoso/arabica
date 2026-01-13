@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Absensi\LemburResource\Pages;
 
 use App\Filament\Resources\Absensi\LemburResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateLembur extends CreateRecord
@@ -24,4 +23,9 @@ class CreateLembur extends CreateRecord
     // //     // Pindahkan tombol ke header agar footer lebih bersih.
     // //     return [];
     // // }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
