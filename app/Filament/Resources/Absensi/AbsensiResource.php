@@ -10,7 +10,6 @@ use emmanpbarrameda\FilamentTakePictureField\Forms\Components\TakePicture;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
@@ -383,15 +382,113 @@ class AbsensiResource extends BaseResource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Filter::make('tanggal')
+                Filter::make('periode')
                     ->form([
-                        DatePicker::make('dari_tanggal')->native(false),
-                        DatePicker::make('sampai_tanggal')->native(false),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    'hari_ini' => 'Hari Ini',
+                                    'kemarin' => 'Kemarin',
+                                    '2_hari_lalu' => '2 Hari Lalu',
+                                    '3_hari_lalu' => '3 Hari Lalu',
+                                    'custom' => 'Custom',
+                                ])
+                                ->default('hari_ini')
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            Forms\Components\DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            Forms\Components\DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
                     ])
-                    ->query(function ($query, array $data) {
-                        return $query
-                            ->when($data['dari_tanggal'], fn ($q) => $q->whereDate('tanggal', '>=', $data['dari_tanggal']))
-                            ->when($data['sampai_tanggal'], fn ($q) => $q->whereDate('tanggal', '<=', $data['sampai_tanggal']));
+                    ->query(function (Builder $query, array $data): Builder {
+                        $range = $data['range'] ?? 'hari_ini';
+
+                        // Handle defaults cleanly
+                        if ($range === 'hari_ini') {
+                            return $query->whereDate('tanggal', now());
+                        }
+
+                        $startDate = null;
+                        $endDate = now();
+
+                        if ($range === 'custom') {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? null; // Allow infinite end if not set
+
+                            return $query
+                                ->when(
+                                    $startDate,
+                                    fn (Builder $query, $date): Builder => $query->whereDate('tanggal', '>=', $date),
+                                )
+                                ->when(
+                                    $endDate,
+                                    fn (Builder $query, $date): Builder => $query->whereDate('tanggal', '<=', $date),
+                                );
+                        }
+
+                        // Strict single day filtering for presets
+                        $targetDate = match ($range) {
+                            'kemarin' => now()->subDay(),
+                            '2_hari_lalu' => now()->subDays(2),
+                            '3_hari_lalu' => now()->subDays(3),
+                            default => null,
+                        };
+
+                        return $query->when(
+                            $targetDate,
+                            fn (Builder $query, $date) => $query->whereDate('tanggal', $date)
+                        );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $range = $data['range'] ?? null;
+                        if (! $range) {
+                            return null;
+                        }
+
+                        if ($range === 'custom') {
+                            $from = $data['from'] ?? null;
+                            $until = $data['until'] ?? null;
+
+                            if (! $from && ! $until) {
+                                return null;
+                            }
+
+                            $label = 'Rentang Waktu: ';
+                            if ($from) {
+                                $label .= Carbon::parse($from)->translatedFormat('d M Y');
+                            }
+                            if ($until) {
+                                $label .= ' s/d ' . Carbon::parse($until)->translatedFormat('d M Y');
+                            }
+
+                            return $label;
+                        }
+
+                        $labels = [
+                            'hari_ini' => 'Hari Ini',
+                            'kemarin' => 'Kemarin',
+                            '2_hari_lalu' => '2 Hari Lalu',
+                            '3_hari_lalu' => '3 Hari Lalu',
+                        ];
+
+                        // If default is 'hari_ini' and we want to show it even if default?
+                        // Usually Filament hides default indicators if they match the default state,
+                        // unless we handle it explicitly.
+                        // But here, let's just return the label.
+
+                        return isset($labels[$range]) ? 'Rentang Waktu: ' . $labels[$range] : null;
                     }),
                 SelectFilter::make('status')
                     ->options([
