@@ -8,6 +8,7 @@ use Filament\Tables;
 use App\Models\Kategori;
 // use Dom\Text;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use App\Filament\Resources\BaseResource;
@@ -41,10 +42,29 @@ class KategoriResource extends BaseResource
                         Forms\Components\TextInput::make('nama_kategori')
                             ->label('Nama Kategori')
                             ->dehydrateStateUsing(fn($state) => Str::title($state))
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, $state) {
+                                $set('slug', Str::slug($state));
+                            })
+                            ->rules([
+                                fn (\Filament\Forms\Get $get, ?Kategori $record): \Closure => function (string $attribute, $value, \Closure $fail) use ($get, $record) {
+                                    $slug = Str::slug($value);
+                                    $query = Kategori::where('slug', $slug);
+                                    
+                                    if ($record) {
+                                        $query->where('id', '!=', $record->id);
+                                    }
+                                    
+                                    if ($query->exists()) {
+                                        $fail('Kategori dengan nama ini sudah ada. Silakan gunakan nama yang berbeda.');
+                                    }
+                                },
+                            ])
                             ->required(),
                         Forms\Components\TextInput::make('slug')
                             ->label('Slug')
-                            ->unique(ignoreRecord: true),
+                            ->dehydrateStateUsing(fn($state) => Str::slug($state))
+                            ->live(onBlur: true),
                     ]),
 
                 // Section::make('Status')

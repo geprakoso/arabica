@@ -11,6 +11,7 @@ use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -43,11 +44,29 @@ class BrandResource extends BaseResource
                             Forms\Components\TextInput::make('nama_brand')
                                 ->label('Nama Brand')
                                 ->dehydrateStateUsing(fn($state) => Str::title($state))
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (Set $set, $state) {
+                                    $set('slug', Str::slug($state));
+                                })
+                                ->rules([
+                                    fn (\Filament\Forms\Get $get, ?Brand $record): \Closure => function (string $attribute, $value, \Closure $fail) use ($get, $record) {
+                                        $slug = Str::slug($value);
+                                        $query = Brand::where('slug', $slug);
+                                        
+                                        if ($record) {
+                                            $query->where('id', '!=', $record->id);
+                                        }
+                                        
+                                        if ($query->exists()) {
+                                            $fail('Brand dengan nama ini sudah ada. Silakan gunakan nama yang berbeda.');
+                                        }
+                                    },
+                                ])
                                 ->required(),
                             Forms\Components\TextInput::make('slug')
                                 ->label('Slug')
-                                ->dehydrateStateUsing(fn($state) => Str::title($state))
-                                ->unique(ignoreRecord: true),
+                                ->dehydrateStateUsing(fn($state) => Str::slug($state))
+                                ->live(onBlur: true),
                             Toggle::make('is_active')
                                 ->label('Aktifkan Brand')
                                 ->default(true)
@@ -105,12 +124,13 @@ class BrandResource extends BaseResource
                             ->icon('heroicon-m-link')
                             ->iconColor('gray')
                             ->color('gray')
+                            ->searchable()
                             ->size(TextColumn\TextColumnSize::Small)
                             ->alignCenter(),
                     ])->space(1),
                 ])->space(3),
             ])
-            ->searchable(false)
+            ->searchable(true)
             ->contentGrid([
                 'md' => 3,
                 'xl' => 4,
