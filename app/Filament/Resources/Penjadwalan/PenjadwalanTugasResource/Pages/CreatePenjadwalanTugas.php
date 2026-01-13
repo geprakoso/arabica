@@ -14,6 +14,12 @@ class CreatePenjadwalanTugas extends CreateRecord
     {
         $data['created_by'] = $data['created_by'] ?? Filament::auth()->id();
 
+        if (isset($data['durasi_pengerjaan']) && in_array($data['durasi_pengerjaan'], ['1', '2', '3'])) {
+            $days = (int) $data['durasi_pengerjaan'];
+            $data['tanggal_mulai'] = now()->toDateString();
+            $data['deadline'] = now()->addDays($days - 1)->toDateString();
+        }
+
         return $data;
     }
 

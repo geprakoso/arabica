@@ -69,6 +69,9 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->toolbarButtons([
                                                 'bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3',
                                             ])
+                                            ->validationMessages([
+                                                'required' => 'Deskripsi belum ditambahkan',
+                                            ])
                                             ->required()
                                             ->columnSpanFull(),
                                     ]),
@@ -93,6 +96,7 @@ class PenjadwalanTugasResource extends BaseResource
 
                                         ToggleButtons::make('prioritas')
                                             ->label('Prioritas')
+                                            ->default('rendah')
                                             ->options([
                                                 'rendah' => 'Rendah',
                                                 'sedang' => 'Sedang',
@@ -109,26 +113,32 @@ class PenjadwalanTugasResource extends BaseResource
                                                 'tinggi' => 'heroicon-o-arrow-up',
                                             ])
                                             ->inline()
-                                            ->required(),
+                                            ->required()
+                                            ->validationMessages([
+                                                'required' => 'Prioritas belum dipilih',
+                                            ]),
                                     ]),
 
                                 // Section 2: Penugasan (Orang)
                                 FormsSection::make('Penugasan')
                                     ->icon('heroicon-o-users')
                                     ->schema([
-                                        Select::make('karyawan_id')
+                                        Select::make('karyawan')
                                             ->label('Ditugaskan Kepada')
                                             ->relationship(
-                                                name: 'karyawan', // Pastikan relasi di model Task bernama 'karyawan'
+                                                name: 'karyawan',
                                                 titleAttribute: 'name',
                                                 modifyQueryUsing: fn ($query) => $query->whereHas('roles', function ($q) {
-                                                    // Opsional: Filter user yang punya role tertentu saja jika perlu
-                                                    // $q->where('name', 'staff');
+                                                    // Optional filter
                                                 })
                                             )
+                                            ->multiple()
                                             ->searchable()
                                             ->preload()
-                                            ->required(),
+                                            ->required()
+                                            ->validationMessages([
+                                                'required' => 'Karyawan belum dipilih',
+                                            ]),
 
                                         Select::make('created_by')
                                             ->label('Pemberi Tugas')
@@ -144,18 +154,77 @@ class PenjadwalanTugasResource extends BaseResource
                                 FormsSection::make('Durasi Pengerjaan')
                                     ->icon('heroicon-o-calendar')
                                     ->schema([
+                                        Select::make('durasi_pengerjaan')
+                                            ->label('Durasi')
+                                            ->options([
+                                                '1' => '1 Hari (Hari Ini)',
+                                                '2' => '2 Hari',
+                                                '3' => '3 Hari',
+                                                'custom' => 'Lainnya (Manual)',
+                                            ])
+                                            ->default('1')
+                                            ->required()
+                                            ->live()
+                                            ->afterStateHydrated(function ($state, \Filament\Forms\Set $set, \Filament\Forms\Get $get, ?\Illuminate\Database\Eloquent\Model $record) {
+                                                if (! $record) {
+                                                    return;
+                                                }
+
+                                                $start = $record->tanggal_mulai;
+                                                $end = $record->deadline;
+
+                                                if (! $start || ! $end) {
+                                                    $set('durasi_pengerjaan', 'custom');
+
+                                                    return;
+                                                }
+
+                                                // Ensure Carbon instances
+                                                $start = \Carbon\Carbon::parse($start);
+                                                $end = \Carbon\Carbon::parse($end);
+
+                                                // Calculate difference (inclusive)
+                                                // Using startOfDay to ignore time components
+                                                $diff = $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
+
+                                                // Robust Check: Start Date must be Today
+                                                $isToday = $start->format('Y-m-d') === now()->format('Y-m-d');
+
+                                                if (in_array($diff, [1, 2, 3]) && $isToday) {
+                                                    $set('durasi_pengerjaan', (string) $diff);
+                                                } else {
+                                                    $set('durasi_pengerjaan', 'custom');
+                                                }
+                                            })
+                                            ->afterStateUpdated(function ($state, \Filament\Forms\Set $set) {
+                                                if ($state === 'custom') {
+                                                    return;
+                                                }
+
+                                                $days = (int) $state;
+                                                if ($days > 0) {
+                                                    $set('tanggal_mulai', now()->toDateString()); // Use Carbon instance or string
+                                                    $set('deadline', now()->addDays($days - 1)->toDateString());
+                                                }
+                                            }),
+
                                         DatePicker::make('tanggal_mulai')
                                             ->label('Tanggal Mulai')
                                             ->native(false)
                                             ->displayFormat('d M Y')
                                             ->required()
-                                            ->default(now()),
+                                            ->default(now())
+                                            ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
+                                            ->dehydrated(),
+
                                         DatePicker::make('deadline')
                                             ->label('Tenggat Waktu')
                                             ->native(false)
                                             ->displayFormat('d M Y')
-                                            ->minDate(fn (Get $get) => $get('tanggal_mulai')) // Validasi UX: Deadline tidak boleh sebelum tanggal mulai
-                                            ->required(),
+                                            ->minDate(fn (Get $get) => $get('tanggal_mulai'))
+                                            ->required()
+                                            ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
+                                            ->dehydrated(),
                                     ]),
                             ])
                             ->columnSpan(['lg' => 1]),
@@ -169,7 +238,9 @@ class PenjadwalanTugasResource extends BaseResource
             ->columns([
                 TextColumn::make('karyawan.name')
                     ->label('Karyawan')
-                    ->sortable()
+                    ->badge()
+                    ->separator(',')
+                    ->limitList(3)
                     ->searchable(),
                 TextColumn::make('judul')
                     ->label('Judul')
@@ -282,6 +353,8 @@ class PenjadwalanTugasResource extends BaseResource
                                         TextEntry::make('karyawan.name')
                                             ->label('Ditugaskan Ke')
                                             ->icon('heroicon-m-user-circle')
+                                            ->badge()
+                                            ->separator(',')
                                             ->weight(FontWeight::Medium),
 
                                         TextEntry::make('creator.name')

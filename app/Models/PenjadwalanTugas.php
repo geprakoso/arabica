@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PenjadwalanTugas extends Model
 {
     protected $fillable = [
-        'karyawan_id',
         'created_by',
         'judul',
         'deskripsi',
@@ -25,9 +24,9 @@ class PenjadwalanTugas extends Model
         'status' => StatusTugas::class,
     ];
 
-    public function karyawan(): BelongsTo
+    public function karyawan(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsTo(User::class, 'karyawan_id');
+        return $this->belongsToMany(User::class, 'penjadwalan_tugas_user');
     }
 
     public function creator(): BelongsTo

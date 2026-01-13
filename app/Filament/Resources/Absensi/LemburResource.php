@@ -230,7 +230,7 @@ class LemburResource extends BaseResource
                 Tables\Columns\ImageColumn::make('bukti')
                     ->label('Bukti')
                     ->square()
-                    ->defaultImageUrl(url('/images/placeholder.png')), // Optional
+                    ->defaultImageUrl(url('/images/icons/icon-48x48.png')),
 
                 TextColumn::make('user.name')
                     ->label('Karyawan')
