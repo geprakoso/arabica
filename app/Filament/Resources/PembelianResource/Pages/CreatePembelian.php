@@ -6,6 +6,7 @@ use App\Models\Pembelian;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\PembelianResource;
 
@@ -56,6 +57,10 @@ class CreatePembelian extends CreateRecord
             ->title('Pembelian baru dibuat')
             ->body("No.PO {$this->record->no_po} ditambahkan inventory.")
             ->icon('heroicon-o-check-circle')
+            ->actions([
+                Action::make('Lihat')
+                    ->url(PembelianResource::getUrl('edit', ['record' => $this->record])),
+            ])
             ->sendToDatabase($user);
     }
     protected function mutateFormDataBeforeCreate(array $data): array

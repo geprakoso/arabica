@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Validation\ValidationException;
 
 class Pembelian extends Model
 {
@@ -29,6 +30,26 @@ class Pembelian extends Model
         static::creating(function (Pembelian $pembelian): void {
             if (blank($pembelian->no_po)) {
                 $pembelian->no_po = self::generatePO();
+            }
+        });
+
+        static::deleting(function (Pembelian $pembelian): void {
+            $externalPenjualanNotas = $pembelian->items()
+                ->whereHas('penjualanItems')
+                ->with(['penjualanItems.penjualan'])
+                ->get()
+                ->flatMap(fn($item) => $item->penjualanItems)
+                ->map(fn($item) => $item->penjualan?->no_nota)
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($externalPenjualanNotas->isNotEmpty()) {
+                $notaList = $externalPenjualanNotas->implode(', ');
+
+                throw ValidationException::withMessages([
+                    'id_pembelian' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
+                ]);
             }
         });
     }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\StockAdjustmentResource\Pages;
 
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\StockAdjustmentResource;
 
@@ -22,6 +23,10 @@ class CreateStockAdjustment extends CreateRecord
             ->title('Stock Adjustment berhasil dibuat. Silakan tambah produk melalui tabel di bawah.')
             ->success()
             ->icon('heroicon-o-check-circle')
+            ->actions([
+                Action::make('Lihat')
+                    ->url(StockAdjustmentResource::getUrl('edit', ['record' => $this->record])),
+            ])
             ->sendToDatabase(Auth::user());
     }
 

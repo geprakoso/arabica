@@ -28,6 +28,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\Split;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\TextEntry;
 use App\Filament\Resources\TukarTambahResource\Pages;
@@ -35,8 +36,10 @@ use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Illuminate\Support\Collection;
 use App\Filament\Resources\TukarTambahResource\RelationManagers\PembelianRelationManager;
 use App\Filament\Resources\TukarTambahResource\RelationManagers\PenjualanRelationManager;
+use Illuminate\Validation\ValidationException;
 
 class TukarTambahResource extends BaseResource
 {
@@ -562,6 +565,49 @@ class TukarTambahResource extends BaseResource
                 \Filament\Tables\Actions\ViewAction::make(),
                 \Filament\Tables\Actions\EditAction::make(),
                 \Filament\Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                \Filament\Tables\Actions\BulkActionGroup::make([
+                    \Filament\Tables\Actions\BulkAction::make('delete')
+                        ->label('Hapus')
+                        ->icon('heroicon-m-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Tukar Tambah')
+                        ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
+                        ->action(function (Collection $records): void {
+                            $failed = [];
+                            $deleted = 0;
+
+                            foreach ($records as $record) {
+                                try {
+                                    $record->delete();
+                                    $deleted++;
+                                } catch (ValidationException $exception) {
+                                    $messages = collect($exception->errors())
+                                        ->flatten()
+                                        ->implode(' ');
+                                    $failed[] = trim($messages) ?: 'Gagal menghapus tukar tambah.';
+                                }
+                            }
+
+                            if (! empty($failed)) {
+                                Notification::make()
+                                    ->title('Sebagian gagal dihapus')
+                                    ->body(implode(' ', $failed))
+                                    ->danger()
+                                    ->send();
+                            }
+
+                            if ($deleted > 0) {
+                                Notification::make()
+                                    ->title('Tukar tambah dihapus')
+                                    ->body('Berhasil menghapus ' . $deleted . ' data.')
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
+                ]),
             ]);
     }
 

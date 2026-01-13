@@ -28,6 +28,9 @@ use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
+use Filament\Notifications\Notification;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
@@ -661,7 +664,45 @@ class PembelianResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('delete')
+                        ->label('Hapus')
+                        ->icon('heroicon-m-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Pembelian')
+                        ->modalDescription('Pembelian yang masih dipakai transaksi lain akan diblokir.')
+                        ->action(function (Collection $records): void {
+                            $failed = [];
+                            $deleted = 0;
+
+                            foreach ($records as $record) {
+                                try {
+                                    $record->delete();
+                                    $deleted++;
+                                } catch (ValidationException $exception) {
+                                    $messages = collect($exception->errors())
+                                        ->flatten()
+                                        ->implode(' ');
+                                    $failed[] = trim($messages) ?: 'Gagal menghapus pembelian.';
+                                }
+                            }
+
+                            if (! empty($failed)) {
+                                Notification::make()
+                                    ->title('Sebagian gagal dihapus')
+                                    ->body(implode(' ', $failed))
+                                    ->danger()
+                                    ->send();
+                            }
+
+                            if ($deleted > 0) {
+                                Notification::make()
+                                    ->title('Pembelian dihapus')
+                                    ->body('Berhasil menghapus ' . $deleted . ' data.')
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
                 ]),
             ]);
     }

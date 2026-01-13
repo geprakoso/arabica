@@ -6,6 +6,7 @@ use App\Filament\Resources\Absensi\AbsensiResource;
 use App\Models\Absensi;
 use Filament\Actions;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
@@ -76,7 +77,11 @@ class ListAbsensis extends ListRecords
                     $notification = Notification::make()
                         ->title('Berhasil absen pulang')
                         ->body('Jam pulang tercatat pada ' . $jamPulang->format('H:i'))
-                        ->success();
+                        ->success()
+                        ->actions([
+                            Action::make('Lihat')
+                                ->url(AbsensiResource::getUrl('edit', ['record' => $absensiHariIni])),
+                        ]);
 
                     $notification->send();
 

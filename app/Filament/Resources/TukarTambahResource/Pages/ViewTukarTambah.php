@@ -4,7 +4,9 @@ namespace App\Filament\Resources\TukarTambahResource\Pages;
 
 use App\Filament\Resources\TukarTambahResource;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Validation\ValidationException;
 
 class ViewTukarTambah extends ViewRecord
 {
@@ -22,6 +24,35 @@ class ViewTukarTambah extends ViewRecord
                 ->icon('heroicon-m-printer')
                 ->url(fn() => route('tukar-tambah.invoice', $this->record))
                 ->openUrlInNewTab(),
+            Action::make('delete')
+                ->label('Hapus')
+                ->icon('heroicon-m-trash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Hapus Tukar Tambah')
+                ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
+                ->action(function (): void {
+                    try {
+                        $this->record->delete();
+
+                        Notification::make()
+                            ->title('Tukar tambah dihapus')
+                            ->success()
+                            ->send();
+
+                        $this->redirect(TukarTambahResource::getUrl('index'));
+                    } catch (ValidationException $exception) {
+                        $messages = collect($exception->errors())
+                            ->flatten()
+                            ->implode(' ');
+
+                        Notification::make()
+                            ->title('Gagal menghapus')
+                            ->body($messages ?: 'Gagal menghapus tukar tambah.')
+                            ->danger()
+                            ->send();
+                    }
+                }),
         ];
     }
 }

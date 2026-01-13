@@ -12,6 +12,7 @@ use App\Models\PenjualanJasa;
 use App\Models\PenjualanPembayaran;
 use App\Models\TukarTambah;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -56,10 +57,6 @@ class CreateTukarTambah extends CreateRecord
                 'id_supplier' => $pembelianPayload['id_supplier'] ?? null,
                 'no_po' => $pembelianPayload['no_po'] ?? null,
                 'tipe_pembelian' => $pembelianPayload['tipe_pembelian'] ?? 'non_ppn',
-                'jenis_pembayaran' => $pembelianPayload['jenis_pembayaran'] ?? 'lunas',
-                'tgl_tempo' => ($pembelianPayload['jenis_pembayaran'] ?? 'lunas') === 'tempo'
-                    ? ($pembelianPayload['tgl_tempo'] ?? null)
-                    : null,
             ]);
 
             $this->createPenjualanItems($penjualan, $penjualanPayload['items'] ?? []);
@@ -93,6 +90,10 @@ class CreateTukarTambah extends CreateRecord
             ->title('Tukar tambah baru dibuat')
             ->body("Nota Penjualan: {$penjualanNota} • Nota Pembelian: {$pembelianNota}")
             ->icon('heroicon-o-check-circle')
+            ->actions([
+                Action::make('Lihat')
+                    ->url(TukarTambahResource::getUrl('view', ['record' => $this->record])),
+            ])
             ->sendToDatabase($user);
     }
 
