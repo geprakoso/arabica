@@ -62,6 +62,19 @@ Route::get('/penjualan/invoice/{penjualan}', function (\App\Models\Penjualan $pe
     ]);
 })->name('penjualan.invoice');
 
+Route::get('/penjualan/invoice-simple/{penjualan}', function (\App\Models\Penjualan $penjualan) {
+    return view('penjualan.invoice-simple', [
+        'penjualan' => $penjualan->load([
+            'items.produk',
+            'jasaItems.jasa',
+            'member',
+            'karyawan',
+            'pembayaran.akunTransaksi',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjualan.invoice.simple');
+
 Route::get('/penjadwalan-service/print/{record}', function (\App\Models\PenjadwalanService $record) {
     return view('filament.resources.penjadwalan-service.print', [
         'record' => $record->load(['member', 'technician', 'jasa']),

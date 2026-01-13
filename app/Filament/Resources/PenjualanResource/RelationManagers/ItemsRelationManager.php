@@ -117,7 +117,7 @@ class ItemsRelationManager extends RelationManager
             TextInput::make('harga_jual')
                 ->label('Harga Jual')
                 ->numeric()
-                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                 ->stripCharacters([',', '.', 'Rp', ' '])
                 ->minValue(0)
                 ->prefix('Rp ')

@@ -2,37 +2,38 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PenjualanResource\Pages;
-use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
-use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
+use Filament\Tables;
 use App\Models\Member;
-use App\Models\PembelianItem;
-use App\Models\Penjualan;
 use App\Models\Produk;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Form;
+use App\Models\Penjualan;
+use Filament\Tables\Table;
+use App\Models\PembelianItem;
+use Filament\Infolists\Infolist;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\Split;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\RichEditor;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use App\Filament\Resources\PenjualanResource\Pages;
 use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Infolists\Infolist;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
+use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
 
 class PenjualanResource extends BaseResource
 {
@@ -74,7 +75,7 @@ class PenjualanResource extends BaseResource
                             ->relationship('karyawan', 'nama_karyawan')
                             ->searchable()
                             ->preload()
-                            ->default(fn() => auth()->user()->karyawan?->id)
+                            ->default(fn() => Auth::user()->karyawan?->id)
                             ->required()
                             ->native(false),
                         Select::make('id_member')
@@ -271,6 +272,12 @@ class PenjualanResource extends BaseResource
                     ->icon('heroicon-m-printer')
                     ->color('primary')
                     ->url(fn(Penjualan $record) => route('penjualan.invoice', $record))
+                    ->openUrlInNewTab(),
+                Action::make('invoice_simple')
+                    ->label('Invoice Simple')
+                    ->icon('heroicon-m-document-text')
+                    ->color('gray')
+                    ->url(fn(Penjualan $record) => route('penjualan.invoice.simple', $record))
                     ->openUrlInNewTab(),
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make()

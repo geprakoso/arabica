@@ -2,40 +2,41 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\TukarTambahResource\Pages;
-use App\Filament\Resources\TukarTambahResource\RelationManagers\PembelianRelationManager;
-use App\Filament\Resources\TukarTambahResource\RelationManagers\PenjualanRelationManager;
-use App\Models\AkunTransaksi;
 use App\Models\Jasa;
 use App\Models\Member;
-use App\Models\PembelianItem;
-use App\Models\Pembelian;
-use App\Models\Penjualan;
-use App\Models\Supplier;
-use App\Models\TukarTambah;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use App\Models\Supplier;
+use Filament\Forms\Form;
+use App\Models\Pembelian;
+use App\Models\Penjualan;
+use Filament\Tables\Table;
+use App\Models\TukarTambah;
+use App\Models\AkunTransaksi;
+use App\Models\PembelianItem;
+use Filament\Infolists\Infolist;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Tabs;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Group;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\Split;
+use Filament\Forms\Components\DatePicker;
+use Filament\Infolists\Components\TextEntry;
+use App\Filament\Resources\TukarTambahResource\Pages;
 use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Infolist;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use App\Filament\Resources\TukarTambahResource\RelationManagers\PembelianRelationManager;
+use App\Filament\Resources\TukarTambahResource\RelationManagers\PenjualanRelationManager;
 
 class TukarTambahResource extends BaseResource
 {
@@ -83,7 +84,7 @@ class TukarTambahResource extends BaseResource
                                     ->relationship('karyawan', 'nama_karyawan')
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn() => auth()->user()?->karyawan?->id)
+                                    ->default(fn() => Auth::user()?->karyawan?->id)
                                     ->required()
                                     ->prefixIcon('heroicon-m-user')
                                     ->columnSpan(1),
@@ -144,7 +145,7 @@ class TukarTambahResource extends BaseResource
                                                             ->label('Sales')
                                                             ->relationship('karyawan', 'nama_karyawan')
                                                             ->preload()
-                                                            ->default(fn() => auth()->user()?->karyawan?->id)
+                                                            ->default(fn() => Auth::user()?->karyawan?->id)
                                                             ->searchable()
                                                             ->prefixIcon('heroicon-m-user-circle'),
                                                         TextInput::make('no_nota')
@@ -311,9 +312,14 @@ class TukarTambahResource extends BaseResource
                                                     ->schema([
                                                         Select::make('jasa_id')
                                                             ->label('Jasa')
+                                                            ->prefixIcon('hugeicons-tools')
                                                             ->options(fn() => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
                                                             ->searchable()
                                                             ->required()
+                                                            ->reactive()
+                                                            ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                                                $set('harga', $state ? (int) (Jasa::query()->find($state)?->harga ?? 0) : null);
+                                                            })
                                                             ->columnSpan(2),
                                                         TextInput::make('qty')
                                                             ->label('Jml')
@@ -326,9 +332,17 @@ class TukarTambahResource extends BaseResource
                                                             ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                                             ->required(),
                                                     ])
+                                                    ->colStyles([
+                                                        'jasa_id' => 'width: 50%;',
+                                                        'qty' => 'width: 10%;',
+                                                        'harga' => 'width: 40%;',
+                                                    ])
                                                     ->columns(4)
-                                                    ->defaultItems(0),
-                                            ]),
+                                                    ->defaultItems(0)
+                                                    ->collapsible()
+                                                    ->cloneable(),
+                                            ])
+                                            ->collapsible(),
 
                                         Section::make('Pembayaran')
                                             ->icon('heroicon-m-banknotes')
@@ -404,6 +418,9 @@ class TukarTambahResource extends BaseResource
                                                     ->createOptionUsing(fn(array $data): int => (int) Supplier::query()->create($data)->getKey()),
                                                 Select::make('id_karyawan')
                                                     ->label('Staff Gudang')
+                                                    ->relationship('karyawan', 'nama_karyawan')
+                                                    ->preload()
+                                                    ->default(fn() => Auth::user()->karyawan->id)
                                                     ->searchable()
                                                     ->prefixIcon('heroicon-m-user'),
                                                 TextInput::make('no_po')
