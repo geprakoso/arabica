@@ -13,6 +13,11 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
   - **Filter Periode**: Menambahkan filter rentang waktu (Hari Ini, Kemarin, 2 Hari Lalu, 3 Hari Lalu, Custom) di dalam menu filter tabel.
   - Memastikan integrasi ikon yang intuitif pada setiap tab filter.
 - **Dokumentasi**: Update panduan teknis upload gambar RichEditor (`docs/rich-editor-image-standard.md`) dengan kode yang terverifikasi.
+- **Fitur Edit Absensi (Admin)**:
+  - Mengaktifkan fitur **Edit** pada tabel Absensi khusus untuk role `super_admin` dan `admin`.
+  - **Modal Edit**: Menggunakan modal box (bukan halaman terpisah) untuk pengeditan cepat.
+  - **Field Fleksibel**: Memungkinkan pengubahan Tanggal, Jam Masuk, Jam Keluar, dan Keterangan.
+  - **Keamanan**: Menambahkan konfirmasi "Alasan Perubahan" yang wajib diisi dan proteksi `visible()` berbasis role.
 
 ## 2026.01.13
 ### Peningkatan UI/UX Lembur & Filter Absensi
