@@ -9,7 +9,7 @@
         @forelse($comments as $comment)
             <div class="flex gap-4">
                 <div class="flex-shrink-0">
-                    <img src="{{ $comment->user->getFilamentAvatarUrl() }}" class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700" alt="{{ $comment->user->name }}">
+                    <img src="{{ $comment->user->getFilamentAvatarUrl() ?? 'https://ui-avatars.com/api/?name=' . urlencode($comment->user->name) . '&color=7F9CF5&background=EBF4FF' }}" class="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700" alt="{{ $comment->user->name }}">
                 </div>
                 <div class="flex-1">
                     <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 relative">

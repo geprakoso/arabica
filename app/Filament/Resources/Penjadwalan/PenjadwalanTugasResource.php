@@ -148,66 +148,6 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->required()
                                             ->columnSpanFull(),
 
-                                        Select::make('durasi_pengerjaan')
-                                            ->label('Durasi')
-                                            ->options([
-                                                '1' => '1 Hari (Hari Ini)',
-                                                '2' => '2 Hari',
-                                                '3' => '3 Hari',
-                                                'custom' => 'Lainnya (Manual)',
-                                            ])
-                                            ->default('1')
-                                            ->required()
-                                            ->live()
-                                            ->afterStateHydrated(function ($component, $state, $record, $set) {
-                                                if (! $record) {
-                                                    return;
-                                                }
-
-                                                $start = $record->tanggal_mulai;
-                                                $end = $record->deadline;
-
-                                                if (! $start || ! $end) {
-                                                    $set('durasi_pengerjaan', 'custom');
-
-                                                    return;
-                                                }
-
-                                                $start = \Illuminate\Support\Carbon::parse($start);
-                                                $end = \Illuminate\Support\Carbon::parse($end);
-
-                                                $diff = $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
-                                                $isToday = $start->format('Y-m-d') === now()->format('Y-m-d');
-
-                                                if ($diff === 1 && $isToday) {
-                                                    $set('durasi_pengerjaan', '1');
-                                                } elseif ($diff === 2) {
-                                                    $set('durasi_pengerjaan', '2');
-                                                } elseif ($diff === 3) {
-                                                    $set('durasi_pengerjaan', '3');
-                                                } else {
-                                                    $set('durasi_pengerjaan', 'custom');
-                                                }
-                                            })
-                                            ->dehydrated(),
-
-                                        DatePicker::make('tanggal_mulai')
-                                            ->label('Tanggal Mulai')
-                                            ->native(false)
-                                            ->displayFormat('d M Y')
-                                            ->required()
-                                            ->default(now())
-                                            ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
-                                            ->dehydrated(),
-
-                                        DatePicker::make('deadline')
-                                            ->label('Tenggat Waktu')
-                                            ->native(false)
-                                            ->displayFormat('d M Y')
-                                            ->minDate(fn (Get $get) => $get('tanggal_mulai'))
-                                            ->required()
-                                            ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
-                                            ->dehydrated(),
                                     ]),
                             ])
                             ->columnSpan(['lg' => 2]),
@@ -291,7 +231,7 @@ class PenjadwalanTugasResource extends BaseResource
                                         Select::make('durasi_pengerjaan')
                                             ->label('Durasi')
                                             ->options([
-                                                '1' => '1 Hari (Hari Ini)',
+                                                '1' => '1 Hari',
                                                 '2' => '2 Hari',
                                                 '3' => '3 Hari',
                                                 'custom' => 'Lainnya (Manual)',
@@ -321,24 +261,24 @@ class PenjadwalanTugasResource extends BaseResource
                                                 // Using startOfDay to ignore time components
                                                 $diff = $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
 
-                                                // Robust Check: Start Date must be Today
-                                                $isToday = $start->format('Y-m-d') === now()->format('Y-m-d');
-
-                                                if (in_array($diff, [1, 2, 3]) && $isToday) {
+                                                if (in_array($diff, [1, 2, 3])) {
                                                     $set('durasi_pengerjaan', (string) $diff);
                                                 } else {
                                                     $set('durasi_pengerjaan', 'custom');
                                                 }
                                             })
-                                            ->afterStateUpdated(function ($state, \Filament\Forms\Set $set) {
+                                            ->afterStateUpdated(function ($state, \Filament\Forms\Set $set, \Filament\Forms\Get $get) {
                                                 if ($state === 'custom') {
                                                     return;
                                                 }
 
                                                 $days = (int) $state;
                                                 if ($days > 0) {
-                                                    $set('tanggal_mulai', now()->toDateString()); // Use Carbon instance or string
-                                                    $set('deadline', now()->addDays($days - 1)->toDateString());
+                                                    // Use existing Start Date or Default to Today
+                                                    $startDate = $get('tanggal_mulai') ? \Carbon\Carbon::parse($get('tanggal_mulai')) : now();
+                                                    
+                                                    $set('tanggal_mulai', $startDate->toDateString());
+                                                    $set('deadline', $startDate->copy()->addDays($days - 1)->toDateString());
                                                 }
                                             }),
 
@@ -349,6 +289,15 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->required()
                                             ->default(now())
                                             ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
+                                            ->afterStateUpdated(function ($state, \Filament\Forms\Set $set, \Filament\Forms\Get $get) {
+                                                 // When Start Date changes, re-calculate Deadline if using a preset
+                                                 $duration = $get('durasi_pengerjaan');
+                                                 if ($duration !== 'custom' && $state) {
+                                                     $days = (int) $duration;
+                                                     $startDate = \Carbon\Carbon::parse($state);
+                                                     $set('deadline', $startDate->addDays($days - 1)->toDateString());
+                                                 }
+                                            })
                                             ->dehydrated(),
 
                                         DatePicker::make('deadline')

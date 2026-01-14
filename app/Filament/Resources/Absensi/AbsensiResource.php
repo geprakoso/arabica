@@ -470,7 +470,7 @@ class AbsensiResource extends BaseResource
                                 $label .= Carbon::parse($from)->translatedFormat('d M Y');
                             }
                             if ($until) {
-                                $label .= ' s/d ' . Carbon::parse($until)->translatedFormat('d M Y');
+                                $label .= ' s/d '.Carbon::parse($until)->translatedFormat('d M Y');
                             }
 
                             return $label;
@@ -488,7 +488,7 @@ class AbsensiResource extends BaseResource
                         // unless we handle it explicitly.
                         // But here, let's just return the label.
 
-                        return isset($labels[$range]) ? 'Rentang Waktu: ' . $labels[$range] : null;
+                        return isset($labels[$range]) ? 'Rentang Waktu: '.$labels[$range] : null;
                     }),
                 SelectFilter::make('status')
                     ->options([
@@ -511,7 +511,40 @@ class AbsensiResource extends BaseResource
                         ->modalSubmitAction(false)
                         ->slideOver()
                         ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\EditAction::make()
+                        ->label('Edit')
+                        ->color('warning')
+                        ->modalHeading('Edit Absensi')
+                        ->modalDescription('Fitur ini memungkinkan perubahan data absensi secara manual. Pastikan data yang dimasukkan valid.')
+                        ->form([
+                            Forms\Components\DatePicker::make('tanggal')
+                                ->label('Tanggal Absen')
+                                ->required()
+                                ->native(false)
+                                ->displayFormat('d M Y'),
+
+                            Forms\Components\Grid::make(2)->schema([
+                                Forms\Components\TimePicker::make('jam_masuk')
+                                    ->label('Jam Masuk')
+                                    ->required()
+                                    ->default(now()->format('H:i'))
+                                    ->seconds(false),
+
+                                Forms\Components\TimePicker::make('jam_keluar')
+                                    ->label('Jam Pulang')
+                                    ->default(now()->format('H:i'))
+                                    ->seconds(false),
+                            ]),
+
+                            Forms\Components\Textarea::make('keterangan')
+                                ->label('Alasan Perubahan')
+                                ->helperText('Wajib diisi jika mengubah data jam/tanggal.')
+                                ->rows(3)
+                                ->columnSpanFull(),
+                        ])
+                        ->visible(fn () => auth()->user()->hasRole(['super_admin', 'admin']))
+                        ->requiresConfirmation()
+                        ->modalSubmitActionLabel('Simpan Perubahan'),
                     Tables\Actions\DeleteAction::make(),
                 ])
                     ->label('Aksi')
@@ -535,8 +568,6 @@ class AbsensiResource extends BaseResource
         return [
             'index' => Pages\ListAbsensis::route('/'),
             'create' => Pages\CreateAbsensi::route('/create'),
-
-            'edit' => Pages\EditAbsensi::route('/{record}/edit'),
         ];
     }
 }
