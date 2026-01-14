@@ -24,6 +24,12 @@ class ViewTukarTambah extends ViewRecord
                 ->icon('heroicon-m-printer')
                 ->url(fn() => route('tukar-tambah.invoice', $this->record))
                 ->openUrlInNewTab(),
+            Action::make('invoice_simple')
+                ->label('Invoice Simple')
+                ->icon('heroicon-m-document-text')
+                ->color('gray')
+                ->url(fn() => route('tukar-tambah.invoice.simple', $this->record))
+                ->openUrlInNewTab(),
             Action::make('delete')
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')

@@ -562,6 +562,12 @@ class TukarTambahResource extends BaseResource
                     ->color('primary')
                     ->url(fn(TukarTambah $record) => route('tukar-tambah.invoice', $record))
                     ->openUrlInNewTab(),
+                Action::make('invoice_simple')
+                    ->label('Invoice Simple')
+                    ->icon('heroicon-m-document-text')
+                    ->color('gray')
+                    ->url(fn(TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
+                    ->openUrlInNewTab(),
                 \Filament\Tables\Actions\ViewAction::make(),
                 \Filament\Tables\Actions\EditAction::make(),
                 \Filament\Tables\Actions\DeleteAction::make(),

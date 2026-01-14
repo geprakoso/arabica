@@ -98,6 +98,22 @@ Route::get('/tukar-tambah/invoice/{tukarTambah}', function (\App\Models\TukarTam
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('tukar-tambah.invoice');
+Route::get('/tukar-tambah/invoice-simple/{tukarTambah}', function (\App\Models\TukarTambah $tukarTambah) {
+    return view('tukar-tambah.invoice-simple', [
+        'tukarTambah' => $tukarTambah->load([
+            'karyawan',
+            'penjualan.items.produk',
+            'penjualan.jasaItems.jasa',
+            'penjualan.member',
+            'penjualan.karyawan',
+            'penjualan.pembayaran.akunTransaksi',
+            'pembelian.items.produk',
+            'pembelian.supplier',
+            'pembelian.karyawan',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('tukar-tambah.invoice.simple');
 Route::get('/penjadwalan-service/print-crosscheck/{record}', function (\App\Models\PenjadwalanService $record) {
     return view('filament.resources.penjadwalan-service.print-crosscheck', [
         'record' => $record->load(['member', 'technician', 'jasa', 'crosschecks', 'listAplikasis', 'listGames', 'listOs']),
