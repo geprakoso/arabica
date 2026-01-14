@@ -146,7 +146,10 @@ class PenjadwalanTugasResource extends BaseResource
                                         RichEditor::make('deskripsi')
                                             ->label('Deskripsi Tugas')
                                             ->required()
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                            ->fileAttachmentsDisk('public')
+                                            ->fileAttachmentsVisibility('public')
+                                            ->saveUploadedFileAttachmentsUsing(fn ($file) => \App\Services\ImageUploadService::processRichEditorUpload($file, 'task-attachments')),
 
                                     ]),
                             ])
@@ -276,7 +279,7 @@ class PenjadwalanTugasResource extends BaseResource
                                                 if ($days > 0) {
                                                     // Use existing Start Date or Default to Today
                                                     $startDate = $get('tanggal_mulai') ? \Carbon\Carbon::parse($get('tanggal_mulai')) : now();
-                                                    
+
                                                     $set('tanggal_mulai', $startDate->toDateString());
                                                     $set('deadline', $startDate->copy()->addDays($days - 1)->toDateString());
                                                 }
@@ -290,13 +293,13 @@ class PenjadwalanTugasResource extends BaseResource
                                             ->default(now())
                                             ->hidden(fn (Get $get) => $get('durasi_pengerjaan') !== 'custom')
                                             ->afterStateUpdated(function ($state, \Filament\Forms\Set $set, \Filament\Forms\Get $get) {
-                                                 // When Start Date changes, re-calculate Deadline if using a preset
-                                                 $duration = $get('durasi_pengerjaan');
-                                                 if ($duration !== 'custom' && $state) {
-                                                     $days = (int) $duration;
-                                                     $startDate = \Carbon\Carbon::parse($state);
-                                                     $set('deadline', $startDate->addDays($days - 1)->toDateString());
-                                                 }
+                                                // When Start Date changes, re-calculate Deadline if using a preset
+                                                $duration = $get('durasi_pengerjaan');
+                                                if ($duration !== 'custom' && $state) {
+                                                    $days = (int) $duration;
+                                                    $startDate = \Carbon\Carbon::parse($state);
+                                                    $set('deadline', $startDate->addDays($days - 1)->toDateString());
+                                                }
                                             })
                                             ->dehydrated(),
 
@@ -382,6 +385,109 @@ class PenjadwalanTugasResource extends BaseResource
                     }),
             ])
             ->filters([
+                \Filament\Tables\Filters\Filter::make('periode')
+                    ->form([
+                        FormsGrid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    'hari_ini' => 'Hari Ini',
+                                    'kemarin' => 'Kemarin',
+                                    '2_hari_lalu' => '2 Hari Lalu',
+                                    '3_hari_lalu' => '3 Hari Lalu',
+                                    'custom' => 'Custom',
+                                ])
+                                ->default('hari_ini')
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
+                    ])
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                        $range = $data['range'] ?? 'hari_ini';
+
+                        // Handle defaults cleanly
+                        if ($range === 'hari_ini') {
+                            return $query->whereDate('tanggal_mulai', now());
+                        }
+
+                        $startDate = null;
+                        $endDate = now();
+
+                        if ($range === 'custom') {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? null;
+
+                            return $query
+                                ->when(
+                                    $startDate,
+                                    fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal_mulai', '>=', $date),
+                                )
+                                ->when(
+                                    $endDate,
+                                    fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal_mulai', '<=', $date),
+                                );
+                        }
+
+                        // Strict single day filtering for presets
+                        $targetDate = match ($range) {
+                            'kemarin' => now()->subDay(),
+                            '2_hari_lalu' => now()->subDays(2),
+                            '3_hari_lalu' => now()->subDays(3),
+                            default => null,
+                        };
+
+                        return $query->when(
+                            $targetDate,
+                            fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal_mulai', $date)
+                        );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $range = $data['range'] ?? null;
+                        if (! $range) {
+                            return null;
+                        }
+
+                        if ($range === 'custom') {
+                            $from = $data['from'] ?? null;
+                            $until = $data['until'] ?? null;
+
+                            if (! $from && ! $until) {
+                                return null;
+                            }
+
+                            $label = 'Rentang Waktu: ';
+                            if ($from) {
+                                $label .= \Carbon\Carbon::parse($from)->translatedFormat('d M Y');
+                            }
+                            if ($until) {
+                                $label .= ' s/d '.\Carbon\Carbon::parse($until)->translatedFormat('d M Y');
+                            }
+
+                            return $label;
+                        }
+
+                        $labels = [
+                            'hari_ini' => 'Hari Ini',
+                            'kemarin' => 'Kemarin',
+                            '2_hari_lalu' => '2 Hari Lalu',
+                            '3_hari_lalu' => '3 Hari Lalu',
+                        ];
+
+                        return isset($labels[$range]) ? 'Rentang Waktu: '.$labels[$range] : null;
+                    }),
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(StatusTugas::class),
