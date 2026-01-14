@@ -2,6 +2,23 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.14
+### Perbaikan & Peningkatan Penjadwalan Tugas
+- **Optimasi Upload Gambar RichEditor**:
+  - Memperbaiki error `BadMethodCallException` pada upload gambar di deskripsi tugas.
+  - Mengimplementasikan standarisasi upload: Resize otomatis ke **1080p**, konversi ke **WebP**, dan kompresi **80% quality**.
+  - Menyimpan file secara terpusat di disk `public`.
+- **Filter Canggih Penjadwalan Tugas**:
+  - **Tab Status Filter**: Menambahkan tab navigasi cepat untuk memfilter tugas berdasarkan status: **Proses** (termasuk Pending), **Selesai**, **Batal**, dan **Semua**.
+  - **Filter Periode**: Menambahkan filter rentang waktu (Hari Ini, Kemarin, 2 Hari Lalu, 3 Hari Lalu, Custom) di dalam menu filter tabel.
+  - Memastikan integrasi ikon yang intuitif pada setiap tab filter.
+- **Dokumentasi**: Update panduan teknis upload gambar RichEditor (`docs/rich-editor-image-standard.md`) dengan kode yang terverifikasi.
+- **Fitur Edit Absensi (Admin)**:
+  - Mengaktifkan fitur **Edit** pada tabel Absensi khusus untuk role `super_admin` dan `admin`.
+  - **Modal Edit**: Menggunakan modal box (bukan halaman terpisah) untuk pengeditan cepat.
+  - **Field Fleksibel**: Memungkinkan pengubahan Tanggal, Jam Masuk, Jam Keluar, dan Keterangan.
+  - **Keamanan**: Menambahkan konfirmasi "Alasan Perubahan" yang wajib diisi dan proteksi `visible()` berbasis role.
+
 ## 2026.01.13
 ### Peningkatan UI/UX Lembur & Filter Absensi
 - **Redesign UI Lembur (`LemburResource`)**:
