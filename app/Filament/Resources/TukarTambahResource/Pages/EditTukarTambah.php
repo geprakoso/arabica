@@ -66,6 +66,11 @@ class EditTukarTambah extends EditRecord
         ];
     }
 
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $record = $this->record->load([

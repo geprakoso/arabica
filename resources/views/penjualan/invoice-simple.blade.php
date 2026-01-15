@@ -135,8 +135,8 @@
     <title>Invoice {{ $penjualan->no_nota }}</title>
     <style>
         @page {
-            size: A4;
-            margin: 6mm 12mm 12mm;
+            size: 241mm 137mm;
+            margin: 2mm 3mm;
         }
 
         * {
@@ -147,28 +147,31 @@
             margin: 0;
             padding: 0;
             font-family: Arial, "Helvetica Neue", sans-serif;
-            font-size: 12px;
+            font-size: 13px;
+            line-height: 1.2;
             color: #111111;
             background-color: #ffffff;
         }
 
-        .page {
-            max-width: 200mm;
-            margin: 4mm auto;
+        .invoice {
+            width: 241mm;
+            height: 135mm;
+            padding: 0 1mm;
+            /* overflow: hidden; */
         }
 
         .top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .brand {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
+            font-size: 14px;
             color: #000000;
             max-width: 60%;
         }
@@ -188,17 +191,17 @@
         */
 
         .brand-text p {
-            margin: 2px 0;
+            margin: 1px 0;
         }
 
         .header-meta {
             text-align: right;
-            font-size: 12px;
+            font-size: 13px;
             color: #111111;
         }
 
         .qr {
-            margin-top: 12px;
+            margin-top: 6px;
             align-items: end;
         }
 
@@ -208,72 +211,72 @@
         }
 
         .divider {
-            margin: -2px 0 14px;
+            margin: -1px 0 4px;
             border-top: 1px dashed #111111;
         }
 
         .title {
             font-size: 24px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .subtitle {
             font-size: 13px;
             color: #111111;
-            margin-bottom: 28px;
+            margin-bottom: 12px;
         }
 
 
         .info-grid {
             display: grid;
-            margin-top: -15px;
-            padding: 2px;
+            margin-top: -6px;
+            padding: 0;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px;
-            font-size: 12px;
+            gap: 4px;
+            font-size: 13px;
 
         }
 
         .info-block h4 {
-            font-size: 11px;
+            font-size: 12px;
             letter-spacing: 1.5px;
-            margin: 0 0 10px;
+            margin: 0 0 6px;
             text-transform: uppercase;
             color: #111111;
         }
 
         .info-block p {
-            margin: 4px 0;
+            margin: 2px 0;
             color: #111111;
-            line-height: 1.5;
+            line-height: 1.2;
         }
 
         .info-block.pelanggan p,
         .info-block.metode p {
-            line-height: 1;
-            margin-top: 2px;
+            line-height: 1.1;
+            margin-top: 1px;
         }
 
         .table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-            margin-top: -8px;
+            font-size: 13px;
+            margin-top: -4px;
         }
 
         .table th {
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 12px;
             text-align: left;
-            padding: 10px 0;
+            padding: 6px 0;
             border-bottom: 1px dashed #111111;
         }
 
         .table td {
-            padding: 3px 1px;
+            padding: 2px 1px;
             line-height: 1.1;
             /* border-bottom: 1px dashed #111111; */
         }
@@ -290,12 +293,12 @@
 
 
         .summary-divider {
-            margin-top: 6px;
+            margin-top: 4px;
             border-top: 1px dashed #111111;
         }
 
         .summary {
-            margin-top: 4px;
+            margin-top: 2px;
             display: flex;
             justify-content: flex-end;
         }
@@ -322,7 +325,7 @@
         }
 
         .signature {
-            margin-top: 24px;
+            margin-top: 16px;
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
@@ -333,9 +336,9 @@
 
         .notice {
             max-width: 400px;
-            font-size: 10px;
+            font-size: 11px;
             color: #111111;
-            line-height: 1;
+            line-height: 1.1;
         }
 
         .signature .qr {
@@ -344,23 +347,26 @@
         }
 
         .notice p {
-            margin: 0 0 4px;
+            margin: 0 0 2px;
         }
 
         .notice .notice-title {
-            margin-top: 6px;
+            margin-top: 4px;
             font-weight: 700;
             color: #111111;
         }
 
         @media print {
             body {
-                font-size: 12px;
+                font-size: 14px;
                 color: #000000;
             }
 
-            .page {
-                max-width: 245mm;
+            .invoice {
+                width: 241mm;
+                height: 137mm;
+                padding: 1mm;
+                overflow: hidden;
             }
 
             .brand,
@@ -369,11 +375,11 @@
             }
 
             .brand-text p {
-                font-size: 10px;
+                font-size: 11px;
             }
 
             .brand-text p:first-child {
-                font-size: 14px;
+                font-size: 15px;
             }
 
             .divider,
@@ -386,7 +392,7 @@
 </head>
 
 <body>
-    <div class="page">
+    <div class="invoice">
         <div class="top">
             <div class="brand">
                 {{--

@@ -424,7 +424,7 @@ class TukarTambahResource extends BaseResource
                                                             ->label('Staff Gudang')
                                                             ->relationship('karyawan', 'nama_karyawan')
                                                             ->preload()
-                                                            ->default(fn() => Auth::user()->karyawan->id)
+                                                            ->default(fn() => Auth::user()?->karyawan?->id)
                                                             ->searchable()
                                                             ->prefixIcon('heroicon-m-user'),
                                                         TextInput::make('no_po')
