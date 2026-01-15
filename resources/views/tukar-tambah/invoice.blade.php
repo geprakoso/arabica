@@ -147,10 +147,14 @@
         }
 
         .section-title {
-            font-size: 18px;
+            display: inline-block;
+            font-size: 15px;
             font-weight: 700;
+            background-color: #1d4ed8;
+            border-radius: 10px;
+            padding: 8px 15px 8px 15px;
             margin: 24px 40px 8px;
-            color: #0f172a;
+            color: #ffffff;
         }
 
         table {
@@ -376,8 +380,8 @@
                 <div class="badge">Invoice Tukar Tambah</div>
                 <div>No. Nota: <strong>{{ $tukarTambah->no_nota ?? '-' }}</strong></div>
                 <div>Tanggal: {{ optional($tukarTambah->tanggal)->format('d F Y') ?? '-' }}</div>
-                <div>Nota Penjualan: {{ $penjualan?->no_nota ?? '-' }}</div>
-                <div>Nota Pembelian: {{ $pembelian?->no_po ?? '-' }}</div>
+                {{-- <div>Nota Penjualan: {{ $penjualan?->no_nota ?? '-' }}</div>
+                <div>Nota Pembelian: {{ $pembelian?->no_po ?? '-' }}</div> --}}
             </div>
         </header>
 
@@ -420,7 +424,7 @@
                 <tr>
                     <th>Produk</th>
                     <th class="text-right">Qty</th>
-                    <th class="text-right">Harga Jual</th>
+                    <th class="text-right">Harga Beli</th>
                     <th class="text-right">Subtotal</th>
                 </tr>
             </thead>
@@ -440,10 +444,6 @@
                     </tr>
                 @endforelse
             </tbody>
-        </table>
-
-        <div class="section-title">Jasa</div>
-        <table>
             <thead>
                 <tr>
                     <th>Jasa</th>
@@ -469,6 +469,10 @@
                 @endforelse
             </tbody>
         </table>
+
+        {{-- <div class="section-title">Jasa</div>
+        <table>
+        </table> --}}
 
         <div class="section-title">Barang Dijual</div>
         <table>

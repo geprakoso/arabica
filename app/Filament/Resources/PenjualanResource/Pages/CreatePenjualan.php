@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 
 class CreatePenjualan extends CreateRecord
 {
@@ -35,6 +36,10 @@ class CreatePenjualan extends CreateRecord
             ->title('Penjualan baru dibuat')
             ->body("No. Nota {$this->record->no_nota} siap ditambahkan produk.")
             ->icon('heroicon-o-check-circle')
+            ->actions([
+                Action::make('Lihat')
+                    ->url(PenjualanResource::getUrl('edit', ['record' => $this->record])),
+            ])
             ->sendToDatabase($user);
     }
 

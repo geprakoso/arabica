@@ -59,6 +59,22 @@ class ItemsRelationManager extends RelationManager
                 ->options(fn(Get $get): array => $this->getConditionOptions((int) ($get('id_produk') ?? 0)))
                 ->native(false)
                 ->reactive()
+                ->disabled(function (Get $get, string $operation): bool {
+                    $options = $this->getConditionOptions((int) ($get('id_produk') ?? 0));
+
+                    return $operation === 'edit' || count($options) <= 1;
+                })
+                ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
+                    if ($state) {
+                        return;
+                    }
+
+                    $options = $this->getConditionOptions((int) ($get('id_produk') ?? 0));
+
+                    if (count($options) === 1) {
+                        $set('kondisi', array_key_first($options));
+                    }
+                })
                 ->placeholder(function (Get $get): string {
                     $options = $this->getConditionOptions((int) ($get('id_produk') ?? 0));
 
@@ -76,13 +92,23 @@ class ItemsRelationManager extends RelationManager
                     $productId = (int) ($get('id_produk') ?? 0);
                     $set('harga_jual', $this->getDefaultPriceForProduct($productId, $state));
                 })
-                ->disabledOn(['edit'])
                 ->nullable(),
             TextInput::make('qty')
                 ->label('Qty')
                 ->numeric()
                 ->minValue(1)
                 ->required()
+                ->helperText(function (Get $get): string {
+                    $productId = (int) ($get('id_produk') ?? 0);
+
+                    if ($productId < 1) {
+                        return 'Pilih produk terlebih dahulu.';
+                    }
+
+                    $available = self::getAvailableQty($productId, $get('kondisi'));
+
+                    return 'Stok tersedia: ' . number_format($available, 0, ',', '.');
+                })
                 ->reactive()
                 ->afterStateUpdated(function (Set $set, Get $get, ?int $state): void {
                     $qty = (int) ($state ?? 0);
@@ -91,7 +117,7 @@ class ItemsRelationManager extends RelationManager
             TextInput::make('harga_jual')
                 ->label('Harga Jual')
                 ->numeric()
-                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2)
+                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                 ->stripCharacters([',', '.', 'Rp', ' '])
                 ->minValue(0)
                 ->prefix('Rp ')
@@ -166,13 +192,15 @@ class ItemsRelationManager extends RelationManager
                     ->placeholder('-'),
                 TextColumn::make('qty')
                     ->label('Qty')
-                    ->numeric(),
+                    ->numeric()
+                    ->extraAttributes(['style' => 'width: 80px;']),
                 TextColumn::make('harga_jual')
                     ->label('Harga Jual')
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format((int) ($state ?? 0), 0, ',', '.')),
                 TextColumn::make('kondisi')
                     ->label('Kondisi')
-                    ->badge(),
+                    ->badge()
+                    ->extraAttributes(['style' => 'width: 100px;']),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
@@ -336,6 +364,26 @@ class ItemsRelationManager extends RelationManager
         $batch = $this->getOldestAvailableBatch($productId, $condition);
 
         return $batch?->harga_jual;
+    }
+
+    protected function getAvailableQty(int $productId, ?string $condition): int
+    {
+        if ($productId < 1) {
+            return 0;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        $query = PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0);
+
+        if ($condition) {
+            $query->where('kondisi', $condition);
+        }
+
+        return $query->sum($qtyColumn);
     }
 
     protected function getOldestAvailableBatch(int $productId, ?string $condition = null): ?PembelianItem

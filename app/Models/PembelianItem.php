@@ -29,6 +29,17 @@ class PembelianItem extends Model
         'kondisi',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (PembelianItem $item): void {
+            $item->pembelian?->recalculatePaymentStatus();
+        });
+
+        static::deleted(function (PembelianItem $item): void {
+            $item->pembelian?->recalculatePaymentStatus();
+        });
+    }
+
     public function pembelian()
     {
         return $this->belongsTo(Pembelian::class, 'id_pembelian', 'id_pembelian');
