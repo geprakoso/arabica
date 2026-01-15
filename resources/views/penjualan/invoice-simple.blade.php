@@ -161,10 +161,12 @@
 
         .invoice {
             width: 241mm;
-            height: 135mm;
-            padding: 0 1mm;
+            height: 137mm;
+            /* padding: 0 1mm; */
+
             /* overflow: hidden; */
         }
+
 
         .top {
             display: flex;
@@ -387,8 +389,11 @@
             .invoice {
                 width: 241mm;
                 height: 137mm;
-                padding: 1mm;
-                overflow: hidden;
+                padding-top: 2mm;
+                /* margin-top: 2mm;
+                /* padding-right: 2mm; */
+                */
+                /* overflow: hidden; */
             }
 
             .brand,

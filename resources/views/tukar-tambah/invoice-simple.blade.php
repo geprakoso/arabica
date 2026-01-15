@@ -174,17 +174,19 @@
 
         .invoice {
             width: 241mm;
-            height: 135mm;
-            padding: 1mm;
+            height: 137mm;
+            /* padding: 10mm; */
+
             /* overflow: hidden; */
         }
+
 
         @media print {
             .invoice {
                 width: 241mm;
                 height: 137mm;
-                padding: 1mm;
-                overflow: hidden;
+                padding-top: 2mm;
+                /* overflow: hidden; */
             }
         }
 
