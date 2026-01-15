@@ -13,7 +13,7 @@ use App\Models\Penjualan;
 use App\Models\Supplier;
 use App\Models\TukarTambah;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -82,16 +82,24 @@ class TukarTambahResource extends BaseResource
                             ->required()
                             ->native(false)
                             ->prefixIcon('heroicon-o-user')
-                            ->helperText('Karyawan yang menangani transaksi ini'),
-                        Textarea::make('catatan')
-                            ->label('Catatan')
-                            ->rows(3)
-                            ->nullable()
-                            ->columnSpanFull()
-                            ->placeholder('Tambahkan catatan atau keterangan khusus untuk transaksi ini...')
-                            ->helperText('Catatan bersifat opsional'),
+                            ->helperText('Karyawan yang menangani transaksi ini')
+                            ->columnSpanFull(),
+                        Section::make()
+                            ->heading('📝 Catatan Tambahan')
+                            ->schema([
+                                Textarea::make('catatan')
+                                    ->label('Catatan')
+                                    ->rows(3)
+                                    ->nullable()
+                                    ->placeholder('Tambahkan catatan atau keterangan khusus untuk transaksi ini...')
+                                    ->helperText('Catatan bersifat opsional'),
+                            ])
+                            ->collapsible()
+                            ->collapsed(true)
+                            ->compact()
+                            ->columnSpanFull(),
                     ])
-                    ->columns(3)
+                    ->columns(2)
                     ->collapsible(),
                 Tabs::make('Transaksi')
                     ->tabs([
@@ -126,14 +134,91 @@ class TukarTambahResource extends BaseResource
                                             ->nullable()
                                             ->native(false)
                                             ->prefixIcon('heroicon-o-user'),
-                                        Textarea::make('catatan')
-                                            ->label('Catatan')
-                                            ->rows(2)
-                                            ->nullable()
-                                            ->columnSpanFull()
-                                            ->placeholder('Catatan tambahan untuk penjualan ini...'),
+                                        Section::make()
+                                            ->heading('📝 Catatan')
+                                            ->schema([
+                                                Textarea::make('catatan')
+                                                    ->label('Catatan Penjualan')
+                                                    ->rows(2)
+                                                    ->nullable()
+                                                    ->placeholder('Catatan tambahan untuk penjualan ini...'),
+                                            ])
+                                            ->collapsible()
+                                            ->collapsed(true)
+                                            ->compact()
+                                            ->columnSpanFull(),
                                     ])
-                                    ->columns(3)
+                                    ->columns(2)
+                                    ->collapsible(),
+                                Section::make('Produk yang Dijual')
+                                    ->description('Daftar produk/barang baru yang dijual kepada pelanggan')
+                                    ->icon('heroicon-o-cube')
+                                    ->schema([
+                                        TableRepeater::make('items')
+                                            ->label('')
+                                            ->minItems(1)
+                                            ->addActionLabel('+ Tambah Produk')
+                                            ->schema([
+                                                Select::make('id_produk')
+                                                    ->label('Produk')
+                                                    ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
+                                                    ->searchable()
+                                                    ->placeholder('Pilih Produk')
+                                                    ->preload()
+                                                    ->required()
+                                                    ->native(false),
+                                                Select::make('kondisi')
+                                                    ->label('Kondisi')
+                                                    ->options([
+                                                        'baru' => 'Baru',
+                                                        'bekas' => 'Bekas',
+                                                    ])
+                                                    ->native(false)
+                                                    ->placeholder('Pilih Kondisi')
+                                                    ->nullable(),
+                                                TextInput::make('qty')
+                                                    ->label('Qty')
+                                                    ->numeric()
+                                                    ->minValue(1)
+                                                    ->default(1)
+                                                    ->required(),
+                                                TextInput::make('harga_jual')
+                                                    ->label('Harga Jual')
+                                                    ->numeric()
+                                                    ->prefix('Rp')
+                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->minValue(0)
+                                                    ->nullable(),
+                                                Repeater::make('serials')
+                                                    ->label('Serial Number & Garansi')
+                                                    ->schema([
+                                                        TextInput::make('sn')
+                                                            ->label('Serial Number')
+                                                            ->placeholder('Masukkan nomor seri')
+                                                            ->maxLength(255)
+                                                            ->columnSpan(1),
+                                                        TextInput::make('garansi')
+                                                            ->label('Garansi')
+                                                            ->placeholder('Contoh: 1 Tahun, 6 Bulan, dst.')
+                                                            ->maxLength(255)
+                                                            ->columnSpan(1),
+                                                    ])
+                                                    ->columns(2)
+                                                    ->defaultItems(0)
+                                                    ->maxItems(1)
+                                                    ->addActionLabel('+ Tambah Serial Number')
+                                                    ->collapsible()
+                                                    ->deletable(false)
+                                                    ->collapsed()
+                                                    ->itemLabel(fn (array $state): ?string => $state['sn'] ?? 'Serial Number')
+                                                    ->reorderableWithButtons(false)
+                                                    ->reorderable(false)
+                                                    ->columnSpanFull(),
+                                            ])
+                                            ->columns(2)
+                                            ->reorderableWithButtons(false)
+                                            ->reorderable(false),
+                                    ])
                                     ->collapsible(),
                                 Section::make('Diskon & Pembayaran')
                                     ->description('Informasi diskon dan metode pembayaran (bisa split payment)')
@@ -160,6 +245,7 @@ class TukarTambahResource extends BaseResource
                                                         'transfer' => 'Transfer',
                                                     ])
                                                     ->native(false)
+                                                    ->placeholder('Pilih Pembayaran')
                                                     ->required()
                                                     ->reactive(),
                                                 Select::make('akun_transaksi_id')
@@ -170,6 +256,7 @@ class TukarTambahResource extends BaseResource
                                                         ->pluck('nama_akun', 'id')
                                                         ->all())
                                                     ->searchable()
+                                                    ->placeholder('Pilih Akun')
                                                     ->preload()
                                                     ->native(false)
                                                     ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
@@ -184,63 +271,12 @@ class TukarTambahResource extends BaseResource
                                                     ->maxLength(255)
                                                     ->nullable(),
                                             ])
-                                            ->columns(4),
+                                            ->columns(4)
+                                            ->reorderable(false)
+                                            ->columnSpanFull(),
                                     ])
-                                    ->collapsible(),
-                                Section::make('Produk yang Dijual')
-                                    ->description('Daftar produk/barang baru yang dijual kepada pelanggan')
-                                    ->icon('heroicon-o-cube')
-                                    ->schema([
-                                        TableRepeater::make('items')
-                                            ->label('')
-                                            ->minItems(1)
-                                            ->addActionLabel('+ Tambah Produk')
-                                            ->schema([
-                                                Select::make('id_produk')
-                                                    ->label('Produk')
-                                                    ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->required()
-                                                    ->native(false),
-                                                Select::make('kondisi')
-                                                    ->label('Kondisi')
-                                                    ->options([
-                                                        'baru' => 'Baru',
-                                                        'bekas' => 'Bekas',
-                                                    ])
-                                                    ->native(false)
-                                                    ->nullable(),
-                                                TextInput::make('qty')
-                                                    ->label('Qty')
-                                                    ->numeric()
-                                                    ->minValue(1)
-                                                    ->default(1)
-                                                    ->required(),
-                                                TextInput::make('harga_jual')
-                                                    ->label('Harga Jual')
-                                                    ->numeric()
-                                                    ->prefix('Rp')
-                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->minValue(0)
-                                                    ->nullable(),
-                                                TableRepeater::make('serials')
-                                                    ->label('SN & Garansi')
-                                                    ->addActionLabel('Tambah SN')
-                                                    ->schema([
-                                                        TextInput::make('sn')
-                                                            ->label('SN')
-                                                            ->maxLength(255),
-                                                        TextInput::make('garansi')
-                                                            ->label('Garansi')
-                                                            ->maxLength(255),
-                                                    ])
-                                                    ->columns(2)
-                                                    ->defaultItems(0),
-                                            ])
-                                            ->columns(2),
-                                    ])
-                                    ->collapsible(),
+                                    ->collapsible()
+                                    ->collapsed(true),
                                 Section::make('Jasa Tambahan')
                                     ->description('Jasa atau layanan yang ditambahkan dalam penjualan (opsional)')
                                     ->icon('heroicon-o-wrench-screwdriver')
@@ -255,8 +291,18 @@ class TukarTambahResource extends BaseResource
                                                     ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
                                                     ->searchable()
                                                     ->preload()
+                                                    ->placeholder('Pilih Jasa')
                                                     ->required()
-                                                    ->native(false),
+                                                    ->native(false)
+                                                    ->reactive()
+                                                    ->afterStateUpdated(function ($state, callable $set) {
+                                                        if ($state) {
+                                                            $jasa = Jasa::find($state);
+                                                            if ($jasa) {
+                                                                $set('harga', $jasa->harga);
+                                                            }
+                                                        }
+                                                    }),
                                                 TextInput::make('qty')
                                                     ->label('Qty')
                                                     ->numeric()
@@ -272,38 +318,65 @@ class TukarTambahResource extends BaseResource
                                                     ->required(),
                                                 Textarea::make('catatan')
                                                     ->label('Catatan')
-                                                    ->rows(2)
+                                                    ->rows(1)
                                                     ->nullable(),
                                             ])
                                             ->columns(2),
                                     ])
-                                    ->collapsible(),
+                                    ->collapsible()
+                                    ->collapsed(true),
                             ])
                             ->statePath('penjualan'),
                         Tab::make('Pembelian')
+                            ->icon('heroicon-o-shopping-bag')
                             ->schema([
-                                Group::make()
+                                Section::make('Informasi Pembelian')
+                                    ->description('Data pembelian barang bekas dari pelanggan')
+                                    ->icon('heroicon-o-document-text')
                                     ->schema([
                                         TextInput::make('no_po')
                                             ->label('No. PO')
                                             ->default(fn () => Pembelian::generatePO())
                                             ->disabled()
                                             ->dehydrated()
-                                            ->required(),
+                                            ->required()
+                                            ->prefixIcon('heroicon-o-hashtag'),
                                         Select::make('id_supplier')
                                             ->label('Supplier')
                                             ->options(fn () => Supplier::query()->orderBy('nama_supplier')->pluck('nama_supplier', 'id')->all())
                                             ->searchable()
                                             ->preload()
                                             ->nullable()
-                                            ->native(false),
+                                            ->native(false)
+                                            ->prefixIcon('heroicon-o-building-storefront'),
                                         Select::make('id_karyawan')
                                             ->label('Karyawan Pembelian')
                                             ->options(fn () => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
                                             ->searchable()
                                             ->preload()
                                             ->nullable()
-                                            ->native(false),
+                                            ->native(false)
+                                            ->prefixIcon('heroicon-o-user'),
+                                        Section::make()
+                                            ->heading('📝 Catatan')
+                                            ->schema([
+                                                Textarea::make('catatan')
+                                                    ->label('Catatan Pembelian')
+                                                    ->rows(2)
+                                                    ->nullable()
+                                                    ->placeholder('Catatan tambahan untuk pembelian ini...'),
+                                            ])
+                                            ->collapsible()
+                                            ->collapsed(true)
+                                            ->compact()
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->columns(2)
+                                    ->collapsible(),
+                                Section::make('Pengaturan Pembayaran')
+                                    ->description('Pajak dan metode pembayaran')
+                                    ->icon('heroicon-o-banknotes')
+                                    ->schema([
                                         Select::make('tipe_pembelian')
                                             ->label('Pajak')
                                             ->options([
@@ -311,7 +384,8 @@ class TukarTambahResource extends BaseResource
                                                 'ppn' => 'PPN (11%)',
                                             ])
                                             ->default('non_ppn')
-                                            ->native(false),
+                                            ->native(false)
+                                            ->prefixIcon('heroicon-o-receipt-percent'),
                                         Select::make('jenis_pembayaran')
                                             ->label('Metode Bayar')
                                             ->options([
@@ -320,21 +394,27 @@ class TukarTambahResource extends BaseResource
                                             ])
                                             ->default('lunas')
                                             ->native(false)
-                                            ->reactive(),
+                                            ->reactive()
+                                            ->prefixIcon('heroicon-o-credit-card'),
                                         DatePicker::make('tgl_tempo')
                                             ->label('Tanggal Tempo')
                                             ->native(false)
                                             ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                            ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo'),
-                                        Textarea::make('catatan')
-                                            ->label('Catatan Pembelian')
-                                            ->rows(2)
-                                            ->nullable()
+                                            ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
+                                            ->prefixIcon('heroicon-o-calendar')
                                             ->columnSpanFull(),
+                                    ])
+                                    ->columns(2)
+                                    ->collapsible()
+                                    ->collapsed(true),
+                                Section::make('Produk Pembelian')
+                                    ->description('Daftar produk yang dibeli')
+                                    ->icon('heroicon-o-cube')
+                                    ->schema([
                                         TableRepeater::make('items')
-                                            ->label('Produk Pembelian')
+                                            ->label('')
                                             ->minItems(1)
-                                            ->addActionLabel('Tambah Produk')
+                                            ->addActionLabel('+ Tambah Produk')
                                             ->schema([
                                                 Select::make('id_produk')
                                                     ->label('Produk')
@@ -375,7 +455,7 @@ class TukarTambahResource extends BaseResource
                                             ])
                                             ->columns(2),
                                     ])
-                                    ->columns(2),
+                                    ->collapsible(),
                             ])
                             ->statePath('pembelian'),
                     ])
