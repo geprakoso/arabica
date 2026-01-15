@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TukarTambah extends Model
 {
@@ -31,6 +33,41 @@ class TukarTambah extends Model
             if (blank($tukarTambah->no_nota)) {
                 $tukarTambah->no_nota = self::generateNoNota();
             }
+        });
+
+        static::deleting(function (TukarTambah $tukarTambah): void {
+            DB::transaction(function () use ($tukarTambah): void {
+                $penjualanId = $tukarTambah->penjualan_id;
+                $pembelian = $tukarTambah->pembelian;
+
+                if ($pembelian) {
+                    $externalPenjualanNotas = $pembelian->items()
+                        ->whereHas('penjualanItems', function ($query) use ($penjualanId): void {
+                            if ($penjualanId) {
+                                $query->where('id_penjualan', '!=', $penjualanId);
+                            }
+                        })
+                        ->with(['penjualanItems.penjualan'])
+                        ->get()
+                        ->flatMap(fn($item) => $item->penjualanItems)
+                        ->filter(fn($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
+                        ->map(fn($item) => $item->penjualan?->no_nota)
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    if ($externalPenjualanNotas->isNotEmpty()) {
+                        $notaList = $externalPenjualanNotas->implode(', ');
+
+                        throw ValidationException::withMessages([
+                            'pembelian_id' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
+                        ]);
+                    }
+                }
+
+                $tukarTambah->penjualan?->delete();
+                $tukarTambah->pembelian?->delete();
+            });
         });
     }
 

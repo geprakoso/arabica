@@ -6,6 +6,7 @@ use App\Filament\Resources\MasterData\SupplierResource;
 use App\Models\User;
 use Filament\Actions;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateSupplier extends CreateRecord
@@ -22,6 +23,10 @@ class CreateSupplier extends CreateRecord
             ->title('Supplier Baru')
             ->body("Supplier **{$supplier->nama_supplier}** siap untuk transaksi.")
             ->info()
+            ->actions([
+                Action::make('Lihat')
+                    ->url(SupplierResource::getUrl('view', ['record' => $supplier])),
+            ])
             ->sendToDatabase($recipients);
     }
 

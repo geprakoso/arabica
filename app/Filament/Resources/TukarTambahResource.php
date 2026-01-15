@@ -9,11 +9,16 @@ use App\Models\AkunTransaksi;
 use App\Models\Jasa;
 use App\Models\Member;
 use App\Models\Pembelian;
+use App\Models\PembelianItem;
 use App\Models\Penjualan;
 use App\Models\Supplier;
 use App\Models\TukarTambah;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -22,17 +27,22 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class TukarTambahResource extends BaseResource
 {
@@ -54,333 +64,490 @@ class TukarTambahResource extends BaseResource
     {
         return $form
             ->schema([
-                Section::make('📋 Informasi Tukar Tambah')
-                    ->description('Informasi umum transaksi tukar tambah barang lama dengan barang baru')
+                Section::make('Informasi Transaksi')
+                    ->description('Detail transaksi tukar tambah barang')
+                    ->icon('heroicon-m-clipboard-document-list')
                     ->schema([
-                        TextInput::make('no_nota')
-                            ->label('No. Nota')
-                            ->default(fn () => TukarTambah::generateNoNota())
-                            ->disabled()
-                            ->dehydrated()
-                            ->unique(ignoreRecord: true)
-                            ->required()
-                            ->prefixIcon('heroicon-o-document-text')
-                            ->helperText('Nomor nota akan digenerate otomatis'),
-                        DatePicker::make('tanggal')
-                            ->label('Tanggal Transaksi')
-                            ->default(now())
-                            ->displayFormat('d F Y')
-                            ->native(false)
-                            ->required()
-                            ->prefixIcon('heroicon-o-calendar'),
-                        Select::make('id_karyawan')
-                            ->label('Karyawan')
-                            ->relationship('karyawan', 'nama_karyawan')
-                            ->searchable()
-                            ->preload()
-                            ->default(fn () => auth()->user()?->karyawan?->id)
-                            ->required()
-                            ->native(false)
-                            ->prefixIcon('heroicon-o-user')
-                            ->helperText('Karyawan yang menangani transaksi ini'),
-                        Textarea::make('catatan')
-                            ->label('Catatan')
-                            ->rows(3)
-                            ->nullable()
-                            ->columnSpanFull()
-                            ->placeholder('Tambahkan catatan atau keterangan khusus untuk transaksi ini...')
-                            ->helperText('Catatan bersifat opsional'),
-                    ])
-                    ->columns(3)
-                    ->collapsible(),
-                Tabs::make('Transaksi')
-                    ->tabs([
-                        Tab::make('Penjualan')
-                            ->icon('heroicon-o-shopping-cart')
+                        Grid::make(2)
                             ->schema([
-                                Section::make('Informasi Penjualan')
-                                    ->description('Data penjualan barang baru kepada pelanggan')
-                                    ->icon('heroicon-o-receipt-percent')
-                                    ->schema([
-                                        TextInput::make('no_nota')
-                                            ->label('No. Nota Penjualan')
-                                            ->default(fn () => Penjualan::generateNoNota())
-                                            ->disabled()
-                                            ->dehydrated()
-                                            ->required()
-                                            ->prefixIcon('heroicon-o-hashtag'),
-                                        Select::make('id_member')
-                                            ->label('Pelanggan / Member')
-                                            ->options(fn () => Member::query()->orderBy('nama_member')->pluck('nama_member', 'id')->all())
-                                            ->searchable()
-                                            ->preload()
-                                            ->nullable()
-                                            ->native(false)
-                                            ->prefixIcon('heroicon-o-user-circle')
-                                            ->placeholder('Pilih pelanggan atau kosongkan untuk umum'),
-                                        Select::make('id_karyawan')
-                                            ->label('Petugas Penjualan')
-                                            ->options(fn () => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
-                                            ->searchable()
-                                            ->preload()
-                                            ->nullable()
-                                            ->native(false)
-                                            ->prefixIcon('heroicon-o-user'),
-                                        Textarea::make('catatan')
-                                            ->label('Catatan')
-                                            ->rows(2)
-                                            ->nullable()
-                                            ->columnSpanFull()
-                                            ->placeholder('Catatan tambahan untuk penjualan ini...'),
-                                    ])
-                                    ->columns(3)
-                                    ->collapsible(),
-                                Section::make('Diskon & Pembayaran')
-                                    ->description('Informasi diskon dan metode pembayaran (bisa split payment)')
-                                    ->icon('heroicon-o-credit-card')
-                                    ->schema([
-                                        TextInput::make('diskon_total')
-                                            ->label('Total Diskon')
-                                            ->prefix('Rp')
-                                            ->numeric()
-                                            ->default(0)
-                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                            ->prefixIcon('heroicon-o-receipt-percent')
-                                            ->helperText('Diskon yang diberikan untuk transaksi ini'),
-                                        TableRepeater::make('pembayaran')
-                                            ->label('Detail Pembayaran')
-                                            ->minItems(0)
-                                            ->addActionLabel('+ Tambah Metode Pembayaran')
-                                            ->helperText('Anda dapat menambahkan beberapa metode pembayaran (split payment)')
-                                            ->schema([
-                                                Select::make('metode_bayar')
-                                                    ->label('Metode')
-                                                    ->options([
-                                                        'cash' => 'Tunai',
-                                                        'transfer' => 'Transfer',
-                                                    ])
-                                                    ->native(false)
-                                                    ->required()
-                                                    ->reactive(),
-                                                Select::make('akun_transaksi_id')
-                                                    ->label('Akun Transaksi')
-                                                    ->options(fn () => AkunTransaksi::query()
-                                                        ->where('is_active', true)
-                                                        ->orderBy('nama_akun')
-                                                        ->pluck('nama_akun', 'id')
-                                                        ->all())
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->native(false)
-                                                    ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
-                                                TextInput::make('jumlah')
-                                                    ->label('Jumlah')
-                                                    ->numeric()
-                                                    ->prefix('Rp')
-                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->required(),
-                                                TextInput::make('catatan')
-                                                    ->label('Catatan')
-                                                    ->maxLength(255)
-                                                    ->nullable(),
-                                            ])
-                                            ->columns(4),
-                                    ])
-                                    ->collapsible(),
-                                Section::make('Produk yang Dijual')
-                                    ->description('Daftar produk/barang baru yang dijual kepada pelanggan')
-                                    ->icon('heroicon-o-cube')
-                                    ->schema([
-                                        TableRepeater::make('items')
-                                            ->label('')
-                                            ->minItems(1)
-                                            ->addActionLabel('+ Tambah Produk')
-                                            ->schema([
-                                                Select::make('id_produk')
-                                                    ->label('Produk')
-                                                    ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->required()
-                                                    ->native(false),
-                                                Select::make('kondisi')
-                                                    ->label('Kondisi')
-                                                    ->options([
-                                                        'baru' => 'Baru',
-                                                        'bekas' => 'Bekas',
-                                                    ])
-                                                    ->native(false)
-                                                    ->nullable(),
-                                                TextInput::make('qty')
-                                                    ->label('Qty')
-                                                    ->numeric()
-                                                    ->minValue(1)
-                                                    ->default(1)
-                                                    ->required(),
-                                                TextInput::make('harga_jual')
-                                                    ->label('Harga Jual')
-                                                    ->numeric()
-                                                    ->prefix('Rp')
-                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->minValue(0)
-                                                    ->nullable(),
-                                                TableRepeater::make('serials')
-                                                    ->label('SN & Garansi')
-                                                    ->addActionLabel('Tambah SN')
-                                                    ->schema([
-                                                        TextInput::make('sn')
-                                                            ->label('SN')
-                                                            ->maxLength(255),
-                                                        TextInput::make('garansi')
-                                                            ->label('Garansi')
-                                                            ->maxLength(255),
-                                                    ])
-                                                    ->columns(2)
-                                                    ->defaultItems(0),
-                                            ])
-                                            ->columns(2),
-                                    ])
-                                    ->collapsible(),
-                                Section::make('Jasa Tambahan')
-                                    ->description('Jasa atau layanan yang ditambahkan dalam penjualan (opsional)')
-                                    ->icon('heroicon-o-wrench-screwdriver')
-                                    ->schema([
-                                        TableRepeater::make('jasa_items')
-                                            ->label('')
-                                            ->minItems(0)
-                                            ->addActionLabel('+ Tambah Jasa')
-                                            ->schema([
-                                                Select::make('jasa_id')
-                                                    ->label('Jasa')
-                                                    ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->required()
-                                                    ->native(false),
-                                                TextInput::make('qty')
-                                                    ->label('Qty')
-                                                    ->numeric()
-                                                    ->minValue(1)
-                                                    ->default(1)
-                                                    ->required(),
-                                                TextInput::make('harga')
-                                                    ->label('Tarif Jasa')
-                                                    ->numeric()
-                                                    ->minValue(0)
-                                                    ->prefix('Rp')
-                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->required(),
-                                                Textarea::make('catatan')
-                                                    ->label('Catatan')
-                                                    ->rows(2)
-                                                    ->nullable(),
-                                            ])
-                                            ->columns(2),
-                                    ])
-                                    ->collapsible(),
+                                TextInput::make('no_nota')
+                                    ->label('No. Nota Utama')
+                                    ->default(fn () => TukarTambah::generateNoNota())
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->required()
+                                    ->prefixIcon('heroicon-m-hashtag')
+                                    ->columnSpan(1),
+                                DatePicker::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->default(now())
+                                    ->displayFormat('d F Y')
+                                    ->required()
+                                    ->prefixIcon('heroicon-m-calendar')
+                                    ->columnSpan(1),
+                                Select::make('id_karyawan')
+                                    ->label('PJ Transaksi')
+                                    ->relationship('karyawan', 'nama_karyawan')
+                                    ->searchable()
+                                    ->preload()
+                                    ->default(fn () => Auth::user()?->karyawan?->id)
+                                    ->required()
+                                    ->prefixIcon('heroicon-m-user')
+                                    ->columnSpan(2),
+                            ]),
+                        Section::make()
+                            ->heading('📝 Catatan Tambahan')
+                            ->schema([
+                                Textarea::make('catatan')
+                                    ->label('Catatan Umum')
+                                    ->rows(2)
+                                    ->placeholder('Keterangan tambahan...')
+                                    ->columnSpanFull(),
                             ])
-                            ->statePath('penjualan'),
-                        Tab::make('Pembelian')
+                            ->collapsible()
+                            ->collapsed(true)
+                            ->compact(),
+                    ])
+                    ->collapsible()
+                    ->collapsed(false),
+
+                Tabs::make('Input Detail')
+                    ->tabs([
+                        // TAB PENJUALAN
+                        Tab::make('Barang Keluar (Penjualan)')
+                            ->icon('heroicon-m-arrow-up-tray')
                             ->schema([
                                 Group::make()
+                                    ->statePath('penjualan')
                                     ->schema([
-                                        TextInput::make('no_po')
-                                            ->label('No. PO')
-                                            ->default(fn () => Pembelian::generatePO())
-                                            ->disabled()
-                                            ->dehydrated()
-                                            ->required(),
-                                        Select::make('id_supplier')
-                                            ->label('Supplier')
-                                            ->options(fn () => Supplier::query()->orderBy('nama_supplier')->pluck('nama_supplier', 'id')->all())
-                                            ->searchable()
-                                            ->preload()
-                                            ->nullable()
-                                            ->native(false),
-                                        Select::make('id_karyawan')
-                                            ->label('Karyawan Pembelian')
-                                            ->options(fn () => \App\Models\Karyawan::query()->orderBy('nama_karyawan')->pluck('nama_karyawan', 'id')->all())
-                                            ->searchable()
-                                            ->preload()
-                                            ->nullable()
-                                            ->native(false),
-                                        Select::make('tipe_pembelian')
-                                            ->label('Pajak')
-                                            ->options([
-                                                'non_ppn' => 'Non PPN',
-                                                'ppn' => 'PPN (11%)',
-                                            ])
-                                            ->default('non_ppn')
-                                            ->native(false),
-                                        Select::make('jenis_pembayaran')
-                                            ->label('Metode Bayar')
-                                            ->options([
-                                                'lunas' => 'Lunas (Cash/Transfer)',
-                                                'tempo' => 'Tempo (Hutang)',
-                                            ])
-                                            ->default('lunas')
-                                            ->native(false)
-                                            ->reactive(),
-                                        DatePicker::make('tgl_tempo')
-                                            ->label('Tanggal Tempo')
-                                            ->native(false)
-                                            ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'tempo')
-                                            ->required(fn (Get $get) => $get('jenis_pembayaran') === 'tempo'),
-                                        Textarea::make('catatan')
-                                            ->label('Catatan Pembelian')
-                                            ->rows(2)
-                                            ->nullable()
-                                            ->columnSpanFull(),
-                                        TableRepeater::make('items')
-                                            ->label('Produk Pembelian')
-                                            ->minItems(1)
-                                            ->addActionLabel('Tambah Produk')
+                                        Section::make('Data Penjualan')
+                                            ->description('Informasi pelanggan dan sales')
+                                            ->icon('heroicon-m-user-group')
                                             ->schema([
-                                                Select::make('id_produk')
-                                                    ->label('Produk')
-                                                    ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->required()
-                                                    ->native(false),
-                                                Select::make('kondisi')
-                                                    ->label('Kondisi')
-                                                    ->options([
-                                                        'baru' => 'Baru',
-                                                        'bekas' => 'Bekas',
-                                                    ])
-                                                    ->default('baru')
-                                                    ->required()
-                                                    ->native(false),
-                                                TextInput::make('qty')
-                                                    ->label('Qty')
-                                                    ->numeric()
-                                                    ->minValue(1)
-                                                    ->default(1)
-                                                    ->required(),
-                                                TextInput::make('hpp')
-                                                    ->label('HPP (Beli)')
-                                                    ->numeric()
-                                                    ->prefix('Rp')
-                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->minValue(0)
-                                                    ->required(),
-                                                TextInput::make('harga_jual')
-                                                    ->label('Harga Jual')
-                                                    ->numeric()
-                                                    ->prefix('Rp')
-                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->minValue(0)
-                                                    ->required(),
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Select::make('id_member')
+                                                            ->label('Pelanggan')
+                                                            ->options(fn () => Member::query()
+                                                                ->orderBy('nama_member')
+                                                                ->pluck('nama_member', 'id')
+                                                                ->all())
+                                                            ->searchable()
+                                                            ->preload()
+                                                            ->prefixIcon('heroicon-m-user')
+                                                            ->createOptionModalHeading('Tambah Member')
+                                                            ->createOptionAction(fn ($action) => $action->label('Tambah Member'))
+                                                            ->createOptionForm([
+                                                                TextInput::make('nama_member')
+                                                                    ->label('Nama Lengkap')
+                                                                    ->required(),
+
+                                                                Grid::make(2)->schema([
+                                                                    TextInput::make('no_hp')
+                                                                        ->label('Nomor WhatsApp / HP')
+                                                                        ->tel()
+                                                                        ->required()
+                                                                        ->unique(table: (new Member)->getTable(), column: 'no_hp'),
+
+                                                                    TextInput::make('email')
+                                                                        ->label('Alamat Email')
+                                                                        ->email()
+                                                                        ->nullable(),
+                                                                ]),
+                                                            ])
+                                                            ->createOptionUsing(fn (array $data): int => (int) Member::query()->create($data)->getKey()),
+
+                                                        TextInput::make('no_nota')
+                                                            ->label('No. Nota Jual')
+                                                            ->default(fn () => Penjualan::generateNoNota())
+                                                            ->disabled()
+                                                            ->dehydrated()
+                                                            ->required()
+                                                            ->prefixIcon('heroicon-m-document'),
+                                                    ]),
                                             ])
-                                            ->columns(2),
-                                    ])
-                                    ->columns(2),
-                            ])
-                            ->statePath('pembelian'),
+                                            ->compact(),
+
+                                        Section::make('Daftar Barang & Jasa')
+                                            ->icon('heroicon-m-shopping-bag')
+                                            ->schema([
+                                                TableRepeater::make('items')
+                                                    ->label('Daftar Barang Keluar')
+                                                    ->addActionLabel('+ Tambah Barang')
+                                                    ->schema([
+                                                        Select::make('id_produk')
+                                                            ->label('Produk')
+                                                            ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
+                                                            ->searchable()
+                                                            ->preload()
+                                                            ->required()
+                                                            ->reactive()
+                                                            ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
+                                                                $options = self::getAvailableConditionOptions((int) ($state ?? 0));
+                                                                $selected = null;
+
+                                                                if (count($options) === 1) {
+                                                                    $selected = array_key_first($options);
+                                                                    $set('kondisi', $selected);
+                                                                } elseif (! array_key_exists($get('kondisi'), $options)) {
+                                                                    $set('kondisi', null);
+                                                                } else {
+                                                                    $selected = $get('kondisi');
+                                                                }
+
+                                                                $set('harga_jual', self::getDefaultPriceForProduct((int) ($state ?? 0), $selected));
+
+                                                                $available = self::getAvailableQty((int) ($state ?? 0), $selected);
+                                                                $current = (int) ($get('qty') ?? 0);
+
+                                                                if ($available > 0 && $current > $available) {
+                                                                    $set('qty', $available);
+                                                                }
+                                                            }),
+                                                        Select::make('kondisi')
+                                                            ->label('Kondisi')
+                                                            ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
+                                                            ->native(false)
+                                                            ->placeholder('Kondisi')
+                                                            ->reactive()
+                                                            ->disabled(function (Get $get): bool {
+                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+
+                                                                return count($options) <= 1;
+                                                            })
+                                                            ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
+                                                                if ($state) {
+                                                                    return;
+                                                                }
+
+                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+
+                                                                if (count($options) === 1) {
+                                                                    $set('kondisi', array_key_first($options));
+                                                                }
+                                                            })
+                                                            ->placeholder(function (Get $get): string {
+                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+
+                                                                $labels = array_values($options);
+
+                                                                if (count($labels) === 1) {
+                                                                    return $labels[0];
+                                                                }
+
+                                                                return 'kondisi';
+                                                            })
+                                                            ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
+                                                                $productId = (int) ($get('id_produk') ?? 0);
+                                                                $set('harga_jual', self::getDefaultPriceForProduct($productId, $state));
+
+                                                                $available = self::getAvailableQty((int) ($get('id_produk') ?? 0), $state);
+                                                                $current = (int) ($get('qty') ?? 0);
+
+                                                                if ($available > 0 && $current > $available) {
+                                                                    $set('qty', $available);
+                                                                }
+                                                            })
+                                                            ->nullable(),
+                                                        TextInput::make('qty')
+                                                            ->label('Qty')
+                                                            ->numeric()
+                                                            ->minValue(1)
+                                                            ->maxValue(function (Get $get): ?int {
+                                                                $productId = (int) ($get('id_produk') ?? 0);
+
+                                                                if ($productId < 1) {
+                                                                    return null;
+                                                                }
+
+                                                                $available = self::getAvailableQty($productId, $get('kondisi'));
+
+                                                                return $available > 0 ? $available : null;
+                                                            })
+                                                            ->required()
+                                                            ->reactive()
+                                                            ->placeholder(function (Get $get): string {
+                                                                $productId = (int) ($get('id_produk') ?? 0);
+
+                                                                if ($productId < 1) {
+                                                                    return 'Pilih produk';
+                                                                }
+
+                                                                $available = self::getAvailableQty($productId, $get('kondisi'));
+
+                                                                return 'Stok: '.number_format($available, 0, ',', '.');
+                                                            }),
+                                                        TextInput::make('harga_jual')
+                                                            ->label('Harga Satuan')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
+
+                                                        Hidden::make('serials')
+                                                            ->default([]),
+
+                                                        TextInput::make('serials_count')
+                                                            ->label('Serial Number & Garansi')
+                                                            ->formatStateUsing(fn (Get $get): string => count($get('serials') ?? []).' serials')
+                                                            ->live()
+                                                            ->disabled()
+                                                            ->dehydrated(false)
+                                                            ->suffixAction(
+                                                                FormAction::make('manage_serials')
+                                                                    ->label('Manage')
+                                                                    ->icon('heroicon-o-qr-code')
+                                                                    ->button()
+                                                                    ->color('info')
+                                                                    ->modalHeading('Manage Serial Numbers')
+                                                                    ->modalWidth('2xl')
+                                                                    ->fillForm(fn (Get $get): array => [
+                                                                        'serials_temp' => $get('serials') ?? [],
+                                                                    ])
+                                                                    ->form([
+                                                                        Repeater::make('serials_temp')
+                                                                            ->label('Serial Numbers')
+                                                                            ->schema([
+                                                                                Grid::make(2)
+                                                                                    ->schema([
+                                                                                        TextInput::make('sn')
+                                                                                            ->label('Serial Number')
+                                                                                            ->required(),
+                                                                                        TextInput::make('garansi')
+                                                                                            ->label('Garansi'),
+                                                                                    ]),
+                                                                            ])
+                                                                            ->defaultItems(0)
+                                                                            ->addActionLabel('+ Add Serial')
+                                                                            ->reorderable(false)
+                                                                            ->collapsible()
+                                                                            ->itemLabel(fn (array $state): ?string => $state['sn'] ?? 'New Serial'),
+                                                                    ])
+                                                                    ->action(function (Set $set, array $data): void {
+                                                                        $set('serials', $data['serials_temp'] ?? []);
+                                                                    })
+                                                            ),
+                                                    ])
+                                                    ->colStyles([
+                                                        'id_produk' => 'width: 30%;',
+                                                        'kondisi' => 'width: 10%;',
+                                                        'qty' => 'width: 10%;',
+                                                        'harga_jual' => 'width: 15%;',
+                                                    ])
+                                                    ->defaultItems(0)
+                                                    ->reorderable(false)
+                                                    ->columns(1),
+
+                                                TableRepeater::make('jasa_items')
+                                                    ->label('Layanan Jasa (Opsional)')
+                                                    ->addActionLabel('+ Tambah Jasa')
+                                                    ->schema([
+                                                        Select::make('jasa_id')
+                                                            ->label('Jasa')
+                                                            ->prefixIcon('hugeicons-tools')
+                                                            ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
+                                                            ->searchable()
+                                                            ->required()
+                                                            ->reactive()
+                                                            ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                                                $set('harga', $state ? (int) (Jasa::query()->find($state)?->harga ?? 0) : null);
+                                                            })
+                                                            ->columnSpan(2),
+                                                        TextInput::make('qty')
+                                                            ->label('Jml')
+                                                            ->numeric()
+                                                            ->default(1)
+                                                            ->required(),
+                                                        TextInput::make('harga')
+                                                            ->label('Tarif')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
+                                                    ])
+                                                    ->colStyles([
+                                                        'jasa_id' => 'width: 60%;',
+                                                        'qty' => 'width: 15%;',
+                                                        'harga' => 'width: 25%;',
+                                                    ])
+                                                    ->columns(3)
+                                                    ->defaultItems(0)
+                                                    ->collapsible()
+                                                    ->cloneable(),
+                                            ])
+                                            ->collapsible()
+                                            ->collapsed(true),
+
+                                        Section::make('Pembayaran')
+                                            ->icon('heroicon-m-banknotes')
+                                            ->schema([
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('diskon_total')
+                                                            ->label('Diskon (Rp)')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->default(0),
+                                                    ]),
+                                                TableRepeater::make('pembayaran')
+                                                    ->label('Metode Pembayaran')
+                                                    ->addActionLabel('+ Bayar')
+                                                    ->schema([
+                                                        Select::make('metode_bayar')
+                                                            ->label('Metode')
+                                                            ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
+                                                            ->required()
+                                                            ->reactive(),
+                                                        Select::make('akun_transaksi_id')
+                                                            ->label('Ke Akun')
+                                                            ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id')),
+                                                        TextInput::make('jumlah')
+                                                            ->label('Nominal')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
+                                                    ])
+                                                    ->columns(3)
+                                                    ->minItems(0),
+                                            ]),
+                                    ]),
+                            ]),
+
+                        // TAB PEMBELIAN
+                        Tab::make('Barang Masuk (Pembelian)')
+                            ->icon('heroicon-m-arrow-down-tray')
+                            ->schema([
+                                Group::make()
+                                    ->statePath('pembelian')
+                                    ->schema([
+                                        Section::make('Data Pembelian')
+                                            ->description('Informasi supplier dan staff gudang')
+                                            ->icon('heroicon-m-building-storefront')
+                                            ->schema([
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Select::make('id_supplier')
+                                                            ->label('Supplier')
+                                                            ->options(fn () => Supplier::query()->orderBy('nama_supplier')->pluck('nama_supplier', 'id')->all())
+                                                            ->searchable()
+                                                            ->prefixIcon('heroicon-m-truck')
+                                                            ->createOptionModalHeading('Tambah Supplier')
+                                                            ->createOptionAction(fn ($action) => $action->label('Tambah Supplier'))
+                                                            ->createOptionForm([
+                                                                Grid::make(2)->schema([
+                                                                    TextInput::make('nama_supplier')
+                                                                        ->label('Nama Supplier / PT')
+                                                                        ->required()
+                                                                        ->unique(table: (new Supplier)->getTable(), column: 'nama_supplier'),
+                                                                    TextInput::make('no_hp')
+                                                                        ->label('No. Handphone / WA')
+                                                                        ->tel()
+                                                                        ->required()
+                                                                        ->unique(table: (new Supplier)->getTable(), column: 'no_hp'),
+
+                                                                ]),
+                                                                TextInput::make('alamat')
+                                                                    ->label('Alamat')
+                                                                    ->nullable(),
+                                                            ])
+                                                            ->createOptionUsing(fn (array $data): int => (int) Supplier::query()->create($data)->getKey()),
+                                                        Select::make('id_karyawan')
+                                                            ->label('Staff Gudang')
+                                                            ->relationship('karyawan', 'nama_karyawan')
+                                                            ->preload()
+                                                            ->default(fn () => Auth::user()?->karyawan?->id)
+                                                            ->searchable()
+                                                            ->prefixIcon('heroicon-m-user'),
+                                                        TextInput::make('no_po')
+                                                            ->label('No. PO')
+                                                            ->default(fn () => Pembelian::generatePO())
+                                                            ->disabled()
+                                                            ->dehydrated()
+                                                            ->columnSpan(2),
+                                                    ]),
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        Select::make('tipe_pembelian')
+                                                            ->label('Pajak')
+                                                            ->options(['non_ppn' => 'Non PPN', 'ppn' => 'PPN (11%)'])
+                                                            ->default('non_ppn')
+                                                            ->columnSpan(2),
+                                                    ]),
+                                            ])
+                                            ->compact(),
+
+                                        Section::make('Daftar Barang Masuk')
+                                            ->icon('heroicon-m-archive-box-arrow-down')
+                                            ->schema([
+                                                TableRepeater::make('items')
+                                                    ->label('Barang')
+                                                    ->addActionLabel('+ Tambah Barang')
+                                                    ->minItems(1)
+                                                    ->schema([
+                                                        \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
+                                                        Select::make('id_produk')
+                                                            ->label('Produk')
+                                                            ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
+                                                            ->searchable()
+                                                            ->required()
+                                                            ->columnSpan(2),
+                                                        Select::make('kondisi')
+                                                            ->label('Kondisi')
+                                                            ->options(['baru' => 'Baru', 'bekas' => 'Bekas'])
+                                                            ->default('baru')
+                                                            ->required(),
+                                                        TextInput::make('qty')
+                                                            ->label('Jml')
+                                                            ->numeric()
+                                                            ->default(1)
+                                                            ->required(),
+                                                        TextInput::make('hpp')
+                                                            ->label('HPP (Beli)')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
+                                                        TextInput::make('harga_jual')
+                                                            ->label('Rencana Jual')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
+                                                    ])
+                                                    ->columns(6)
+                                                    ->colStyles([
+                                                        'id_produk' => 'width:37%',
+                                                        'kondisi' => 'width:15%',
+                                                        'qty' => 'width:8%',
+                                                        'hpp' => 'width:20%',
+                                                        'harga_jual' => 'width:25%',
+                                                    ]),
+                                            ]),
+                                        Section::make('Pembayaran')
+                                            ->icon('heroicon-m-banknotes')
+                                            ->schema([
+                                                TableRepeater::make('pembayaran')
+                                                    ->label('Metode Pembayaran')
+                                                    ->addActionLabel('+ Bayar')
+                                                    ->schema([
+                                                        Select::make('metode_bayar')
+                                                            ->label('Metode')
+                                                            ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
+                                                            ->required()
+                                                            ->reactive(),
+                                                        Select::make('akun_transaksi_id')
+                                                            ->label('Ke Akun')
+                                                            ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
+                                                            ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
+                                                        TextInput::make('jumlah')
+                                                            ->label('Nominal')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
+                                                    ])
+                                                    ->columns(3)
+                                                    ->minItems(0),
+                                            ]),
+                                    ]),
+                            ]),
                     ])
-                    ->columnSpanFull()
-                    ->visibleOn('create'),
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -426,10 +593,127 @@ class TukarTambahResource extends BaseResource
                     ->color('primary')
                     ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice', $record))
                     ->openUrlInNewTab(),
+                Action::make('invoice_simple')
+                    ->label('Invoice Simple')
+                    ->icon('heroicon-m-document-text')
+                    ->color('gray')
+                    ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
+                    ->openUrlInNewTab(),
                 \Filament\Tables\Actions\ViewAction::make(),
                 \Filament\Tables\Actions\EditAction::make(),
                 \Filament\Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                \Filament\Tables\Actions\BulkActionGroup::make([
+                    \Filament\Tables\Actions\BulkAction::make('delete')
+                        ->label('Hapus')
+                        ->icon('heroicon-m-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Tukar Tambah')
+                        ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
+                        ->action(function (Collection $records): void {
+                            $failed = [];
+                            $deleted = 0;
+
+                            foreach ($records as $record) {
+                                try {
+                                    $record->delete();
+                                    $deleted++;
+                                } catch (ValidationException $exception) {
+                                    $messages = collect($exception->errors())
+                                        ->flatten()
+                                        ->implode(' ');
+                                    $failed[] = trim($messages) ?: 'Gagal menghapus tukar tambah.';
+                                }
+                            }
+
+                            if (! empty($failed)) {
+                                Notification::make()
+                                    ->title('Sebagian gagal dihapus')
+                                    ->body(implode(' ', $failed))
+                                    ->danger()
+                                    ->send();
+                            }
+
+                            if ($deleted > 0) {
+                                Notification::make()
+                                    ->title('Tukar tambah dihapus')
+                                    ->body('Berhasil menghapus '.$deleted.' data.')
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
+                ]),
             ]);
+    }
+
+    protected static function getAvailableConditionOptions(int $productId): array
+    {
+        if ($productId < 1) {
+            return [];
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+        $labels = [
+            'baru' => 'Baru',
+            'bekas' => 'Bekas',
+        ];
+
+        return PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0)
+            ->whereNotNull('kondisi')
+            ->distinct()
+            ->orderBy('kondisi')
+            ->pluck('kondisi')
+            ->mapWithKeys(fn (string $value): array => [$value => $labels[$value] ?? ucfirst($value)])
+            ->all();
+    }
+
+    protected static function getAvailableQty(int $productId, ?string $condition): int
+    {
+        if ($productId < 1) {
+            return 0;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        $query = PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0);
+
+        if ($condition) {
+            $query->where('kondisi', $condition);
+        }
+
+        return (int) $query->sum($qtyColumn);
+    }
+
+    protected static function getDefaultPriceForProduct(?int $productId, ?string $condition = null): ?int
+    {
+        $batch = self::getOldestAvailableBatch($productId, $condition);
+
+        return $batch?->harga_jual;
+    }
+
+    protected static function getOldestAvailableBatch(?int $productId, ?string $condition = null): ?PembelianItem
+    {
+        if (! $productId) {
+            return null;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        return PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0)
+            ->when($condition, fn ($query, $condition) => $query->where('kondisi', $condition))
+            ->orderBy('id_pembelian_item')
+            ->first();
     }
 
     public static function infolist(Infolist $infolist): Infolist

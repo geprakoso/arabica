@@ -62,6 +62,19 @@ Route::get('/penjualan/invoice/{penjualan}', function (\App\Models\Penjualan $pe
     ]);
 })->name('penjualan.invoice');
 
+Route::get('/penjualan/invoice-simple/{penjualan}', function (\App\Models\Penjualan $penjualan) {
+    return view('penjualan.invoice-simple', [
+        'penjualan' => $penjualan->load([
+            'items.produk',
+            'jasaItems.jasa',
+            'member',
+            'karyawan',
+            'pembayaran.akunTransaksi',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjualan.invoice.simple');
+
 Route::get('/penjadwalan-service/print/{record}', function (\App\Models\PenjadwalanService $record) {
     return view('filament.resources.penjadwalan-service.print', [
         'record' => $record->load(['member', 'technician', 'jasa']),
@@ -85,6 +98,22 @@ Route::get('/tukar-tambah/invoice/{tukarTambah}', function (\App\Models\TukarTam
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('tukar-tambah.invoice');
+Route::get('/tukar-tambah/invoice-simple/{tukarTambah}', function (\App\Models\TukarTambah $tukarTambah) {
+    return view('tukar-tambah.invoice-simple', [
+        'tukarTambah' => $tukarTambah->load([
+            'karyawan',
+            'penjualan.items.produk',
+            'penjualan.jasaItems.jasa',
+            'penjualan.member',
+            'penjualan.karyawan',
+            'penjualan.pembayaran.akunTransaksi',
+            'pembelian.items.produk',
+            'pembelian.supplier',
+            'pembelian.karyawan',
+        ]),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('tukar-tambah.invoice.simple');
 Route::get('/penjadwalan-service/print-crosscheck/{record}', function (\App\Models\PenjadwalanService $record) {
     return view('filament.resources.penjadwalan-service.print-crosscheck', [
         'record' => $record->load(['member', 'technician', 'jasa', 'crosschecks', 'listAplikasis', 'listGames', 'listOs']),

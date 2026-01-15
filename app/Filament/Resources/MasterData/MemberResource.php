@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\MasterData;
 
 use App\Filament\Resources\MasterData\MemberResource\Pages;
+use App\Filament\Resources\MasterData\MemberResource\RelationManagers\PenjualanItemsRelationManager;
+use App\Filament\Resources\MasterData\MemberResource\RelationManagers\PenjualanJasaRelationManager;
 use App\Models\Member;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
@@ -385,7 +387,8 @@ class MemberResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            //
+            PenjualanItemsRelationManager::class,
+            PenjualanJasaRelationManager::class,
         ];
     }
 
