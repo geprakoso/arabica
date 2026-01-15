@@ -21,7 +21,7 @@ class InvoicePenjualanMail extends Mailable
 
     public function build(): static
     {
-        $pdf = Pdf::loadView('penjualan.invoice-simple', [
+        $pdf = Pdf::loadView('penjualan.invoice', [
             'penjualan' => $this->penjualan,
             'profile' => $this->profile,
         ]);

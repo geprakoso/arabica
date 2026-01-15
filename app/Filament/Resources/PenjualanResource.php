@@ -81,6 +81,7 @@ class PenjualanResource extends BaseResource
                         Select::make('id_member')
                             ->label('Member')
                             ->searchable()
+                            ->relationship('member', 'nama_member')
                             ->preload()
                             ->nullable()
                             ->native(false)
