@@ -8,9 +8,16 @@
     $profileAddress = $profile?->address ?? 'Alamat toko belum diisi';
     $profilePhone = $profile?->phone;
     $profileEmail = $profile?->email;
+    $profileLogo = $profile?->logo;
     $memberName = $penjualan?->member?->nama_member ?? 'Pelanggan Umum';
     $memberAddress = $penjualan?->member?->alamat;
     $memberPhone = $penjualan?->member?->no_hp;
+    $profileLogoUrl = null;
+    if ($profileLogo) {
+        $profileLogoUrl = \Illuminate\Support\Str::startsWith($profileLogo, ['http://', 'https://', '/'])
+            ? $profileLogo
+            : \Illuminate\Support\Facades\Storage::url($profileLogo);
+    }
     $invoiceDate = $tukarTambah->tanggal ? $tukarTambah->tanggal->format('d.m.Y') : now()->format('d.m.Y');
     $qrUrl = 'https://store.haen.co.id/';
     $qrSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(72)->margin(0)->generate($qrUrl);
@@ -197,6 +204,18 @@
             max-width: 60%;
         }
 
+        .logo-box {
+            width: 17%;
+            height: 17%;
+            rotate: -5deg;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #111111;
+        }
+
         .brand-text p {
             margin: 1px 0;
         }
@@ -236,7 +255,7 @@
 
         .info-grid {
             display: grid;
-            margin-top: -4px;
+            margin-top: 0px;
             padding: 0;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 4px;
@@ -350,8 +369,23 @@
             line-height: 1.1;
         }
 
+        .customer-sign {
+            text-align: center;
+            min-width: 140px;
+
+        }
+
+        .customer-sign .line {
+            width: 120px;
+            margin: 80px auto 6px;
+            border-bottom: 1px dashed #111111;
+        }
+
+        /* .customer-sign .name {
+            margin-top: 12px;
+        } */
+
         .signature .qr {
-            margin-left: auto;
             text-align: center;
         }
 
@@ -397,6 +431,14 @@
     <div class="invoice">
         <div class="top">
             <div class="brand">
+                <div class="logo-box">
+                    @if ($profileLogoUrl)
+                        <img src="{{ $profileLogoUrl }}" alt="Logo"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                    @else
+                        {{ strtoupper(substr($profileName, 0, 1)) }}
+                    @endif
+                </div>
                 <div class="brand-text">
                     <p><strong>{{ $profileName }}</strong></p>
                     <p>{{ $profileAddress }}</p>
@@ -518,6 +560,11 @@
                     ditanggung oleh garansi.</p>
                 <p class="notice-title">Kebijakan Pengembalian</p>
                 <p>Barang yang sudah dibeli tidak dapat dikembalikan. Periksa kondisi produk sebelum pembayaran.</p>
+            </div>
+            <div class="customer-sign">
+                <div>Tanda tangan pelanggan</div>
+                <div class="line"></div>
+                <div class="name">{{ $memberName }}</div>
             </div>
             <div class="qr">
                 {!! $qrSvg !!}
