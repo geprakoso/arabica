@@ -13,9 +13,12 @@ use App\Models\PembelianItem;
 use App\Models\Penjualan;
 use App\Models\Supplier;
 use App\Models\TukarTambah;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -168,146 +171,170 @@ class TukarTambahResource extends BaseResource
                                         Section::make('Daftar Barang & Jasa')
                                             ->icon('heroicon-m-shopping-bag')
                                             ->schema([
-                                                \Filament\Forms\Components\Repeater::make('items')
+                                                TableRepeater::make('items')
                                                     ->label('Daftar Barang Keluar')
                                                     ->addActionLabel('+ Tambah Barang')
                                                     ->schema([
-                                                        Grid::make(12)
-                                                            ->schema([
-                                                                Select::make('id_produk')
-                                                                    ->label('Produk')
-                                                                    ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
-                                                                    ->searchable()
-                                                                    ->preload()
-                                                                    ->required()
-                                                                    ->reactive()
-                                                                    ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
-                                                                        $options = self::getAvailableConditionOptions((int) ($state ?? 0));
-                                                                        $selected = null;
+                                                        Select::make('id_produk')
+                                                            ->label('Produk')
+                                                            ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
+                                                            ->searchable()
+                                                            ->preload()
+                                                            ->required()
+                                                            ->reactive()
+                                                            ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
+                                                                $options = self::getAvailableConditionOptions((int) ($state ?? 0));
+                                                                $selected = null;
 
-                                                                        if (count($options) === 1) {
-                                                                            $selected = array_key_first($options);
-                                                                            $set('kondisi', $selected);
-                                                                        } elseif (! array_key_exists($get('kondisi'), $options)) {
-                                                                            $set('kondisi', null);
-                                                                        } else {
-                                                                            $selected = $get('kondisi');
-                                                                        }
+                                                                if (count($options) === 1) {
+                                                                    $selected = array_key_first($options);
+                                                                    $set('kondisi', $selected);
+                                                                } elseif (! array_key_exists($get('kondisi'), $options)) {
+                                                                    $set('kondisi', null);
+                                                                } else {
+                                                                    $selected = $get('kondisi');
+                                                                }
 
-                                                                        $set('harga_jual', self::getDefaultPriceForProduct((int) ($state ?? 0), $selected));
+                                                                $set('harga_jual', self::getDefaultPriceForProduct((int) ($state ?? 0), $selected));
 
-                                                                        $available = self::getAvailableQty((int) ($state ?? 0), $selected);
-                                                                        $current = (int) ($get('qty') ?? 0);
+                                                                $available = self::getAvailableQty((int) ($state ?? 0), $selected);
+                                                                $current = (int) ($get('qty') ?? 0);
 
-                                                                        if ($available > 0 && $current > $available) {
-                                                                            $set('qty', $available);
-                                                                        }
-                                                                    })
-                                                                    ->columnSpan(4),
-                                                                Select::make('kondisi')
-                                                                    ->label('Kondisi')
-                                                                    ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
-                                                                    ->native(false)
-                                                                    ->placeholder('Kondisi')
-                                                                    ->reactive()
-                                                                    ->disabled(function (Get $get): bool {
-                                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+                                                                if ($available > 0 && $current > $available) {
+                                                                    $set('qty', $available);
+                                                                }
+                                                            }),
+                                                        Select::make('kondisi')
+                                                            ->label('Kondisi')
+                                                            ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
+                                                            ->native(false)
+                                                            ->placeholder('Kondisi')
+                                                            ->reactive()
+                                                            ->disabled(function (Get $get): bool {
+                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
 
-                                                                        return count($options) <= 1;
-                                                                    })
-                                                                    ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
-                                                                        if ($state) {
-                                                                            return;
-                                                                        }
+                                                                return count($options) <= 1;
+                                                            })
+                                                            ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
+                                                                if ($state) {
+                                                                    return;
+                                                                }
 
-                                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
 
-                                                                        if (count($options) === 1) {
-                                                                            $set('kondisi', array_key_first($options));
-                                                                        }
-                                                                    })
-                                                                    ->placeholder(function (Get $get): string {
-                                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+                                                                if (count($options) === 1) {
+                                                                    $set('kondisi', array_key_first($options));
+                                                                }
+                                                            })
+                                                            ->placeholder(function (Get $get): string {
+                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
 
-                                                                        $labels = array_values($options);
+                                                                $labels = array_values($options);
 
-                                                                        if (count($labels) === 1) {
-                                                                            return $labels[0];
-                                                                        }
+                                                                if (count($labels) === 1) {
+                                                                    return $labels[0];
+                                                                }
 
-                                                                        return 'kondisi';
-                                                                    })
-                                                                    ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
-                                                                        $productId = (int) ($get('id_produk') ?? 0);
-                                                                        $set('harga_jual', self::getDefaultPriceForProduct($productId, $state));
+                                                                return 'kondisi';
+                                                            })
+                                                            ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
+                                                                $productId = (int) ($get('id_produk') ?? 0);
+                                                                $set('harga_jual', self::getDefaultPriceForProduct($productId, $state));
 
-                                                                        $available = self::getAvailableQty((int) ($get('id_produk') ?? 0), $state);
-                                                                        $current = (int) ($get('qty') ?? 0);
+                                                                $available = self::getAvailableQty((int) ($get('id_produk') ?? 0), $state);
+                                                                $current = (int) ($get('qty') ?? 0);
 
-                                                                        if ($available > 0 && $current > $available) {
-                                                                            $set('qty', $available);
-                                                                        }
-                                                                    })
-                                                                    ->columnSpan(1)
-                                                                    ->nullable(),
-                                                                TextInput::make('qty')
-                                                                    ->label('Qty')
-                                                                    ->numeric()
-                                                                    // ->default(1)
-                                                                    ->minValue(1)
-                                                                    ->maxValue(function (Get $get): ?int {
-                                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                                if ($available > 0 && $current > $available) {
+                                                                    $set('qty', $available);
+                                                                }
+                                                            })
+                                                            ->nullable(),
+                                                        TextInput::make('qty')
+                                                            ->label('Qty')
+                                                            ->numeric()
+                                                            ->minValue(1)
+                                                            ->maxValue(function (Get $get): ?int {
+                                                                $productId = (int) ($get('id_produk') ?? 0);
 
-                                                                        if ($productId < 1) {
-                                                                            return null;
-                                                                        }
+                                                                if ($productId < 1) {
+                                                                    return null;
+                                                                }
 
-                                                                        $available = self::getAvailableQty($productId, $get('kondisi'));
+                                                                $available = self::getAvailableQty($productId, $get('kondisi'));
 
-                                                                        return $available > 0 ? $available : null;
-                                                                    })
-                                                                    ->required()
-                                                                    ->reactive()
-                                                                    ->placeholder(function (Get $get): string {
-                                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                                return $available > 0 ? $available : null;
+                                                            })
+                                                            ->required()
+                                                            ->reactive()
+                                                            ->placeholder(function (Get $get): string {
+                                                                $productId = (int) ($get('id_produk') ?? 0);
 
-                                                                        if ($productId < 1) {
-                                                                            return 'Pilih produk';
-                                                                        }
+                                                                if ($productId < 1) {
+                                                                    return 'Pilih produk';
+                                                                }
 
-                                                                        $available = self::getAvailableQty($productId, $get('kondisi'));
+                                                                $available = self::getAvailableQty($productId, $get('kondisi'));
 
-                                                                        return 'Stok: '.number_format($available, 0, ',', '.');
-                                                                    })
-                                                                    ->columnSpan(1),
-                                                                TextInput::make('harga_jual')
-                                                                    ->label('Harga Satuan')
-                                                                    ->prefix('Rp')
-                                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                                    ->required()
-                                                                    ->columnSpan(2),
+                                                                return 'Stok: '.number_format($available, 0, ',', '.');
+                                                            }),
+                                                        TextInput::make('harga_jual')
+                                                            ->label('Harga Satuan')
+                                                            ->prefix('Rp')
+                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                            ->required(),
 
-                                                                \Filament\Forms\Components\Repeater::make('serials')
-                                                                    ->label('Serial Number & Garansi')
-                                                                    ->addActionLabel('+ SN')
-                                                                    ->schema([
-                                                                        TextInput::make('sn')
-                                                                            ->label('SN')
-                                                                            ->required(),
-                                                                        TextInput::make('garansi')
-                                                                            ->label('Garansi'),
+                                                        Hidden::make('serials')
+                                                            ->default([]),
+
+                                                        TextInput::make('serials_count')
+                                                            ->label('Serial Number & Garansi')
+                                                            ->formatStateUsing(fn (Get $get): string => count($get('serials') ?? []).' serials')
+                                                            ->live()
+                                                            ->disabled()
+                                                            ->dehydrated(false)
+                                                            ->suffixAction(
+                                                                FormAction::make('manage_serials')
+                                                                    ->label('Manage')
+                                                                    ->icon('heroicon-o-qr-code')
+                                                                    ->button()
+                                                                    ->color('info')
+                                                                    ->modalHeading('Manage Serial Numbers')
+                                                                    ->modalWidth('2xl')
+                                                                    ->fillForm(fn (Get $get): array => [
+                                                                        'serials_temp' => $get('serials') ?? [],
                                                                     ])
-                                                                    ->grid(2)
-                                                                    ->defaultItems(0)
-                                                                    ->reorderable(false)
-                                                                    ->collapsible()
-                                                                    ->collapsed(fn (Get $get): bool => empty($get('serials')))
-                                                                    ->columnSpan(4),
-                                                            ]),
-
+                                                                    ->form([
+                                                                        Repeater::make('serials_temp')
+                                                                            ->label('Serial Numbers')
+                                                                            ->schema([
+                                                                                Grid::make(2)
+                                                                                    ->schema([
+                                                                                        TextInput::make('sn')
+                                                                                            ->label('Serial Number')
+                                                                                            ->required(),
+                                                                                        TextInput::make('garansi')
+                                                                                            ->label('Garansi'),
+                                                                                    ]),
+                                                                            ])
+                                                                            ->defaultItems(0)
+                                                                            ->addActionLabel('+ Add Serial')
+                                                                            ->reorderable(false)
+                                                                            ->collapsible()
+                                                                            ->itemLabel(fn (array $state): ?string => $state['sn'] ?? 'New Serial'),
+                                                                    ])
+                                                                    ->action(function (Set $set, array $data): void {
+                                                                        $set('serials', $data['serials_temp'] ?? []);
+                                                                    })
+                                                            ),
                                                     ])
-                                                    ->collapsible()
-                                                    ->itemLabel(fn (array $state): ?string => \App\Models\Produk::find($state['id_produk'] ?? null)?->nama_produk ?? 'Produk Belum Dipilih')
+                                                    ->colStyles([
+                                                        'id_produk' => 'width: 30%;',
+                                                        'kondisi' => 'width: 10%;',
+                                                        'qty' => 'width: 10%;',
+                                                        'harga_jual' => 'width: 15%;',
+                                                    ])
+                                                    ->defaultItems(0)
+                                                    ->reorderable(false)
                                                     ->columns(1),
 
                                                 TableRepeater::make('jasa_items')
