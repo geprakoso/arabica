@@ -5,12 +5,14 @@ namespace App\Filament\Resources\TukarTambahResource\Pages;
 use App\Filament\Resources\TukarTambahResource;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
+use App\Models\PembelianPembayaran;
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use App\Models\PenjualanPembayaran;
 use App\Models\TukarTambah;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +28,7 @@ class CreateTukarTambah extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return TukarTambahResource::getUrl('edit', ['record' => $this->record]);
+        return TukarTambahResource::getUrl('index');
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -55,16 +57,13 @@ class CreateTukarTambah extends CreateRecord
                 'id_supplier' => $pembelianPayload['id_supplier'] ?? null,
                 'no_po' => $pembelianPayload['no_po'] ?? null,
                 'tipe_pembelian' => $pembelianPayload['tipe_pembelian'] ?? 'non_ppn',
-                'jenis_pembayaran' => $pembelianPayload['jenis_pembayaran'] ?? 'lunas',
-                'tgl_tempo' => ($pembelianPayload['jenis_pembayaran'] ?? 'lunas') === 'tempo'
-                    ? ($pembelianPayload['tgl_tempo'] ?? null)
-                    : null,
             ]);
 
             $this->createPenjualanItems($penjualan, $penjualanPayload['items'] ?? []);
             $this->createPenjualanJasaItems($penjualan, $penjualanPayload['jasa_items'] ?? []);
             $this->createPembelianItems($pembelian, $pembelianPayload['items'] ?? []);
             $this->createPenjualanPembayaran($penjualan, $penjualanPayload['pembayaran'] ?? []);
+            $this->createPembelianPembayaran($pembelian, $pembelianPayload['pembayaran'] ?? []);
 
             return TukarTambah::query()->create([
                 'tanggal' => $tanggal,
@@ -91,15 +90,25 @@ class CreateTukarTambah extends CreateRecord
             ->title('Tukar tambah baru dibuat')
             ->body("Nota Penjualan: {$penjualanNota} • Nota Pembelian: {$pembelianNota}")
             ->icon('heroicon-o-check-circle')
+            ->actions([
+                Action::make('Lihat')
+                    ->url(TukarTambahResource::getUrl('view', ['record' => $this->record])),
+            ])
             ->sendToDatabase($user);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            $this->getCreateFormAction()->formId('form'),
-            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
-            $this->getCancelFormAction(),
+            $this->getCreateFormAction()
+                ->label('Buat')
+                ->icon('heroicon-o-plus')
+                ->formId('form'),
+            $this->getCancelFormAction()
+                ->label('Batal')
+                ->formId('form')
+                ->color('danger')
+                ->icon('heroicon-o-x-mark'),
         ];
     }
 
@@ -257,6 +266,30 @@ class CreateTukarTambah extends CreateRecord
 
             PenjualanPembayaran::query()->create([
                 'id_penjualan' => $penjualan->getKey(),
+                'metode_bayar' => $metode,
+                'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
+                'jumlah' => (int) $jumlah,
+                'catatan' => $item['catatan'] ?? null,
+            ]);
+        }
+    }
+
+    protected function createPembelianPembayaran(Pembelian $pembelian, array $items): void
+    {
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $metode = $item['metode_bayar'] ?? null;
+            $jumlah = $item['jumlah'] ?? null;
+
+            if (! $metode || $jumlah === null || $jumlah === '') {
+                continue;
+            }
+
+            PembelianPembayaran::query()->create([
+                'id_pembelian' => $pembelian->getKey(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,

@@ -6,6 +6,7 @@ use App\Models\Absensi;
 use App\Models\ProfilePerusahaan;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\Absensi\AbsensiResource;
 
@@ -172,6 +173,10 @@ class CreateAbsensi extends CreateRecord
                 ->title('Berhasil absen masuk')
                 ->body("Anda telah absen masuk pada {$this->record->tanggal->format('d-m-Y')} pukul {$this->record->jam_masuk}.")
                 ->icon('heroicon-o-check-circle')
+                ->actions([
+                    Action::make('Lihat')
+                        ->url(AbsensiResource::getUrl('edit', ['record' => $this->record])),
+                ])
                 ->success();
             
             $notification->send();
@@ -184,7 +189,11 @@ class CreateAbsensi extends CreateRecord
             $notification = Notification::make()
                 ->title('Pengajuan absensi tersimpan')
                 ->body("Status: {$status} pada {$this->record->tanggal -> format('d-m-Y')}.")
-                ->icon('heroicon-o-document-check');
+                ->icon('heroicon-o-document-check')
+                ->actions([
+                    Action::make('Lihat')
+                        ->url(AbsensiResource::getUrl('edit', ['record' => $this->record])),
+                ]);
 
             $notification->sendToDatabase($user);
 
@@ -195,7 +204,11 @@ class CreateAbsensi extends CreateRecord
         $notification = Notification::make()
             ->title('Absensi baru dibuat')
             ->body("Status: {$status} pada {$this->record->tanggal}.")
-            ->icon('heroicon-o-check-circle');
+            ->icon('heroicon-o-check-circle')
+            ->actions([
+                Action::make('Lihat')
+                    ->url(AbsensiResource::getUrl('edit', ['record' => $this->record])),
+            ]);
 
         $notification->sendToDatabase($user);
     }

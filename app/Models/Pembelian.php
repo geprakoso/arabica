@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Validation\ValidationException;
 
 class Pembelian extends Model
 {
@@ -29,6 +30,26 @@ class Pembelian extends Model
         static::creating(function (Pembelian $pembelian): void {
             if (blank($pembelian->no_po)) {
                 $pembelian->no_po = self::generatePO();
+            }
+        });
+
+        static::deleting(function (Pembelian $pembelian): void {
+            $externalPenjualanNotas = $pembelian->items()
+                ->whereHas('penjualanItems')
+                ->with(['penjualanItems.penjualan'])
+                ->get()
+                ->flatMap(fn($item) => $item->penjualanItems)
+                ->map(fn($item) => $item->penjualan?->no_nota)
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($externalPenjualanNotas->isNotEmpty()) {
+                $notaList = $externalPenjualanNotas->implode(', ');
+
+                throw ValidationException::withMessages([
+                    'id_pembelian' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
+                ]);
             }
         });
     }
@@ -71,8 +92,45 @@ class Pembelian extends Model
         return $this->hasMany(PembelianItem::class, 'id_pembelian', 'id_pembelian');
     }
 
+    public function pembayaran()
+    {
+        return $this->hasMany(PembelianPembayaran::class, 'id_pembelian', 'id_pembelian');
+    }
+
+    public function jasaItems()
+    {
+        return $this->hasMany(PembelianJasa::class, 'id_pembelian', 'id_pembelian');
+    }
+
     public function tukarTambah()
     {
         return $this->hasOne(TukarTambah::class, 'pembelian_id', 'id_pembelian');
+    }
+
+    public function calculateTotalPembelian(): float
+    {
+        $itemsTotal = (float) ($this->items()
+            ->selectRaw('COALESCE(SUM(qty * hpp), 0) as total')
+            ->value('total') ?? 0);
+        $jasaTotal = (float) ($this->jasaItems()
+            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+            ->value('total') ?? 0);
+
+        return $itemsTotal + $jasaTotal;
+    }
+
+    public function recalculatePaymentStatus(): void
+    {
+        $total = $this->calculateTotalPembelian();
+        $totalPaid = (float) ($this->pembayaran()->sum('jumlah') ?? 0);
+        $status = $total <= 0 || $totalPaid >= $total ? 'lunas' : 'tempo';
+
+        if ($this->jenis_pembayaran === $status) {
+            return;
+        }
+
+        $this->forceFill([
+            'jenis_pembayaran' => $status,
+        ])->saveQuietly();
     }
 }
