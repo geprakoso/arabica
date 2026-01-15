@@ -688,11 +688,8 @@ class PembelianResource extends BaseResource
                             }
 
                             if (! empty($failed)) {
-                                Notification::make()
-                                    ->title('Sebagian gagal dihapus')
-                                    ->body(implode(' ', $failed))
-                                    ->danger()
-                                    ->send();
+                                $this->deleteBlockedMessage = implode(' ', $failed);
+                                $this->mountAction('bulkDeleteBlocked');
                             }
 
                             if ($deleted > 0) {

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Produk;
 use App\Models\PenjualanItem;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -31,6 +32,74 @@ class PembelianItem extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (PembelianItem $item): void {
+            $qty = (int) ($item->qty ?? 0);
+
+            if ($qty < 1) {
+                return;
+            }
+
+            $qtyMasukColumn = self::qtyMasukColumn();
+            $qtySisaColumn = self::qtySisaColumn();
+
+            if ($qtyMasukColumn !== 'qty' && is_null($item->{$qtyMasukColumn})) {
+                $item->{$qtyMasukColumn} = $qty;
+            }
+
+            if ($qtySisaColumn !== 'qty' && is_null($item->{$qtySisaColumn})) {
+                $item->{$qtySisaColumn} = $qty;
+            }
+        });
+
+        static::updating(function (PembelianItem $item): void {
+            if (! $item->isDirty('qty')) {
+                return;
+            }
+
+            $qtyMasukColumn = self::qtyMasukColumn();
+            $qtySisaColumn = self::qtySisaColumn();
+            $qtyMasuk = (int) ($item->{$qtyMasukColumn} ?? $item->qty);
+            $qtySisa = (int) ($item->{$qtySisaColumn} ?? $item->qty);
+
+            $hasSales = $qtySisa < $qtyMasuk || $item->penjualanItems()->exists();
+
+            if ($hasSales) {
+                $notaList = $item->penjualanItems()
+                    ->with('penjualan:id_penjualan,no_nota')
+                    ->get()
+                    ->pluck('penjualan.no_nota')
+                    ->filter()
+                    ->unique()
+                    ->implode(', ');
+
+                $suffix = $notaList ? ' No nota: ' . $notaList . '.' : '';
+
+                throw ValidationException::withMessages([
+                    'qty' => 'Qty pembelian tidak bisa diubah karena sudah ada penjualan.' . $suffix,
+                ]);
+            }
+        });
+
+        static::deleting(function (PembelianItem $item): void {
+            if (! $item->penjualanItems()->exists()) {
+                return;
+            }
+
+            $notaList = $item->penjualanItems()
+                ->with('penjualan:id_penjualan,no_nota')
+                ->get()
+                ->pluck('penjualan.no_nota')
+                ->filter()
+                ->unique()
+                ->implode(', ');
+
+            $suffix = $notaList ? ' No nota: ' . $notaList . '.' : '';
+
+            throw ValidationException::withMessages([
+                'id_pembelian_item' => 'Item pembelian tidak bisa dihapus karena sudah ada penjualan.' . $suffix,
+            ]);
+        });
+
         static::saved(function (PembelianItem $item): void {
             $item->pembelian?->recalculatePaymentStatus();
         });
