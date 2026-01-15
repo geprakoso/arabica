@@ -15,6 +15,7 @@ use App\Models\Supplier;
 use App\Models\TukarTambah;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -64,7 +65,7 @@ class TukarTambahResource extends BaseResource
                     ->description('Detail transaksi tukar tambah barang')
                     ->icon('heroicon-m-clipboard-document-list')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(2)
                             ->schema([
                                 TextInput::make('no_nota')
                                     ->label('No. Nota Utama')
@@ -89,15 +90,23 @@ class TukarTambahResource extends BaseResource
                                     ->default(fn () => Auth::user()?->karyawan?->id)
                                     ->required()
                                     ->prefixIcon('heroicon-m-user')
-                                    ->columnSpan(1),
+                                    ->columnSpan(2),
                             ]),
-                        Textarea::make('catatan')
-                            ->label('Catatan Umum')
-                            ->rows(2)
-                            ->placeholder('Keterangan tambahan...')
-                            ->columnSpanFull(),
+                        Section::make()
+                            ->heading('📝 Catatan Tambahan')
+                            ->schema([
+                                Textarea::make('catatan')
+                                    ->label('Catatan Umum')
+                                    ->rows(2)
+                                    ->placeholder('Keterangan tambahan...')
+                                    ->columnSpanFull(),
+                            ])
+                            ->collapsible()
+                            ->collapsed(true)
+                            ->compact(),
                     ])
-                    ->collapsible(),
+                    ->collapsible()
+                    ->collapsed(false),
 
                 Tabs::make('Input Detail')
                     ->tabs([
@@ -109,9 +118,10 @@ class TukarTambahResource extends BaseResource
                                     ->statePath('penjualan')
                                     ->schema([
                                         Section::make('Data Penjualan')
+                                            ->description('Informasi pelanggan dan sales')
                                             ->icon('heroicon-m-user-group')
                                             ->schema([
-                                                Grid::make(3)
+                                                Grid::make(2)
                                                     ->schema([
                                                         Select::make('id_member')
                                                             ->label('Pelanggan')
@@ -144,18 +154,12 @@ class TukarTambahResource extends BaseResource
                                                             ])
                                                             ->createOptionUsing(fn (array $data): int => (int) Member::query()->create($data)->getKey()),
 
-                                                        Select::make('id_karyawan')
-                                                            ->label('Sales')
-                                                            ->relationship('karyawan', 'nama_karyawan')
-                                                            ->preload()
-                                                            ->default(fn () => Auth::user()?->karyawan?->id)
-                                                            ->searchable()
-                                                            ->prefixIcon('heroicon-m-user-circle'),
                                                         TextInput::make('no_nota')
                                                             ->label('No. Nota Jual')
                                                             ->default(fn () => Penjualan::generateNoNota())
                                                             ->disabled()
                                                             ->dehydrated()
+                                                            ->required()
                                                             ->prefixIcon('heroicon-m-document'),
                                                     ]),
                                             ])
@@ -168,7 +172,7 @@ class TukarTambahResource extends BaseResource
                                                     ->label('Daftar Barang Keluar')
                                                     ->addActionLabel('+ Tambah Barang')
                                                     ->schema([
-                                                        Grid::make(6)
+                                                        Grid::make(12)
                                                             ->schema([
                                                                 Select::make('id_produk')
                                                                     ->label('Produk')
@@ -199,11 +203,12 @@ class TukarTambahResource extends BaseResource
                                                                             $set('qty', $available);
                                                                         }
                                                                     })
-                                                                    ->columnSpan(2),
+                                                                    ->columnSpan(4),
                                                                 Select::make('kondisi')
                                                                     ->label('Kondisi')
                                                                     ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
                                                                     ->native(false)
+                                                                    ->placeholder('Kondisi')
                                                                     ->reactive()
                                                                     ->disabled(function (Get $get): bool {
                                                                         $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
@@ -230,7 +235,7 @@ class TukarTambahResource extends BaseResource
                                                                             return $labels[0];
                                                                         }
 
-                                                                        return 'Pilih kondisi ('.implode(' / ', $labels).')';
+                                                                        return 'kondisi';
                                                                     })
                                                                     ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
                                                                         $productId = (int) ($get('id_produk') ?? 0);
@@ -246,9 +251,9 @@ class TukarTambahResource extends BaseResource
                                                                     ->columnSpan(1)
                                                                     ->nullable(),
                                                                 TextInput::make('qty')
-                                                                    ->label('Jml (Qty)')
+                                                                    ->label('Qty')
                                                                     ->numeric()
-                                                                    ->default(1)
+                                                                    // ->default(1)
                                                                     ->minValue(1)
                                                                     ->maxValue(function (Get $get): ?int {
                                                                         $productId = (int) ($get('id_produk') ?? 0);
@@ -263,16 +268,16 @@ class TukarTambahResource extends BaseResource
                                                                     })
                                                                     ->required()
                                                                     ->reactive()
-                                                                    ->helperText(function (Get $get): string {
+                                                                    ->placeholder(function (Get $get): string {
                                                                         $productId = (int) ($get('id_produk') ?? 0);
 
                                                                         if ($productId < 1) {
-                                                                            return 'Pilih produk terlebih dahulu.';
+                                                                            return 'Pilih produk';
                                                                         }
 
                                                                         $available = self::getAvailableQty($productId, $get('kondisi'));
 
-                                                                        return 'Stok tersedia: '.number_format($available, 0, ',', '.');
+                                                                        return 'Stok: '.number_format($available, 0, ',', '.');
                                                                     })
                                                                     ->columnSpan(1),
                                                                 TextInput::make('harga_jual')
@@ -281,27 +286,25 @@ class TukarTambahResource extends BaseResource
                                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                                                     ->required()
                                                                     ->columnSpan(2),
-                                                            ]),
 
-                                                        \Filament\Forms\Components\Repeater::make('serials')
-                                                            ->label('Data Serial Number (SN)')
-                                                            ->addActionLabel('+ Input SN')
-                                                            ->schema([
-                                                                Grid::make(3)
+                                                                \Filament\Forms\Components\Repeater::make('serials')
+                                                                    ->label('Serial Number & Garansi')
+                                                                    ->addActionLabel('+ SN')
                                                                     ->schema([
                                                                         TextInput::make('sn')
-                                                                            ->label('Serial Number')
-                                                                            ->required()
-                                                                            ->columnSpan(2),
+                                                                            ->label('SN')
+                                                                            ->required(),
                                                                         TextInput::make('garansi')
-                                                                            ->label('Garansi (Cth: 1 Thn)')
-                                                                            ->columnSpan(1),
-                                                                    ]),
-                                                            ])
-                                                            ->defaultItems(1)
-                                                            ->reorderable(false)
-                                                            ->grid(2)
-                                                            ->columnSpanFull(),
+                                                                            ->label('Garansi'),
+                                                                    ])
+                                                                    ->grid(2)
+                                                                    ->defaultItems(0)
+                                                                    ->reorderable(false)
+                                                                    ->collapsible()
+                                                                    ->collapsed(fn (Get $get): bool => empty($get('serials')))
+                                                                    ->columnSpan(4),
+                                                            ]),
+
                                                     ])
                                                     ->collapsible()
                                                     ->itemLabel(fn (array $state): ?string => \App\Models\Produk::find($state['id_produk'] ?? null)?->nama_produk ?? 'Produk Belum Dipilih')
@@ -334,16 +337,17 @@ class TukarTambahResource extends BaseResource
                                                             ->required(),
                                                     ])
                                                     ->colStyles([
-                                                        'jasa_id' => 'width: 50%;',
-                                                        'qty' => 'width: 10%;',
-                                                        'harga' => 'width: 40%;',
+                                                        'jasa_id' => 'width: 60%;',
+                                                        'qty' => 'width: 15%;',
+                                                        'harga' => 'width: 25%;',
                                                     ])
-                                                    ->columns(4)
+                                                    ->columns(3)
                                                     ->defaultItems(0)
                                                     ->collapsible()
                                                     ->cloneable(),
                                             ])
-                                            ->collapsible(),
+                                            ->collapsible()
+                                            ->collapsed(true),
 
                                         Section::make('Pembayaran')
                                             ->icon('heroicon-m-banknotes')
@@ -388,9 +392,10 @@ class TukarTambahResource extends BaseResource
                                     ->statePath('pembelian')
                                     ->schema([
                                         Section::make('Data Pembelian')
+                                            ->description('Informasi supplier dan staff gudang')
                                             ->icon('heroicon-m-building-storefront')
                                             ->schema([
-                                                Grid::make(3)
+                                                Grid::make(2)
                                                     ->schema([
                                                         Select::make('id_supplier')
                                                             ->label('Supplier')
@@ -428,14 +433,16 @@ class TukarTambahResource extends BaseResource
                                                             ->label('No. PO')
                                                             ->default(fn () => Pembelian::generatePO())
                                                             ->disabled()
-                                                            ->dehydrated(),
+                                                            ->dehydrated()
+                                                            ->columnSpan(2),
                                                     ]),
                                                 Grid::make(2)
                                                     ->schema([
                                                         Select::make('tipe_pembelian')
                                                             ->label('Pajak')
                                                             ->options(['non_ppn' => 'Non PPN', 'ppn' => 'PPN (11%)'])
-                                                            ->default('non_ppn'),
+                                                            ->default('non_ppn')
+                                                            ->columnSpan(2),
                                                     ]),
                                             ])
                                             ->compact(),
