@@ -2,6 +2,23 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.15
+### Peningkatan UI/UX Tukar Tambah
+- **Modal Serial Number & Garansi**:
+  - Mengubah input serial number dari tampilan inline (nested table) menjadi **modal popup** untuk UI yang lebih bersih dan compact.
+  - Menambahkan tombol **"Manage"** dengan ikon QR code yang menampilkan jumlah serial number (e.g., "2 serials").
+  - Modal berisi `Repeater` untuk menambah, mengedit, dan menghapus serial number (`sn` dan `garansi`) secara individual.
+  - Implementasi **data transfer** antara hidden field (`serials`) dan modal repeater (`serials_temp`) menggunakan `fillForm` dan `action` callbacks.
+  - Menambahkan `->button()` pada `FormAction` agar tombol menampilkan icon dan label secara bersamaan (bukan hanya icon).
+  - **Known Issue**: Count serial number belum update secara reactive setelah modal disimpan (ditunda untuk perbaikan masa depan).
+- **Perbaikan Penjualan** (dari repository):
+  - Memperbaiki logika visibility tombol aksi pada tabel penjualan.
+  - Menyesuaikan kondisi hidden untuk action group berdasarkan status pembayaran dan keberadaan line items.
+- **Refactoring Email Invoice**:
+  - Menyesuaikan sintaks anonymous function pada `InvoicePenjualanMail.php` untuk konsistensi kode.
+  - Mengurutkan ulang import statements sesuai standar PSR-12.
+- **Dokumentasi**: Menambahkan dokumentasi teknis lengkap untuk implementasi modal serial number (`docs/2026-01-15_modal_serial_number_tukar_tambah.md`).
+
 ## 2026.01.14
 ### Perbaikan & Peningkatan Penjadwalan Tugas
 - **Optimasi Upload Gambar RichEditor**:
