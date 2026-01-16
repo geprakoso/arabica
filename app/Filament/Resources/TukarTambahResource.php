@@ -163,341 +163,343 @@ class TukarTambahResource extends BaseResource
                                         //     ])
                                         //     ->compact(),
 
-                                        Section::make('Daftar Barang & Jasa')
-                                            ->icon('heroicon-m-shopping-bag')
+                                        TableRepeater::make('items')
+                                            ->label('Daftar Barang Keluar')
+                                            ->addActionLabel('+ Tambah Barang')
+                                            ->reactive()
+                                            ->afterStateUpdated(function (Set $set, Get $get): void {
+                                                // Update total items count
+                                                $items = $get('items') ?? [];
+                                                $jasaItems = $get('jasa_items') ?? [];
+                                                $totalItems = count($items) + count($jasaItems);
+                                                $set('total_items_summary', $totalItems);
+
+                                                // Update total price
+                                                $productTotal = collect($items)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga_jual'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $serviceTotal = collect($jasaItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $total = $productTotal + $serviceTotal;
+                                                $set('total_price_summary', number_format($total, 0, ',', '.'));
+
+                                                // Update grand total - use absolute paths
+                                                $pembelianItems = $get('../../pembelian/items') ?? [];
+                                                $pembelianTotal = collect($pembelianItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $hpp = (int) ($item['hpp'] ?? 0);
+
+                                                    return $qty * $hpp;
+                                                });
+                                                $grandTotal = $total - $pembelianTotal;
+                                                // Set at root level using absolute path traversal
+                                                $set('../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
+                                            })
                                             ->schema([
-                                                TableRepeater::make('items')
-                                                    ->label('Daftar Barang Keluar')
-                                                    ->addActionLabel('+ Tambah Barang')
+                                                Select::make('id_produk')
+                                                    ->label('Produk')
+                                                    ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(function (Set $set, Get $get): void {
-                                                        // Update total items count
-                                                        $items = $get('items') ?? [];
-                                                        $jasaItems = $get('jasa_items') ?? [];
-                                                        $totalItems = count($items) + count($jasaItems);
-                                                        $set('total_items_summary', $totalItems);
+                                                    ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
+                                                        $options = self::getAvailableConditionOptions((int) ($state ?? 0));
+                                                        $selected = null;
 
-                                                        // Update total price
-                                                        $productTotal = collect($items)->sum(function ($item) {
-                                                            $qty = (int) ($item['qty'] ?? 0);
-                                                            $price = (int) ($item['harga_jual'] ?? 0);
-                                                            return $qty * $price;
-                                                        });
+                                                        if (count($options) === 1) {
+                                                            $selected = array_key_first($options);
+                                                            $set('kondisi', $selected);
+                                                        } elseif (! array_key_exists($get('kondisi'), $options)) {
+                                                            $set('kondisi', null);
+                                                        } else {
+                                                            $selected = $get('kondisi');
+                                                        }
 
-                                                        $serviceTotal = collect($jasaItems)->sum(function ($item) {
-                                                            $qty = (int) ($item['qty'] ?? 0);
-                                                            $price = (int) ($item['harga'] ?? 0);
-                                                            return $qty * $price;
-                                                        });
+                                                        $set('harga_jual', self::getDefaultPriceForProduct((int) ($state ?? 0), $selected));
 
-                                                        $total = $productTotal + $serviceTotal;
-                                                        $set('total_price_summary', number_format($total, 0, ',', '.'));
-                                                        
-                                                        // Update grand total - use absolute paths
-                                                        $pembelianItems = $get('../../pembelian/items') ?? [];
-                                                        $pembelianTotal = collect($pembelianItems)->sum(function ($item) {
-                                                            $qty = (int) ($item['qty'] ?? 0);
-                                                            $hpp = (int) ($item['hpp'] ?? 0);
-                                                            return $qty * $hpp;
-                                                        });
-                                                        $grandTotal = $total - $pembelianTotal;
-                                                        // Set at root level using absolute path traversal
-                                                        $set('../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
+                                                        $available = self::getAvailableQty((int) ($state ?? 0), $selected);
+                                                        $current = (int) ($get('qty') ?? 0);
+
+                                                        if ($available > 0 && $current > $available) {
+                                                            $set('qty', $available);
+                                                        }
+                                                    }),
+                                                Select::make('kondisi')
+                                                    ->label('Kondisi')
+                                                    ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
+                                                    ->native(false)
+                                                    ->placeholder('Kondisi')
+                                                    ->reactive()
+                                                    ->disabled(function (Get $get): bool {
+                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+
+                                                        return count($options) <= 1;
                                                     })
-                                                    ->schema([
-                                                        Select::make('id_produk')
-                                                            ->label('Produk')
-                                                            ->options(fn () => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
-                                                            ->searchable()
-                                                            ->preload()
-                                                            ->required()
-                                                            ->reactive()
-                                                            ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
-                                                                $options = self::getAvailableConditionOptions((int) ($state ?? 0));
-                                                                $selected = null;
+                                                    ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
+                                                        if ($state) {
+                                                            return;
+                                                        }
 
-                                                                if (count($options) === 1) {
-                                                                    $selected = array_key_first($options);
-                                                                    $set('kondisi', $selected);
-                                                                } elseif (! array_key_exists($get('kondisi'), $options)) {
-                                                                    $set('kondisi', null);
-                                                                } else {
-                                                                    $selected = $get('kondisi');
-                                                                }
+                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
 
-                                                                $set('harga_jual', self::getDefaultPriceForProduct((int) ($state ?? 0), $selected));
+                                                        if (count($options) === 1) {
+                                                            $set('kondisi', array_key_first($options));
+                                                        }
+                                                    })
+                                                    ->placeholder(function (Get $get): string {
+                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
 
-                                                                $available = self::getAvailableQty((int) ($state ?? 0), $selected);
-                                                                $current = (int) ($get('qty') ?? 0);
+                                                        $labels = array_values($options);
 
-                                                                if ($available > 0 && $current > $available) {
-                                                                    $set('qty', $available);
-                                                                }
-                                                            }),
-                                                        Select::make('kondisi')
-                                                            ->label('Kondisi')
-                                                            ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
-                                                            ->native(false)
-                                                            ->placeholder('Kondisi')
-                                                            ->reactive()
-                                                            ->disabled(function (Get $get): bool {
-                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+                                                        if (count($labels) === 1) {
+                                                            return $labels[0];
+                                                        }
 
-                                                                return count($options) <= 1;
-                                                            })
-                                                            ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
-                                                                if ($state) {
-                                                                    return;
-                                                                }
+                                                        return 'kondisi';
+                                                    })
+                                                    ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
+                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                        $set('harga_jual', self::getDefaultPriceForProduct($productId, $state));
 
-                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+                                                        $available = self::getAvailableQty((int) ($get('id_produk') ?? 0), $state);
+                                                        $current = (int) ($get('qty') ?? 0);
 
-                                                                if (count($options) === 1) {
-                                                                    $set('kondisi', array_key_first($options));
-                                                                }
-                                                            })
-                                                            ->placeholder(function (Get $get): string {
-                                                                $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
+                                                        if ($available > 0 && $current > $available) {
+                                                            $set('qty', $available);
+                                                        }
+                                                    })
+                                                    ->nullable(),
+                                                TextInput::make('qty')
+                                                    ->label('Qty')
+                                                    ->numeric()
+                                                    ->minValue(1)
+                                                    ->maxValue(function (Get $get): ?int {
+                                                        $productId = (int) ($get('id_produk') ?? 0);
 
-                                                                $labels = array_values($options);
+                                                        if ($productId < 1) {
+                                                            return null;
+                                                        }
 
-                                                                if (count($labels) === 1) {
-                                                                    return $labels[0];
-                                                                }
+                                                        $available = self::getAvailableQty($productId, $get('kondisi'));
 
-                                                                return 'kondisi';
-                                                            })
-                                                            ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
-                                                                $productId = (int) ($get('id_produk') ?? 0);
-                                                                $set('harga_jual', self::getDefaultPriceForProduct($productId, $state));
+                                                        return $available > 0 ? $available : null;
+                                                    })
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->placeholder(function (Get $get): string {
+                                                        $productId = (int) ($get('id_produk') ?? 0);
 
-                                                                $available = self::getAvailableQty((int) ($get('id_produk') ?? 0), $state);
-                                                                $current = (int) ($get('qty') ?? 0);
+                                                        if ($productId < 1) {
+                                                            return 'Pilih produk';
+                                                        }
 
-                                                                if ($available > 0 && $current > $available) {
-                                                                    $set('qty', $available);
-                                                                }
-                                                            })
-                                                            ->nullable(),
-                                                        TextInput::make('qty')
-                                                            ->label('Qty')
-                                                            ->numeric()
-                                                            ->minValue(1)
-                                                            ->maxValue(function (Get $get): ?int {
-                                                                $productId = (int) ($get('id_produk') ?? 0);
+                                                        $available = self::getAvailableQty($productId, $get('kondisi'));
 
-                                                                if ($productId < 1) {
-                                                                    return null;
-                                                                }
+                                                        return 'Stok: '.number_format($available, 0, ',', '.');
+                                                    }),
+                                                TextInput::make('harga_jual')
+                                                    ->label('Harga Satuan')
+                                                    ->prefix('Rp')
+                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->required()
+                                                    ->reactive(),
 
-                                                                $available = self::getAvailableQty($productId, $get('kondisi'));
+                                                Hidden::make('serials')
+                                                    ->default([])
+                                                    ->reactive(),
 
-                                                                return $available > 0 ? $available : null;
-                                                            })
-                                                            ->required()
-                                                            ->reactive()
-                                                            ->placeholder(function (Get $get): string {
-                                                                $productId = (int) ($get('id_produk') ?? 0);
-
-                                                                if ($productId < 1) {
-                                                                    return 'Pilih produk';
-                                                                }
-
-                                                                $available = self::getAvailableQty($productId, $get('kondisi'));
-
-                                                                return 'Stok: '.number_format($available, 0, ',', '.');
-                                                            }),
-                                                        TextInput::make('harga_jual')
-                                                            ->label('Harga Satuan')
-                                                            ->prefix('Rp')
-                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                            ->required()
-                                                            ->reactive(),
-
-                                                        Hidden::make('serials')
-                                                            ->default([])
-                                                            ->reactive(),
-
-                                                        TextInput::make('serials_count')
-                                                            ->label('Serial Number & Garansi')
-                                                            ->formatStateUsing(fn (Get $get): string => count($get('serials') ?? []).' serials')
-                                                            ->live()
-                                                            ->disabled()
-                                                            ->dehydrated(true)
-                                                            ->suffixAction(
-                                                                FormAction::make('manage_serials')
-                                                                    ->label('Manage')
-                                                                    ->icon('heroicon-o-qr-code')
-                                                                    ->button()
-                                                                    ->color('info')
-                                                                    ->modalHeading('Manage Serial Numbers')
-                                                                    ->modalWidth('2xl')
-                                                                    ->fillForm(fn (Get $get): array => [
-                                                                        'serials_temp' => $get('serials') ?? [],
-                                                                    ])
-                                                                    ->form([
-                                                                        Repeater::make('serials_temp')
-                                                                            ->label('Serial Numbers')
+                                                TextInput::make('serials_count')
+                                                    ->label('Serial Number & Garansi')
+                                                    ->formatStateUsing(fn (Get $get): string => count($get('serials') ?? []).' serials')
+                                                    ->live()
+                                                    ->disabled()
+                                                    ->dehydrated(true)
+                                                    ->suffixAction(
+                                                        FormAction::make('manage_serials')
+                                                            ->label('Manage')
+                                                            ->icon('heroicon-o-qr-code')
+                                                            ->button()
+                                                            ->color('info')
+                                                            ->modalHeading('Manage Serial Numbers')
+                                                            ->modalWidth('2xl')
+                                                            ->fillForm(fn (Get $get): array => [
+                                                                'serials_temp' => $get('serials') ?? [],
+                                                            ])
+                                                            ->form([
+                                                                Repeater::make('serials_temp')
+                                                                    ->label('Serial Numbers')
+                                                                    ->schema([
+                                                                        Grid::make(2)
                                                                             ->schema([
-                                                                                Grid::make(2)
-                                                                                    ->schema([
-                                                                                        TextInput::make('sn')
-                                                                                            ->label('Serial Number')
-                                                                                            ->required(),
-                                                                                        TextInput::make('garansi')
-                                                                                            ->label('Garansi'),
-                                                                                    ]),
-                                                                            ])
-                                                                            ->defaultItems(0)
-                                                                            ->addActionLabel('+ Add Serial')
-                                                                            ->reorderable(false)
-                                                                            ->collapsible()
-                                                                            ->itemLabel(fn (array $state): ?string => $state['sn'] ?? 'New Serial'),
+                                                                                TextInput::make('sn')
+                                                                                    ->label('Serial Number')
+                                                                                    ->required(),
+                                                                                TextInput::make('garansi')
+                                                                                    ->label('Garansi'),
+                                                                            ]),
                                                                     ])
-                                                                    ->action(function (Set $set, array $data, $livewire): void {
-                                                                        $set('serials', $data['serials_temp'] ?? []);
-                                                                    })
-                                                                    ->after(function (Set $set, Get $get): void {
-                                                                        // Force refresh of serials_count by updating it
-                                                                        $serials = $get('serials') ?? [];
-                                                                        $set('serials_count', count($serials));
-                                                                    })
-                                                            ),
-                                                    ])
-                                                    ->colStyles([
-                                                        'id_produk' => 'width: 30%;',
-                                                        'kondisi' => 'width: 10%;',
-                                                        'qty' => 'width: 10%;',
-                                                        'harga_jual' => 'width: 15%;',
-                                                    ])
-                                                    ->defaultItems(1)
-                                                    ->reorderable(false)
-                                                    ->columns(1),
+                                                                    ->defaultItems(0)
+                                                                    ->addActionLabel('+ Add Serial')
+                                                                    ->reorderable(false)
+                                                                    ->collapsible()
+                                                                    ->itemLabel(fn (array $state): ?string => $state['sn'] ?? 'New Serial'),
+                                                            ])
+                                                            ->action(function (Set $set, array $data, $livewire): void {
+                                                                $set('serials', $data['serials_temp'] ?? []);
+                                                            })
+                                                            ->after(function (Set $set, Get $get): void {
+                                                                // Force refresh of serials_count by updating it
+                                                                $serials = $get('serials') ?? [];
+                                                                $set('serials_count', count($serials));
+                                                            })
+                                                    ),
+                                            ])
+                                            ->colStyles([
+                                                'id_produk' => 'width: 30%;',
+                                                'kondisi' => 'width: 10%;',
+                                                'qty' => 'width: 10%;',
+                                                'harga_jual' => 'width: 15%;',
+                                            ])
+                                            ->defaultItems(1)
+                                            ->reorderable(false)
+                                            ->columns(1),
 
-                                                TableRepeater::make('jasa_items')
-                                                    ->label('Layanan Jasa (Opsional)')
-                                                    ->addActionLabel('+ Tambah Jasa')
+                                        TableRepeater::make('jasa_items')
+                                            ->label('Layanan Jasa (Opsional)')
+                                            ->addActionLabel('+ Tambah Jasa')
+                                            ->reactive()
+                                            ->afterStateUpdated(function (Set $set, Get $get): void {
+                                                // Update total items count
+                                                $items = $get('items') ?? [];
+                                                $jasaItems = $get('jasa_items') ?? [];
+                                                $totalItems = count($items) + count($jasaItems);
+                                                $set('total_items_summary', $totalItems);
+
+                                                // Update total price
+                                                $productTotal = collect($items)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga_jual'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $serviceTotal = collect($jasaItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $total = $productTotal + $serviceTotal;
+                                                $set('total_price_summary', number_format($total, 0, ',', '.'));
+
+                                                // Update grand total - recalculate pembelian from items
+                                                $pembelianItems = $get('../../../pembelian/items') ?? [];
+                                                $pembelianTotal = collect($pembelianItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $hpp = (int) ($item['hpp'] ?? 0);
+
+                                                    return $qty * $hpp;
+                                                });
+                                                $grandTotal = $total - $pembelianTotal;
+                                                // Set at root level - jasa_items is nested deeper
+                                                $set('../../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
+                                            })
+                                            ->schema([
+                                                Select::make('jasa_id')
+                                                    ->label('Jasa')
+                                                    ->prefixIcon('hugeicons-tools')
+                                                    ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
+                                                    ->searchable()
+                                                    ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(function (Set $set, Get $get): void {
-                                                        // Update total items count
+                                                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                                        $set('harga', $state ? (int) (Jasa::query()->find($state)?->harga ?? 0) : null);
+                                                    })
+                                                    ->columnSpan(2),
+                                                TextInput::make('qty')
+                                                    ->label('Jml')
+                                                    ->numeric()
+                                                    ->default(1)
+                                                    ->required()
+                                                    ->reactive(),
+                                                TextInput::make('harga')
+                                                    ->label('Tarif')
+                                                    ->prefix('Rp')
+                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->required()
+                                                    ->reactive(),
+                                            ])
+                                            ->colStyles([
+                                                'jasa_id' => 'width: 60%;',
+                                                'qty' => 'width: 15%;',
+                                                'harga' => 'width: 25%;',
+                                            ])
+                                            ->columns(3)
+                                            ->defaultItems(0)
+                                            ->collapsible()
+                                            ->cloneable(),
+
+                                        // Summary Section
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('total_items_summary')
+                                                    ->label('Total Item')
+                                                    ->live()
+                                                    ->default(0)
+                                                    ->disabled()
+                                                    ->dehydrated(false)
+                                                    ->afterStateHydrated(function (Set $set, Get $get): void {
                                                         $items = $get('items') ?? [];
                                                         $jasaItems = $get('jasa_items') ?? [];
                                                         $totalItems = count($items) + count($jasaItems);
                                                         $set('total_items_summary', $totalItems);
+                                                    })
+                                                    ->suffixIcon('heroicon-m-shopping-bag'),
 
-                                                        // Update total price
+                                                TextInput::make('total_price_summary')
+                                                    ->label('Total Harga')
+                                                    ->prefix('Rp')
+                                                    ->live()
+                                                    ->default(0)
+                                                    ->disabled()
+                                                    ->dehydrated(false)
+                                                    ->afterStateHydrated(function (Set $set, Get $get): void {
+                                                        $items = $get('items') ?? [];
+                                                        $jasaItems = $get('jasa_items') ?? [];
+
+                                                        // Calculate product total: qty * harga_jual
                                                         $productTotal = collect($items)->sum(function ($item) {
                                                             $qty = (int) ($item['qty'] ?? 0);
                                                             $price = (int) ($item['harga_jual'] ?? 0);
+
                                                             return $qty * $price;
                                                         });
 
+                                                        // Calculate service total: qty * harga
                                                         $serviceTotal = collect($jasaItems)->sum(function ($item) {
                                                             $qty = (int) ($item['qty'] ?? 0);
                                                             $price = (int) ($item['harga'] ?? 0);
+
                                                             return $qty * $price;
                                                         });
 
                                                         $total = $productTotal + $serviceTotal;
                                                         $set('total_price_summary', number_format($total, 0, ',', '.'));
-                                                        
-                                                        // Update grand total - recalculate pembelian from items
-                                                        $pembelianItems = $get('../../../pembelian/items') ?? [];
-                                                        $pembelianTotal = collect($pembelianItems)->sum(function ($item) {
-                                                            $qty = (int) ($item['qty'] ?? 0);
-                                                            $hpp = (int) ($item['hpp'] ?? 0);
-                                                            return $qty * $hpp;
-                                                        });
-                                                        $grandTotal = $total - $pembelianTotal;
-                                                        // Set at root level - jasa_items is nested deeper
-                                                        $set('../../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
                                                     })
-                                                    ->schema([
-                                                        Select::make('jasa_id')
-                                                            ->label('Jasa')
-                                                            ->prefixIcon('hugeicons-tools')
-                                                            ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
-                                                            ->searchable()
-                                                            ->required()
-                                                            ->reactive()
-                                                            ->afterStateUpdated(function (Set $set, ?int $state): void {
-                                                                $set('harga', $state ? (int) (Jasa::query()->find($state)?->harga ?? 0) : null);
-                                                            })
-                                                            ->columnSpan(2),
-                                                        TextInput::make('qty')
-                                                            ->label('Jml')
-                                                            ->numeric()
-                                                            ->default(1)
-                                                            ->required()
-                                                            ->reactive(),
-                                                        TextInput::make('harga')
-                                                            ->label('Tarif')
-                                                            ->prefix('Rp')
-                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                            ->required()
-                                                            ->reactive(),
-                                                    ])
-                                                    ->colStyles([
-                                                        'jasa_id' => 'width: 60%;',
-                                                        'qty' => 'width: 15%;',
-                                                        'harga' => 'width: 25%;',
-                                                    ])
-                                                    ->columns(3)
-                                                    ->defaultItems(0)
-                                                    ->collapsible()
-                                                    ->cloneable(),
-
-                                                // Summary Section
-                                                Grid::make(2)
-                                                    ->schema([
-                                                        TextInput::make('total_items_summary')
-                                                            ->label('Total Item')
-                                                            ->live()
-                                                            ->default(0)
-                                                            ->disabled()
-                                                            ->dehydrated(false)
-                                                            ->afterStateHydrated(function (Set $set, Get $get): void {
-                                                                $items = $get('items') ?? [];
-                                                                $jasaItems = $get('jasa_items') ?? [];
-                                                                $totalItems = count($items) + count($jasaItems);
-                                                                $set('total_items_summary', $totalItems);
-                                                            })
-                                                            ->suffixIcon('heroicon-m-shopping-bag'),
-
-                                                        TextInput::make('total_price_summary')
-                                                            ->label('Total Harga')
-                                                            ->prefix('Rp')
-                                                            ->live()
-                                                            ->default(0)
-                                                            ->disabled()
-                                                            ->dehydrated(false)
-                                                            ->afterStateHydrated(function (Set $set, Get $get): void {
-                                                                $items = $get('items') ?? [];
-                                                                $jasaItems = $get('jasa_items') ?? [];
-
-                                                                // Calculate product total: qty * harga_jual
-                                                                $productTotal = collect($items)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $price = (int) ($item['harga_jual'] ?? 0);
-                                                                    return $qty * $price;
-                                                                });
-
-                                                                // Calculate service total: qty * harga
-                                                                $serviceTotal = collect($jasaItems)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $price = (int) ($item['harga'] ?? 0);
-                                                                    return $qty * $price;
-                                                                });
-
-                                                                $total = $productTotal + $serviceTotal;
-                                                                $set('total_price_summary', number_format($total, 0, ',', '.'));
-                                                            })
-                                                            ->suffixIcon('heroicon-m-banknotes'),
-                                                    ])
-                                                    ->columnSpanFull(),
+                                                    ->suffixIcon('heroicon-m-banknotes'),
                                             ])
-                                            ->collapsible()
-                                            ->collapsed(true),
+                                            ->columnSpanFull(),
                                     ]),
                             ]),
 
@@ -514,183 +516,189 @@ class TukarTambahResource extends BaseResource
                                                 $supplier = Supplier::query()
                                                     ->where('nama_supplier', 'User Jual')
                                                     ->first();
-                                                
-                                                if (!$supplier) {
+
+                                                if (! $supplier) {
                                                     $supplier = Supplier::query()->create([
                                                         'nama_supplier' => 'User Jual',
                                                         'no_hp' => '0000',
                                                     ]);
                                                 }
-                                                
+
                                                 return $supplier->id;
                                             })
                                             ->dehydrated(),
 
-                                        Section::make('Daftar Barang Masuk')
-                                            ->icon('heroicon-m-archive-box-arrow-down')
+                                        TableRepeater::make('items')
+                                            ->label('Barang')
+                                            ->addActionLabel('+ Tambah Barang')
+                                            ->minItems(1)
+                                            ->reactive()
+                                            ->afterStateUpdated(function (Set $set, Get $get): void {
+                                                // Recalculate total pembelian
+                                                $items = $get('items') ?? [];
+
+                                                $total = collect($items)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $hpp = (int) ($item['hpp'] ?? 0);
+
+                                                    return $qty * $hpp;
+                                                });
+
+                                                $set('total_pembelian_summary', number_format($total, 0, ',', '.'));
+
+                                                // Update grand total - recalculate penjualan from items
+                                                $penjualanItems = $get('../../penjualan/items') ?? [];
+                                                $penjualanJasaItems = $get('../../penjualan/jasa_items') ?? [];
+
+                                                $productTotal = collect($penjualanItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga_jual'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $serviceTotal = collect($penjualanJasaItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $penjualanTotal = $productTotal + $serviceTotal;
+                                                $grandTotal = $penjualanTotal - $total;
+                                                // Set at root level - pembelian items is nested: pembelian.items
+                                                $set('../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
+                                            })
                                             ->schema([
-                                                TableRepeater::make('items')
-                                                    ->label('Barang')
-                                                    ->addActionLabel('+ Tambah Barang')
-                                                    ->minItems(1)
-                                                    ->reactive()
+                                                \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
+                                                Select::make('id_produk')
+                                                    ->label('Produk')
+                                                    ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->columnSpan(2),
+                                                Select::make('kondisi')
+                                                    ->label('Kondisi')
+                                                    ->options(['baru' => 'Baru', 'bekas' => 'Bekas'])
+                                                    ->default('baru')
+                                                    ->required(),
+                                                TextInput::make('qty')
+                                                    ->label('Jml')
+                                                    ->numeric()
+                                                    ->default(1)
+                                                    ->required()
+                                                    ->lazy()
                                                     ->afterStateUpdated(function (Set $set, Get $get): void {
-                                                        // Recalculate total pembelian
-                                                        $items = $get('items') ?? [];
-                                                        
+                                                        // Trigger parent repeater update
+                                                        $items = $get('../../items') ?? [];
                                                         $total = collect($items)->sum(function ($item) {
                                                             $qty = (int) ($item['qty'] ?? 0);
                                                             $hpp = (int) ($item['hpp'] ?? 0);
+
                                                             return $qty * $hpp;
                                                         });
-                                                        
-                                                        $set('total_pembelian_summary', number_format($total, 0, ',', '.'));
-                                                        
+                                                        $set('../../total_pembelian_summary', number_format($total, 0, ',', '.'));
+
                                                         // Update grand total - recalculate penjualan from items
-                                                        $penjualanItems = $get('../../penjualan/items') ?? [];
-                                                        $penjualanJasaItems = $get('../../penjualan/jasa_items') ?? [];
-                                                        
+                                                        $penjualanItems = $get('../../../../penjualan/items') ?? [];
+                                                        $penjualanJasaItems = $get('../../../../penjualan/jasa_items') ?? [];
+
                                                         $productTotal = collect($penjualanItems)->sum(function ($item) {
                                                             $qty = (int) ($item['qty'] ?? 0);
                                                             $price = (int) ($item['harga_jual'] ?? 0);
+
                                                             return $qty * $price;
                                                         });
-                                                        
+
                                                         $serviceTotal = collect($penjualanJasaItems)->sum(function ($item) {
                                                             $qty = (int) ($item['qty'] ?? 0);
                                                             $price = (int) ($item['harga'] ?? 0);
+
                                                             return $qty * $price;
                                                         });
-                                                        
+
                                                         $penjualanTotal = $productTotal + $serviceTotal;
                                                         $grandTotal = $penjualanTotal - $total;
-                                                        // Set at root level - pembelian items is nested: pembelian.items
-                                                        $set('../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
-                                                    })
-                                                    ->schema([
-                                                        \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
-                                                        Select::make('id_produk')
-                                                            ->label('Produk')
-                                                            ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
-                                                            ->searchable()
-                                                            ->required()
-                                                            ->columnSpan(2),
-                                                        Select::make('kondisi')
-                                                            ->label('Kondisi')
-                                                            ->options(['baru' => 'Baru', 'bekas' => 'Bekas'])
-                                                            ->default('baru')
-                                                            ->required(),
-                                                        TextInput::make('qty')
-                                                            ->label('Jml')
-                                                            ->numeric()
-                                                            ->default(1)
-                                                            ->required()
-                                                            ->lazy()
-                                                            ->afterStateUpdated(function (Set $set, Get $get): void {
-                                                                // Trigger parent repeater update
-                                                                $items = $get('../../items') ?? [];
-                                                                $total = collect($items)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $hpp = (int) ($item['hpp'] ?? 0);
-                                                                    return $qty * $hpp;
-                                                                });
-                                                                $set('../../total_pembelian_summary', number_format($total, 0, ',', '.'));
-                                                                
-                                                                // Update grand total - recalculate penjualan from items
-                                                                $penjualanItems = $get('../../../../penjualan/items') ?? [];
-                                                                $penjualanJasaItems = $get('../../../../penjualan/jasa_items') ?? [];
-                                                                
-                                                                $productTotal = collect($penjualanItems)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $price = (int) ($item['harga_jual'] ?? 0);
-                                                                    return $qty * $price;
-                                                                });
-                                                                
-                                                                $serviceTotal = collect($penjualanJasaItems)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $price = (int) ($item['harga'] ?? 0);
-                                                                    return $qty * $price;
-                                                                });
-                                                                
-                                                                $penjualanTotal = $productTotal + $serviceTotal;
-                                                                $grandTotal = $penjualanTotal - $total;
-                                                                // Set at root level
-                                                                $set('../../../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
-                                                            }),
-                                                        TextInput::make('hpp')
-                                                            ->label('HPP (Beli)')
-                                                            ->prefix('Rp')
-                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                            ->required()
-                                                            ->lazy()
-                                                            ->afterStateUpdated(function (Set $set, Get $get): void {
-                                                                // Trigger parent repeater update
-                                                                $items = $get('../../items') ?? [];
-                                                                $total = collect($items)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $hpp = (int) ($item['hpp'] ?? 0);
-                                                                    return $qty * $hpp;
-                                                                });
-                                                                $set('../../total_pembelian_summary', number_format($total, 0, ',', '.'));
-                                                                
-                                                                // Update grand total - recalculate penjualan from items
-                                                                $penjualanItems = $get('../../../../penjualan/items') ?? [];
-                                                                $penjualanJasaItems = $get('../../../../penjualan/jasa_items') ?? [];
-                                                                
-                                                                $productTotal = collect($penjualanItems)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $price = (int) ($item['harga_jual'] ?? 0);
-                                                                    return $qty * $price;
-                                                                });
-                                                                
-                                                                $serviceTotal = collect($penjualanJasaItems)->sum(function ($item) {
-                                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                                    $price = (int) ($item['harga'] ?? 0);
-                                                                    return $qty * $price;
-                                                                });
-                                                                
-                                                                $penjualanTotal = $productTotal + $serviceTotal;
-                                                                $grandTotal = $penjualanTotal - $total;
-                                                                // Set at root level
-                                                                $set('../../../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
-                                                            }),
-                                                        TextInput::make('harga_jual')
-                                                            ->label('Rencana Jual')
-                                                            ->prefix('Rp')
-                                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                            ->required(),
-                                                    ])
-                                                    ->columns(6)
-                                                    ->colStyles([
-                                                        'id_produk' => 'width:37%',
-                                                        'kondisi' => 'width:15%',
-                                                        'qty' => 'width:8%',
-                                                        'hpp' => 'width:20%',
-                                                        'harga_jual' => 'width:25%',
-                                                    ]),
-
-                                                // Summary for Pembelian
-                                                TextInput::make('total_pembelian_summary')
-                                                    ->label('Total Pembelian')
+                                                        // Set at root level
+                                                        $set('../../../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
+                                                    }),
+                                                TextInput::make('hpp')
+                                                    ->label('HPP (Beli)')
                                                     ->prefix('Rp')
-                                                    ->live()
-                                                    ->default(0)
-                                                    ->disabled()
-                                                    ->dehydrated(false)
-                                                    ->afterStateHydrated(function (Set $set, Get $get): void {
-                                                        $items = $get('items') ?? [];
-                                                        
-                                                        // Calculate total: qty * hpp
+                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->required()
+                                                    ->lazy()
+                                                    ->afterStateUpdated(function (Set $set, Get $get): void {
+                                                        // Trigger parent repeater update
+                                                        $items = $get('../../items') ?? [];
                                                         $total = collect($items)->sum(function ($item) {
                                                             $qty = (int) ($item['qty'] ?? 0);
                                                             $hpp = (int) ($item['hpp'] ?? 0);
+
                                                             return $qty * $hpp;
                                                         });
-                                                        
-                                                        $set('total_pembelian_summary', number_format($total, 0, ',', '.'));
-                                                    })
-                                                    ->suffixIcon('heroicon-m-calculator'),
+                                                        $set('../../total_pembelian_summary', number_format($total, 0, ',', '.'));
+
+                                                        // Update grand total - recalculate penjualan from items
+                                                        $penjualanItems = $get('../../../../penjualan/items') ?? [];
+                                                        $penjualanJasaItems = $get('../../../../penjualan/jasa_items') ?? [];
+
+                                                        $productTotal = collect($penjualanItems)->sum(function ($item) {
+                                                            $qty = (int) ($item['qty'] ?? 0);
+                                                            $price = (int) ($item['harga_jual'] ?? 0);
+
+                                                            return $qty * $price;
+                                                        });
+
+                                                        $serviceTotal = collect($penjualanJasaItems)->sum(function ($item) {
+                                                            $qty = (int) ($item['qty'] ?? 0);
+                                                            $price = (int) ($item['harga'] ?? 0);
+
+                                                            return $qty * $price;
+                                                        });
+
+                                                        $penjualanTotal = $productTotal + $serviceTotal;
+                                                        $grandTotal = $penjualanTotal - $total;
+                                                        // Set at root level
+                                                        $set('../../../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
+                                                    }),
+                                                TextInput::make('harga_jual')
+                                                    ->label('Rencana Jual')
+                                                    ->prefix('Rp')
+                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->required(),
+                                            ])
+                                            ->columns(6)
+                                            ->colStyles([
+                                                'id_produk' => 'width:37%',
+                                                'kondisi' => 'width:15%',
+                                                'qty' => 'width:8%',
+                                                'hpp' => 'width:20%',
+                                                'harga_jual' => 'width:25%',
                                             ]),
+
+                                        // Summary for Pembelian
+                                        TextInput::make('total_pembelian_summary')
+                                            ->label('Total Pembelian')
+                                            ->prefix('Rp')
+                                            ->live()
+                                            ->default(0)
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->afterStateHydrated(function (Set $set, Get $get): void {
+                                                $items = $get('items') ?? [];
+
+                                                // Calculate total: qty * hpp
+                                                $total = collect($items)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $hpp = (int) ($item['hpp'] ?? 0);
+
+                                                    return $qty * $hpp;
+                                                });
+
+                                                $set('total_pembelian_summary', number_format($total, 0, ',', '.'));
+                                            })
+                                            ->suffixIcon('heroicon-m-calculator'),
                                     ]),
                             ]),
                     ])
@@ -707,112 +715,187 @@ class TukarTambahResource extends BaseResource
                                 // Calculate Penjualan total from items
                                 $penjualanItems = $get('penjualan.items') ?? [];
                                 $penjualanJasaItems = $get('penjualan.jasa_items') ?? [];
-                                
+
                                 $productTotal = collect($penjualanItems)->sum(function ($item) {
                                     $qty = (int) ($item['qty'] ?? 0);
                                     $price = (int) ($item['harga_jual'] ?? 0);
+
                                     return $qty * $price;
                                 });
-                                
+
                                 $serviceTotal = collect($penjualanJasaItems)->sum(function ($item) {
                                     $qty = (int) ($item['qty'] ?? 0);
                                     $price = (int) ($item['harga'] ?? 0);
+
                                     return $qty * $price;
                                 });
-                                
+
                                 $penjualanTotal = $productTotal + $serviceTotal;
-                                
+
                                 // Calculate Pembelian total from items
                                 $pembelianItems = $get('pembelian.items') ?? [];
                                 $pembelianTotal = collect($pembelianItems)->sum(function ($item) {
                                     $qty = (int) ($item['qty'] ?? 0);
                                     $hpp = (int) ($item['hpp'] ?? 0);
+
                                     return $qty * $hpp;
                                 });
-                                
+
                                 // Calculate grand total
                                 $grandTotal = $penjualanTotal - $pembelianTotal;
-                                
-                                return 'Rp ' . number_format($grandTotal, 0, ',', '.');
+
+                                return 'Rp '.number_format($grandTotal, 0, ',', '.');
                             })
                             ->extraAttributes(['class' => 'text-xl font-bold text-primary-600'])
                             ->helperText('Total yang dibayar pelanggan setelah dikurangi nilai barang masuk'),
                     ])
                     ->collapsed(false),
 
-                // Pembayaran Sections (Outside Tabs)
-                Section::make('Pembayaran Penjualan')
-                    ->description('Pembayaran untuk barang keluar')
+                // Unified Pembayaran Section
+                Section::make('Pembayaran')
+                    ->description('Pembayaran untuk penjualan dan pembelian')
                     ->icon('heroicon-m-banknotes')
-                    ->statePath('penjualan')
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('diskon_total')
-                                    ->label('Diskon (Rp)')
+                                TextInput::make('penjualan.diskon_total')
+                                    ->label('Diskon Penjualan')
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->default(0),
-                            ]),
-                        TableRepeater::make('pembayaran')
-                            ->label('Metode Pembayaran Penjualan')
-                            ->addActionLabel('+ Bayar')
-                            ->schema([
-                                Select::make('metode_bayar')
-                                    ->label('Metode')
-                                    ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
-                                    ->required()
-                                    ->reactive(),
-                                Select::make('akun_transaksi_id')
-                                    ->label('Ke Akun')
-                                    ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id')),
-                                TextInput::make('jumlah')
-                                    ->label('Nominal')
-                                    ->prefix('Rp')
-                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required()
-                                    ->placeholder(fn (Get $get): string => 'Total: Rp ' . ($get('total_price_summary') ?? '0')),
-                            ])
-                            ->columns(3)
-                            ->minItems(0),
-                    ])
-                    ->collapsible()
-                    ->collapsed(false),
-
-                Section::make('Pembayaran Pembelian')
-                    ->description('Pembayaran untuk barang masuk')
-                    ->icon('heroicon-m-banknotes')
-                    ->statePath('pembelian')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('tipe_pembelian')
-                                    ->label('Pajak')
+                                    ->default(0)
+                                    ->helperText('Diskon untuk barang keluar'),
+                                Select::make('pembelian.tipe_pembelian')
+                                    ->label('Pajak Pembelian')
                                     ->options(['non_ppn' => 'Non PPN', 'ppn' => 'PPN (11%)'])
                                     ->default('non_ppn')
-                                    ->columnSpan(2),
+                                    ->helperText('Pajak untuk barang masuk'),
                             ]),
-                        TableRepeater::make('pembayaran')
-                            ->label('Metode Pembayaran Pembelian')
-                            ->addActionLabel('+ Bayar')
+
+                        TableRepeater::make('unified_pembayaran')
+                            ->label('Metode Pembayaran')
+                            ->addActionLabel('+ Tambah Pembayaran')
                             ->schema([
+                                Select::make('tipe_transaksi')
+                                    ->label('Untuk')
+                                    ->options([
+                                        'penjualan' => 'Penjualan',
+                                        'pembelian' => 'Pembelian',
+                                    ])
+                                    ->required()
+                                    ->reactive(),
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
                                     ->required()
                                     ->reactive(),
                                 Select::make('akun_transaksi_id')
-                                    ->label('Ke Akun')
+                                    ->label('Akun Transaksi')
                                     ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
-                                    ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
+                                    ->searchable()
+                                    ->required(),
                                 TextInput::make('jumlah')
                                     ->label('Nominal')
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required(),
+                                    ->required()
+                                    ->placeholder(function (Get $get, $livewire): string {
+                                        $tipeTransaksi = $get('tipe_transaksi');
+
+                                        if (! $tipeTransaksi) {
+                                            return 'Pilih tipe transaksi dulu';
+                                        }
+
+                                        try {
+                                            $formData = $livewire->data ?? [];
+
+                                            if ($tipeTransaksi === 'penjualan') {
+                                                // Calculate penjualan total from form data
+                                                $items = $formData['penjualan']['items'] ?? [];
+                                                $jasaItems = $formData['penjualan']['jasa_items'] ?? [];
+
+                                                $productTotal = collect($items)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga_jual'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $serviceTotal = collect($jasaItems)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $price = (int) ($item['harga'] ?? 0);
+
+                                                    return $qty * $price;
+                                                });
+
+                                                $diskon = (int) ($formData['penjualan']['diskon_total'] ?? 0);
+                                                $total = max(0, ($productTotal + $serviceTotal) - $diskon);
+
+                                                return $total > 0 ? 'Saran: Rp '.number_format($total, 0, ',', '.') : 'Total Penjualan';
+                                            } elseif ($tipeTransaksi === 'pembelian') {
+                                                // Calculate pembelian total from form data
+                                                $items = $formData['pembelian']['items'] ?? [];
+
+                                                $total = collect($items)->sum(function ($item) {
+                                                    $qty = (int) ($item['qty'] ?? 0);
+                                                    $hpp = (int) ($item['hpp'] ?? 0);
+
+                                                    return $qty * $hpp;
+                                                });
+
+                                                return $total > 0 ? 'Saran: Rp '.number_format($total, 0, ',', '.') : 'Total Pembelian';
+                                            }
+                                        } catch (\Exception $e) {
+                                            // Fallback if form data is not available
+                                            return $tipeTransaksi === 'penjualan' ? 'Total Penjualan' : 'Total Pembelian';
+                                        }
+
+                                        return 'Masukkan nominal';
+                                    })
+                                    ->live(onBlur: true),
                             ])
-                            ->columns(3)
-                            ->minItems(0),
+                            ->columns(4)
+                            ->minItems(0)
+                            ->defaultItems(2)
+                            ->default([
+                                [
+                                    'tipe_transaksi' => 'penjualan',
+                                    'metode_bayar' => null,
+                                    'akun_transaksi_id' => null,
+                                    'jumlah' => null,
+                                ],
+                                [
+                                    'tipe_transaksi' => 'pembelian',
+                                    'metode_bayar' => null,
+                                    'akun_transaksi_id' => null,
+                                    'jumlah' => null,
+                                ],
+                            ])
+                            ->reorderable(false)
+                            ->afterStateHydrated(function (Set $set, Get $get, $state) {
+                                // On edit, load existing payments from both penjualan and pembelian
+                                if (filled($state)) {
+                                    return;
+                                }
+
+                                $unifiedPayments = [];
+
+                                // Load penjualan payments
+                                $penjualanPayments = $get('penjualan.pembayaran') ?? [];
+                                foreach ($penjualanPayments as $payment) {
+                                    $unifiedPayments[] = array_merge($payment, ['tipe_transaksi' => 'penjualan']);
+                                }
+
+                                // Load pembelian payments
+                                $pembelianPayments = $get('pembelian.pembayaran') ?? [];
+                                foreach ($pembelianPayments as $payment) {
+                                    $unifiedPayments[] = array_merge($payment, ['tipe_transaksi' => 'pembelian']);
+                                }
+
+                                if (! empty($unifiedPayments)) {
+                                    $set('unified_pembayaran', $unifiedPayments);
+                                }
+                            })
+                            ->dehydrated(false), // Don't save this field directly
                     ])
                     ->collapsible()
                     ->collapsed(false),
@@ -856,21 +939,26 @@ class TukarTambahResource extends BaseResource
                     ->copyable(),
             ])
             ->actions([
-                Action::make('invoice')
-                    ->label('Invoice')
-                    ->icon('heroicon-m-printer')
-                    ->color('primary')
-                    ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice', $record))
-                    ->openUrlInNewTab(),
-                Action::make('invoice_simple')
-                    ->label('Invoice Simple')
-                    ->icon('heroicon-m-document-text')
-                    ->color('gray')
-                    ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
-                    ->openUrlInNewTab(),
-                \Filament\Tables\Actions\ViewAction::make(),
-                \Filament\Tables\Actions\EditAction::make(),
-                \Filament\Tables\Actions\DeleteAction::make(),
+                \Filament\Tables\Actions\ActionGroup::make([
+                    Action::make('invoice')
+                        ->label('Invoice')
+                        ->icon('heroicon-m-printer')
+                        ->color('primary')
+                        ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice', $record))
+                        ->openUrlInNewTab(),
+                    Action::make('invoice_simple')
+                        ->label('Invoice Simple')
+                        ->icon('heroicon-m-document-text')
+                        ->color('gray')
+                        ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
+                        ->openUrlInNewTab(),
+                    \Filament\Tables\Actions\ViewAction::make(),
+                    \Filament\Tables\Actions\EditAction::make(),
+                    \Filament\Tables\Actions\DeleteAction::make(),
+                ])
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->size('lg')
+                    ->color('primary'),
             ])
             ->bulkActions([
                 \Filament\Tables\Actions\BulkActionGroup::make([

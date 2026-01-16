@@ -40,6 +40,33 @@ class CreateTukarTambah extends CreateRecord
             $penjualanPayload = is_array($data['penjualan'] ?? null) ? $data['penjualan'] : [];
             $pembelianPayload = is_array($data['pembelian'] ?? null) ? $data['pembelian'] : [];
 
+            // Process unified payments and split them
+            $unifiedPayments = $data['unified_pembayaran'] ?? [];
+            $penjualanPayments = [];
+            $pembelianPayments = [];
+            
+            foreach ($unifiedPayments as $payment) {
+                if (!is_array($payment)) {
+                    continue;
+                }
+                
+                $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
+                
+                // Remove tipe_transaksi from payment data before saving
+                $paymentData = $payment;
+                unset($paymentData['tipe_transaksi']);
+                
+                if ($tipeTransaksi === 'penjualan') {
+                    $penjualanPayments[] = $paymentData;
+                } elseif ($tipeTransaksi === 'pembelian') {
+                    $pembelianPayments[] = $paymentData;
+                }
+            }
+            
+            // Override pembayaran arrays with unified payments
+            $penjualanPayload['pembayaran'] = $penjualanPayments;
+            $pembelianPayload['pembayaran'] = $pembelianPayments;
+
             // Generate TukarTambah nota number first
             $ttNotaNumber = $data['no_nota'] ?? TukarTambah::generateNoNota();
 
