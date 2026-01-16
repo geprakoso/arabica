@@ -416,11 +416,24 @@ class PenjadwalanTugasResource extends BaseResource
                         ]),
                     ])
                     ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                        // Check if we're on the 'proses' tab - if so, skip date filtering
+                        // to show all pending/proses records regardless of date
+                        $livewire = \Livewire\Livewire::current();
+                        $activeTab = $livewire?->activeTab ?? null;
+                        
+                        if ($activeTab === 'proses') {
+                            return $query;
+                        }
+
                         $range = $data['range'] ?? 'hari_ini';
 
-                        // Handle defaults cleanly
+                        // Handle "Hari Ini" - show tasks that are active today
+                        // (started on or before today AND deadline on or after today)
                         if ($range === 'hari_ini') {
-                            return $query->whereDate('tanggal_mulai', now());
+                            $today = now()->toDateString();
+                            return $query
+                                ->whereDate('tanggal_mulai', '<=', $today)
+                                ->whereDate('deadline', '>=', $today);
                         }
 
                         $startDate = null;
@@ -441,17 +454,20 @@ class PenjadwalanTugasResource extends BaseResource
                                 );
                         }
 
-                        // Strict single day filtering for presets
+                        // Preset date filters - show tasks that were active on that specific date
+                        // (started on or before that date AND deadline on or after that date)
                         $targetDate = match ($range) {
-                            'kemarin' => now()->subDay(),
-                            '2_hari_lalu' => now()->subDays(2),
-                            '3_hari_lalu' => now()->subDays(3),
+                            'kemarin' => now()->subDay()->toDateString(),
+                            '2_hari_lalu' => now()->subDays(2)->toDateString(),
+                            '3_hari_lalu' => now()->subDays(3)->toDateString(),
                             default => null,
                         };
 
                         return $query->when(
                             $targetDate,
-                            fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal_mulai', $date)
+                            fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query
+                                ->whereDate('tanggal_mulai', '<=', $date)
+                                ->whereDate('deadline', '>=', $date)
                         );
                     })
                     ->indicateUsing(function (array $data): ?string {

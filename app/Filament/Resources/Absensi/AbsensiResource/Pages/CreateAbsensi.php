@@ -169,14 +169,10 @@ class CreateAbsensi extends CreateRecord
         $status = $this->record->status;
 
         if ($status === 'hadir') {
-            $notification =Notification::make()
+            $notification = Notification::make()
                 ->title('Berhasil absen masuk')
                 ->body("Anda telah absen masuk pada {$this->record->tanggal->format('d-m-Y')} pukul {$this->record->jam_masuk}.")
                 ->icon('heroicon-o-check-circle')
-                ->actions([
-                    Action::make('Lihat')
-                        ->url(AbsensiResource::getUrl('edit', ['record' => $this->record])),
-                ])
                 ->success();
             
             $notification->send();
@@ -188,13 +184,11 @@ class CreateAbsensi extends CreateRecord
         if (in_array($status, ['izin', 'sakit'], true)) {
             $notification = Notification::make()
                 ->title('Pengajuan absensi tersimpan')
-                ->body("Status: {$status} pada {$this->record->tanggal -> format('d-m-Y')}.")
+                ->body("Status: {$status} pada {$this->record->tanggal->format('d-m-Y')}.")
                 ->icon('heroicon-o-document-check')
-                ->actions([
-                    Action::make('Lihat')
-                        ->url(AbsensiResource::getUrl('edit', ['record' => $this->record])),
-                ]);
+                ->info();
 
+            $notification->send();
             $notification->sendToDatabase($user);
 
             return;
@@ -205,11 +199,9 @@ class CreateAbsensi extends CreateRecord
             ->title('Absensi baru dibuat')
             ->body("Status: {$status} pada {$this->record->tanggal}.")
             ->icon('heroicon-o-check-circle')
-            ->actions([
-                Action::make('Lihat')
-                    ->url(AbsensiResource::getUrl('edit', ['record' => $this->record])),
-            ]);
+            ->success();
 
+        $notification->send();
         $notification->sendToDatabase($user);
     }
 }

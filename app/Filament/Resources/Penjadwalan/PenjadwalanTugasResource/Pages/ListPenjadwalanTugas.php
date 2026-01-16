@@ -11,6 +11,8 @@ class ListPenjadwalanTugas extends ListRecords
     protected static string $resource = PenjadwalanTugasResource::class;
     protected static ?string $title = 'Penjadwalan Tugas';
 
+    public ?string $activeTab = null;
+
     protected function getHeaderActions(): array
     {
         return [
@@ -38,5 +40,10 @@ class ListPenjadwalanTugas extends ListRecords
             'all' => \Filament\Resources\Components\Tab::make('Semua')
                 ->icon('heroicon-m-list-bullet'),
         ];
+    }
+
+    public function getDefaultActiveTab(): string | int | null
+    {
+        return 'proses'; // Set default tab to 'proses'
     }
 }

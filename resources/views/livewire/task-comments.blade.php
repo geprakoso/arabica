@@ -24,7 +24,7 @@
                         </div>
                         
                         <!-- Body -->
-                        <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                        <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" style="white-space: pre-line;">
                             {{ $comment->body }}
                         </div>
                     </div>
@@ -40,10 +40,11 @@
     <!-- Input Form -->
     <form wire:submit.prevent="submit" class="relative">
         <textarea 
-            wire:model="body" 
+            wire:model.defer="body" 
             placeholder="Tulis komentar..."
             class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary-500 focus:border-primary-500 resize-none"
             rows="3"
+            wrap="soft"
         ></textarea>
         
         <div class="flex justify-end mt-2">
