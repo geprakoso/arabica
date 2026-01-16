@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -41,19 +42,9 @@ class TukarTambah extends Model
                 $pembelian = $tukarTambah->pembelian;
 
                 if ($pembelian) {
-                    $externalPenjualanNotas = $pembelian->items()
-                        ->whereHas('penjualanItems', function ($query) use ($penjualanId): void {
-                            if ($penjualanId) {
-                                $query->where('id_penjualan', '!=', $penjualanId);
-                            }
-                        })
-                        ->with(['penjualanItems.penjualan'])
-                        ->get()
-                        ->flatMap(fn($item) => $item->penjualanItems)
-                        ->filter(fn($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
-                        ->map(fn($item) => $item->penjualan?->no_nota)
+                    $externalPenjualanNotas = $tukarTambah->getExternalPenjualanReferences()
+                        ->pluck('nota')
                         ->filter()
-                        ->unique()
                         ->values();
 
                     if ($externalPenjualanNotas->isNotEmpty()) {
@@ -86,6 +77,24 @@ class TukarTambah extends Model
         return $this->belongsTo(Pembelian::class, 'pembelian_id', 'id_pembelian');
     }
 
+    public function isEditLocked(): bool
+    {
+        return $this->getExternalPenjualanReferences()->isNotEmpty();
+    }
+
+    public function getEditBlockedMessage(): string
+    {
+        $notaList = $this->getExternalPenjualanReferences()
+            ->pluck('nota')
+            ->filter()
+            ->values();
+        $suffix = $notaList->isNotEmpty()
+            ? ' Nota: ' . $notaList->implode(', ') . '.'
+            : '';
+
+        return 'Tukar tambah tidak bisa diedit karena item pembelian dipakai transaksi lain.' . $suffix;
+    }
+
     public function getKodeAttribute(): string
     {
         return 'TT-' . str_pad((string) $this->getKey(), 5, '0', STR_PAD_LEFT);
@@ -106,5 +115,39 @@ class TukarTambah extends Model
         }
 
         return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function getExternalPenjualanReferences(): Collection
+    {
+        $pembelian = $this->pembelian;
+        if (! $pembelian) {
+            return collect();
+        }
+
+        $penjualanId = $this->penjualan_id;
+
+        return $pembelian->items()
+            ->whereHas('penjualanItems', function ($query) use ($penjualanId): void {
+                if ($penjualanId) {
+                    $query->where('id_penjualan', '!=', $penjualanId);
+                }
+            })
+            ->with(['penjualanItems.penjualan'])
+            ->get()
+            ->flatMap(fn($item) => $item->penjualanItems)
+            ->filter(fn($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
+            ->map(function ($item) {
+                if (! $item->penjualan) {
+                    return null;
+                }
+
+                return [
+                    'id' => (int) $item->penjualan->getKey(),
+                    'nota' => $item->penjualan->no_nota,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 }

@@ -600,8 +600,49 @@ class TukarTambahResource extends BaseResource
                     ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
                     ->openUrlInNewTab(),
                 \Filament\Tables\Actions\ViewAction::make(),
-                \Filament\Tables\Actions\EditAction::make(),
-                \Filament\Tables\Actions\DeleteAction::make(),
+                Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-m-pencil-square')
+                    ->color('warning')
+                    ->action(function (TukarTambah $record, \Filament\Tables\Actions\Action $action): void {
+                        $livewire = $action->getLivewire();
+
+                        if ($record->isEditLocked()) {
+                            $livewire->editBlockedMessage = $record->getEditBlockedMessage();
+                            $livewire->editBlockedPenjualanReferences = $record->getExternalPenjualanReferences()->all();
+                            $livewire->replaceMountedAction('editBlocked');
+                            return;
+                        }
+
+                        $livewire->redirect(TukarTambahResource::getUrl('edit', ['record' => $record]));
+                    }),
+                Action::make('delete')
+                    ->label('Hapus')
+                    ->icon('heroicon-m-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus Tukar Tambah')
+                    ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
+                    ->action(function (TukarTambah $record, \Filament\Tables\Actions\Action $action): void {
+                        $livewire = $action->getLivewire();
+
+                        try {
+                            $record->delete();
+
+                            Notification::make()
+                                ->title('Tukar tambah dihapus')
+                                ->success()
+                                ->send();
+                        } catch (ValidationException $exception) {
+                            $messages = collect($exception->errors())
+                                ->flatten()
+                                ->implode(' ');
+
+                            $livewire->deleteBlockedMessage = $messages ?: 'Gagal menghapus tukar tambah.';
+                            $livewire->deleteBlockedPenjualanReferences = $record->getExternalPenjualanReferences()->all();
+                            $livewire->replaceMountedAction('deleteBlocked');
+                        }
+                    }),
             ])
             ->bulkActions([
                 \Filament\Tables\Actions\BulkActionGroup::make([
@@ -612,9 +653,11 @@ class TukarTambahResource extends BaseResource
                         ->requiresConfirmation()
                         ->modalHeading('Hapus Tukar Tambah')
                         ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
-                        ->action(function (Collection $records): void {
+                        ->action(function (Collection $records, \Filament\Tables\Actions\BulkAction $action): void {
+                            $livewire = $action->getLivewire();
                             $failed = [];
                             $deleted = 0;
+                            $blockedReferences = collect();
 
                             foreach ($records as $record) {
                                 try {
@@ -625,15 +668,17 @@ class TukarTambahResource extends BaseResource
                                         ->flatten()
                                         ->implode(' ');
                                     $failed[] = trim($messages) ?: 'Gagal menghapus tukar tambah.';
+                                    $blockedReferences = $blockedReferences->merge($record->getExternalPenjualanReferences());
                                 }
                             }
 
                             if (! empty($failed)) {
-                                Notification::make()
-                                    ->title('Sebagian gagal dihapus')
-                                    ->body(implode(' ', $failed))
-                                    ->danger()
-                                    ->send();
+                                $livewire->deleteBlockedMessage = implode(' ', $failed);
+                                $livewire->deleteBlockedPenjualanReferences = $blockedReferences
+                                    ->unique('id')
+                                    ->values()
+                                    ->all();
+                                $livewire->replaceMountedAction('bulkDeleteBlocked');
                             }
 
                             if ($deleted > 0) {

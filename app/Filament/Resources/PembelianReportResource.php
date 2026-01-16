@@ -9,7 +9,9 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -87,18 +89,139 @@ class PembelianReportResource extends BaseResource
                     )), // menghitung total harga jual dari relasi items
             ])
             ->filters([
-                Tables\Filters\Filter::make('periode')
-                    ->label('Periode')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('Dari'),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('Sampai'),
+                Tables\Filters\Filter::make('periodik')
+                    ->label('Periodik')
+                    ->default(fn (): array => [
+                        'isActive' => true,
+                        'period_type' => 'monthly',
+                        'month' => now()->month,
+                        'year' => now()->year,
                     ])
+                    ->form([
+                        Forms\Components\Select::make('period_type')
+                            ->label('Tipe')
+                            ->options([
+                                'monthly' => 'Bulanan',
+                                'quarterly' => '3 Bulan',
+                            ])
+                            ->reactive()
+                            ->required(),
+                        Forms\Components\Select::make('month')
+                            ->label('Bulan')
+                            ->options([
+                                1 => 'Januari',
+                                2 => 'Februari',
+                                3 => 'Maret',
+                                4 => 'April',
+                                5 => 'Mei',
+                                6 => 'Juni',
+                                7 => 'Juli',
+                                8 => 'Agustus',
+                                9 => 'September',
+                                10 => 'Oktober',
+                                11 => 'November',
+                                12 => 'Desember',
+                            ])
+                            ->visible(fn (Forms\Get $get): bool => $get('period_type') === 'monthly')
+                            ->required(fn (Forms\Get $get): bool => $get('period_type') === 'monthly'),
+                        Forms\Components\Select::make('quarter')
+                            ->label('Quarter')
+                            ->options([
+                                1 => 'Q1 (Jan - Mar)',
+                                2 => 'Q2 (Apr - Jun)',
+                                3 => 'Q3 (Jul - Sep)',
+                                4 => 'Q4 (Okt - Des)',
+                            ])
+                            ->visible(fn (Forms\Get $get): bool => $get('period_type') === 'quarterly')
+                            ->required(fn (Forms\Get $get): bool => $get('period_type') === 'quarterly'),
+                        Forms\Components\Select::make('year')
+                            ->label('Tahun')
+                            ->options(function (): array {
+                                $year = now()->year;
+                                return collect(range($year - 4, $year + 1))
+                                    ->mapWithKeys(fn (int $value) => [$value => (string) $value])
+                                    ->all();
+                            })
+                            ->default(fn (): int => now()->year)
+                            ->required(),
+                    ])
+                    ->indicateUsing(function (array $data): array {
+                        $type = $data['period_type'] ?? null;
+                        $year = $data['year'] ?? null;
+
+                        if (! $type || ! $year) {
+                            return [];
+                        }
+
+                        if ($type === 'monthly') {
+                            $month = (int) ($data['month'] ?? 0);
+                            $months = [
+                                1 => 'Januari',
+                                2 => 'Februari',
+                                3 => 'Maret',
+                                4 => 'April',
+                                5 => 'Mei',
+                                6 => 'Juni',
+                                7 => 'Juli',
+                                8 => 'Agustus',
+                                9 => 'September',
+                                10 => 'Oktober',
+                                11 => 'November',
+                                12 => 'Desember',
+                            ];
+
+                            $monthLabel = $months[$month] ?? 'Bulan';
+                            $now = now();
+                            $isThisMonth = $month === (int) $now->month && (int) $year === (int) $now->year;
+                            $label = $monthLabel . ' ' . $year;
+                            $text = $isThisMonth ? ('Bulan ini (' . $label . ')') : $label;
+
+                            return [Indicator::make('Periodik: ' . $text)];
+                        }
+
+                        if ($type === 'quarterly') {
+                            $quarter = (int) ($data['quarter'] ?? 0);
+                            $quarterLabel = $quarter >= 1 && $quarter <= 4 ? 'Q' . $quarter : 'Quarter';
+
+                            return [Indicator::make('Periodik: ' . $quarterLabel . ' ' . $year)];
+                        }
+
+                        return [];
+                    })
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal', '>=', $date))
-                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal', '<=', $date));
+                        $type = $data['period_type'] ?? null;
+                        $year = (int) ($data['year'] ?? 0);
+
+                        if (! $type || $year < 1) {
+                            return $query;
+                        }
+
+                        if ($type === 'monthly') {
+                            $month = (int) ($data['month'] ?? 0);
+                            if ($month < 1 || $month > 12) {
+                                return $query;
+                            }
+
+                            $start = Carbon::create($year, $month, 1)->startOfMonth();
+                            $end = Carbon::create($year, $month, 1)->endOfMonth();
+
+                            return $query->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()]);
+                        }
+
+                        if ($type === 'quarterly') {
+                            $quarter = (int) ($data['quarter'] ?? 0);
+                            if ($quarter < 1 || $quarter > 4) {
+                                return $query;
+                            }
+
+                            $startMonth = (($quarter - 1) * 3) + 1;
+                            $start = Carbon::create($year, $startMonth, 1)->startOfMonth();
+                            $end = Carbon::create($year, $startMonth, 1)->addMonths(2)->endOfMonth();
+
+                            return $query->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()]);
+                        }
+
+                        return $query;
                     }),
             ])
             ->headerActions([
