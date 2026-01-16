@@ -153,6 +153,13 @@ class PembelianResource extends BaseResource
                                     ])
                                     ->default('non_ppn')
                                     ->native(false),
+
+                                TextInput::make('nota_supplier')
+                                    ->label('Nota Referensi')
+                                    ->placeholder('Opsional')
+                                    ->maxLength(255)
+                                    ->prefixIcon('heroicon-m-receipt-refund')
+                                    ->columnSpanFull(),
                             ])
                                 ->columns(2),
                             // Tab::make('Produk Dibeli')
@@ -448,6 +455,11 @@ class PembelianResource extends BaseResource
                                     ->size(TextEntrySize::Large)
                                     ->icon('heroicon-m-document-text'),
 
+                                TextEntry::make('nota_supplier')
+                                    ->label('Nota Supplier')
+                                    ->icon('heroicon-m-receipt-refund')
+                                    ->placeholder('-'),
+
                                 TextEntry::make('tanggal')
                                     ->label('Tanggal Transaksi')
                                     ->date('d F Y')
@@ -506,13 +518,13 @@ class PembelianResource extends BaseResource
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large),
-                            ]),
+                            ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('total_dibayar')
                                     ->label('Total Dibayar')
                                     ->state(fn(Pembelian $record): float => (float) ($record->pembayaran()->sum('jumlah') ?? 0))
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
-                            ]),
+                            ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('sisa_bayar')
                                     ->label('Sisa Bayar')
@@ -523,8 +535,19 @@ class PembelianResource extends BaseResource
                                         return max(0, $total - $dibayar);
                                     })
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
+                            ])->grow(),
+                            InfoGroup::make([
+                                TextEntry::make('kelebihan_bayar')
+                                    ->label('Kelebihan Bayar')
+                                    ->state(function (Pembelian $record): float {
+                                        $total = $record->calculateTotalPembelian();
+                                        $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                        return max(0, $dibayar - $total);
+                                    })
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])->grow(false),
-                        ])->from('md'),
+                        ])->from('lg'),
                     ]),
 
                 // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
@@ -607,6 +630,12 @@ class PembelianResource extends BaseResource
                     ->weight('medium')
                     ->toggleable()
                     ->sortable(),
+                TextColumn::make('nota_supplier')
+                    ->label('Nota Supplier')
+                    ->icon('heroicon-m-receipt-refund')
+                    ->placeholder('-')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('request_orders_label')
                     ->label('Request Order')
                     ->badge()
@@ -646,6 +675,13 @@ class PembelianResource extends BaseResource
                     ->badge()
                     ->color('primary')
                     ->alignCenter()
+                    ->sortable(),
+                TextColumn::make('total_pembayaran')
+                    ->label('Total Pembayaran')
+                    ->icon('heroicon-m-banknotes')
+                    ->state(fn(Pembelian $record) => $record->calculateTotalPembelian())
+                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
+                    ->color('success')
                     ->sortable(),
             ])
             ->filters([])

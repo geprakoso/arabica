@@ -1,5 +1,12 @@
 @php
     $items = $getState() ?? [];
+
+    if ($items instanceof \Illuminate\Support\Collection) {
+        $items = $items->all();
+    }
+
+    $totalPembelian = collect($items)->sum(fn ($item) => (float) (data_get($item, 'hpp') ?? 0)
+        * (int) (data_get($item, 'qty') ?? 0));
 @endphp
 
 <div class="overflow-x-auto max-w-full text-sm" style="-webkit-overflow-scrolling: touch;">
@@ -62,4 +69,8 @@
             @endforelse
         </tbody>
     </table>
+    <div class="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+        <span>Total Pembelian</span>
+        <span class="text-lg font-semibold text-success-600 dark:text-success-400">Rp {{ number_format($totalPembelian, 0, ',', '.') }}</span>
+    </div>
 </div>

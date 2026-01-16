@@ -16,6 +16,7 @@ class Pembelian extends Model
 
     protected $fillable = [
         'no_po',
+        'nota_supplier',
         'tanggal',
         'harga_jual',
         'catatan',
