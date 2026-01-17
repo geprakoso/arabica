@@ -291,7 +291,7 @@
         }
 
         .table td.item {
-            padding-top: 1px;
+            padding-top: 2px;
             padding-bottom: 1px;
             padding-left: 5px;
             padding-right: 5px;
@@ -402,7 +402,7 @@
 
             .brand {
                 /* Nama brand */
-                font-size: 16px;
+                font-size: 17px;
             }
 
             .header-meta {
@@ -495,7 +495,7 @@
 
             .notice {
                 /* Catatan tambahan */
-                font-size: 11px;
+                font-size: 12px;
                 line-height: 0.9;
                 margin-left: 5px;
             }
@@ -517,7 +517,7 @@
 
             .brand-text p {
                 /* Alamat & kontak */
-                font-size: 13px;
+                font-size: 15px;
                 line-height: 1;
                 margin: 0px;
             }

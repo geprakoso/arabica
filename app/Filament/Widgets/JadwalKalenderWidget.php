@@ -35,6 +35,7 @@ class JadwalKalenderWidget extends CalendarWidget
 
     protected int | string | array $columnSpan = 'full';
     protected bool $dayMaxEvents = true;
+    protected string $icon = 'heroicon-o-calendar';
     protected ?string $locale = 'id';
     protected bool $eventClickEnabled = true;
     protected bool $dateSelectEnabled = true;

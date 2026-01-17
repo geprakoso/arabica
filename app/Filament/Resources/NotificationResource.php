@@ -25,7 +25,7 @@ class NotificationResource extends BaseResource
 
     protected static ?string $navigationGroup = 'Pengaturan';
 
-    protected static ?int $navigationSort = 99;
+    protected static ?int $navigationSort = -1;
 
     protected static ?string $slug = 'notifications';
 

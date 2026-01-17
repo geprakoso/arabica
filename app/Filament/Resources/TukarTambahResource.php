@@ -1051,7 +1051,8 @@ class TukarTambahResource extends BaseResource
                     Action::make('view')
                         ->label('Lihat')
                         ->icon('heroicon-m-eye')
-                        ->color('gray'),
+                        ->color('primary')
+                        ->url(fn(TukarTambah $record) => TukarTambahResource::getUrl('view', ['record' => $record])),
                     Action::make('edit')
                         ->label('Edit')
                         ->icon('heroicon-m-pencil-square')
