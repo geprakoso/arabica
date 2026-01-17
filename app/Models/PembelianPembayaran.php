@@ -15,6 +15,7 @@ class PembelianPembayaran extends Model
         'metode_bayar',
         'akun_transaksi_id',
         'jumlah',
+        'bukti_transfer',
         'catatan',
     ];
 

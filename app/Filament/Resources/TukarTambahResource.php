@@ -508,22 +508,9 @@ class TukarTambahResource extends BaseResource
                                             ->cloneable(),
 
                                         // Summary Section
-                                        Grid::make(2)
+                                        Grid::make(1)
                                             ->schema([
-                                                TextInput::make('total_items_summary')
-                                                    ->label('Total Item')
-                                                    ->live()
-                                                    ->default(0)
-                                                    ->disabled()
-                                                    ->dehydrated(false)
-                                                    ->afterStateHydrated(function (Set $set, Get $get): void {
-                                                        $items = $get('items') ?? [];
-                                                        $jasaItems = $get('jasa_items') ?? [];
-                                                        $totalItems = count($items) + count($jasaItems);
-                                                        $set('total_items_summary', $totalItems);
-                                                    })
-                                                    ->suffixIcon('heroicon-m-shopping-bag'),
-
+                                                
                                                 TextInput::make('total_price_summary')
                                                     ->label('Total Harga')
                                                     ->prefix('Rp')
