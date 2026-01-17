@@ -203,7 +203,7 @@ class AbsensiResource extends BaseResource
                     ->columnSpanFull() // Agar wizard lebar penuh
                     ->submitAction(new HtmlString(
                         Blade::render(
-                            '<x-filament::button type="submit" color="success" icon="heroicon-m-check">Simpan Absensi</x-filament::button>'
+                            '<x-filament::button type="submit" color="success" icon="heroicon-m-check" wire:loading.attr="disabled">Simpan Absensi</x-filament::button>'
                         )
                     ))
                     ->cancelAction(new HtmlString(

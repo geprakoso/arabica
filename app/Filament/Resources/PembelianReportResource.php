@@ -41,7 +41,7 @@ class PembelianReportResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
             ->defaultSort('tanggal', 'desc')
             ->columns([
                 TextColumn::make('no_po')
@@ -68,30 +68,48 @@ class PembelianReportResource extends BaseResource
                     ->icon('heroicon-m-user')
                     ->color('secondary')
                     ->toggleable(),
-                TextColumn::make('total_items')
-                    ->label('Total Qty')
-                    ->badge()
-                    ->color('info')
-                    ->state(fn (Pembelian $record) => $record->items->sum('qty')), // menghitung total qty dari relasi items
-                TextColumn::make('total_hpp')
-                    ->label('Total HPP')
-                    ->state(fn (Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0))
-                    )) // menghitung total HPP dari relasi items
+
+                TextColumn::make('nota_supplier')
+                    ->label('Nota Referensi')
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-m-receipt-refund')
                     ->color('gray')
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('total_harga_jual')
-                    ->label('Total Pembelian')
-                    ->weight('bold')
+                TextColumn::make('jenis_pembayaran')
+                    ->label('Status Pembayaran')
+                    ->badge()
+                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->colors([
+                        'success' => 'lunas',
+                        'danger' => 'tempo',
+                    ]),
+                TextColumn::make('total_pembayaran')
+                    ->label('Total Pembayaran')
+                    ->state(fn(Pembelian $record) => self::formatCurrency($record->calculateTotalPembelian()))
                     ->color('success')
-                    ->state(fn (Pembelian $record) => self::formatCurrency(
-                        $record->items->sum(fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
-                    )), // menghitung total harga jual dari relasi items
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('total_dibayar')
+                    ->label('Total Dibayar')
+                    ->state(fn(Pembelian $record) => self::formatCurrency(
+                        $record->pembayaran()->sum('jumlah') ?? 0
+                    ))
+                    ->color('warning')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('sisa_bayar')
+                    ->label('Sisa Pembayaran')
+                    ->color('info')
+                    ->state(function (Pembelian $record) {
+                        $total = $record->calculateTotalPembelian();
+                        $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                        return self::formatCurrency(max(0, $total - $dibayar));
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('periodik')
                     ->label('Periodik')
-                    ->default(fn (): array => [
+                    ->default(fn(): array => [
                         'isActive' => true,
                         'period_type' => 'monthly',
                         'month' => now()->month,
@@ -122,8 +140,8 @@ class PembelianReportResource extends BaseResource
                                 11 => 'November',
                                 12 => 'Desember',
                             ])
-                            ->visible(fn (Forms\Get $get): bool => $get('period_type') === 'monthly')
-                            ->required(fn (Forms\Get $get): bool => $get('period_type') === 'monthly'),
+                            ->visible(fn(Forms\Get $get): bool => $get('period_type') === 'monthly')
+                            ->required(fn(Forms\Get $get): bool => $get('period_type') === 'monthly'),
                         Forms\Components\Select::make('quarter')
                             ->label('Quarter')
                             ->options([
@@ -132,17 +150,17 @@ class PembelianReportResource extends BaseResource
                                 3 => 'Q3 (Jul - Sep)',
                                 4 => 'Q4 (Okt - Des)',
                             ])
-                            ->visible(fn (Forms\Get $get): bool => $get('period_type') === 'quarterly')
-                            ->required(fn (Forms\Get $get): bool => $get('period_type') === 'quarterly'),
+                            ->visible(fn(Forms\Get $get): bool => $get('period_type') === 'quarterly')
+                            ->required(fn(Forms\Get $get): bool => $get('period_type') === 'quarterly'),
                         Forms\Components\Select::make('year')
                             ->label('Tahun')
                             ->options(function (): array {
                                 $year = now()->year;
                                 return collect(range($year - 4, $year + 1))
-                                    ->mapWithKeys(fn (int $value) => [$value => (string) $value])
+                                    ->mapWithKeys(fn(int $value) => [$value => (string) $value])
                                     ->all();
                             })
-                            ->default(fn (): int => now()->year)
+                            ->default(fn(): int => now()->year)
                             ->required(),
                     ])
                     ->indicateUsing(function (array $data): array {
@@ -227,7 +245,7 @@ class PembelianReportResource extends BaseResource
             ->headerActions([
                 \AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction::make('export')
                     ->label('Download')
-                    ->filename('Laporan Pembelian'.'_'.date('d M Y'))
+                    ->filename('Laporan Pembelian' . '_' . date('d M Y'))
                     ->defaultFormat('pdf')
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('success')
