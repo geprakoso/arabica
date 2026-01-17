@@ -58,13 +58,19 @@ class Pembelian extends Model
 
     public static function generatePO(): string
     {
-        $prefix = 'PO-';
+        $date = now()->format('Ym');
+        $prefix = 'PO-' . $date . '-';
 
-        $lastNumber = self::where('no_po', 'like', $prefix . '%')
-            ->selectRaw('MAX(CAST(SUBSTRING(no_po, 4) AS UNSIGNED)) as max_num')
-            ->value('max_num') ?? 0;
+        $latest = self::where('no_po', 'like', $prefix . '%')
+            ->orderBy('no_po', 'desc')
+            ->first();
 
-        return $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        $next = 1;
+        if ($latest && preg_match('/' . preg_quote($prefix, '/') . '(\d+)$/', $latest->no_po, $m)) {
+            $next = (int) $m[1] + 1;
+        }
+
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     protected $casts = [

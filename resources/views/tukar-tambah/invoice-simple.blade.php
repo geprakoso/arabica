@@ -305,6 +305,20 @@
             padding: 2px 1px;
             line-height: 1.1;
             border-bottom: none;
+            padding-right: 5px;
+
+        }
+
+        .table td.item {
+            padding-top: 1px;
+            padding-bottom: 1px;
+            padding-left: 5px;
+        }
+
+        .table td.item small {
+            display: block;
+            margin-top: -2px;
+            line-height: 1.05;
         }
 
         .table .section-row td {
@@ -403,8 +417,105 @@
 
         @media print {
             body {
-                font-size: 13px;
+                font-size: 15px;
                 color: #000000;
+            }
+
+            .brand {
+                /* Nama brand */
+                font-size: 16px;
+            }
+
+            .header-meta {
+                /* Nomor invoice & tanggal */
+                font-size: 15px;
+            }
+
+            .title {
+                /* Judul invoice */
+                font-size: 26px;
+            }
+
+            .subtitle {
+                /* Subjudul */
+                font-size: 15px;
+            }
+
+            .info-grid {
+                /* Info pelanggan & metode */
+                font-size: 15px;
+            }
+
+            .info-block h4 {
+                /* Label info (judul kecil) */
+                font-size: 14px;
+            }
+
+            .pelanggan-name {
+                /* Nama pelanggan */
+                font-size: 15px;
+            }
+
+            .pelanggan-address {
+                /* Alamat pelanggan */
+                font-size: 12px;
+                line-height: 1;
+                margin-top: -2px;
+            }
+
+            .pelanggan-phone {
+                /* No HP pelanggan */
+                font-size: 12px;
+                line-height: 1;
+                margin-top: -2px;
+            }
+
+            .table {
+                /* Tabel item */
+                font-size: 15px;
+                line-height: 0.5;
+                margin-top: -5px;
+            }
+
+            .table th {
+                /* Header tabel */
+                font-size: 15px;
+                padding-top: 10px;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+
+            .summary table {
+                /* Ringkasan subtotal/diskon/total */
+                font-size: 15px;
+                line-height: 1;
+                margin-right: 5px;
+
+            }
+
+            .summary .label {
+                /* Label ringkasan */
+                font-size: 13px;
+            }
+
+            .summary .total {
+                /* Total akhir */
+                font-size: 17px;
+            }
+
+            .signature {
+                /* Area tanda tangan */
+                font-size: 14px;
+                line-height: 0.6;
+                margin-top: 8px;
+                margin-right: 5px;
+            }
+
+            .notice {
+                /* Catatan tambahan */
+                font-size: 11px;
+                line-height: 0.9;
+                margin-left: 5px;
             }
 
             .brand,
@@ -413,11 +524,15 @@
             }
 
             .brand-text p {
-                font-size: 11px;
+                /* Alamat & kontak */
+                font-size: 13px;
+                line-height: 1;
+                margin: 0px;
             }
 
             .brand-text p:first-child {
-                font-size: 15px;
+                /* Nama brand (baris pertama) */
+                font-size: 17px;
             }
 
             .divider,
@@ -459,12 +574,12 @@
 
         <div class="info-grid">
             <div class="info-block pelanggan">
-                <p><strong>{{ $memberName }}</strong></p>
+                <p class="pelanggan-name"><strong>{{ $memberName }}</strong></p>
                 @if ($memberAddress)
-                    <p>{{ $memberAddress }}</p>
+                    <p class="pelanggan-address">{{ $memberAddress }}</p>
                 @endif
                 @if ($memberPhone)
-                    <p>{{ $memberPhone }}</p>
+                    <p class="pelanggan-phone">{{ $memberPhone }}</p>
                 @endif
             </div>
             <div class="info-block metode">
@@ -488,6 +603,7 @@
                 @endif
             </div>
         </div>
+        <div class="divider"></div>
 
         <table class="table">
             <thead>
@@ -504,7 +620,7 @@
                 </tr>
                 @forelse ($rowsPenjualan as $row)
                     <tr>
-                        <td>{!! $row['desc'] !!}</td>
+                        <td class="item">{!! $row['desc'] !!}</td>
                         <td class="unit">Rp {{ number_format($row['unit'], 0, ',', '.') }}</td>
                         <td class="qty">{{ number_format($row['qty'], 0, ',', '.') }}</td>
                         <td class="total">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>
@@ -519,7 +635,7 @@
                 </tr>
                 @forelse ($rowsPembelian as $row)
                     <tr>
-                        <td>{!! $row['desc'] !!}</td>
+                        <td class="item">{!! $row['desc'] !!}</td>
                         <td class="unit">Rp {{ number_format($row['unit'], 0, ',', '.') }}</td>
                         <td class="qty">{{ number_format($row['qty'], 0, ',', '.') }}</td>
                         <td class="total">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>

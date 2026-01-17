@@ -357,8 +357,7 @@ class PenjualanResource extends BaseResource
                     Tables\Actions\EditAction::make()
                         ->icon('heroicon-m-pencil-square')
                         ->tooltip('Edit'),
-                    Tables\Actions\DeleteAction::make()
-                        ->icon('heroicon-m-trash'),
+
                 ])
                     ->hidden(function (Penjualan $record): bool {
                         $hasLines = $record->items()->exists() || $record->jasaItems()->exists();

@@ -35,17 +35,6 @@ class ViewTukarTambah extends ViewRecord
 
                     $this->redirect(TukarTambahResource::getUrl('edit', ['record' => $this->record]));
                 }),
-            Action::make('invoice')
-                ->label('Invoice')
-                ->icon('heroicon-m-printer')
-                ->url(fn() => route('tukar-tambah.invoice', $this->record))
-                ->openUrlInNewTab(),
-            Action::make('invoice_simple')
-                ->label('Invoice Simple')
-                ->icon('heroicon-m-document-text')
-                ->color('gray')
-                ->url(fn() => route('tukar-tambah.invoice.simple', $this->record))
-                ->openUrlInNewTab(),
             Action::make('delete')
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')
@@ -73,6 +62,17 @@ class ViewTukarTambah extends ViewRecord
                         $this->replaceMountedAction('deleteBlocked');
                     }
                 }),
+            Action::make('invoice')
+                ->label('Invoice')
+                ->icon('heroicon-m-printer')
+                ->url(fn() => route('tukar-tambah.invoice', $this->record))
+                ->openUrlInNewTab(),
+            Action::make('invoice_simple')
+                ->label('Invoice Simple')
+                ->icon('heroicon-m-document-text')
+                ->color('warning')
+                ->url(fn() => route('tukar-tambah.invoice.simple', $this->record))
+                ->openUrlInNewTab(),
         ];
     }
 
@@ -80,15 +80,15 @@ class ViewTukarTambah extends ViewRecord
     {
         return Action::make('editBlocked')
             ->modalHeading('Tidak bisa edit')
-            ->modalDescription(fn () => $this->editBlockedMessage ?? 'Tukar tambah tidak bisa diedit.')
+            ->modalDescription(fn() => $this->editBlockedMessage ?? 'Tukar tambah tidak bisa diedit.')
             ->modalIcon('heroicon-o-lock-closed')
             ->modalIconColor('warning')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->editBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->editBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
@@ -96,22 +96,22 @@ class ViewTukarTambah extends ViewRecord
     {
         return Action::make('deleteBlocked')
             ->modalHeading('Gagal menghapus')
-            ->modalDescription(fn () => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
+            ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->modalIconColor('danger')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
     protected function buildPenjualanFooterActions(array $references): array
     {
         return collect($references)
-            ->filter(fn (array $reference) => ! empty($reference['id']))
+            ->filter(fn(array $reference) => ! empty($reference['id']))
             ->map(function (array $reference, int $index) {
                 $nota = $reference['nota'] ?? null;
                 $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';

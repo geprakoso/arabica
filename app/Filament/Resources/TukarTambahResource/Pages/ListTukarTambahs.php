@@ -22,7 +22,10 @@ class ListTukarTambahs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Tukar Tambah')
+                ->icon('heroicon-o-plus')
+                ->color('primary'),
         ];
     }
 
@@ -30,15 +33,15 @@ class ListTukarTambahs extends ListRecords
     {
         return Action::make('editBlocked')
             ->modalHeading('Tidak bisa edit')
-            ->modalDescription(fn () => $this->editBlockedMessage ?? 'Tukar tambah tidak bisa diedit.')
+            ->modalDescription(fn() => $this->editBlockedMessage ?? 'Tukar tambah tidak bisa diedit.')
             ->modalIcon('heroicon-o-lock-closed')
             ->modalIconColor('warning')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->editBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->editBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
@@ -46,15 +49,15 @@ class ListTukarTambahs extends ListRecords
     {
         return Action::make('deleteBlocked')
             ->modalHeading('Gagal menghapus')
-            ->modalDescription(fn () => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
+            ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->modalIconColor('danger')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
@@ -62,22 +65,22 @@ class ListTukarTambahs extends ListRecords
     {
         return Action::make('bulkDeleteBlocked')
             ->modalHeading('Sebagian gagal dihapus')
-            ->modalDescription(fn () => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
+            ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->modalIconColor('danger')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
     protected function buildPenjualanFooterActions(array $references): array
     {
         return collect($references)
-            ->filter(fn (array $reference) => ! empty($reference['id']))
+            ->filter(fn(array $reference) => ! empty($reference['id']))
             ->map(function (array $reference, int $index) {
                 $nota = $reference['nota'] ?? null;
                 $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';

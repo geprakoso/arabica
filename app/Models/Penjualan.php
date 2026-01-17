@@ -61,9 +61,9 @@ class Penjualan extends Model
     public static function generateNoNota(string $prefixCode = 'PJ'): string
     {
         return DB::transaction(function () use ($prefixCode) {
-            $date = now()->format('Ymd');
+            $date = now()->format('Ym');
             $prefix = $prefixCode . '-' . $date . '-';
-            
+
             $latest = static::where('no_nota', 'like', $prefix . '%')
                 ->orderBy('no_nota', 'desc')
                 ->lockForUpdate()
@@ -74,7 +74,7 @@ class Penjualan extends Model
                 $next = (int) $m[1] + 1;
             }
 
-            return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+            return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
         });
     }
 

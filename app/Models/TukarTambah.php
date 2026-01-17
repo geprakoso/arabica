@@ -120,7 +120,7 @@ class TukarTambah extends Model
 
     public static function generateNoNota(): string
     {
-        $date = now()->format('Ymd');
+        $date = now()->format('Ym');
         $prefix = 'TT-' . $date . '-';
 
         $latest = static::where('no_nota', 'like', $prefix . '%')
@@ -132,7 +132,7 @@ class TukarTambah extends Model
             $next = (int) $m[1] + 1;
         }
 
-        return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     public function getExternalPenjualanReferences(): Collection

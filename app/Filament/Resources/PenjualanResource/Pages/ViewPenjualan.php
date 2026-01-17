@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\PenjualanResource\Pages;
 
-use App\Mail\InvoicePenjualanMail;
-use App\Models\ProfilePerusahaan;
 use App\Filament\Resources\PenjualanResource;
+use App\Mail\InvoicePenjualanMail;
+use App\Models\Penjualan;
+use App\Models\ProfilePerusahaan;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -19,17 +20,28 @@ class ViewPenjualan extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('edit')
+                ->icon('heroicon-m-pencil-square')
+                ->color('primary')
+                ->url(fn() => PenjualanResource::getUrl('edit', ['record' => $this->record])),
+            Action::make('delete')
+                ->icon('heroicon-m-trash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->action(function (Penjualan $record): void {
+                    $record->delete();
+                }),
             Action::make('invoice')
                 ->label('Invoice')
                 ->icon('heroicon-m-printer')
                 ->color('primary')
-                ->url(fn () => route('penjualan.invoice', $this->record))
+                ->url(fn() => route('penjualan.invoice', $this->record))
                 ->openUrlInNewTab(),
             Action::make('invoice_simple')
                 ->label('Invoice Simple')
                 ->icon('heroicon-m-document-text')
-                ->color('gray')
-                ->url(fn () => route('penjualan.invoice.simple', $this->record))
+                ->color('warning')
+                ->url(fn() => route('penjualan.invoice.simple', $this->record))
                 ->openUrlInNewTab(),
             Action::make('email_invoice')
                 ->label('Email Invoice')
