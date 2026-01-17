@@ -18,10 +18,9 @@ class PenjadwalanTugasSeeder extends Seeder
             return;
         }
 
-        PenjadwalanTugas::updateOrCreate(
+        $task = PenjadwalanTugas::firstOrCreate(
             [
                 'judul' => 'Follow up pengiriman',
-                'karyawan_id' => $assignee->id,
             ],
             [
                 'deskripsi' => 'Hubungi pelanggan untuk jadwal pengiriman besok.',
@@ -32,5 +31,7 @@ class PenjadwalanTugasSeeder extends Seeder
                 'created_by' => $creator->id,
             ]
         );
+
+        $task->karyawan()->syncWithoutDetaching([$assignee->id]);
     }
 }

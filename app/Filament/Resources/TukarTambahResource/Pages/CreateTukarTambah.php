@@ -40,13 +40,44 @@ class CreateTukarTambah extends CreateRecord
             $penjualanPayload = is_array($data['penjualan'] ?? null) ? $data['penjualan'] : [];
             $pembelianPayload = is_array($data['pembelian'] ?? null) ? $data['pembelian'] : [];
 
+            // Process unified payments and split them
+            $unifiedPayments = $data['unified_pembayaran'] ?? [];
+            $penjualanPayments = [];
+            $pembelianPayments = [];
+            
+            foreach ($unifiedPayments as $payment) {
+                if (!is_array($payment)) {
+                    continue;
+                }
+                
+                $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
+                
+                // Remove tipe_transaksi from payment data before saving
+                $paymentData = $payment;
+                unset($paymentData['tipe_transaksi']);
+                
+                if ($tipeTransaksi === 'penjualan') {
+                    $penjualanPayments[] = $paymentData;
+                } elseif ($tipeTransaksi === 'pembelian') {
+                    $pembelianPayments[] = $paymentData;
+                }
+            }
+            
+            // Override pembayaran arrays with unified payments
+            $penjualanPayload['pembayaran'] = $penjualanPayments;
+            $pembelianPayload['pembayaran'] = $pembelianPayments;
+
+            // Generate TukarTambah nota number first
+            $ttNotaNumber = $data['no_nota'] ?? TukarTambah::generateNoNota();
+
+            // Use TukarTambah nota for both Penjualan and Pembelian
             $penjualan = Penjualan::query()->create([
                 'tanggal_penjualan' => $tanggal,
                 'catatan' => $penjualanPayload['catatan'] ?? $catatan,
                 'id_karyawan' => $penjualanPayload['id_karyawan'] ?? $karyawanId,
-                'id_member' => $penjualanPayload['id_member'] ?? null,
+                'id_member' => $data['id_member'] ?? null,  // Get from main form
                 'diskon_total' => $penjualanPayload['diskon_total'] ?? 0,
-                'no_nota' => $penjualanPayload['no_nota'] ?? null,
+                'no_nota' => $ttNotaNumber,  // Use TukarTambah nota
                 'sumber_transaksi' => 'tukar_tambah',
             ]);
 
@@ -55,7 +86,7 @@ class CreateTukarTambah extends CreateRecord
                 'catatan' => $pembelianPayload['catatan'] ?? $catatan,
                 'id_karyawan' => $pembelianPayload['id_karyawan'] ?? $karyawanId,
                 'id_supplier' => $pembelianPayload['id_supplier'] ?? null,
-                'no_po' => $pembelianPayload['no_po'] ?? null,
+                'no_po' => $ttNotaNumber,  // Use TukarTambah nota
                 'tipe_pembelian' => $pembelianPayload['tipe_pembelian'] ?? 'non_ppn',
             ]);
 
@@ -65,7 +96,9 @@ class CreateTukarTambah extends CreateRecord
             $this->createPenjualanPembayaran($penjualan, $penjualanPayload['pembayaran'] ?? []);
             $this->createPembelianPembayaran($pembelian, $pembelianPayload['pembayaran'] ?? []);
 
+            // Create TukarTambah with the same nota
             return TukarTambah::query()->create([
+                'no_nota' => $ttNotaNumber,  // Explicitly set
                 'tanggal' => $tanggal,
                 'catatan' => $catatan,
                 'id_karyawan' => $karyawanId,

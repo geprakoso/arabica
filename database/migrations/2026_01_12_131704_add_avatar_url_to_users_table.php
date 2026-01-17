@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar_url')->nullable()->after('avatar');
+            $table->string('avatar_url')->nullable()->after('name');
         });
 
         // Sync existing avatar data from karyawan table

@@ -35,6 +35,7 @@ use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -152,6 +153,13 @@ class PembelianResource extends BaseResource
                                     ])
                                     ->default('non_ppn')
                                     ->native(false),
+
+                                TextInput::make('nota_supplier')
+                                    ->label('Nota Referensi')
+                                    ->placeholder('Opsional')
+                                    ->maxLength(255)
+                                    ->prefixIcon('heroicon-m-receipt-refund')
+                                    ->columnSpanFull(),
                             ])
                                 ->columns(2),
                             // Tab::make('Produk Dibeli')
@@ -447,6 +455,11 @@ class PembelianResource extends BaseResource
                                     ->size(TextEntrySize::Large)
                                     ->icon('heroicon-m-document-text'),
 
+                                TextEntry::make('nota_supplier')
+                                    ->label('Nota Supplier')
+                                    ->icon('heroicon-m-receipt-refund')
+                                    ->placeholder('-'),
+
                                 TextEntry::make('tanggal')
                                     ->label('Tanggal Transaksi')
                                     ->date('d F Y')
@@ -505,13 +518,13 @@ class PembelianResource extends BaseResource
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large),
-                            ]),
+                            ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('total_dibayar')
                                     ->label('Total Dibayar')
                                     ->state(fn(Pembelian $record): float => (float) ($record->pembayaran()->sum('jumlah') ?? 0))
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
-                            ]),
+                            ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('sisa_bayar')
                                     ->label('Sisa Bayar')
@@ -522,8 +535,19 @@ class PembelianResource extends BaseResource
                                         return max(0, $total - $dibayar);
                                     })
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
+                            ])->grow(),
+                            InfoGroup::make([
+                                TextEntry::make('kelebihan_bayar')
+                                    ->label('Kelebihan Bayar')
+                                    ->state(function (Pembelian $record): float {
+                                        $total = $record->calculateTotalPembelian();
+                                        $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                        return max(0, $dibayar - $total);
+                                    })
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])->grow(false),
-                        ])->from('md'),
+                        ])->from('lg'),
                     ]),
 
                 // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
@@ -606,6 +630,12 @@ class PembelianResource extends BaseResource
                     ->weight('medium')
                     ->toggleable()
                     ->sortable(),
+                TextColumn::make('nota_supplier')
+                    ->label('Nota Supplier')
+                    ->icon('heroicon-m-receipt-refund')
+                    ->placeholder('-')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('request_orders_label')
                     ->label('Request Order')
                     ->badge()
@@ -646,6 +676,13 @@ class PembelianResource extends BaseResource
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
+                TextColumn::make('total_pembayaran')
+                    ->label('Total Pembayaran')
+                    ->icon('heroicon-m-banknotes')
+                    ->state(fn(Pembelian $record) => $record->calculateTotalPembelian())
+                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
+                    ->color('success')
+                    ->sortable(),
             ])
             ->filters([])
             ->actions([
@@ -654,10 +691,23 @@ class PembelianResource extends BaseResource
                         ->icon('heroicon-m-eye')
                         ->color('primary')
                         ->tooltip('Lihat Detail'),
-                    Tables\Actions\EditAction::make()
+                    Action::make('edit')
+                        ->label('Edit')
                         ->icon('heroicon-m-pencil-square')
                         ->color('warning')
-                        ->tooltip('Edit'),
+                        ->tooltip('Edit')
+                        ->action(function (Pembelian $record, \Filament\Tables\Actions\Action $action): void {
+                            $livewire = $action->getLivewire();
+
+                            if ($record->isEditLocked()) {
+                                $livewire->editBlockedMessage = $record->getEditBlockedMessage();
+                                $livewire->editBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
+                                $livewire->replaceMountedAction('editBlocked');
+                                return;
+                            }
+
+                            $livewire->redirect(PembelianResource::getUrl('edit', ['record' => $record]));
+                        }),
                 ])
                     ->label('Aksi')
                     ->tooltip('Aksi'),
@@ -671,9 +721,11 @@ class PembelianResource extends BaseResource
                         ->requiresConfirmation()
                         ->modalHeading('Hapus Pembelian')
                         ->modalDescription('Pembelian yang masih dipakai transaksi lain akan diblokir.')
-                        ->action(function (Collection $records): void {
+                        ->action(function (Collection $records, \Filament\Tables\Actions\BulkAction $action): void {
+                            $livewire = $action->getLivewire();
                             $failed = [];
                             $deleted = 0;
+                            $blockedReferences = collect();
 
                             foreach ($records as $record) {
                                 try {
@@ -684,15 +736,17 @@ class PembelianResource extends BaseResource
                                         ->flatten()
                                         ->implode(' ');
                                     $failed[] = trim($messages) ?: 'Gagal menghapus pembelian.';
+                                    $blockedReferences = $blockedReferences->merge($record->getBlockedPenjualanReferences());
                                 }
                             }
 
                             if (! empty($failed)) {
-                                Notification::make()
-                                    ->title('Sebagian gagal dihapus')
-                                    ->body(implode(' ', $failed))
-                                    ->danger()
-                                    ->send();
+                                $livewire->deleteBlockedMessage = implode(' ', $failed);
+                                $livewire->deleteBlockedPenjualanReferences = $blockedReferences
+                                    ->unique('id')
+                                    ->values()
+                                    ->all();
+                                $livewire->replaceMountedAction('bulkDeleteBlocked');
                             }
 
                             if ($deleted > 0) {

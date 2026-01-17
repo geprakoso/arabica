@@ -29,6 +29,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use App\Filament\Resources\PenjualanResource\Pages;
 use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Infolists\Components\Grid as InfoGrid;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
@@ -268,18 +269,23 @@ class PenjualanResource extends BaseResource
                     ->placeholder('Semua'),
             ])
             ->actions([
-                Action::make('invoice')
+                ActionGroup::make([
+                    Action::make('invoice')
+                        ->label('Invoice')
+                        ->icon('heroicon-m-printer')
+                        ->color('primary')
+                        ->url(fn(Penjualan $record) => route('penjualan.invoice', $record))
+                        ->openUrlInNewTab(),
+                    Action::make('invoice_simple')
+                        ->label('Invoice Simple')
+                        ->icon('heroicon-m-document-text')
+                        ->color('gray')
+                        ->url(fn(Penjualan $record) => route('penjualan.invoice.simple', $record))
+                        ->openUrlInNewTab(),
+                ])
                     ->label('Invoice')
                     ->icon('heroicon-m-printer')
-                    ->color('primary')
-                    ->url(fn(Penjualan $record) => route('penjualan.invoice', $record))
-                    ->openUrlInNewTab(),
-                Action::make('invoice_simple')
-                    ->label('Invoice Simple')
-                    ->icon('heroicon-m-document-text')
-                    ->color('gray')
-                    ->url(fn(Penjualan $record) => route('penjualan.invoice.simple', $record))
-                    ->openUrlInNewTab(),
+                    ->tooltip('Invoice'),
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make()
                         ->icon('heroicon-m-eye')
@@ -446,54 +452,78 @@ class PenjualanResource extends BaseResource
                             ]),
 
                             InfoGroup::make([
-                                TextEntry::make('total_dibayar')
-                                    ->label('Total Dibayar')
-                                    ->money('IDR')
-                                    ->state(function (Penjualan $record): float {
-                                        return (float) ($record->pembayaran()->sum('jumlah') ?? 0);
-                                    })
-                                    ->extraAttributes([
-                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                    ])
-                                    ->placeholder('-'),
-                                TextEntry::make('sisa_bayar')
-                                    ->label('Sisa Bayar')
-                                    ->money('IDR')
-                                    ->state(function (Penjualan $record): float {
-                                        $subtotalProduk = (float) ($record->items()
-                                            ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
-                                            ->value('total') ?? 0);
-                                        $subtotalJasa = (float) ($record->jasaItems()
-                                            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
-                                            ->value('total') ?? 0);
-                                        $diskon = (float) ($record->diskon_total ?? 0);
-                                        $grandTotal = max(0, ($subtotalProduk + $subtotalJasa) - $diskon);
+                                InfoGrid::make(2) // 2 kolom
+                                    ->schema([
+                                        TextEntry::make('total')
+                                            ->label('Subtotal')
+                                            ->money('IDR')
+                                            ->state(function (Penjualan $record): float {
+                                                $subtotalProduk = (float) ($record->items()
+                                                    ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
+                                                    ->value('total') ?? 0);
+                                                $subtotalJasa = (float) ($record->jasaItems()
+                                                    ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                                                    ->value('total') ?? 0);
 
-                                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                                                return $subtotalProduk + $subtotalJasa;
+                                            })
+                                            ->extraAttributes([
+                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
+                                            ])
+                                            ->placeholder('-'),
+                                        TextEntry::make('total_dibayar')
+                                            ->label('Total Dibayar')
+                                            ->money('IDR')
+                                            ->state(function (Penjualan $record): float {
+                                                return (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                                            })
+                                            ->extraAttributes([
+                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
+                                            ])
+                                            ->placeholder('-'),
+                                        TextEntry::make('sisa_bayar')
+                                            ->label('Sisa Bayar')
+                                            ->money('IDR')
+                                            ->state(function (Penjualan $record): float {
+                                                $subtotalProduk = (float) ($record->items()
+                                                    ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
+                                                    ->value('total') ?? 0);
+                                                $subtotalJasa = (float) ($record->jasaItems()
+                                                    ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                                                    ->value('total') ?? 0);
+                                                $diskon = (float) ($record->diskon_total ?? 0);
+                                                $grandTotal = max(0, ($subtotalProduk + $subtotalJasa) - $diskon);
 
-                                        return max(0, $grandTotal - $totalPaid);
-                                    })
-                                    ->extraAttributes([
-                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                    ])
-                                    ->placeholder('-'),
-                                TextEntry::make('total')
-                                    ->label('Subtotal')
-                                    ->money('IDR')
-                                    ->state(function (Penjualan $record): float {
-                                        $subtotalProduk = (float) ($record->items()
-                                            ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
-                                            ->value('total') ?? 0);
-                                        $subtotalJasa = (float) ($record->jasaItems()
-                                            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
-                                            ->value('total') ?? 0);
+                                                $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
 
-                                        return $subtotalProduk + $subtotalJasa;
-                                    })
-                                    ->extraAttributes([
-                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                    ])
-                                    ->placeholder('-'),
+                                                return max(0, $grandTotal - $totalPaid);
+                                            })
+                                            ->extraAttributes([
+                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
+                                            ])
+                                            ->placeholder('-'),
+                                        TextEntry::make('kelebihan_bayar')
+                                            ->label('Kelebihan Bayar')
+                                            ->money('IDR')
+                                            ->state(function (Penjualan $record): float {
+                                                $subtotalProduk = (float) ($record->items()
+                                                    ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
+                                                    ->value('total') ?? 0);
+                                                $subtotalJasa = (float) ($record->jasaItems()
+                                                    ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                                                    ->value('total') ?? 0);
+                                                $diskon = (float) ($record->diskon_total ?? 0);
+                                                $grandTotal = max(0, ($subtotalProduk + $subtotalJasa) - $diskon);
+
+                                                $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                                return max(0, $totalPaid - $grandTotal);
+                                            })
+                                            ->extraAttributes([
+                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
+                                            ])
+                                            ->placeholder('-'),
+                                    ]),
 
                                 TextEntry::make('diskon_total')
                                     ->label('Diskon')
@@ -502,6 +532,8 @@ class PenjualanResource extends BaseResource
                                         'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
                                     ])
                                     ->placeholder('-'),
+
+
 
                                 TextEntry::make('tunai_diterima')
                                     ->label('Tunai Diterima')

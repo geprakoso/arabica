@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TukarTambahResource\Pages;
 
 use App\Filament\Resources\TukarTambahResource;
+use App\Filament\Resources\PenjualanResource;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\PembelianPembayaran;
@@ -11,8 +12,10 @@ use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use App\Models\PenjualanPembayaran;
 use Filament\Actions\Action;
+use Filament\Actions\StaticAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +24,8 @@ use Illuminate\Validation\ValidationException;
 class EditTukarTambah extends EditRecord
 {
     protected static string $resource = TukarTambahResource::class;
+    public array $deleteBlockedPenjualanReferences = [];
+    public ?string $deleteBlockedMessage = null;
 
     protected function getHeaderActions(): array
     {
@@ -56,11 +61,9 @@ class EditTukarTambah extends EditRecord
                             ->flatten()
                             ->implode(' ');
 
-                        Notification::make()
-                            ->title('Gagal menghapus')
-                            ->body($messages ?: 'Gagal menghapus tukar tambah.')
-                            ->danger()
-                            ->send();
+                        $this->deleteBlockedMessage = $messages ?: 'Gagal menghapus tukar tambah.';
+                        $this->deleteBlockedPenjualanReferences = $this->record->getExternalPenjualanReferences()->all();
+                        $this->replaceMountedAction('deleteBlocked');
                     }
                 }),
         ];
@@ -69,6 +72,41 @@ class EditTukarTambah extends EditRecord
     protected function getFormActions(): array
     {
         return [];
+    }
+
+    protected function deleteBlockedAction(): Action
+    {
+        return Action::make('deleteBlocked')
+            ->modalHeading('Gagal menghapus')
+            ->modalDescription(fn () => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
+            ->modalIcon('heroicon-o-exclamation-triangle')
+            ->modalIconColor('danger')
+            ->modalWidth('md')
+            ->modalAlignment(Alignment::Center)
+            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            ->modalFooterActionsAlignment(Alignment::Center)
+            ->modalSubmitAction(false)
+            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->color('danger');
+    }
+
+    protected function buildPenjualanFooterActions(array $references): array
+    {
+        return collect($references)
+            ->filter(fn (array $reference) => ! empty($reference['id']))
+            ->map(function (array $reference, int $index) {
+                $nota = $reference['nota'] ?? null;
+                $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
+
+                return StaticAction::make('viewPenjualan' . $index)
+                    ->button()
+                    ->label($label)
+                    ->url(PenjualanResource::getUrl('view', ['record' => $reference['id'] ?? 0]))
+                    ->openUrlInNewTab()
+                    ->color('danger');
+            })
+            ->values()
+            ->all();
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -174,6 +212,33 @@ class EditTukarTambah extends EditRecord
 
             $penjualanPayload = is_array($data['penjualan'] ?? null) ? $data['penjualan'] : [];
             $pembelianPayload = is_array($data['pembelian'] ?? null) ? $data['pembelian'] : [];
+
+            // Process unified payments and split them
+            $unifiedPayments = $data['unified_pembayaran'] ?? [];
+            $penjualanPayments = [];
+            $pembelianPayments = [];
+            
+            foreach ($unifiedPayments as $payment) {
+                if (!is_array($payment)) {
+                    continue;
+                }
+                
+                $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
+                
+                // Remove tipe_transaksi from payment data before saving
+                $paymentData = $payment;
+                unset($paymentData['tipe_transaksi']);
+                
+                if ($tipeTransaksi === 'penjualan') {
+                    $penjualanPayments[] = $paymentData;
+                } elseif ($tipeTransaksi === 'pembelian') {
+                    $pembelianPayments[] = $paymentData;
+                }
+            }
+            
+            // Override pembayaran arrays with unified payments
+            $penjualanPayload['pembayaran'] = $penjualanPayments;
+            $pembelianPayload['pembayaran'] = $pembelianPayments;
 
             $penjualan = $record->penjualan;
             if ($penjualan) {

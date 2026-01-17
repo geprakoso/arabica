@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class Pembelian extends Model
@@ -15,6 +16,7 @@ class Pembelian extends Model
 
     protected $fillable = [
         'no_po',
+        'nota_supplier',
         'tanggal',
         'harga_jual',
         'catatan',
@@ -100,6 +102,56 @@ class Pembelian extends Model
     public function jasaItems()
     {
         return $this->hasMany(PembelianJasa::class, 'id_pembelian', 'id_pembelian');
+    }
+
+    public function isEditLocked(): bool
+    {
+        $itemTable = (new PembelianItem())->getTable();
+        $qtyMasukColumn = PembelianItem::qtyMasukColumn();
+        $qtySisaColumn = PembelianItem::qtySisaColumn();
+
+        return $this->items()
+            ->where(function ($query) use ($itemTable, $qtyMasukColumn, $qtySisaColumn) {
+                $query->whereColumn($itemTable . '.' . $qtySisaColumn, '<', $itemTable . '.' . $qtyMasukColumn)
+                    ->orWhereHas('penjualanItems');
+            })
+            ->exists();
+    }
+
+    public function getEditBlockedMessage(): string
+    {
+        $notaList = $this->getBlockedPenjualanReferences()
+            ->pluck('nota')
+            ->filter()
+            ->values();
+
+        $suffix = $notaList->isNotEmpty()
+            ? ' Nota: ' . $notaList->implode(', ') . '.'
+            : '';
+
+        return 'Pembelian tidak bisa diedit karena item sudah dipakai transaksi lain.' . $suffix;
+    }
+
+    public function getBlockedPenjualanReferences(): Collection
+    {
+        return $this->items()
+            ->whereHas('penjualanItems')
+            ->with(['penjualanItems.penjualan:id_penjualan,no_nota'])
+            ->get()
+            ->flatMap(fn($item) => $item->penjualanItems)
+            ->map(function ($item) {
+                if (! $item->penjualan) {
+                    return null;
+                }
+
+                return [
+                    'id' => (int) $item->penjualan->getKey(),
+                    'nota' => $item->penjualan->no_nota,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     public function tukarTambah()

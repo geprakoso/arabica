@@ -5,6 +5,9 @@
     if ($rows instanceof \Illuminate\Support\Collection) {
         $rows = $rows->all();
     }
+
+    $totalJasa = collect($rows)->sum(fn ($item) => (int) (data_get($item, 'qty') ?? 0)
+        * (float) (data_get($item, 'harga') ?? 0));
 @endphp
 
 <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
@@ -55,4 +58,8 @@
             @endforelse
         </tbody>
     </table>
+    <div class="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+        <span>Total Jasa</span>
+        <span class="text-lg font-semibold text-success-600 dark:text-success-400">Rp {{ number_format($totalJasa, 0, ',', '.') }}</span>
+    </div>
 </div>
