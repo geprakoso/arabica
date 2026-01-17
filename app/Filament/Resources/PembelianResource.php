@@ -422,7 +422,7 @@ class PembelianResource extends BaseResource
                     ]),
 
                 // === BAGIAN 3: PEMBAYARAN (GRID KIRI KANAN) ===
-FormsSection::make('Pembayaran')
+                FormsSection::make('Pembayaran')
                     ->icon('heroicon-o-credit-card')
                     ->description('pembayaran split bisa transfer dan tunai')
                     ->schema([
@@ -446,6 +446,11 @@ FormsSection::make('Pembayaran')
                             })
                             ->live() // Update availability when fields change
                             ->childComponents([
+                                DatePicker::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->default(now())
+                                    ->native(false)
+                                    ->required(),
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->placeholder('pilih')
@@ -483,9 +488,9 @@ FormsSection::make('Pembayaran')
                                         // Total Paid includes the current value if it's in the array.
                                         // The placeholder is shown when the field is empty (value is null/empty).
                                         // So totalPaid calculated here will exclude this field's contribution effectively (0).
-                                        
+
                                         $remaining = max(0, $grandTotal - $totalPaid);
-                                        
+
                                         return 'Sisa: Rp. ' . number_format($remaining, 0, ',', '.');
                                     })
                                     ->required(),
@@ -608,7 +613,7 @@ FormsSection::make('Pembayaran')
                         ])->from('md'), // Split hanya aktif di layar medium ke atas
                     ]),
 
-                    // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
+                // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
                 InfoSection::make('Daftar Barang')
                     // ->compact() // Mengurangi padding agar lebih rapat
                     ->schema([
@@ -676,22 +681,26 @@ FormsSection::make('Pembayaran')
                         RepeatableEntry::make('pembayaran')
                             ->hiddenLabel()
                             ->schema([
+                                TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->date('d/m/Y')
+                                    ->placeholder('-'),
                                 TextEntry::make('metode_bayar')
                                     ->label('Metode')
                                     ->badge()
-                                    ->formatStateUsing(fn ($state) => $state === 'cash' ? 'Tunai' : 'Transfer')
-                                    ->color(fn ($state) => $state === 'cash' ? 'success' : 'info'),
+                                    ->formatStateUsing(fn($state) => $state === 'cash' ? 'Tunai' : 'Transfer')
+                                    ->color(fn($state) => $state === 'cash' ? 'success' : 'info'),
                                 TextEntry::make('akunTransaksi.nama_akun')
                                     ->label('Akun Transaksi')
                                     ->placeholder('-'),
                                 TextEntry::make('jumlah')
                                     ->label('Jumlah')
-                                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format((int) $state, 0, ',', '.')),
+                                    ->formatStateUsing(fn($state) => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])
-                            ->columns(3),
+                            ->columns(4),
                     ]),
 
-                
+
 
                 // === BAGIAN BAWAH: FOOTER & CATATAN ===
                 InfoSection::make()
@@ -706,12 +715,12 @@ FormsSection::make('Pembayaran')
                                         ->icon('heroicon-m-paper-clip')
                                         ->color('gray')
                                         ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty()),
-                                    
+
                                     TextEntry::make('catatan')
                                         ->label('Catatan')
                                         ->visible(fn(Pembelian $record) => filled($record->catatan)),
                                 ])
-                                ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty() || filled($record->catatan)),
+                                    ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty() || filled($record->catatan)),
 
                                 // Kanan: Info Tempo (Jika ada)
                                 InfoGroup::make([
@@ -751,7 +760,7 @@ FormsSection::make('Pembayaran')
                                         'class' => 'rounded-md shadow-sm border border-gray-200 dark:border-gray-700 object-cover cursor-pointer',
                                         'style' => 'aspect-ratio: 1/1;',
                                     ])
-                                    ->url(fn ($state) => Storage::url($state))
+                                    ->url(fn($state) => Storage::url($state))
                                     ->openUrlInNewTab(),
                             ])
                             ->grid(10)

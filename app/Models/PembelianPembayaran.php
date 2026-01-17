@@ -12,6 +12,7 @@ class PembelianPembayaran extends Model
 
     protected $fillable = [
         'id_pembelian',
+        'tanggal',
         'metode_bayar',
         'akun_transaksi_id',
         'jumlah',
@@ -20,6 +21,7 @@ class PembelianPembayaran extends Model
     ];
 
     protected $casts = [
+        'tanggal' => 'date',
         'jumlah' => 'decimal:2',
     ];
 
