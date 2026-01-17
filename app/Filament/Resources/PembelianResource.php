@@ -21,10 +21,13 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Set;
 use Filament\Infolists\Components\Grid as InfoGrid;
 use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
@@ -39,10 +42,16 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Forms\Components\FileUpload;
+use App\Support\WebpUpload;
+use Filament\Forms\Components\BaseFileUpload;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class PembelianResource extends BaseResource
 {
@@ -218,49 +227,6 @@ class PembelianResource extends BaseResource
                         ]),
                     ]),
 
-                FormsSection::make('Pembayaran')
-                    ->icon('heroicon-o-credit-card')
-                    ->description('pembayaran split bisa transfer dan tunai')
-                    ->schema([
-                        TableRepeater::make('pembayaran')
-                            ->label('')
-                            ->relationship('pembayaran')
-                            ->minItems(0)
-                            ->addActionLabel('Tambah Pembayaran')
-                            ->colStyles([
-                                'metode_bayar' => 'width: 20%;',
-                                'akun_transaksi_id' => 'width: 30%;',
-                                'jumlah' => 'width: 50%;',
-                            ])
-                            ->childComponents([
-                                Select::make('metode_bayar')
-                                    ->label('Metode')
-                                    ->placeholder('pilih')
-                                    ->options([
-                                        'cash' => 'Tunai',
-                                        'transfer' => 'Transfer',
-                                    ])
-                                    ->native(false)
-                                    ->required()
-                                    ->reactive(),
-                                Select::make('akun_transaksi_id')
-                                    ->label('Akun Transaksi')
-                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
-                                    ->searchable()
-                                    ->placeholder('pilih')
-                                    ->preload()
-                                    ->native(false)
-                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
-                                TextInput::make('jumlah')
-                                    ->label('Jumlah')
-                                    ->numeric()
-                                    ->prefix('Rp')
-                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)->live(onBlur: true)
-                                    ->required(),
-                            ])
-                            ->columns(4),
-                    ]),
-
                 // === BAGIAN 2: DAFTAR BARANG (REPEATER) ===
                 FormsSection::make('Item Barang')
                     ->icon('heroicon-o-shopping-cart')
@@ -309,6 +275,7 @@ class PembelianResource extends BaseResource
                                     ->minValue(1)
                                     ->default(1)
                                     ->required()
+                                    ->live(onBlur: true)
                                     ->columnSpan([
                                         'md' => 1,
                                         'xl' => 1,
@@ -319,6 +286,7 @@ class PembelianResource extends BaseResource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->live(onBlur: true)
                                     ->placeholder(function (Get $get): ?string {
                                         $pricing = self::getLastRecordedPricingForProduct((int) $get('id_produk'));
                                         $value = $pricing['hpp'];
@@ -409,13 +377,17 @@ class PembelianResource extends BaseResource
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->default(1)
+                                    ->minValue(1)
+                                    ->required()
+                                    ->live(onBlur: true),
                                 TextInput::make('harga')
                                     ->label('Tarif')
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required(),
+                                    ->required()
+                                    ->live(onBlur: true),
                                 TextInput::make('catatan')
                                     ->label('Catatan')
                                     ->placeholder('Opsional')
@@ -428,13 +400,147 @@ class PembelianResource extends BaseResource
                                 'catatan' => 'width: 35%;',
                             ])
                             ->columns(6)
-                            ->defaultItems(0)
+                            ->defaultItems(0) // Default 0 items
                             ->collapsible()
                             ->cloneable(),
                     ]),
 
-                // === BAGIAN 3: PEMBAYARAN (GRID KIRI KANAN) ===
+                FormsSection::make('Total')
+                    ->schema([
+                        Placeholder::make('grand_total_display')
+                            ->label('GRAND TOTAL')
+                            ->content(function (Get $get) {
+                                $items = $get('items') ?? [];
+                                $jasaItems = $get('jasaItems') ?? [];
 
+                                $totalBarang = collect($items)->sum(fn($item) => ((int)($item['qty'] ?? 0)) * ((int)($item['hpp'] ?? 0)));
+                                $totalJasa = collect($jasaItems)->sum(fn($item) => ((int)($item['qty'] ?? 0)) * ((int)($item['harga'] ?? 0)));
+
+                                return 'Rp ' . number_format($totalBarang + $totalJasa, 0, ',', '.');
+                            })
+                            ->extraAttributes(['class' => 'text-xl font-bold text-primary-600']),
+                    ]),
+
+                // === BAGIAN 3: PEMBAYARAN (GRID KIRI KANAN) ===
+                FormsSection::make('Pembayaran')
+                    ->icon('heroicon-o-credit-card')
+                    ->description('pembayaran split bisa transfer dan tunai')
+                    ->schema([
+                        TableRepeater::make('pembayaran')
+                            ->label('')
+                            ->relationship('pembayaran')
+                            ->minItems(0)
+                            ->addActionLabel('Tambah Pembayaran')
+                            ->addable(function (Get $get) {
+                                $items = $get('items') ?? [];
+                                $jasaItems = $get('jasaItems') ?? [];
+                                $pembayaran = $get('pembayaran') ?? [];
+
+                                $totalBarang = collect($items)->sum(fn($item) => ((int)($item['qty'] ?? 0)) * ((int)($item['hpp'] ?? 0)));
+                                $totalJasa = collect($jasaItems)->sum(fn($item) => ((int)($item['qty'] ?? 0)) * ((int)($item['harga'] ?? 0)));
+                                $grandTotal = $totalBarang + $totalJasa;
+
+                                $totalPaid = collect($pembayaran)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
+
+                                return $totalPaid < $grandTotal;
+                            })
+                            ->live() // Update availability when fields change
+                            ->childComponents([
+                                DatePicker::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->default(now())
+                                    ->native(false)
+                                    ->required(),
+                                Select::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->placeholder('pilih')
+                                    ->options([
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                    ])
+                                    ->native(false)
+                                    ->required()
+                                    ->reactive(),
+                                Select::make('akun_transaksi_id')
+                                    ->label('Akun Transaksi')
+                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
+                                    ->searchable()
+                                    ->placeholder('pilih')
+                                    ->preload()
+                                    ->native(false)
+                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                TextInput::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)->live(onBlur: true)
+                                    ->placeholder(function (Get $get) {
+                                        $items = $get('../../items') ?? [];
+                                        $jasaItems = $get('../../jasaItems') ?? [];
+                                        $pembayaran = $get('../../pembayaran') ?? [];
+
+                                        $totalBarang = collect($items)->sum(fn($item) => ((int)($item['qty'] ?? 0)) * ((int)($item['hpp'] ?? 0)));
+                                        $totalJasa = collect($jasaItems)->sum(fn($item) => ((int)($item['qty'] ?? 0)) * ((int)($item['harga'] ?? 0)));
+                                        $grandTotal = $totalBarang + $totalJasa;
+
+                                        $totalPaid = collect($pembayaran)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
+
+                                        // Total Paid includes the current value if it's in the array.
+                                        // The placeholder is shown when the field is empty (value is null/empty).
+                                        // So totalPaid calculated here will exclude this field's contribution effectively (0).
+
+                                        $remaining = max(0, $grandTotal - $totalPaid);
+
+                                        return 'Sisa: Rp. ' . number_format($remaining, 0, ',', '.');
+                                    })
+                                    ->required(),
+                                FileUpload::make('bukti_transfer')
+                                    ->label('Bukti')
+                                    ->image()
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->directory('pembelian/bukti-transfer')
+                                    ->imageResizeMode('contain')
+                                    ->imageResizeTargetWidth('1920')
+                                    ->imageResizeTargetHeight('1080')
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->saveUploadedFileUsing(function (BaseFileUpload $component, TemporaryUploadedFile $file): ?string {
+                                        return WebpUpload::store($component, $file, 80);
+                                    })
+                                    ->openable()
+                                    ->downloadable()
+                                    ->previewable(false)
+                                    // ->placeholder('Upload bukti transfer')
+                                    ->extraAttributes(['class' => 'compact-file-upload'])
+                                    ->helperText(new HtmlString('
+                                        <style>
+                                            .compact-file-upload .filepond--root,
+                                            .compact-file-upload .filepond--panel-root {
+                                                min-height: 38px !important;
+                                                height: 38px !important;
+                                                border-radius: 0.5rem;
+                                            }
+                                            .compact-file-upload .filepond--drop-label {
+                                                min-height: 38px !important;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                transform: none !important;
+                                                padding: 0 !important;
+                                                color: rgb(var(--primary-600)) !important;
+                                                cursor: pointer;
+                                            }
+                                        </style>
+                                    ')),
+                            ])
+                            ->colStyles([
+                                'metode_bayar' => 'width: 15%;',
+                                'akun_transaksi_id' => 'width: 25%;',
+                                'jumlah' => 'width: 35%;',
+                                'bukti_transfer' => 'width: 25%;',
+                            ])
+                            ->columns(4),
+                    ]),
 
             ]);
     }
@@ -507,6 +613,25 @@ class PembelianResource extends BaseResource
                         ])->from('md'), // Split hanya aktif di layar medium ke atas
                     ]),
 
+                // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
+                InfoSection::make('Daftar Barang')
+                    // ->compact() // Mengurangi padding agar lebih rapat
+                    ->schema([
+                        ViewEntry::make('items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.pembelian-items-table')
+                            ->state(fn(Pembelian $record) => $record->items),
+                    ]),
+
+                InfoSection::make('Daftar Jasa')
+                    ->visible(fn(Pembelian $record) => $record->jasaItems->isNotEmpty())
+                    ->schema([
+                        ViewEntry::make('jasa_items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.pembelian-jasa-table')
+                            ->state(fn(Pembelian $record) => $record->jasaItems),
+                    ]),
+
                 InfoSection::make('Pembayaran')
                     ->schema([
                         Split::make([
@@ -522,7 +647,7 @@ class PembelianResource extends BaseResource
                             InfoGroup::make([
                                 TextEntry::make('total_dibayar')
                                     ->label('Total Dibayar')
-                                    ->state(fn(Pembelian $record): float => (float) ($record->pembayaran()->sum('jumlah') ?? 0))
+                                    ->state(fn(Pembelian $record): float => (float) $record->pembayaran->sum('jumlah'))
                                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])->grow(),
                             InfoGroup::make([
@@ -530,7 +655,7 @@ class PembelianResource extends BaseResource
                                     ->label('Sisa Bayar')
                                     ->state(function (Pembelian $record): float {
                                         $total = $record->calculateTotalPembelian();
-                                        $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                                        $dibayar = (float) $record->pembayaran->sum('jumlah');
 
                                         return max(0, $total - $dibayar);
                                     })
@@ -541,7 +666,7 @@ class PembelianResource extends BaseResource
                                     ->label('Kelebihan Bayar')
                                     ->state(function (Pembelian $record): float {
                                         $total = $record->calculateTotalPembelian();
-                                        $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                                        $dibayar = (float) $record->pembayaran->sum('jumlah');
 
                                         return max(0, $dibayar - $total);
                                     })
@@ -550,38 +675,52 @@ class PembelianResource extends BaseResource
                         ])->from('lg'),
                     ]),
 
-                // === BAGIAN TENGAH: TABEL BARANG (CLEAN TABLE) ===
-                InfoSection::make('Daftar Barang')
-                    // ->compact() // Mengurangi padding agar lebih rapat
+                InfoSection::make('Rincian Pembayaran')
+                    ->visible(fn(Pembelian $record) => $record->pembayaran->isNotEmpty())
                     ->schema([
-                        ViewEntry::make('items_table')
+                        RepeatableEntry::make('pembayaran')
                             ->hiddenLabel()
-                            ->view('filament.infolists.components.pembelian-items-table')
-                            ->state(fn(Pembelian $record) => $record->items()->with('produk')->get()),
+                            ->schema([
+                                TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->date('d/m/Y')
+                                    ->placeholder('-'),
+                                TextEntry::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->badge()
+                                    ->formatStateUsing(fn($state) => $state === 'cash' ? 'Tunai' : 'Transfer')
+                                    ->color(fn($state) => $state === 'cash' ? 'success' : 'info'),
+                                TextEntry::make('akunTransaksi.nama_akun')
+                                    ->label('Akun Transaksi')
+                                    ->placeholder('-'),
+                                TextEntry::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->formatStateUsing(fn($state) => 'Rp ' . number_format((int) $state, 0, ',', '.')),
+                            ])
+                            ->columns(4),
                     ]),
 
-                InfoSection::make('Daftar Jasa')
-                    ->schema([
-                        ViewEntry::make('jasa_items_table')
-                            ->hiddenLabel()
-                            ->view('filament.infolists.components.pembelian-jasa-table')
-                            ->state(fn(Pembelian $record) => $record->jasaItems()->with('jasa')->get()),
-                    ]),
+
 
                 // === BAGIAN BAWAH: FOOTER & CATATAN ===
                 InfoSection::make()
+                    ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty() || filled($record->catatan) || $record->jenis_pembayaran === 'tempo')
                     ->schema([
                         InfoGrid::make(2)
                             ->schema([
-                                // Kiri: Catatan
                                 InfoGroup::make([
                                     TextEntry::make('requestOrders.no_ro')
                                         ->label('Referensi RO')
                                         ->badge()
                                         ->icon('heroicon-m-paper-clip')
                                         ->color('gray')
-                                        ->placeholder('-'),
-                                ]),
+                                        ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty()),
+
+                                    TextEntry::make('catatan')
+                                        ->label('Catatan')
+                                        ->visible(fn(Pembelian $record) => filled($record->catatan)),
+                                ])
+                                    ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty() || filled($record->catatan)),
 
                                 // Kanan: Info Tempo (Jika ada)
                                 InfoGroup::make([
@@ -603,13 +742,43 @@ class PembelianResource extends BaseResource
                                 ])->visible(fn($record) => $record->jenis_pembayaran === 'tempo'),
                             ]),
                     ]),
+
+                InfoSection::make('Bukti Pembayaran')
+                    ->visible(fn(Pembelian $record) => $record->pembayaran->whereNotNull('bukti_transfer')->isNotEmpty())
+                    ->schema([
+                        RepeatableEntry::make('bukti_transfers')
+                            ->hiddenLabel()
+                            ->state(fn(Pembelian $record) => $record->pembayaran->whereNotNull('bukti_transfer')->values()->toArray())
+                            ->schema([
+                                ImageEntry::make('bukti_transfer')
+                                    ->hiddenLabel()
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->width(100)
+                                    ->height(100)
+                                    ->extraImgAttributes([
+                                        'class' => 'rounded-md shadow-sm border border-gray-200 dark:border-gray-700 object-cover cursor-pointer',
+                                        'style' => 'aspect-ratio: 1/1;',
+                                    ])
+                                    ->url(fn($state) => Storage::url($state))
+                                    ->openUrlInNewTab(),
+                            ])
+                            ->grid(10)
+                            ->contained(false),
+                    ]),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with('requestOrders'))
+            ->modifyQueryUsing(fn(Builder $query) => $query->with([
+                'requestOrders',
+                'supplier',
+                'karyawan',
+                'items',
+                'jasaItems',
+            ]))
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')

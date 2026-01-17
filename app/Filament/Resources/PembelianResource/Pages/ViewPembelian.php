@@ -19,6 +19,19 @@ class ViewPembelian extends ViewRecord
     public ?string $editBlockedMessage = null;
     public ?string $deleteBlockedMessage = null;
 
+    public function resolveRecord(int|string $key): \Illuminate\Database\Eloquent\Model
+    {
+        return static::getModel()::with([
+            'supplier',
+            'karyawan',
+            'tukarTambah',
+            'requestOrders',
+            'items.produk',
+            'jasaItems.jasa',
+            'pembayaran.akunTransaksi',
+        ])->findOrFail($key);
+    }
+
     protected function getHeaderActions(): array
     {
         return [

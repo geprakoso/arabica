@@ -165,16 +165,30 @@ class Pembelian extends Model
         return $this->hasOne(TukarTambah::class, 'pembelian_id', 'id_pembelian');
     }
 
+    protected ?float $cachedTotalPembelian = null;
+
     public function calculateTotalPembelian(): float
     {
-        $itemsTotal = (float) ($this->items()
-            ->selectRaw('COALESCE(SUM(qty * hpp), 0) as total')
-            ->value('total') ?? 0);
-        $jasaTotal = (float) ($this->jasaItems()
-            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
-            ->value('total') ?? 0);
+        // Return cached value if available
+        if ($this->cachedTotalPembelian !== null) {
+            return $this->cachedTotalPembelian;
+        }
 
-        return $itemsTotal + $jasaTotal;
+        // Use loaded relations if available (avoids N+1)
+        if ($this->relationLoaded('items') && $this->relationLoaded('jasaItems')) {
+            $itemsTotal = (float) $this->items->sum(fn($item) => ($item->qty ?? 0) * ($item->hpp ?? 0));
+            $jasaTotal = (float) $this->jasaItems->sum(fn($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
+        } else {
+            // Fallback to database queries
+            $itemsTotal = (float) ($this->items()
+                ->selectRaw('COALESCE(SUM(qty * hpp), 0) as total')
+                ->value('total') ?? 0);
+            $jasaTotal = (float) ($this->jasaItems()
+                ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+                ->value('total') ?? 0);
+        }
+
+        return $this->cachedTotalPembelian = $itemsTotal + $jasaTotal;
     }
 
     public function recalculatePaymentStatus(): void
