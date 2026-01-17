@@ -20,6 +20,7 @@ class TukarTambah extends Model
         'tanggal',
         'catatan',
         'id_karyawan',
+        'id_member',
         'penjualan_id',
         'pembelian_id',
     ];
@@ -75,6 +76,23 @@ class TukarTambah extends Model
     public function pembelian()
     {
         return $this->belongsTo(Pembelian::class, 'pembelian_id', 'id_pembelian');
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'id_member');
+    }
+
+    /**
+     * Get the columns that should be searched.
+     */
+    public function getSearchableColumns(): array
+    {
+        return [
+            'no_nota',
+            'member.nama_member',
+            'member.no_hp',
+        ];
     }
 
     public function isEditLocked(): bool

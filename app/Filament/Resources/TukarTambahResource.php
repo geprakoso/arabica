@@ -45,6 +45,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
+
 class TukarTambahResource extends BaseResource
 {
     protected static ?string $model = TukarTambah::class;
@@ -77,6 +78,9 @@ class TukarTambahResource extends BaseResource
                                     ->disabled()
                                     ->dehydrated()
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->prefixIcon('heroicon-m-hashtag')
                                     ->columnSpan(1),
                                 DatePicker::make('tanggal')
@@ -84,6 +88,9 @@ class TukarTambahResource extends BaseResource
                                     ->default(now())
                                     ->displayFormat('d F Y')
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->prefixIcon('heroicon-m-calendar')
                                     ->columnSpan(1),
                                 Select::make('id_karyawan')
@@ -93,6 +100,9 @@ class TukarTambahResource extends BaseResource
                                     ->preload()
                                     ->default(fn () => Auth::user()?->karyawan?->id)
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->prefixIcon('heroicon-m-user')
                                     ->columnSpan(1),
                                 Select::make('id_member')
@@ -103,19 +113,29 @@ class TukarTambahResource extends BaseResource
                                         ->all())
                                     ->searchable()
                                     ->preload()
+                                    ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->prefixIcon('heroicon-m-user')
                                     ->createOptionModalHeading('Tambah Member')
                                     ->createOptionAction(fn ($action) => $action->label('Tambah Member'))
                                     ->createOptionForm([
                                         TextInput::make('nama_member')
                                             ->label('Nama Lengkap')
-                                            ->required(),
+                                            ->required()
+                                            ->validationMessages([
+                                                'required' => 'Perlu diisi',
+                                            ]),
 
                                         Grid::make(2)->schema([
                                             TextInput::make('no_hp')
                                                 ->label('Nomor WhatsApp / HP')
                                                 ->tel()
                                                 ->required()
+                                                ->validationMessages([
+                                                    'required' => 'Perlu diisi',
+                                                ])
                                                 ->unique(table: (new Member)->getTable(), column: 'no_hp'),
 
                                             TextInput::make('email')
@@ -211,6 +231,9 @@ class TukarTambahResource extends BaseResource
                                                     ->searchable()
                                                     ->preload()
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->reactive()
                                                     ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
                                                         $options = self::getAvailableConditionOptions((int) ($state ?? 0));
@@ -295,6 +318,9 @@ class TukarTambahResource extends BaseResource
                                                         return $available > 0 ? $available : null;
                                                     })
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->reactive()
                                                     ->placeholder(function (Get $get): string {
                                                         $productId = (int) ($get('id_produk') ?? 0);
@@ -312,6 +338,9 @@ class TukarTambahResource extends BaseResource
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->reactive(),
 
                                                 Hidden::make('serials')
@@ -332,27 +361,46 @@ class TukarTambahResource extends BaseResource
                                                             ->color('info')
                                                             ->modalHeading('Manage Serial Numbers')
                                                             ->modalWidth('2xl')
-                                                            ->fillForm(fn (Get $get): array => [
-                                                                'serials_temp' => $get('serials') ?? [],
-                                                            ])
+                                                            ->fillForm(function (Get $get): array {
+                                                                $existingSerials = $get('serials') ?? [];
+                                                                $qty = (int) ($get('qty') ?? 0);
+
+                                                                // If we have existing serials, use them
+                                                                if (count($existingSerials) > 0) {
+                                                                    return ['serials_temp' => $existingSerials];
+                                                                }
+
+                                                                // Otherwise, create empty rows based on qty
+                                                                $serials = [];
+                                                                for ($i = 0; $i < $qty; $i++) {
+                                                                    $serials[] = [
+                                                                        'sn' => '',
+                                                                        'garansi' => '',
+                                                                    ];
+                                                                }
+
+                                                                return ['serials_temp' => $serials];
+                                                            })
                                                             ->form([
-                                                                Repeater::make('serials_temp')
-                                                                    ->label('Serial Numbers')
+                                                                TableRepeater::make('serials_temp')
+                                                                    ->label('')
                                                                     ->schema([
-                                                                        Grid::make(2)
-                                                                            ->schema([
-                                                                                TextInput::make('sn')
-                                                                                    ->label('Serial Number')
-                                                                                    ->required(),
-                                                                                TextInput::make('garansi')
-                                                                                    ->label('Garansi'),
+                                                                        TextInput::make('sn')
+                                                                            ->label('Serial Number')
+                                                                            ->required()
+                                                                            ->validationMessages([
+                                                                                'required' => 'Perlu diisi',
                                                                             ]),
+                                                                        TextInput::make('garansi')
+                                                                            ->label('Garansi'),
                                                                     ])
                                                                     ->defaultItems(0)
                                                                     ->addActionLabel('+ Add Serial')
                                                                     ->reorderable(false)
-                                                                    ->collapsible()
-                                                                    ->itemLabel(fn (array $state): ?string => $state['sn'] ?? 'New Serial'),
+                                                                    ->colStyles([
+                                                                        'sn' => 'width: 60%;',
+                                                                        'garansi' => 'width: 40%;',
+                                                                    ]),
                                                             ])
                                                             ->action(function (Set $set, array $data, $livewire): void {
                                                                 $set('serials', $data['serials_temp'] ?? []);
@@ -422,6 +470,9 @@ class TukarTambahResource extends BaseResource
                                                     ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
                                                     ->searchable()
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->reactive()
                                                     ->afterStateUpdated(function (Set $set, ?int $state): void {
                                                         $set('harga', $state ? (int) (Jasa::query()->find($state)?->harga ?? 0) : null);
@@ -432,12 +483,18 @@ class TukarTambahResource extends BaseResource
                                                     ->numeric()
                                                     ->default(1)
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->reactive(),
                                                 TextInput::make('harga')
                                                     ->label('Tarif')
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->reactive(),
                                             ])
                                             ->colStyles([
@@ -576,17 +633,26 @@ class TukarTambahResource extends BaseResource
                                                     ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
                                                     ->searchable()
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->columnSpan(2),
                                                 Select::make('kondisi')
                                                     ->label('Kondisi')
                                                     ->options(['baru' => 'Baru', 'bekas' => 'Bekas'])
                                                     ->default('baru')
-                                                    ->required(),
+                                                    ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ]),
                                                 TextInput::make('qty')
                                                     ->label('Jml')
                                                     ->numeric()
                                                     ->default(1)
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->lazy()
                                                     ->afterStateUpdated(function (Set $set, Get $get): void {
                                                         // Trigger parent repeater update
@@ -627,6 +693,9 @@ class TukarTambahResource extends BaseResource
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                                     ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ])
                                                     ->lazy()
                                                     ->afterStateUpdated(function (Set $set, Get $get): void {
                                                         // Trigger parent repeater update
@@ -666,7 +735,10 @@ class TukarTambahResource extends BaseResource
                                                     ->label('Rencana Jual')
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->required(),
+                                                    ->required()
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                    ]),
                                             ])
                                             ->columns(6)
                                             ->colStyles([
@@ -782,22 +854,34 @@ class TukarTambahResource extends BaseResource
                                         'pembelian' => 'Pembelian',
                                     ])
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->reactive(),
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->reactive(),
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi')
                                     ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
                                     ->searchable()
-                                    ->required(),
+                                    ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ]),
                                 TextInput::make('jumlah')
                                     ->label('Nominal')
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                     ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ])
                                     ->placeholder(function (Get $get, $livewire): string {
                                         $tipeTransaksi = $get('tipe_transaksi');
 
@@ -917,12 +1001,19 @@ class TukarTambahResource extends BaseResource
                     ->label('No. Nota')
                     ->icon('heroicon-m-document-text')
                     ->copyable()
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
+                    ->sortable(),
+                TextColumn::make('member.nama_member')
+                    ->label('Pelanggan')
+                    ->icon('heroicon-m-user-circle')
+                    ->searchable(['nama_member', 'no_hp'])
+                    ->description(fn (TukarTambah $record): ?string => $record->member?->no_hp)
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
@@ -1055,7 +1146,124 @@ class TukarTambahResource extends BaseResource
                             }
                         }),
                 ]),
-            ]);
+            ])
+            ->filters([
+                \Filament\Tables\Filters\Filter::make('periode')
+                    ->form([
+                        Grid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    'hari_ini' => 'Hari Ini',
+                                    'kemarin' => 'Kemarin',
+                                    '2_hari_lalu' => '2 Hari Lalu',
+                                    '3_hari_lalu' => '3 Hari Lalu',
+                                    'custom' => 'Custom',
+                                ])
+                                // ->default('hari_ini')
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
+                    ])
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                        $range = $data['range'] ?? null;
+
+                        // If no range selected, return unfiltered query
+                        if (!$range) {
+                            return $query;
+                        }
+
+                        // Handle defaults cleanly
+                        if ($range === 'hari_ini') {
+                            return $query->whereDate('tanggal', now());
+                        }
+
+                        $startDate = null;
+                        $endDate = now();
+
+                        if ($range === 'custom') {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? null;
+
+                            return $query
+                                ->when(
+                                    $startDate,
+                                    fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
+                                )
+                                ->when(
+                                    $endDate,
+                                    fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
+                                );
+                        }
+
+                        // Strict single day filtering for presets
+                        $targetDate = match ($range) {
+                            'kemarin' => now()->subDay(),
+                            '2_hari_lalu' => now()->subDays(2),
+                            '3_hari_lalu' => now()->subDays(3),
+                            default => null,
+                        };
+
+                        return $query->when(
+                            $targetDate,
+                            fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', $date)
+                        );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $range = $data['range'] ?? null;
+                        if (! $range) {
+                            return null;
+                        }
+
+                        if ($range === 'custom') {
+                            $from = $data['from'] ?? null;
+                            $until = $data['until'] ?? null;
+
+                            if (! $from && ! $until) {
+                                return null;
+                            }
+
+                            $label = 'Periode: ';
+                            if ($from) {
+                                $label .= \Carbon\Carbon::parse($from)->translatedFormat('d M Y');
+                            }
+                            if ($until) {
+                                $label .= ' s/d '.\Carbon\Carbon::parse($until)->translatedFormat('d M Y');
+                            }
+
+                            return $label;
+                        }
+
+                        $labels = [
+                            'hari_ini' => 'Hari Ini',
+                            'kemarin' => 'Kemarin',
+                            '2_hari_lalu' => '2 Hari Lalu',
+                            '3_hari_lalu' => '3 Hari Lalu',
+                        ];
+
+                        return isset($labels[$range]) ? 'Periode: '.$labels[$range] : null;
+                    }),
+            ])
+            ->searchable()
+            ->persistSearchInSession()
+            ->searchPlaceholder('Cari No. Nota, Pelanggan, atau No. HP...')
+            ->modifyQueryUsing(function (\Illuminate\Database\Eloquent\Builder $query) {
+                // Add eager loading for search performance
+                return $query->with(['member']);
+            });
     }
 
     protected static function getAvailableConditionOptions(int $productId): array
