@@ -6,6 +6,7 @@ use App\Mail\InvoicePenjualanMail;
 use App\Models\ProfilePerusahaan;
 use App\Filament\Resources\PenjualanResource;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -19,6 +20,7 @@ class ViewPenjualan extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            EditAction::make(),
             Action::make('invoice')
                 ->label('Invoice')
                 ->icon('heroicon-m-printer')

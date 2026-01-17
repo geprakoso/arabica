@@ -6,6 +6,7 @@ use Filament\Tables;
 use App\Models\Member;
 use App\Models\Produk;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Models\Penjualan;
 use Filament\Tables\Table;
@@ -23,7 +24,11 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\Split;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Component;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
@@ -35,6 +40,15 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
 use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
+
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\BaseFileUpload;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Support\WebpUpload;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Storage;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 
 class PenjualanResource extends BaseResource
 {
@@ -54,7 +68,9 @@ class PenjualanResource extends BaseResource
     {
         return $form
             ->schema([
-                Section::make('Detail Penjualan')
+                // === BAGIAN 1: INFORMASI PENJUALAN ===
+                Section::make('Informasi Penjualan')
+                    ->icon('heroicon-o-document-text')
                     ->schema([
                         TextInput::make('no_nota')
                             ->label('No. Nota')
@@ -69,7 +85,6 @@ class PenjualanResource extends BaseResource
                             ->prefixIcon('heroicon-s-calendar')
                             ->displayFormat('d F Y')
                             ->required()
-                            ->default(now())
                             ->native(false),
                         Select::make('id_karyawan')
                             ->label('Karyawan')
@@ -117,47 +132,401 @@ class PenjualanResource extends BaseResource
                                     TextInput::make('kecamatan')->label('Kecamatan')->nullable(),
                                 ]),
                             ]),
+                    ])
+                    ->columns(2),
+
+                // === BAGIAN 2: DAFTAR PRODUK ===
+                Section::make('Daftar Produk')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->description('Pilih produk yang dijual')
+                    ->schema([
+                        TableRepeater::make('items_temp')
+                            ->label('')
+                            ->minItems(0)
+                            ->reorderable(false)
+                            ->addActionLabel('Tambah Produk')
+                            ->colStyles([
+                                'id_produk' => 'width: 35%;',
+                                'kondisi' => 'width: 12%;',
+                                'qty' => 'width: 8%;',
+                                'harga_jual' => 'width: 18%;',
+                                'serials_count' => 'width: 20%;',
+                            ])
+                            ->childComponents([
+                                Select::make('id_produk')
+                                    ->label('Produk')
+                                    ->options(fn() => self::getAvailableProductOptions())
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->native(false)
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
+                                        $set('harga_jual', null);
+                                        $set('kondisi', null);
+                                        $set('serials', []);
+                                        
+                                        if ($state) {
+                                            // Get default price from oldest batch
+                                            $batch = self::getOldestAvailableBatch($state);
+                                            if ($batch) {
+                                                $set('harga_jual', $batch->harga_jual);
+                                                $set('kondisi', $batch->kondisi);
+                                            }
+                                        }
+                                    }),
+                                Select::make('kondisi')
+                                    ->label('Kondisi')
+                                    ->options(function (Get $get): array {
+                                        $productId = (int) ($get('id_produk') ?? 0);
+                                        return self::getConditionOptions($productId);
+                                    })
+                                    ->native(false)
+                                    ->placeholder('Otomatis')
+                                    ->nullable()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
+                                        $productId = (int) ($get('id_produk') ?? 0);
+                                        if ($productId > 0) {
+                                            // Get price for this condition
+                                            $batch = self::getOldestAvailableBatch($productId, $state);
+                                            if ($batch) {
+                                                $set('harga_jual', $batch->harga_jual);
+                                            }
+                                        }
+                                    }),
+                                TextInput::make('qty')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(function (Get $get): ?int {
+                                        $productId = (int) ($get('id_produk') ?? 0);
+                                        if ($productId < 1) {
+                                            return null;
+                                        }
+                                        $condition = $get('kondisi');
+                                        return self::getAvailableQty($productId, $condition) ?: null;
+                                    })
+                                    ->required()
+                                    ->live(onBlur: true)
+                                    ->placeholder(function (Get $get): string {
+                                        $productId = (int) ($get('id_produk') ?? 0);
+                                        if ($productId < 1) {
+                                            return '';
+                                        }
+                                        $condition = $get('kondisi');
+                                        $available = self::getAvailableQty($productId, $condition);
+                                        return 'Stok: ' . number_format($available, 0, ',', '.');
+                                    })
+                                    ->validationMessages([
+                                        'max' => 'Stok tidak cukup! Maksimal :max unit.',
+                                    ])
+                                    ->afterStateUpdated(function (Set $set, Get $get, ?int $state): void {
+                                        // Reset serials when qty changes
+                                        $qty = (int) ($state ?? 0);
+                                        $serials = $get('serials') ?? [];
+                                        
+                                        // Adjust serials array to match qty
+                                        if (count($serials) > $qty) {
+                                            $serials = array_slice($serials, 0, $qty);
+                                        }
+                                        while (count($serials) < $qty) {
+                                            $serials[] = ['sn' => '', 'garansi' => ''];
+                                        }
+                                        $set('serials', $serials);
+                                    }),
+                                TextInput::make('harga_jual')
+                                    ->label('Harga')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->required(),
+                                
+                                // Hidden field to store serial data
+                                Hidden::make('serials')
+                                    ->default([])
+                                    ->dehydrated(true),
+                                
+                                // Serial count display with modal action
+                                TextInput::make('serials_count')
+                                    ->label('SN & Garansi')
+                                    ->formatStateUsing(fn(Get $get): string => count(array_filter($get('serials') ?? [], fn($s) => !empty($s['sn']))) . ' SN')
+                                    ->live()
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffixAction(
+                                        FormAction::make('manage_serials')
+                                            ->label('Isi')
+                                            ->icon('heroicon-o-qr-code')
+                                            ->button()
+                                            ->color('info')
+                                            ->modalHeading('Serial Number & Garansi')
+                                            ->modalWidth('2xl')
+                                            ->fillForm(function (Get $get): array {
+                                                $existingSerials = $get('serials') ?? [];
+                                                $qty = (int) ($get('qty') ?? 0);
+
+                                                // If we have existing serials, use them
+                                                if (count($existingSerials) > 0) {
+                                                    return ['serials_temp' => $existingSerials];
+                                                }
+
+                                                // Otherwise, create empty rows based on qty
+                                                $serials = [];
+                                                for ($i = 0; $i < $qty; $i++) {
+                                                    $serials[] = ['sn' => '', 'garansi' => ''];
+                                                }
+
+                                                return ['serials_temp' => $serials];
+                                            })
+                                            ->form([
+                                                TableRepeater::make('serials_temp')
+                                                    ->label('')
+                                                    ->schema([
+                                                        TextInput::make('sn')
+                                                            ->label('Serial Number')
+                                                            ->placeholder('Masukkan SN'),
+                                                        TextInput::make('garansi')
+                                                            ->label('Garansi')
+                                                            ->placeholder('Contoh: 1 Tahun'),
+                                                    ])
+                                                    ->defaultItems(0)
+                                                    ->addActionLabel('+ Tambah Serial')
+                                                    ->reorderable(false)
+                                                    ->colStyles([
+                                                        'sn' => 'width: 60%;',
+                                                        'garansi' => 'width: 40%;',
+                                                    ]),
+                                            ])
+                                            ->action(function (Set $set, array $data): void {
+                                                $set('serials', $data['serials_temp'] ?? []);
+                                            })
+                                            ->after(function (Set $set, Get $get): void {
+                                                // Force refresh of serials_count
+                                                $serials = $get('serials') ?? [];
+                                                $filledCount = count(array_filter($serials, fn($s) => !empty($s['sn'])));
+                                                $set('serials_count', $filledCount . ' SN');
+                                            })
+                                    ),
+                            ]),
+                    ]),
+
+                // === BAGIAN 3: DAFTAR JASA ===
+                Section::make('Daftar Jasa')
+                    ->icon('heroicon-o-wrench-screwdriver')
+                    ->description('Jasa yang diberikan')
+                    ->collapsed()
+                    ->schema([
+                        TableRepeater::make('jasaItems')
+                            ->label('')
+                            ->relationship('jasaItems')
+                            ->minItems(0)
+                            ->defaultItems(0)
+                            ->addActionLabel('Tambah Jasa')
+                            ->colStyles([
+                                'jasa_id' => 'width: 35%;',
+                                'qty' => 'width: 10%;',
+                                'harga' => 'width: 25%;',
+                                'catatan' => 'width: 30%;',
+                            ])
+                            ->childComponents([
+                                Select::make('jasa_id')
+                                    ->label('Jasa')
+                                    ->relationship('jasa', 'nama_jasa')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->native(false)
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                        if ($state) {
+                                            $harga = \App\Models\Jasa::find($state)?->harga;
+                                            $set('harga', $harga);
+                                        }
+                                    }),
+                                TextInput::make('qty')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->default(1)
+                                    ->required()
+                                    ->live(onBlur: true),
+                                TextInput::make('harga')
+                                    ->label('Tarif')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->required(),
+                                TextInput::make('catatan')
+                                    ->label('Catatan')
+                                    ->placeholder('Opsional'),
+                            ]),
+                    ]),
+
+                // === BAGIAN: GRAND TOTAL ===
+                Section::make('Grand Total')
+                    ->description('Total tagihan ke pelanggan')
+                    ->icon('heroicon-m-calculator')
+                    ->schema([
+                        Placeholder::make('grand_total')
+                            ->label('Grand Total')
+                            ->content(function (Get $get): string {
+                                // Calculate Product Total
+                                $items = $get('items_temp') ?? [];
+                                $productTotal = collect($items)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga_jual'] ?? 0));
+
+                                // Calculate Service Total
+                                $jasaItems = $get('jasaItems') ?? [];
+                                $serviceTotal = collect($jasaItems)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga'] ?? 0));
+
+                                // Get Discount
+                                $diskon = (int)($get('diskon_total') ?? 0);
+
+                                // Calculate Grand Total
+                                $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
+
+                                return 'Rp ' . number_format($grandTotal, 0, ',', '.');
+                            })
+                            ->extraAttributes(['class' => 'text-xl font-bold text-primary-600']),
+                    ])
+                    ->collapsed(false),
+
+                // === BAGIAN 4: DISKON & PEMBAYARAN ===
+                Section::make('Pembayaran')
+                    ->icon('heroicon-o-credit-card')
+                    ->schema([
                         TextInput::make('diskon_total')
                             ->label('Diskon')
                             ->prefix('Rp')
                             ->numeric()
                             ->default(0)
+                            ->live()
                             ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0),
                         TableRepeater::make('pembayaran')
                             ->label('Pembayaran (Split)')
                             ->relationship('pembayaran')
                             ->minItems(0)
+                            ->addable(function (Get $get): bool {
+                                // Grand Total
+                                $items = $get('items_temp') ?? [];
+                                $productTotal = collect($items)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga_jual'] ?? 0));
+                                $jasaItems = $get('jasaItems') ?? [];
+                                $serviceTotal = collect($jasaItems)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga'] ?? 0));
+                                $diskon = (int)($get('diskon_total') ?? 0);
+                                $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
+
+                                // Paid
+                                $payments = $get('pembayaran') ?? [];
+                                $paidTotal = collect($payments)->sum(fn($p) => (int)($p['jumlah'] ?? 0));
+
+                                return $grandTotal > $paidTotal;
+                            })
                             ->addActionLabel('Tambah Pembayaran')
                             ->colStyles([
-                                'metode_bayar' => 'width: 20%;',
-                                'akun_transaksi_id' => 'width: 30%;',
-                                'jumlah' => 'width: 50%;',
+                                'tanggal' => 'width: 15%;',
+                                'metode_bayar' => 'width: 15%;',
+                                'akun_transaksi_id' => 'width: 20%;',
+                                'jumlah' => 'width: 25%;',
+                                'bukti_transfer' => 'width: 25%;',
                             ])
-                            ->childComponents([
-                                Select::make('metode_bayar')
-                                    ->label('Metode')
-                                    ->options([
-                                        'cash' => 'Tunai',
-                                        'transfer' => 'Transfer',
+                                    ->live() // Update availability when fields change
+                                    ->childComponents([
+                                        DatePicker::make('tanggal')
+                                            ->label('Tanggal')
+                                            ->default(now())
+                                            ->native(false)
+                                            ->required(),
+                                        Select::make('metode_bayar')
+                                            ->label('Metode')
+                                            ->placeholder('pilih')
+                                            ->options([
+                                                'cash' => 'Tunai',
+                                                'transfer' => 'Transfer',
+                                            ])
+                                            ->native(false)
+                                            ->required()
+                                            ->reactive(),
+                                        Select::make('akun_transaksi_id')
+                                            ->label('Akun Transaksi')
+                                            ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
+                                            ->searchable()
+                                            ->preload()
+                                            ->placeholder('pilih')
+                                            ->native(false)
+                                            ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                        TextInput::make('jumlah')
+                                            ->label('Jumlah')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                            ->live()
+                                            ->placeholder(function (Get $get, Component $component): string {
+                                                // Grand Total
+                                                $items = $get('../../items_temp') ?? [];
+                                                $productTotal = collect($items)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga_jual'] ?? 0));
+                                                $jasaItems = $get('../../jasaItems') ?? [];
+                                                $serviceTotal = collect($jasaItems)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga'] ?? 0));
+                                                $diskon = (int)($get('../../diskon_total') ?? 0);
+                                                $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
+                
+                                                // Previous Payments
+                                                $payments = $get('../../pembayaran') ?? [];
+                                                $itemPath = $component->getContainer()->getStatePath();
+                                                $parts = explode('.', $itemPath);
+                                                $myUuid = end($parts);
+                                                
+                                                $previousPaid = 0;
+                                                foreach ($payments as $uuid => $data) {
+                                                    if ($uuid === $myUuid) {
+                                                        break;
+                                                    }
+                                                    $previousPaid += (int)($data['jumlah'] ?? 0);
+                                                }
+                                                
+                                                $remaining = max(0, $grandTotal - $previousPaid);
+                                                return 'Rp ' . number_format($remaining, 0, ',', '.');
+                                            })
+                                            ->required(),
+                                        FileUpload::make('bukti_transfer')
+                                            ->label('Bukti')
+                                            ->image()
+                                            ->disk('public')
+                                            ->visibility('public')
+                                            ->directory('penjualan/bukti-transfer')
+                                            ->imageResizeMode('contain')
+                                            ->imageResizeTargetWidth('1920')
+                                            ->imageResizeTargetHeight('1080')
+                                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                            ->saveUploadedFileUsing(function (BaseFileUpload $component, TemporaryUploadedFile $file): ?string {
+                                                return WebpUpload::store($component, $file, 80);
+                                            })
+                                            ->openable()
+                                            ->downloadable()
+                                            ->previewable(false)
+                                            // ->placeholder('Upload bukti transfer')
+                                            ->extraAttributes(['class' => 'compact-file-upload'])
+                                            ->helperText(new HtmlString('
+                                                <style>
+                                                    .compact-file-upload .filepond--root,
+                                                    .compact-file-upload .filepond--panel-root {
+                                                        min-height: 38px !important;
+                                                        height: 38px !important;
+                                                        border-radius: 0.5rem;
+                                                    }
+                                                    .compact-file-upload .filepond--drop-label {
+                                                        min-height: 38px !important;
+                                                        display: flex;
+                                                        align-items: center;
+                                                        justify-content: center;
+                                                        transform: none !important;
+                                                        padding: 0 !important;
+                                                        color: rgb(var(--primary-600)) !important;
+                                                        cursor: pointer;
+                                                    }
+                                                </style>
+                                            ')),
                                     ])
-                                    ->native(false)
-                                    ->required()
-                                    ->reactive(),
-                                Select::make('akun_transaksi_id')
-                                    ->label('Akun Transaksi')
-                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
-                                    ->searchable()
-                                    ->preload()
-                                    ->native(false)
-                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
-                                TextInput::make('jumlah')
-                                    ->label('Jumlah')
-                                    ->numeric()
-                                    ->prefix('Rp')
-                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required(),
-                            ])
-                            ->columns(4),
+                                    ->columns(5),
                         RichEditor::make('catatan')
                             ->label('Catatan')
                             ->columnSpanFull(),
@@ -439,121 +808,119 @@ class PenjualanResource extends BaseResource
                             ->state(fn(Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
                     ]),
 
-                // === BAGIAN BAWAH: CATATAN & RINGKASAN ===
+                // === BAGIAN RINGKASAN PEMBAYARAN (SPLIT MATCHING PEMBELIAN) ===
                 InfoSection::make()
                     ->schema([
                         Split::make([
                             InfoGroup::make([
-                                TextEntry::make('catatan')
-                                    ->label('Catatan')
-                                    ->markdown()
-                                    ->prose()
-                                    ->placeholder('Tidak ada catatan'),
+                                TextEntry::make('total_tagihan')
+                                    ->label('Total Tagihan')
+                                    ->money('IDR')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->state(fn(Penjualan $record) => static::calculateGrandTotal($record)),
+
+                                TextEntry::make('total_dibayar')
+                                    ->label('Total Dibayar')
+                                    ->money('IDR')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('success')
+                                    ->state(fn(Penjualan $record) => $record->pembayaran->sum('jumlah')),
                             ]),
 
                             InfoGroup::make([
-                                InfoGrid::make(2) // 2 kolom
-                                    ->schema([
-                                        TextEntry::make('total')
-                                            ->label('Subtotal')
-                                            ->money('IDR')
-                                            ->state(function (Penjualan $record): float {
-                                                $subtotalProduk = (float) ($record->items()
-                                                    ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
-                                                    ->value('total') ?? 0);
-                                                $subtotalJasa = (float) ($record->jasaItems()
-                                                    ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
-                                                    ->value('total') ?? 0);
-
-                                                return $subtotalProduk + $subtotalJasa;
-                                            })
-                                            ->extraAttributes([
-                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                            ])
-                                            ->placeholder('-'),
-                                        TextEntry::make('total_dibayar')
-                                            ->label('Total Dibayar')
-                                            ->money('IDR')
-                                            ->state(function (Penjualan $record): float {
-                                                return (float) ($record->pembayaran()->sum('jumlah') ?? 0);
-                                            })
-                                            ->extraAttributes([
-                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                            ])
-                                            ->placeholder('-'),
-                                        TextEntry::make('sisa_bayar')
-                                            ->label('Sisa Bayar')
-                                            ->money('IDR')
-                                            ->state(function (Penjualan $record): float {
-                                                $subtotalProduk = (float) ($record->items()
-                                                    ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
-                                                    ->value('total') ?? 0);
-                                                $subtotalJasa = (float) ($record->jasaItems()
-                                                    ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
-                                                    ->value('total') ?? 0);
-                                                $diskon = (float) ($record->diskon_total ?? 0);
-                                                $grandTotal = max(0, ($subtotalProduk + $subtotalJasa) - $diskon);
-
-                                                $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
-
-                                                return max(0, $grandTotal - $totalPaid);
-                                            })
-                                            ->extraAttributes([
-                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                            ])
-                                            ->placeholder('-'),
-                                        TextEntry::make('kelebihan_bayar')
-                                            ->label('Kelebihan Bayar')
-                                            ->money('IDR')
-                                            ->state(function (Penjualan $record): float {
-                                                $subtotalProduk = (float) ($record->items()
-                                                    ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
-                                                    ->value('total') ?? 0);
-                                                $subtotalJasa = (float) ($record->jasaItems()
-                                                    ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
-                                                    ->value('total') ?? 0);
-                                                $diskon = (float) ($record->diskon_total ?? 0);
-                                                $grandTotal = max(0, ($subtotalProduk + $subtotalJasa) - $diskon);
-
-                                                $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
-
-                                                return max(0, $totalPaid - $grandTotal);
-                                            })
-                                            ->extraAttributes([
-                                                'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                            ])
-                                            ->placeholder('-'),
-                                    ]),
-
-                                TextEntry::make('diskon_total')
-                                    ->label('Diskon')
+                                TextEntry::make('sisa_bayar')
+                                    ->label('Sisa Bayar')
                                     ->money('IDR')
-                                    ->extraAttributes([
-                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                    ])
-                                    ->placeholder('-'),
-
-
-
-                                TextEntry::make('tunai_diterima')
-                                    ->label('Tunai Diterima')
-                                    ->money('IDR')
-                                    ->extraAttributes([
-                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                    ])
-                                    ->placeholder('-')
-                                    ->visible(fn(Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('danger')
+                                    ->state(function (Penjualan $record) {
+                                        $grandTotal = static::calculateGrandTotal($record);
+                                        $paid = $record->pembayaran->sum('jumlah');
+                                        return max(0, $grandTotal - $paid);
+                                    }),
 
                                 TextEntry::make('kembalian')
-                                    ->label('Kembalian')
+                                    ->label('Kembalian / Kelebihan')
                                     ->money('IDR')
-                                    ->extraAttributes([
-                                        'class' => '[&_.fi-in-affixes_.min-w-0>div]:justify-start [&_.fi-in-affixes_.min-w-0>div]:text-left md:[&_.fi-in-affixes_.min-w-0>div]:justify-end md:[&_.fi-in-affixes_.min-w-0>div]:text-right',
-                                    ])
-                                    ->placeholder('-')
-                                    ->visible(fn(Penjualan $record) => (string) ($record->metode_bayar?->value ?? $record->metode_bayar ?? '') === 'cash'),
-                            ])->grow(false),
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('info')
+                                    ->state(function (Penjualan $record) {
+                                        $grandTotal = static::calculateGrandTotal($record);
+                                        $paid = $record->pembayaran->sum('jumlah');
+                                        return max(0, $paid - $grandTotal);
+                                    }),
+                            ]),
                         ])->from('md'),
+                    ]),
+
+                // === RINCIAN PEMBAYARAN DETAIL (TABLE) ===
+                InfoSection::make('Rincian Pembayaran')
+                    ->schema([
+                        RepeatableEntry::make('pembayaran')
+                            ->hiddenLabel()
+                            ->schema([
+                                TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->date('d M Y'),
+                                TextEntry::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->badge()
+                                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                        default => $state,
+                                    })
+                                    ->color('primary'),
+                                TextEntry::make('akunTransaksi.nama_akun')
+                                    ->label('Akun')
+                                    ->icon('heroicon-m-building-library')
+                                    ->placeholder('-'),
+                                TextEntry::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->money('IDR')
+                                    ->weight(FontWeight::Bold),
+                            ])
+                            ->columns(4),
+                    ])
+                    ->collapsible()
+                    ->collapsed(fn(Penjualan $record) => $record->pembayaran->isEmpty()),
+
+                // === FOOTER: CATATAN ===
+                InfoSection::make('Catatan')
+                    ->schema([
+                        TextEntry::make('catatan')
+                            ->hiddenLabel()
+                            ->markdown()
+                            ->placeholder('Tidak ada catatan'),
+                    ])
+                    ->collapsible(),
+
+                InfoSection::make('Bukti Pembayaran')
+                    ->visible(fn(Penjualan $record) => $record->pembayaran->whereNotNull('bukti_transfer')->isNotEmpty())
+                    ->schema([
+                        RepeatableEntry::make('bukti_transfers')
+                            ->hiddenLabel()
+                            ->state(fn(Penjualan $record) => $record->pembayaran->whereNotNull('bukti_transfer')->values()->toArray())
+                            ->schema([
+                                ImageEntry::make('bukti_transfer')
+                                    ->hiddenLabel()
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->width(100)
+                                    ->height(100)
+                                    ->extraImgAttributes([
+                                        'class' => 'rounded-md shadow-sm border border-gray-200 dark:border-gray-700 object-cover cursor-pointer',
+                                        'style' => 'aspect-ratio: 1/1;',
+                                    ])
+                                    ->url(fn($state) => Storage::url($state))
+                                    ->openUrlInNewTab(),
+                            ])
+                            ->grid(10)
+                            ->contained(false),
                     ]),
             ]);
     }
@@ -664,6 +1031,71 @@ class PenjualanResource extends BaseResource
         $diskon = (int) ($record->diskon_total ?? 0);
 
         return max(0, ($totalProduk + $totalJasa) - $diskon);
+    }
+
+    /**
+     * Get condition options for a product based on available batches.
+     */
+    public static function getConditionOptions(int $productId): array
+    {
+        if ($productId < 1) {
+            return [];
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        return PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0)
+            ->pluck('kondisi')
+            ->filter()
+            ->unique()
+            ->mapWithKeys(fn(string $condition): array => [$condition => ucfirst(strtolower($condition))])
+            ->toArray();
+    }
+
+    /**
+     * Get the oldest available batch for a product.
+     */
+    public static function getOldestAvailableBatch(int $productId, ?string $condition = null): ?PembelianItem
+    {
+        if ($productId < 1) {
+            return null;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        return PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0)
+            ->when($condition, fn($query) => $query->where('kondisi', $condition))
+            ->orderBy('id_pembelian_item')
+            ->first();
+    }
+
+    /**
+     * Get available stock quantity for a product.
+     */
+    public static function getAvailableQty(int $productId, ?string $condition = null): int
+    {
+        if ($productId < 1) {
+            return 0;
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        $query = PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->where($qtyColumn, '>', 0);
+
+        if ($condition) {
+            $query->where('kondisi', $condition);
+        }
+
+        return (int) $query->sum($qtyColumn);
     }
 
     protected static function formatCurrency(int $value): string
