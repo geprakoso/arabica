@@ -35,6 +35,9 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
 use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Province;
 
 class PenjualanResource extends BaseResource
 {
@@ -112,9 +115,69 @@ class PenjualanResource extends BaseResource
                                     ->nullable(),
 
                                 Grid::make(3)->schema([
-                                    TextInput::make('provinsi')->label('Provinsi')->nullable(),
-                                    TextInput::make('kota')->label('Kota/Kabupaten')->nullable(),
-                                    TextInput::make('kecamatan')->label('Kecamatan')->nullable(),
+                                    Select::make('provinsi')
+                                        ->label('Provinsi')
+                                        ->searchable()
+                                        ->options(fn() => Province::query()
+                                            ->orderBy('name')
+                                            ->pluck('name', 'name')
+                                            ->all())
+                                        ->live()
+                                        ->afterStateUpdated(function (callable $set): void {
+                                            $set('kota', null);
+                                            $set('kecamatan', null);
+                                        })
+                                        ->placeholder('Pilih provinsi'),
+                                    Select::make('kota')
+                                        ->label('Kota/Kabupaten')
+                                        ->searchable()
+                                        ->options(function (Get $get): array {
+                                            $provinceName = $get('provinsi');
+                                            if (!$provinceName) {
+                                                return [];
+                                            }
+
+                                            $provinceCode = Province::query()
+                                                ->where('name', $provinceName)
+                                                ->value('code');
+
+                                            if (!$provinceCode) {
+                                                return [];
+                                            }
+
+                                            return City::query()
+                                                ->where('province_code', $provinceCode)
+                                                ->orderBy('name')
+                                                ->pluck('name', 'name')
+                                                ->all();
+                                        })
+                                        ->live()
+                                        ->afterStateUpdated(fn($set) => $set('kecamatan', null))
+                                        ->placeholder('Pilih kota/kabupaten'),
+                                    Select::make('kecamatan')
+                                        ->label('Kecamatan')
+                                        ->searchable()
+                                        ->options(function (Get $get): array {
+                                            $cityName = $get('kota');
+                                            if (!$cityName) {
+                                                return [];
+                                            }
+
+                                            $cityCode = City::query()
+                                                ->where('name', $cityName)
+                                                ->value('code');
+
+                                            if (!$cityCode) {
+                                                return [];
+                                            }
+
+                                            return District::query()
+                                                ->where('city_code', $cityCode)
+                                                ->orderBy('name')
+                                                ->pluck('name', 'name')
+                                                ->all();
+                                        })
+                                        ->placeholder('Pilih kecamatan'),
                                 ]),
                             ]),
                         TextInput::make('diskon_total')
