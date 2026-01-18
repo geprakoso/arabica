@@ -37,6 +37,7 @@ use Filament\Infolists\Components\Group as InfoGroup;
 use Filament\Infolists\Components\Grid as InfoGrid;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Notifications\Notification;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
 use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
@@ -527,11 +528,18 @@ class PenjualanResource extends BaseResource
                                             ')),
                                     ])
                                     ->columns(5),
-                        RichEditor::make('catatan')
-                            ->label('Catatan')
-                            ->columnSpanFull(),
+
+                        
                     ])
                     ->columns(2),
+                    Section::make('Catatan')
+                            ->collapsible()
+                            ->collapsed()
+                            ->schema([
+                                RichEditor::make('catatan')
+                                    ->label('Catatan')
+                                    ->columnSpanFull(),
+                            ]),
             ]);
     }
 
@@ -664,9 +672,21 @@ class PenjualanResource extends BaseResource
                         ->icon('heroicon-m-pencil-square')
                         ->tooltip('Edit'),
                     Tables\Actions\DeleteAction::make()
-                        ->icon('heroicon-m-trash'),
-                ])
-                    ->hidden(function (Penjualan $record): bool {
+                        ->icon('heroicon-m-trash')
+                        ->hidden(fn (Penjualan $record): bool => 
+                            $record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()
+                        )
+                        ->tooltip(fn (Penjualan $record): ?string => 
+                            ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
+                                ? 'Hapus dari Tukar Tambah'
+                                : null
+                        ),
+                ])->hidden(function (Penjualan $record): bool {
+                        // Always show actions for Tukar Tambah records (at least View)
+                        if ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()) {
+                            return false;
+                        }
+                        
                         $hasLines = $record->items()->exists() || $record->jasaItems()->exists();
                         $grandTotal = (float) ($record->grand_total ?? 0);
                         $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
@@ -769,7 +789,12 @@ class PenjualanResource extends BaseResource
 
                                 TextEntry::make('grand_total')
                                     ->label('Grand Total')
-                                    ->money('IDR')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
                                     ->state(function (Penjualan $record): float {
                                         $subtotalProduk = (float) ($record->items()
                                             ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
@@ -815,14 +840,24 @@ class PenjualanResource extends BaseResource
                             InfoGroup::make([
                                 TextEntry::make('total_tagihan')
                                     ->label('Total Tagihan')
-                                    ->money('IDR')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->state(fn(Penjualan $record) => static::calculateGrandTotal($record)),
 
                                 TextEntry::make('total_dibayar')
                                     ->label('Total Dibayar')
-                                    ->money('IDR')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->color('success')
@@ -832,7 +867,12 @@ class PenjualanResource extends BaseResource
                             InfoGroup::make([
                                 TextEntry::make('sisa_bayar')
                                     ->label('Sisa Bayar')
-                                    ->money('IDR')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->color('danger')
@@ -844,7 +884,12 @@ class PenjualanResource extends BaseResource
 
                                 TextEntry::make('kembalian')
                                     ->label('Kembalian / Kelebihan')
-                                    ->money('IDR')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->color('info')
@@ -881,7 +926,12 @@ class PenjualanResource extends BaseResource
                                     ->placeholder('-'),
                                 TextEntry::make('jumlah')
                                     ->label('Jumlah')
-                                    ->money('IDR')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
                                     ->weight(FontWeight::Bold),
                             ])
                             ->columns(4),
@@ -891,6 +941,7 @@ class PenjualanResource extends BaseResource
 
                 // === FOOTER: CATATAN ===
                 InfoSection::make('Catatan')
+                    ->visible(fn(Penjualan $record) => !empty($record->catatan))
                     ->schema([
                         TextEntry::make('catatan')
                             ->hiddenLabel()

@@ -167,5 +167,10 @@ class EditPenjualan extends EditRecord
     {
         return [];
     }
+
+    public function getRelationManagers(): array
+    {
+        return [];
+    }
 }
 

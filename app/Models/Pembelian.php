@@ -36,6 +36,15 @@ class Pembelian extends Model
         });
 
         static::deleting(function (Pembelian $pembelian): void {
+            // Check if this pembelian belongs to a Tukar Tambah
+            if ($pembelian->tukarTambah()->exists()) {
+                $ttKode = $pembelian->tukarTambah?->kode ?? 'TT-XXXXX';
+                
+                throw ValidationException::withMessages([
+                    'id_pembelian' => "Tidak bisa hapus: Pembelian ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
+                ]);
+            }
+            
             $externalPenjualanNotas = $pembelian->items()
                 ->whereHas('penjualanItems')
                 ->with(['penjualanItems.penjualan'])

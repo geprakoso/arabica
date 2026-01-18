@@ -26,6 +26,7 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -234,104 +235,106 @@ class TukarTambahResource extends BaseResource
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
                                                     ])
-                                                    ->reactive()
-                                                    ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
-                                                        $options = self::getAvailableConditionOptions((int) ($state ?? 0));
-                                                        $selected = null;
-
-                                                        if (count($options) === 1) {
-                                                            $selected = array_key_first($options);
-                                                            $set('kondisi', $selected);
-                                                        } elseif (! array_key_exists($get('kondisi'), $options)) {
-                                                            $set('kondisi', null);
-                                                        } else {
-                                                            $selected = $get('kondisi');
-                                                        }
-
-                                                        $set('harga_jual', self::getDefaultPriceForProduct((int) ($state ?? 0), $selected));
-
-                                                        $available = self::getAvailableQty((int) ($state ?? 0), $selected);
-                                                        $current = (int) ($get('qty') ?? 0);
-
-                                                        if ($available > 0 && $current > $available) {
-                                                            $set('qty', $available);
+                                                    ->live()
+                                                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                                        if ($state) {
+                                                            // Get default price from oldest batch
+                                                            $batch = \App\Filament\Resources\PenjualanResource::getOldestAvailableBatch($state);
+                                                            if ($batch) {
+                                                                $set('harga_jual', $batch->harga_jual);
+                                                                $set('kondisi', $batch->kondisi);
+                                                            }
                                                         }
                                                     }),
                                                 Select::make('kondisi')
                                                     ->label('Kondisi')
-                                                    ->options(fn (Get $get): array => self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0)))
+                                                    ->options(function (Get $get): array {
+                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                        return \App\Filament\Resources\PenjualanResource::getConditionOptions($productId);
+                                                    })
                                                     ->native(false)
-                                                    ->placeholder('Kondisi')
-                                                    ->reactive()
-                                                    ->disabled(function (Get $get): bool {
-                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
-
-                                                        return count($options) <= 1;
-                                                    })
-                                                    ->afterStateHydrated(function (Set $set, ?string $state, Get $get): void {
-                                                        if ($state) {
-                                                            return;
-                                                        }
-
-                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
-
-                                                        if (count($options) === 1) {
-                                                            $set('kondisi', array_key_first($options));
-                                                        }
-                                                    })
-                                                    ->placeholder(function (Get $get): string {
-                                                        $options = self::getAvailableConditionOptions((int) ($get('id_produk') ?? 0));
-
-                                                        $labels = array_values($options);
-
-                                                        if (count($labels) === 1) {
-                                                            return $labels[0];
-                                                        }
-
-                                                        return 'kondisi';
-                                                    })
+                                                    ->placeholder('Otomatis')
+                                                    ->nullable()
+                                                    ->live()
                                                     ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
                                                         $productId = (int) ($get('id_produk') ?? 0);
-                                                        $set('harga_jual', self::getDefaultPriceForProduct($productId, $state));
-
-                                                        $available = self::getAvailableQty((int) ($get('id_produk') ?? 0), $state);
-                                                        $current = (int) ($get('qty') ?? 0);
-
-                                                        if ($available > 0 && $current > $available) {
-                                                            $set('qty', $available);
+                                                        if ($productId > 0) {
+                                                            // Get price for this condition
+                                                            $batch = \App\Filament\Resources\PenjualanResource::getOldestAvailableBatch($productId, $state);
+                                                            if ($batch) {
+                                                                $set('harga_jual', $batch->harga_jual);
+                                                            }
                                                         }
-                                                    })
-                                                    ->nullable(),
+                                                    }),
                                                 TextInput::make('qty')
                                                     ->label('Qty')
                                                     ->numeric()
+                                                    ->step(1)
                                                     ->minValue(1)
                                                     ->maxValue(function (Get $get): ?int {
                                                         $productId = (int) ($get('id_produk') ?? 0);
-
                                                         if ($productId < 1) {
                                                             return null;
                                                         }
-
-                                                        $available = self::getAvailableQty($productId, $get('kondisi'));
-
-                                                        return $available > 0 ? $available : null;
+                                                        $condition = $get('kondisi');
+                                                        return \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition) ?: null;
                                                     })
                                                     ->required()
-                                                    ->validationMessages([
-                                                        'required' => 'Perlu diisi',
-                                                    ])
-                                                    ->reactive()
+                                                    ->live(onBlur: true)
+                                                    ->extraInputAttributes(function (Get $get): array {
+                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                        $condition = $get('kondisi');
+                                                        $max = $productId > 0 
+                                                            ? \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition) 
+                                                            : null;
+                                                        
+                                                        return [
+                                                            'min' => 1,
+                                                            'max' => $max,
+                                                            'step' => 1,
+                                                        ];
+                                                    })
                                                     ->placeholder(function (Get $get): string {
                                                         $productId = (int) ($get('id_produk') ?? 0);
-
                                                         if ($productId < 1) {
-                                                            return 'Pilih produk';
+                                                            return '';
                                                         }
-
-                                                        $available = self::getAvailableQty($productId, $get('kondisi'));
-
-                                                        return 'Stok: '.number_format($available, 0, ',', '.');
+                                                        $condition = $get('kondisi');
+                                                        $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+                                                        return 'Stok: ' . number_format($available, 0, ',', '.');
+                                                    })
+                                                    ->validationMessages([
+                                                        'required' => 'Perlu diisi',
+                                                        'min' => 'Minimal 1',
+                                                        'max' => 'Stok tidak cukup! Maksimal :max unit.',
+                                                    ])
+                                                    ->afterStateUpdated(function (Set $set, Get $get, ?int $state): void {
+                                                        // Ensure qty is within bounds
+                                                        $qty = (int) ($state ?? 0);
+                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                        $condition = $get('kondisi');
+                                                        
+                                                        if ($productId > 0) {
+                                                            $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+                                                            
+                                                            // Clamp qty to min=1, max=available
+                                                            if ($qty < 1 && $qty !== 0) {
+                                                                $set('qty', 1);
+                                                            } elseif ($qty > $available && $available > 0) {
+                                                                $set('qty', $available);
+                                                            }
+                                                        }
+                                                        
+                                                        // Adjust serials array to match qty
+                                                        $qty = (int) ($get('qty') ?? 0);
+                                                        $serials = $get('serials') ?? [];
+                                                        if (count($serials) > $qty) {
+                                                            $serials = array_slice($serials, 0, $qty);
+                                                        }
+                                                        while (count($serials) < $qty) {
+                                                            $serials[] = ['sn' => '', 'garansi' => ''];
+                                                        }
+                                                        $set('serials', $serials);
                                                     }),
                                                 TextInput::make('harga_jual')
                                                     ->label('Harga Satuan')
@@ -834,6 +837,14 @@ class TukarTambahResource extends BaseResource
                             ->label('Metode Pembayaran')
                             ->addActionLabel('+ Tambah Pembayaran')
                             ->schema([
+                                DatePicker::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->default(now())
+                                    ->native(false)
+                                    ->required()
+                                    ->validationMessages([
+                                        'required' => 'Perlu diisi',
+                                    ]),
                                 Select::make('tipe_transaksi')
                                     ->label('Untuk')
                                     ->options([
@@ -845,6 +856,7 @@ class TukarTambahResource extends BaseResource
                                         'required' => 'Perlu diisi',
                                     ])
                                     ->reactive(),
+                                
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
@@ -857,7 +869,7 @@ class TukarTambahResource extends BaseResource
                                     ->label('Akun Transaksi')
                                     ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
                                     ->searchable()
-                                    ->required()
+                                    ->required(fn (Get $get) => $get('metode_bayar') === 'transfer')
                                     ->validationMessages([
                                         'required' => 'Perlu diisi',
                                     ]),
@@ -923,22 +935,68 @@ class TukarTambahResource extends BaseResource
                                         return 'Masukkan nominal';
                                     })
                                     ->live(onBlur: true),
+                                FileUpload::make('bukti_transfer')
+                                    ->label('Bukti')
+                                    ->image()
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->directory('tukar-tambah/bukti-transfer')
+                                    ->imageResizeMode('contain')
+                                    ->imageResizeTargetWidth('1920')
+                                    ->imageResizeTargetHeight('1080')
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->openable()
+                                    ->downloadable()
+                                    ->previewable(false)
+                                    ->extraAttributes(['class' => 'compact-file-upload'])
+                                    ->helperText(new \Illuminate\Support\HtmlString('
+                                        <style>
+                                            .compact-file-upload .filepond--root,
+                                            .compact-file-upload .filepond--panel-root {
+                                                min-height: 38px !important;
+                                                height: 38px !important;
+                                                border-radius: 0.5rem;
+                                            }
+                                            .compact-file-upload .filepond--drop-label {
+                                                min-height: 38px !important;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                transform: none !important;
+                                                padding: 0 !important;
+                                                color: rgb(var(--primary-600)) !important;
+                                                cursor: pointer;
+                                            }
+                                        </style>
+                                    ')),
                             ])
-                            ->columns(4)
+                            ->colStyles([
+                                'tanggal' => 'width: 13%;',
+                                'tipe_transaksi' => 'width: 12%;',
+                                'metode_bayar' => 'width: 18%;',
+                                'akun_transaksi_id' => 'width: 18%;',
+                                'jumlah' => 'width: 19%;',
+                                'bukti_transfer' => 'width: 29%;',
+                            ])
+                            ->columns(6)
                             ->minItems(0)
                             ->defaultItems(2)
                             ->default([
                                 [
                                     'tipe_transaksi' => 'penjualan',
+                                    'tanggal' => now()->format('Y-m-d'),
                                     'metode_bayar' => null,
                                     'akun_transaksi_id' => null,
                                     'jumlah' => null,
+                                    'bukti_transfer' => null,
                                 ],
                                 [
                                     'tipe_transaksi' => 'pembelian',
+                                    'tanggal' => now()->format('Y-m-d'),
                                     'metode_bayar' => null,
                                     'akun_transaksi_id' => null,
                                     'jumlah' => null,
+                                    'bukti_transfer' => null,
                                 ],
                             ])
                             ->reorderable(false)
@@ -965,8 +1023,7 @@ class TukarTambahResource extends BaseResource
                                 if (! empty($unifiedPayments)) {
                                     $set('unified_pembayaran', $unifiedPayments);
                                 }
-                            })
-                            ->dehydrated(false), // Don't save this field directly
+                            }),
                     ])
                     ->collapsible()
                     ->collapsed(false),
@@ -996,11 +1053,11 @@ class TukarTambahResource extends BaseResource
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
-                TextColumn::make('member.nama_member')
+                TextColumn::make('penjualan.member.nama_member')
                     ->label('Pelanggan')
                     ->icon('heroicon-m-user-circle')
                     ->searchable(['nama_member', 'no_hp'])
-                    ->description(fn (TukarTambah $record): ?string => $record->member?->no_hp)
+                    ->description(fn (TukarTambah $record): ?string => $record->penjualan?->member?->no_hp)
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
