@@ -57,8 +57,18 @@ class TukarTambah extends Model
                     }
                 }
 
-                $tukarTambah->penjualan?->delete();
-                $tukarTambah->pembelian?->delete();
+                // Set flags to allow cascade deletion
+                \App\Models\Penjualan::$allowTukarTambahDeletion = true;
+                \App\Models\Pembelian::$allowTukarTambahDeletion = true;
+                
+                try {
+                    $tukarTambah->penjualan?->delete();
+                    $tukarTambah->pembelian?->delete();
+                } finally {
+                    // Reset flags
+                    \App\Models\Penjualan::$allowTukarTambahDeletion = false;
+                    \App\Models\Pembelian::$allowTukarTambahDeletion = false;
+                }
             });
         });
     }

@@ -13,6 +13,9 @@ class Pembelian extends Model
 
     protected $table = 'tb_pembelian';
     protected $primaryKey = 'id_pembelian';
+    
+    // Flag to allow TukarTambah cascade deletion
+    public static bool $allowTukarTambahDeletion = false;
 
     protected $fillable = [
         'no_po',
@@ -36,13 +39,16 @@ class Pembelian extends Model
         });
 
         static::deleting(function (Pembelian $pembelian): void {
-            // Check if this pembelian belongs to a Tukar Tambah
-            if ($pembelian->tukarTambah()->exists()) {
-                $ttKode = $pembelian->tukarTambah?->kode ?? 'TT-XXXXX';
-                
-                throw ValidationException::withMessages([
-                    'id_pembelian' => "Tidak bisa hapus: Pembelian ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
-                ]);
+            // Allow deletion if triggered by TukarTambah cascade
+            if (!self::$allowTukarTambahDeletion) {
+                // Check if this pembelian belongs to a Tukar Tambah
+                if ($pembelian->tukarTambah()->exists()) {
+                    $ttKode = $pembelian->tukarTambah?->kode ?? 'TT-XXXXX';
+                    
+                    throw ValidationException::withMessages([
+                        'id_pembelian' => "Tidak bisa hapus: Pembelian ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
+                    ]);
+                }
             }
             
             $externalPenjualanNotas = $pembelian->items()
