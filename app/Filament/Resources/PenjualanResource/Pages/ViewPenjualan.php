@@ -7,6 +7,7 @@ use App\Mail\InvoicePenjualanMail;
 use App\Models\Penjualan;
 use App\Models\ProfilePerusahaan;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -20,17 +21,7 @@ class ViewPenjualan extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('edit')
-                ->icon('heroicon-m-pencil-square')
-                ->color('primary')
-                ->url(fn() => PenjualanResource::getUrl('edit', ['record' => $this->record])),
-            Action::make('delete')
-                ->icon('heroicon-m-trash')
-                ->color('danger')
-                ->requiresConfirmation()
-                ->action(function (Penjualan $record): void {
-                    $record->delete();
-                }),
+            EditAction::make(),
             Action::make('invoice')
                 ->label('Invoice')
                 ->icon('heroicon-m-printer')

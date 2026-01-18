@@ -17,6 +17,7 @@ use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -45,6 +46,8 @@ class CreateTukarTambah extends CreateRecord
             $penjualanPayments = [];
             $pembelianPayments = [];
             
+            \Log::info('TukarTambah: Unified Payments Received', ['unified_pembayaran' => $unifiedPayments]);
+            
             foreach ($unifiedPayments as $payment) {
                 if (!is_array($payment)) {
                     continue;
@@ -58,10 +61,17 @@ class CreateTukarTambah extends CreateRecord
                 
                 if ($tipeTransaksi === 'penjualan') {
                     $penjualanPayments[] = $paymentData;
+                    \Log::info('TukarTambah: Added to Penjualan Payments', ['payment' => $paymentData]);
                 } elseif ($tipeTransaksi === 'pembelian') {
                     $pembelianPayments[] = $paymentData;
+                    \Log::info('TukarTambah: Added to Pembelian Payments', ['payment' => $paymentData]);
                 }
             }
+            
+            \Log::info('TukarTambah: Split Payments', [
+                'penjualan_count' => count($penjualanPayments),
+                'pembelian_count' => count($pembelianPayments),
+            ]);
             
             // Override pembayaran arrays with unified payments
             $penjualanPayload['pembayaran'] = $penjualanPayments;
@@ -285,25 +295,43 @@ class CreateTukarTambah extends CreateRecord
 
     protected function createPenjualanPembayaran(Penjualan $penjualan, array $items): void
     {
+        \Log::info('createPenjualanPembayaran called', ['items_count' => count($items), 'items' => $items]);
+        
         foreach ($items as $item) {
             if (! is_array($item)) {
+                \Log::warning('Penjualan Payment: Skipped non-array item', ['item' => $item]);
                 continue;
             }
 
             $metode = $item['metode_bayar'] ?? null;
             $jumlah = $item['jumlah'] ?? null;
 
-            if (! $metode || $jumlah === null || $jumlah === '') {
+            \Log::info('Penjualan Payment: Processing', [
+                'metode' => $metode,
+                'jumlah' => $jumlah,
+                'jumlah_int' => (int) $jumlah,
+            ]);
+
+            // Skip if no payment method or amount
+            if (! $metode || $jumlah === null || $jumlah === '' || (int) $jumlah <= 0) {
+                \Log::warning('Penjualan Payment: Skipped due to validation', [
+                    'metode' => $metode,
+                    'jumlah' => $jumlah,
+                ]);
                 continue;
             }
 
-            PenjualanPembayaran::query()->create([
+            $payment = PenjualanPembayaran::query()->create([
                 'id_penjualan' => $penjualan->getKey(),
+                'tanggal' => $item['tanggal'] ?? now(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,
+                'bukti_transfer' => $item['bukti_transfer'] ?? null,
                 'catatan' => $item['catatan'] ?? null,
             ]);
+            
+            \Log::info('Penjualan Payment: Created', ['id' => $payment->id_penjualan_pembayaran, 'jumlah' => $payment->jumlah]);
         }
     }
 
@@ -317,15 +345,18 @@ class CreateTukarTambah extends CreateRecord
             $metode = $item['metode_bayar'] ?? null;
             $jumlah = $item['jumlah'] ?? null;
 
-            if (! $metode || $jumlah === null || $jumlah === '') {
+            // Skip if no payment method or amount
+            if (! $metode || $jumlah === null || $jumlah === '' || (int) $jumlah <= 0) {
                 continue;
             }
 
             PembelianPembayaran::query()->create([
                 'id_pembelian' => $pembelian->getKey(),
+                'tanggal' => $item['tanggal'] ?? now(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,
+                'bukti_transfer' => $item['bukti_transfer'] ?? null,
                 'catatan' => $item['catatan'] ?? null,
             ]);
         }

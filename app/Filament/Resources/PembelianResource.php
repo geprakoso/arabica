@@ -877,6 +877,16 @@ class PembelianResource extends BaseResource
 
                             $livewire->redirect(PembelianResource::getUrl('edit', ['record' => $record]));
                         }),
+                    Tables\Actions\DeleteAction::make()
+                        ->icon('heroicon-m-trash')
+                        ->hidden(fn (Pembelian $record): bool => 
+                            $record->tukarTambah()->exists()
+                        )
+                        ->tooltip(fn (Pembelian $record): ?string => 
+                            $record->tukarTambah()->exists()
+                                ? 'Hapus dari Tukar Tambah'
+                                : null
+                        ),
                 ])
                     ->label('Aksi')
                     ->tooltip('Aksi'),

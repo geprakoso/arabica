@@ -44,6 +44,15 @@ class Penjualan extends Model
     protected static function booted(): void
     {
         static::deleting(function (Penjualan $penjualan): void {
+            // Check if this penjualan belongs to a Tukar Tambah
+            if ($penjualan->sumber_transaksi === 'tukar_tambah' || $penjualan->tukarTambah()->exists()) {
+                $ttKode = $penjualan->tukarTambah?->kode ?? 'TT-XXXXX';
+                
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'id_penjualan' => "Tidak bisa hapus: Penjualan ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
+                ]);
+            }
+            
             $penjualan->items()->get()->each->delete();
             $penjualan->jasaItems()->get()->each->delete();
         });

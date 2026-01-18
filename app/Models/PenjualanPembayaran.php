@@ -12,13 +12,16 @@ class PenjualanPembayaran extends Model
 
     protected $fillable = [
         'id_penjualan',
+        'tanggal',
         'metode_bayar',
         'akun_transaksi_id',
         'jumlah',
+        'bukti_transfer',
         'catatan',
     ];
 
     protected $casts = [
+        'tanggal' => 'date',
         'jumlah' => 'decimal:2',
     ];
 
