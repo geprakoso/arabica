@@ -1103,15 +1103,13 @@ class TukarTambahResource extends BaseResource
                         ->color('warning')
                         ->action(function (TukarTambah $record, \Filament\Tables\Actions\Action $action): void {
                             $livewire = $action->getLivewire();
-
-                            if ($record->isEditLocked()) {
-                                $livewire->editBlockedMessage = $record->getEditBlockedMessage();
-                                $livewire->editBlockedPenjualanReferences = $record->getExternalPenjualanReferences()->all();
-                                $livewire->replaceMountedAction('editBlocked');
-
-                                return;
-                            }
-
+                            // if ($record->isEditLocked()) {
+                            //     $livewire->editBlockedMessage = $record->getEditBlockedMessage();
+                            //     $livewire->editBlockedPenjualanReferences = $record->getExternalPenjualanReferences()->all();
+                            //     $livewire->replaceMountedAction('editBlocked');
+                            //
+                            //     return;
+                            // }
                             $livewire->redirect(TukarTambahResource::getUrl('edit', ['record' => $record]));
                         }),
 

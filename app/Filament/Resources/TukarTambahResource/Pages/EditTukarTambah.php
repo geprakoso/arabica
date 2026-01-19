@@ -310,12 +310,18 @@ class EditTukarTambah extends EditRecord
             ->values();
 
         if ($externalPenjualanNotas->isNotEmpty()) {
-            $notaList = $externalPenjualanNotas->implode(', ');
-
-            throw ValidationException::withMessages([
-                'pembelian.items' => 'Item pembelian sudah terpakai di transaksi lain. Edit tukar tambah diblokir. Nota: ' . $notaList . '.',
-            ]);
+            $pembelian->pembayaran()->get()->each->delete();
+            $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+            return;
         }
+
+        // if ($externalPenjualanNotas->isNotEmpty()) {
+        //     $notaList = $externalPenjualanNotas->implode(', ');
+        //
+        //     throw ValidationException::withMessages([
+        //         'pembelian.items' => 'Item pembelian sudah terpakai di transaksi lain. Edit tukar tambah diblokir. Nota: ' . $notaList . '.',
+        //     ]);
+        // }
 
         $pembelian->items()->get()->each->delete();
         $pembelian->pembayaran()->get()->each->delete();
