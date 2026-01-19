@@ -167,6 +167,11 @@ class LiburCutiResource extends BaseResource
                     ->description(fn (LiburCuti $record) => $record->user->email ?? '-')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Tanggal Pengajuan')
+                    ->icon('heroicon-m-calendar')
+                    ->date('d M Y')
+                    ->sortable(),
                 TextColumn::make('keperluan')
                     ->badge()
                     ->formatStateUsing(fn (Keperluan|string|null $state) => $state instanceof Keperluan
