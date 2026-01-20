@@ -219,7 +219,32 @@ class PenjualanResource extends BaseResource
                             ->childComponents([
                                 Select::make('id_produk')
                                     ->label('Produk')
-                                    ->options(fn() => self::getAvailableProductOptions())
+                                    ->options(function (Get $get): array {
+                                        $options = self::getAvailableProductOptions();
+                                        $items = $get('../../items_temp') ?? [];
+                                        $includeIds = collect($items)
+                                            ->pluck('id_produk')
+                                            ->filter()
+                                            ->unique()
+                                            ->values()
+                                            ->all();
+
+                                        if (!empty($includeIds)) {
+                                            $extras = Produk::query()
+                                                ->whereIn('id', $includeIds)
+                                                ->orderBy('nama_produk')
+                                                ->pluck('nama_produk', 'id')
+                                                ->all();
+                                            foreach ($extras as $id => $label) {
+                                                if (!array_key_exists($id, $options)) {
+                                                    $extras[$id] = $label . ' (stok habis)';
+                                                }
+                                            }
+                                            $options = $options + $extras;
+                                        }
+
+                                        return $options;
+                                    })
                                     ->searchable()
                                     ->preload()
                                     ->required()
@@ -229,7 +254,7 @@ class PenjualanResource extends BaseResource
                                         $set('harga_jual', null);
                                         $set('kondisi', null);
                                         $set('serials', []);
-                                        
+
                                         if ($state) {
                                             // Get default price from oldest batch
                                             $batch = self::getOldestAvailableBatch($state);
@@ -289,7 +314,7 @@ class PenjualanResource extends BaseResource
                                         // Reset serials when qty changes
                                         $qty = (int) ($state ?? 0);
                                         $serials = $get('serials') ?? [];
-                                        
+
                                         // Adjust serials array to match qty
                                         if (count($serials) > $qty) {
                                             $serials = array_slice($serials, 0, $qty);
@@ -305,12 +330,12 @@ class PenjualanResource extends BaseResource
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                     ->required(),
-                                
+
                                 // Hidden field to store serial data
                                 Hidden::make('serials')
                                     ->default([])
                                     ->dehydrated(true),
-                                
+
                                 // Serial count display with modal action
                                 TextInput::make('serials_count')
                                     ->label('SN & Garansi')
@@ -493,83 +518,83 @@ class PenjualanResource extends BaseResource
                                 'jumlah' => 'width: 25%;',
                                 'bukti_transfer' => 'width: 25%;',
                             ])
-                                    ->live() // Update availability when fields change
-                                    ->childComponents([
-                                        DatePicker::make('tanggal')
-                                            ->label('Tanggal')
-                                            ->default(now())
-                                            ->native(false)
-                                            ->required(),
-                                        Select::make('metode_bayar')
-                                            ->label('Metode')
-                                            ->placeholder('pilih')
-                                            ->options([
-                                                'cash' => 'Tunai',
-                                                'transfer' => 'Transfer',
-                                            ])
-                                            ->native(false)
-                                            ->required()
-                                            ->reactive(),
-                                        Select::make('akun_transaksi_id')
-                                            ->label('Akun Transaksi')
-                                            ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
-                                            ->searchable()
-                                            ->preload()
-                                            ->placeholder('pilih')
-                                            ->native(false)
-                                            ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
-                                        TextInput::make('jumlah')
-                                            ->label('Jumlah')
-                                            ->numeric()
-                                            ->prefix('Rp')
-                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                            ->live()
-                                            ->placeholder(function (Get $get, Component $component): string {
-                                                // Grand Total
-                                                $items = $get('../../items_temp') ?? [];
-                                                $productTotal = collect($items)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga_jual'] ?? 0));
-                                                $jasaItems = $get('../../jasaItems') ?? [];
-                                                $serviceTotal = collect($jasaItems)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga'] ?? 0));
-                                                $diskon = (int)($get('../../diskon_total') ?? 0);
-                                                $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
-                
-                                                // Previous Payments
-                                                $payments = $get('../../pembayaran') ?? [];
-                                                $itemPath = $component->getContainer()->getStatePath();
-                                                $parts = explode('.', $itemPath);
-                                                $myUuid = end($parts);
-                                                
-                                                $previousPaid = 0;
-                                                foreach ($payments as $uuid => $data) {
-                                                    if ($uuid === $myUuid) {
-                                                        break;
-                                                    }
-                                                    $previousPaid += (int)($data['jumlah'] ?? 0);
-                                                }
-                                                
-                                                $remaining = max(0, $grandTotal - $previousPaid);
-                                                return 'Rp ' . number_format($remaining, 0, ',', '.');
-                                            })
-                                            ->required(),
-                                        FileUpload::make('bukti_transfer')
-                                            ->label('Bukti')
-                                            ->image()
-                                            ->disk('public')
-                                            ->visibility('public')
-                                            ->directory('penjualan/bukti-transfer')
-                                            ->imageResizeMode('contain')
-                                            ->imageResizeTargetWidth('1920')
-                                            ->imageResizeTargetHeight('1080')
-                                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                                            ->saveUploadedFileUsing(function (BaseFileUpload $component, TemporaryUploadedFile $file): ?string {
-                                                return WebpUpload::store($component, $file, 80);
-                                            })
-                                            ->openable()
-                                            ->downloadable()
-                                            ->previewable(false)
-                                            // ->placeholder('Upload bukti transfer')
-                                            ->extraAttributes(['class' => 'compact-file-upload'])
-                                            ->helperText(new HtmlString('
+                            ->live() // Update availability when fields change
+                            ->childComponents([
+                                DatePicker::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->default(now())
+                                    ->native(false)
+                                    ->required(),
+                                Select::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->placeholder('pilih')
+                                    ->options([
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                    ])
+                                    ->native(false)
+                                    ->required()
+                                    ->reactive(),
+                                Select::make('akun_transaksi_id')
+                                    ->label('Akun Transaksi')
+                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
+                                    ->searchable()
+                                    ->preload()
+                                    ->placeholder('pilih')
+                                    ->native(false)
+                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
+                                TextInput::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->live()
+                                    ->placeholder(function (Get $get, Component $component): string {
+                                        // Grand Total
+                                        $items = $get('../../items_temp') ?? [];
+                                        $productTotal = collect($items)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga_jual'] ?? 0));
+                                        $jasaItems = $get('../../jasaItems') ?? [];
+                                        $serviceTotal = collect($jasaItems)->sum(fn($item) => (int)($item['qty'] ?? 0) * (int)($item['harga'] ?? 0));
+                                        $diskon = (int)($get('../../diskon_total') ?? 0);
+                                        $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
+
+                                        // Previous Payments
+                                        $payments = $get('../../pembayaran') ?? [];
+                                        $itemPath = $component->getContainer()->getStatePath();
+                                        $parts = explode('.', $itemPath);
+                                        $myUuid = end($parts);
+
+                                        $previousPaid = 0;
+                                        foreach ($payments as $uuid => $data) {
+                                            if ($uuid === $myUuid) {
+                                                break;
+                                            }
+                                            $previousPaid += (int)($data['jumlah'] ?? 0);
+                                        }
+
+                                        $remaining = max(0, $grandTotal - $previousPaid);
+                                        return 'Rp ' . number_format($remaining, 0, ',', '.');
+                                    })
+                                    ->required(),
+                                FileUpload::make('bukti_transfer')
+                                    ->label('Bukti')
+                                    ->image()
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->directory('penjualan/bukti-transfer')
+                                    ->imageResizeMode('contain')
+                                    ->imageResizeTargetWidth('1920')
+                                    ->imageResizeTargetHeight('1080')
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->saveUploadedFileUsing(function (BaseFileUpload $component, TemporaryUploadedFile $file): ?string {
+                                        return WebpUpload::store($component, $file, 80);
+                                    })
+                                    ->openable()
+                                    ->downloadable()
+                                    ->previewable(false)
+                                    // ->placeholder('Upload bukti transfer')
+                                    ->extraAttributes(['class' => 'compact-file-upload'])
+                                    ->helperText(new HtmlString('
                                                 <style>
                                                     .compact-file-upload .filepond--root,
                                                     .compact-file-upload .filepond--panel-root {
@@ -589,20 +614,20 @@ class PenjualanResource extends BaseResource
                                                     }
                                                 </style>
                                             ')),
-                                    ])
-                                    ->columns(5),
+                            ])
+                            ->columns(5),
 
-                        
+
                     ])
                     ->columns(2),
-                    Section::make('Catatan')
-                            ->collapsible()
-                            ->collapsed()
-                            ->schema([
-                                RichEditor::make('catatan')
-                                    ->label('Catatan')
-                                    ->columnSpanFull(),
-                            ]),
+                Section::make('Catatan')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        RichEditor::make('catatan')
+                            ->label('Catatan')
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -613,6 +638,7 @@ class PenjualanResource extends BaseResource
                 ->with(['items', 'jasaItems'])
                 ->withCount(['items', 'jasaItems'])
                 ->withSum('pembayaran', 'jumlah'))
+            ->defaultSort('tanggal_penjualan', 'desc')
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
@@ -736,31 +762,32 @@ class PenjualanResource extends BaseResource
                         ->tooltip('Edit'),
                     Tables\Actions\DeleteAction::make()
                         ->icon('heroicon-m-trash')
-                        ->hidden(fn (Penjualan $record): bool => 
+                        ->hidden(
+                            fn(Penjualan $record): bool =>
                             $record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()
                         )
-                        ->tooltip(fn (Penjualan $record): ?string => 
-                            ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
+                        ->tooltip(
+                            fn(Penjualan $record): ?string => ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
                                 ? 'Hapus dari Tukar Tambah'
                                 : null
                         ),
                 ])->hidden(function (Penjualan $record): bool {
-                        // Always show actions for Tukar Tambah records (at least View)
-                        if ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()) {
-                            return false;
-                        }
-                        
-                        $hasLines = $record->items()->exists() || $record->jasaItems()->exists();
-                        $grandTotal = (float) ($record->grand_total ?? 0);
-                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
-                        $isUnpaid = $totalPaid < $grandTotal;
+                    // Always show actions for Tukar Tambah records (at least View)
+                    if ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()) {
+                        return false;
+                    }
 
-                        if ($isUnpaid || $grandTotal <= 0) {
-                            return false;
-                        }
+                    $hasLines = $record->items()->exists() || $record->jasaItems()->exists();
+                    $grandTotal = (float) ($record->grand_total ?? 0);
+                    $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
+                    $isUnpaid = $totalPaid < $grandTotal;
 
-                        return $hasLines && $grandTotal > 0;
-                    })
+                    if ($isUnpaid || $grandTotal <= 0) {
+                        return false;
+                    }
+
+                    return $hasLines && $grandTotal > 0;
+                })
                     ->label('Aksi')
                     ->tooltip('Aksi'),
             ])

@@ -39,13 +39,12 @@ class ViewPembelian extends ViewRecord
                 ->label('Ubah')
                 ->icon('heroicon-m-pencil-square')
                 ->action(function (): void {
-                    if ($this->record->isEditLocked()) {
-                        $this->editBlockedMessage = $this->record->getEditBlockedMessage();
-                        $this->editBlockedPenjualanReferences = $this->record->getBlockedPenjualanReferences()->all();
-                        $this->replaceMountedAction('editBlocked');
-                        return;
-                    }
-
+                    // if ($this->record->isEditLocked()) {
+                    //     $this->editBlockedMessage = $this->record->getEditBlockedMessage();
+                    //     $this->editBlockedPenjualanReferences = $this->record->getBlockedPenjualanReferences()->all();
+                    //     $this->replaceMountedAction('editBlocked');
+                    //     return;
+                    // }
                     $this->redirect(PembelianResource::getUrl('edit', ['record' => $this->record]));
                 }),
             Action::make('delete')

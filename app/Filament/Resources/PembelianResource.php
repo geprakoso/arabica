@@ -236,6 +236,7 @@ class PembelianResource extends BaseResource
                             ->relationship('items')
                             ->hiddenLabel() // Hilangkan label "Items" agar lebih clean
                             ->minItems(0)
+                            // ->disabled(fn (?Pembelian $record, string $operation): bool => $operation === 'edit' && $record?->isEditLocked())
                             ->columns(12) // Menggunakan grid 12 kolom agar presisi
                             ->schema([
                                 Select::make('id_produk')
@@ -359,6 +360,7 @@ class PembelianResource extends BaseResource
                             ->relationship('jasaItems')
                             ->label('Pembelian Jasa')
                             ->addActionLabel('+ Tambah Jasa')
+                            // ->disabled(fn (?Pembelian $record, string $operation): bool => $operation === 'edit' && $record?->isEditLocked())
                             ->schema([
                                 Select::make('jasa_id')
                                     ->label('Jasa')
@@ -779,6 +781,7 @@ class PembelianResource extends BaseResource
                 'items',
                 'jasaItems',
             ]))
+            ->defaultSort('tanggal', 'desc')
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
@@ -867,26 +870,24 @@ class PembelianResource extends BaseResource
                         ->tooltip('Edit')
                         ->action(function (Pembelian $record, \Filament\Tables\Actions\Action $action): void {
                             $livewire = $action->getLivewire();
-
-                            if ($record->isEditLocked()) {
-                                $livewire->editBlockedMessage = $record->getEditBlockedMessage();
-                                $livewire->editBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
-                                $livewire->replaceMountedAction('editBlocked');
-                                return;
-                            }
-
+                            // if ($record->isEditLocked()) {
+                            //     $livewire->editBlockedMessage = $record->getEditBlockedMessage();
+                            //     $livewire->editBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
+                            //     $livewire->replaceMountedAction('editBlocked');
+                            //     return;
+                            // }
                             $livewire->redirect(PembelianResource::getUrl('edit', ['record' => $record]));
                         }),
-                    Tables\Actions\DeleteAction::make()
-                        ->icon('heroicon-m-trash')
-                        ->hidden(fn (Pembelian $record): bool => 
-                            $record->tukarTambah()->exists()
-                        )
-                        ->tooltip(fn (Pembelian $record): ?string => 
-                            $record->tukarTambah()->exists()
-                                ? 'Hapus dari Tukar Tambah'
-                                : null
-                        ),
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->icon('heroicon-m-trash')
+                    //     ->hidden(fn (Pembelian $record): bool => 
+                    //         $record->tukarTambah()->exists()
+                    //     )
+                    //     ->tooltip(fn (Pembelian $record): ?string => 
+                    //         $record->tukarTambah()->exists()
+                    //             ? 'Hapus dari Tukar Tambah'
+                    //             : null
+                    //     ),
                 ])
                     ->label('Aksi')
                     ->tooltip('Aksi'),

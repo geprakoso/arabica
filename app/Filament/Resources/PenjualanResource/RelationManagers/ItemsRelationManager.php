@@ -31,7 +31,22 @@ class ItemsRelationManager extends RelationManager
         return $form->schema([
             Select::make('id_produk')
                 ->label('Produk')
-                ->options(fn() => PenjualanResource::getAvailableProductOptions())
+                ->options(function (Get $get): array {
+                    $options = PenjualanResource::getAvailableProductOptions();
+                    $selectedId = (int) ($get('id_produk') ?? 0);
+
+                    if ($selectedId > 0 && !array_key_exists($selectedId, $options)) {
+                        $label = \App\Models\Produk::query()
+                            ->where('id', $selectedId)
+                            ->value('nama_produk');
+
+                        if ($label) {
+                            $options[$selectedId] = $label . ' (stok habis)';
+                        }
+                    }
+
+                    return $options;
+                })
                 ->searchable()
                 ->preload()
                 ->required()
