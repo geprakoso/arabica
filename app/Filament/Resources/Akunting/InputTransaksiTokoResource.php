@@ -323,6 +323,7 @@ class InputTransaksiTokoResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('tanggal_transaksi', 'desc')
             ->filters([
                 Tables\Filters\Filter::make('filters')
                     ->form([
