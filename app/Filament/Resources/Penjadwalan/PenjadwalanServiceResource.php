@@ -40,6 +40,8 @@ class PenjadwalanServiceResource extends BaseResource
 
     protected static ?string $navigationLabel = 'Penerimaan Service';
 
+    protected static ?int $navigationSort = 2;
+
     public static function form(Form $form): Form
     {
         return $form
