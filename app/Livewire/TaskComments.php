@@ -46,7 +46,7 @@ class TaskComments extends Component
     public function submit()
     {
         $this->validate([
-            'body' => 'required|string|max:1000',
+            'body' => 'required|string|max:3000',
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => 'file|max:10240', // Max 10MB per file
         ]);

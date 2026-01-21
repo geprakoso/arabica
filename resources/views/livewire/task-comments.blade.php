@@ -1,4 +1,4 @@
-@php use Illuminate\Support\Facades\Storage; @endphp
+@php use Illuminate\Support\Facades\Storage; use Illuminate\Support\Str; @endphp
 <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm p-6 dark:bg-gray-900 dark:border-gray-800">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         <x-heroicon-m-chat-bubble-left-right class="w-5 h-5 text-primary-600" />
@@ -24,9 +24,9 @@
                             </span>
                         </div>
                         
-                        <!-- Body -->
-                        <div class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed" style="white-space: pre-line;">
-                            {{ $comment->body }}
+                        <!-- Body (Markdown Rendered) -->
+                        <div class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-headings:my-2 prose-code:text-primary-600 dark:prose-code:text-primary-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:rounded">
+                            {!! Str::markdown($comment->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
                         </div>
 
                         <!-- Attachments -->
@@ -72,9 +72,9 @@
     <form wire:submit.prevent="submit" class="relative">
         <textarea 
             wire:model.defer="body" 
-            placeholder="Tulis komentar..."
-            class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary-500 focus:border-primary-500 resize-none"
-            rows="3"
+            placeholder="Tulis komentar..." 
+            class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary-500 focus:border-primary-500 resize-y font-sans"
+            rows="6"
             wrap="soft"
         ></textarea>
         

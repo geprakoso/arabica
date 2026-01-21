@@ -2,7 +2,33 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
-## 2026.01.15
+## 2026.01.21
+### Fitur Lampiran Multi-Upload pada Komentar Tugas
+- **Multi-File Upload**: Menambahkan kemampuan upload banyak file sekaligus pada sistem komentar tugas dengan akumulasi file (bukan replace).
+- **Thumbnail 64x64px**: Gambar ditampilkan sebagai thumbnail kecil dengan ukuran konsisten 64x64 piksel.
+- **Konversi WebP Otomatis**: Gambar yang diupload otomatis di-resize ke maksimal 1080p dan dikonversi ke format WebP dengan kualitas 80%.
+- **Ikon Tipe File**: Dokumen non-gambar (PDF, DOC, XLS, TXT, ZIP, dll.) ditampilkan dengan ikon sesuai ekstensinya.
+- **iOS-style Close Button**: Tombol hapus lampiran bergaya iOS dengan lingkaran abu-abu dan ikon X di pojok kanan atas.
+- **Preview Upload**: Menampilkan preview file sebelum dikirim dengan kemampuan hapus per-file.
+- **Loading Indicator**: Menampilkan indikator loading saat proses upload berlangsung.
+
+### Perbaikan Otorisasi Penjadwalan Tugas
+- **Pembatasan Aksi Status**: Tombol Proses, Selesai, dan Batal hanya dapat digunakan oleh **Pemberi Tugas** dan **Ditugaskan Ke**.
+- **Pembatasan Edit**: Fitur edit tugas hanya tersedia untuk **super_admin**, **Pemberi Tugas**, dan **Ditugaskan Ke**.
+- **Proteksi Halaman Edit**: Menambahkan pengecekan otorisasi pada halaman edit dengan redirect dan notifikasi jika tidak memiliki izin.
+- **Visibility Tombol Edit**: Menyembunyikan tombol edit pada tabel dan halaman view untuk pengguna yang tidak berwenang.
+
+### Perbaikan Filter Tabel
+- **Clear Filter = Semua Data**: Ketika filter di-clear, tabel sekarang menampilkan semua record (menghapus default "Hari Ini").
+- **Placeholder "Semua Tanggal"**: Menambahkan placeholder pada dropdown filter rentang waktu.
+
+### Peningkatan UI Dark Mode
+- **Warna Teks Komentar**: Memperbaiki warna teks komentar pada dark mode menjadi lebih terang (`gray-200`).
+
+### Dokumentasi
+- Menambahkan `docs/multi_upload_attachment_feature.md` - Dokumentasi lengkap fitur multi-upload lampiran.
+
+
 ### Peningkatan UI/UX Tukar Tambah
 - **Modal Serial Number & Garansi**:
   - Mengubah input serial number dari tampilan inline (nested table) menjadi **modal popup** untuk UI yang lebih bersih dan compact.
