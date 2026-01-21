@@ -22,6 +22,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
+use Moataz01\FilamentNotificationSound\FilamentNotificationSoundPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -88,6 +89,13 @@ class AdminPanelProvider extends PanelProvider
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
                     ->allowSubFolders()
             )
+            ->plugins([
+                FilamentNotificationSoundPlugin::make()
+                    ->soundPath('/sounds/custom-notification.mp3') // Custom sound path
+                    ->volume(0.5) // Volume (0.0 to 1.0)
+                    ->showAnimation(true) // Show animation on notification badge
+                    ->enabled(true), // Enable/disable the plugin
+            ])
             ->plugins([
                 FilamentEditProfilePlugin::make()
                     ->slug('my-profile')
