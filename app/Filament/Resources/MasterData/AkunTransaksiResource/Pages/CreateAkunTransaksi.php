@@ -21,14 +21,13 @@ class CreateAkunTransaksi extends CreateRecord
 
     private function buildPrefix(array $data): string
     {
-        $jenis = strtolower($data['jenis'] ?? '');
+        // If has bank name, use bank prefix
+        if (!empty($data['nama_bank'])) {
+            return $this->prefixFromBank($data['nama_bank']);
+        }
 
-        return match ($jenis) {
-            'transfer' => $this->prefixFromBank($data['nama_bank'] ?? null),
-            'tunai' => $this->prefixFromWords($data['nama_akun'] ?? null, firstLetters: 3, secondLetters: 2, fallback: 5),
-            'qris' => 'QRIS',
-            default => $this->prefixFromWords($data['nama_akun'] ?? $data['jenis'] ?? null, firstLetters: 4, secondLetters: 0, fallback: 4),
-        };
+        // Otherwise use nama_akun
+        return $this->prefixFromWords($data['nama_akun'] ?? null, 4, 0, 4);
     }
 
     private function prefixFromBank(?string $namaBank): string

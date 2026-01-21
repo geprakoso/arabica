@@ -8,12 +8,10 @@ use App\Models\AkunTransaksi;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Pages\SubNavigationPosition;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -47,23 +45,10 @@ class AkunTransaksiResource extends BaseResource
                             ->dehydrated(false)
                             ->helperText('Otomatis digenerate')
                             ->maxLength(255),
-                        Forms\Components\Select::make('jenis')
-                            ->options([
-                                'tunai' => 'Tunai',
-                                'transfer' => 'Transfer',
-                                'qris' => 'QRIS',
-                                'e-wallet' => 'E-Wallet',
-                                'gyro' => 'Gyro',
-                            ])
-                            ->required()
-                            ->live()
-                            ->native(false)
-                            ->default('transfer'),
                     ]),
 
                 Section::make('Data Rekening Bank')
                     ->compact()
-                    ->visible(fn (Get $get) => $get('jenis') === 'transfer')
                     ->schema([
                         Forms\Components\TextInput::make('nama_bank')
                             ->label('Nama Bank')
@@ -104,15 +89,7 @@ class AkunTransaksiResource extends BaseResource
                     ->label('Kode Akun')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('jenis')
-                    ->badge()
-                    ->color(fn (string $state) => match ($state) {
-                        'transfer' => 'info',
-                        'tunai' => 'success',
-                        'qris' => 'warning',
-                        default => 'gray',
-                    })
-                    ->sortable(),
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Aktif')
                     ->boolean(),
@@ -126,16 +103,7 @@ class AkunTransaksiResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('jenis')
-                    ->label('Jenis')
-                    ->options([
-                        'tunai' => 'Tunai',
-                        'transfer' => 'Transfer',
-                        'qris' => 'QRIS',
-                        'e-wallet' => 'E-Wallet',
-                        'gyro' => 'Gyro',
-                    ])
-                    ->native(false),
+
                 TernaryFilter::make('is_active')
                     ->label('Aktif')
                     ->boolean()

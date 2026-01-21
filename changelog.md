@@ -42,7 +42,73 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - Data lokasi di-cache di level query untuk performa optimal
 
 
-## 2026.01.15
+## 2026.01.18
+### Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah
+
+**Fitur Baru:**
+- **Proteksi Penghapusan Record Tukar Tambah**: Record Penjualan dan Pembelian yang dibuat oleh Tukar Tambah sekarang tidak bisa dihapus langsung. Harus dihapus melalui Tukar Tambah untuk menjaga integritas data.
+- **Proteksi Cascade Deletion**: Sistem menggunakan flag statis untuk memungkinkan Tukar Tambah menghapus record terkait sambil memblokir penghapusan langsung dari resource lain.
+
+**Perbaikan:**
+- **Perbaikan Pencatatan Pembayaran Tukar Tambah**: Pembayaran dari Tukar Tambah sekarang dicatat dengan benar di Penjualan dan Pembelian, termasuk tanggal pembayaran dan bukti transfer.
+- **Perbaikan Status Pembayaran**: Status pembayaran tidak lagi menampilkan "Tempo" untuk transaksi yang sudah dibayar penuh.
+- **Perbaikan Form Submission**: Menghapus `dehydrated(false)` dari field `unified_pembayaran` yang mencegah data pembayaran terkirim ke backend.
+- **Perbaikan Tampilan Member**: Nama member sekarang ditampilkan dengan benar di tabel Tukar Tambah melalui relasi `penjualan.member`.
+- **Perbaikan ActionGroup**: ActionGroup sekarang selalu muncul untuk record Tukar Tambah, menampilkan aksi View dan Edit (Delete disembunyikan).
+
+**Detail Teknis:**
+- Menambahkan static flag `$allowTukarTambahDeletion` pada model Penjualan dan Pembelian
+- Menambahkan validasi di event `deleting` untuk memblokir penghapusan record Tukar Tambah
+- TukarTambah mengatur flag sebelum menghapus record terkait (cascade deletion)
+- Menggunakan try-finally untuk memastikan flag di-reset setelah penghapusan
+- Menambahkan field `tanggal` dan `bukti_transfer` pada method pembayaran
+- Menambahkan validasi untuk skip pembayaran dengan jumlah 0 atau kosong
+
+## 2026.01.17
+### Penyempurnaan Form Member Penjualan
+
+**Fitur Baru:**
+- **Dropdown Lokasi Indonesia**: Form member di PenjualanResource sekarang menggunakan dropdown untuk Provinsi, Kota/Kabupaten, dan Kecamatan dengan data dari package `laravolt/indonesia`.
+- **Cascading Dropdown**: Dropdown Kota bergantung pada Provinsi yang dipilih, dan dropdown Kecamatan bergantung pada Kota yang dipilih.
+
+**Perbaikan:**
+- **Searchable Location Fields**: Semua field lokasi sekarang searchable untuk memudahkan pencarian.
+- **Auto-reset Child Fields**: Saat Provinsi diubah, Kota dan Kecamatan otomatis di-reset. Saat Kota diubah, Kecamatan otomatis di-reset.
+
+**Detail Teknis:**
+- Mengubah TextInput menjadi Select untuk field `provinsi`, `kota`, dan `kecamatan`
+- Menambahkan import untuk `Province`, `City`, dan `District` dari package `laravolt/indonesia`
+- Implementasi reactive dropdown dengan `live()` dan `afterStateUpdated()`
+- Data lokasi di-cache di level query untuk performa optimal
+
+
+## 2026.01.21
+### Fitur Lampiran Multi-Upload pada Komentar Tugas
+- **Multi-File Upload**: Menambahkan kemampuan upload banyak file sekaligus pada sistem komentar tugas dengan akumulasi file (bukan replace).
+- **Thumbnail 64x64px**: Gambar ditampilkan sebagai thumbnail kecil dengan ukuran konsisten 64x64 piksel.
+- **Konversi WebP Otomatis**: Gambar yang diupload otomatis di-resize ke maksimal 1080p dan dikonversi ke format WebP dengan kualitas 80%.
+- **Ikon Tipe File**: Dokumen non-gambar (PDF, DOC, XLS, TXT, ZIP, dll.) ditampilkan dengan ikon sesuai ekstensinya.
+- **iOS-style Close Button**: Tombol hapus lampiran bergaya iOS dengan lingkaran abu-abu dan ikon X di pojok kanan atas.
+- **Preview Upload**: Menampilkan preview file sebelum dikirim dengan kemampuan hapus per-file.
+- **Loading Indicator**: Menampilkan indikator loading saat proses upload berlangsung.
+
+### Perbaikan Otorisasi Penjadwalan Tugas
+- **Pembatasan Aksi Status**: Tombol Proses, Selesai, dan Batal hanya dapat digunakan oleh **Pemberi Tugas** dan **Ditugaskan Ke**.
+- **Pembatasan Edit**: Fitur edit tugas hanya tersedia untuk **super_admin**, **Pemberi Tugas**, dan **Ditugaskan Ke**.
+- **Proteksi Halaman Edit**: Menambahkan pengecekan otorisasi pada halaman edit dengan redirect dan notifikasi jika tidak memiliki izin.
+- **Visibility Tombol Edit**: Menyembunyikan tombol edit pada tabel dan halaman view untuk pengguna yang tidak berwenang.
+
+### Perbaikan Filter Tabel
+- **Clear Filter = Semua Data**: Ketika filter di-clear, tabel sekarang menampilkan semua record (menghapus default "Hari Ini").
+- **Placeholder "Semua Tanggal"**: Menambahkan placeholder pada dropdown filter rentang waktu.
+
+### Peningkatan UI Dark Mode
+- **Warna Teks Komentar**: Memperbaiki warna teks komentar pada dark mode menjadi lebih terang (`gray-200`).
+
+### Dokumentasi
+- Menambahkan `docs/multi_upload_attachment_feature.md` - Dokumentasi lengkap fitur multi-upload lampiran.
+
+
 ### Peningkatan UI/UX Tukar Tambah
 - **Modal Serial Number & Garansi**:
   - Mengubah input serial number dari tampilan inline (nested table) menjadi **modal popup** untuk UI yang lebih bersih dan compact.
