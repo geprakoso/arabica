@@ -185,7 +185,7 @@ class GudangResource extends BaseResource
                             ->zoom(15)
                             ->showMarker()
                             ->tilesUrl('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-                            ->liveLocation(true, true, 5000) // Enable live location
+                            ->liveLocation(false) // Disabled to prevent overwriting user-selected marker positions
                             ->showMyLocationButton()
                             ->extraStyles([
                                 'min-height: 400px',

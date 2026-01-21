@@ -352,6 +352,10 @@ class PenjadwalanTugasResource extends BaseResource
                         'tinggi' => 'warning',
                     ])
                     ->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Dibuat')
+                    ->date('d M Y')
+                    ->sortable(),
                 TextColumn::make('deadline')
                     ->label('Deadline')
                     ->date('d M Y')
@@ -397,7 +401,7 @@ class PenjadwalanTugasResource extends BaseResource
                                     '3_hari_lalu' => '3 Hari Lalu',
                                     'custom' => 'Custom',
                                 ])
-                                ->default('hari_ini')
+                                ->placeholder('Semua Tanggal')
                                 ->native(false)
                                 ->reactive()
                                 ->columnSpan(2),
@@ -416,16 +420,12 @@ class PenjadwalanTugasResource extends BaseResource
                         ]),
                     ])
                     ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
-                        // Check if we're on the 'proses' tab - if so, skip date filtering
-                        // to show all pending/proses records regardless of date
-                        $livewire = \Livewire\Livewire::current();
-                        $activeTab = $livewire?->activeTab ?? null;
-                        
-                        if ($activeTab === 'proses') {
+                        $range = $data['range'] ?? null;
+
+                        // If no filter selected, show all records
+                        if (empty($range)) {
                             return $query;
                         }
-
-                        $range = $data['range'] ?? 'hari_ini';
 
                         // Handle "Hari Ini" - show tasks that are active today
                         // (started on or before today AND deadline on or after today)
@@ -435,9 +435,6 @@ class PenjadwalanTugasResource extends BaseResource
                                 ->whereDate('tanggal_mulai', '<=', $today)
                                 ->whereDate('deadline', '>=', $today);
                         }
-
-                        $startDate = null;
-                        $endDate = now();
 
                         if ($range === 'custom') {
                             $startDate = $data['from'] ?? null;
@@ -510,7 +507,29 @@ class PenjadwalanTugasResource extends BaseResource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(function ($record) {
+                        $user = auth()->user();
+
+                        // Super admin can always edit
+                        if ($user->hasRole('super_admin')) {
+                            return true;
+                        }
+
+                        $userId = $user->id;
+
+                        // Check if user is the task creator (pemberi tugas)
+                        if ($record->created_by === $userId) {
+                            return true;
+                        }
+
+                        // Check if user is assigned to the task (ditugaskan ke)
+                        if ($record->karyawan()->where('users.id', $userId)->exists()) {
+                            return true;
+                        }
+
+                        return false;
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

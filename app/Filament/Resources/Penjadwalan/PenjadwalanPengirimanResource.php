@@ -44,7 +44,9 @@ class PenjadwalanPengirimanResource extends BaseResource
 
     protected static ?string $navigationGroup = 'Tugas';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
+
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Form $form): Form
     {
