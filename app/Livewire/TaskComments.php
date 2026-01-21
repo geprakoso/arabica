@@ -3,21 +3,52 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use App\Services\ImageUploadService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TaskComments extends Component
 {
+    use WithFileUploads;
+
     public \App\Models\PenjadwalanTugas $record;
     public string $body = '';
+    public $attachments = [];
+    public $newAttachments = []; // Temporary property for new uploads
 
     public function mount(\App\Models\PenjadwalanTugas $record)
     {
         $this->record = $record;
     }
 
+    /**
+     * When new files are uploaded, merge them with existing attachments
+     */
+    public function updatedNewAttachments()
+    {
+        // Validate new uploads
+        $this->validate([
+            'newAttachments.*' => 'file|max:10240', // Max 10MB per file
+        ]);
+
+        // Merge with existing attachments (limit to 10 files total)
+        foreach ($this->newAttachments as $file) {
+            if (count($this->attachments) < 10) {
+                $this->attachments[] = $file;
+            }
+        }
+
+        // Clear the temporary property
+        $this->newAttachments = [];
+    }
+
     public function submit()
     {
         $this->validate([
             'body' => 'required|string|max:1000',
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:10240', // Max 10MB per file
         ]);
 
         $user = auth()->user();
@@ -35,10 +66,31 @@ class TaskComments extends Component
             return;
         }
 
+        // Process attachments
+        $storedPaths = [];
+        foreach ($this->attachments as $file) {
+            $extension = strtolower($file->getClientOriginalExtension());
+            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+
+            if (in_array($extension, $imageExtensions)) {
+                // Process image with ImageUploadService (resize & convert to webp)
+                $path = ImageUploadService::processRichEditorUpload($file, 'task-comment-attachments');
+            } else {
+                // Store other files directly
+                $filename = Str::ulid() . '.' . $extension;
+                $path = $file->storeAs('task-comment-attachments', $filename, 'public');
+            }
+
+            if ($path) {
+                $storedPaths[] = $path;
+            }
+        }
+
         \App\Models\TaskComment::create([
             'penjadwalan_tugas_id' => $this->record->id,
             'user_id' => $user->id,
             'body' => $this->body,
+            'attachments' => !empty($storedPaths) ? $storedPaths : null,
         ]);
 
         // Send Notification to Assignees and Creator
@@ -65,11 +117,18 @@ class TaskComments extends Component
         }
 
         $this->body = '';
+        $this->attachments = [];
         
         \Filament\Notifications\Notification::make()
             ->title('Komentar ditambahkan')
             ->success()
             ->send();
+    }
+
+    public function removeAttachment($index)
+    {
+        unset($this->attachments[$index]);
+        $this->attachments = array_values($this->attachments);
     }
 
     public function render()
