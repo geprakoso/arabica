@@ -25,7 +25,7 @@ class ViewPenjadwalanService extends ViewRecord
                 ->label($meta[0])
                 ->color($meta[1])
                 ->icon($meta[2])
-                ->visible(fn () => $this->getRecord()->status !== $status)
+                ->visible(fn() => $this->getRecord()->status !== $status)
                 ->action(function () use ($status): void {
                     $record = $this->getRecord();
                     $record->update(['status' => $status]);
@@ -48,20 +48,20 @@ class ViewPenjadwalanService extends ViewRecord
                 ->label('Cetak Invoice')
                 ->icon('heroicon-m-printer')
                 ->color('success')
-                ->url(fn ($record) => route('penjadwalan-service.print', $record))
+                ->url(fn($record) => route('penjadwalan-service.print', $record))
                 ->openUrlInNewTab(),
             Actions\Action::make('print_simple')
                 ->label('Invoice Simple')
                 ->icon('heroicon-m-document-text')
                 ->color('gray')
-                ->url(fn ($record) => route('penjadwalan-service.invoice.simple', $record))
+                ->url(fn($record) => route('penjadwalan-service.invoice.simple', $record))
                 ->openUrlInNewTab(),
             Actions\Action::make('print_crosscheck')
                 ->label('Cetak Checklist')
                 ->icon('heroicon-m-clipboard-document-check')
                 ->color('info')
-                ->visible(fn ($record) => $record->has_crosscheck)
-                ->url(fn ($record) => route('penjadwalan-service.print-crosscheck', $record))
+                ->visible(fn($record) => $record->has_crosscheck)
+                ->url(fn($record) => route('penjadwalan-service.print-crosscheck', $record))
                 ->openUrlInNewTab(),
         ];
     }

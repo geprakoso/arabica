@@ -25,13 +25,13 @@ class KalenderEventResource extends Resource
 {
     protected static ?string $model = KalenderEvent::class;
 
-    protected static ?string $navigationGroup = 'Tugas';
+    protected static ?string $navigationGroup = 'Kalender';
 
     protected static ?string $navigationLabel = 'Kalender Event';
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = -1;
 
     public static function form(Form $form): Form
     {
@@ -71,7 +71,7 @@ class KalenderEventResource extends Resource
                     ->required(),
                 TextInput::make('created_by')
                     ->label('Dibuat Oleh')
-                    ->default(fn () => Filament::auth()->id())
+                    ->default(fn() => Filament::auth()->id())
                     ->disabled()
                     ->visible(false)
                     ->dehydrated()
@@ -91,7 +91,7 @@ class KalenderEventResource extends Resource
                 TextColumn::make('tipe')
                     ->label('Tipe')
                     ->badge()
-                    ->color(fn (string $state) => match ($state) {
+                    ->color(fn(string $state) => match ($state) {
                         'libur' => 'danger',
                         'meeting' => 'info',
                         'event' => 'success',
@@ -130,7 +130,7 @@ class KalenderEventResource extends Resource
                         TextEntry::make('tipe')
                             ->label('Tipe')
                             ->badge()
-                            ->color(fn (string $state) => match ($state) {
+                            ->color(fn(string $state) => match ($state) {
                                 'libur' => 'danger',
                                 'meeting' => 'info',
                                 'event' => 'success',

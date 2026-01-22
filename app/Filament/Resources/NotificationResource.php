@@ -23,9 +23,8 @@ class NotificationResource extends BaseResource
 
     protected static ?string $pluralLabel = 'Notifikasi';
 
-    protected static ?string $navigationGroup = 'Pengaturan';
 
-    protected static ?int $navigationSort = -1;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $slug = 'notifications';
 
