@@ -638,7 +638,7 @@ class PenjualanResource extends BaseResource
                 ->with(['items', 'jasaItems'])
                 ->withCount(['items', 'jasaItems'])
                 ->withSum('pembayaran', 'jumlah'))
-            ->defaultSort('tanggal_penjualan', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')

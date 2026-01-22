@@ -7,13 +7,24 @@ use App\Filament\Resources\PenjualanReportResource\Pages;
 use App\Models\Penjualan;
 use Filament\Forms\Get;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 
 class PenjualanReportResource extends Resource
 {
@@ -41,12 +52,17 @@ class PenjualanReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['items', 'jasaItems', 'member', 'karyawan'])) // eager loading data relasi
-            ->defaultSort('tanggal_penjualan', 'desc') // default sort
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'jasaItems', 'member', 'karyawan'])) // eager loading data relasi
+            ->defaultSort('created_at', 'desc') // default sort
+            ->recordAction('detail')
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
                     ->icon('heroicon-m-receipt-percent')
+                    ->url(fn (Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab()
+                    ->tooltip('Klik untuk melihat detail')
                     ->weight('bold')
                     ->color('primary')
                     ->searchable()
@@ -72,11 +88,11 @@ class PenjualanReportResource extends Resource
                     ->label('Total Qty')
                     ->badge()
                     ->color('info')
-                    ->state(fn (Penjualan $record) => $record->items->sum('qty')) // menghitung total qty dari relasi items
+                    ->state(fn(Penjualan $record) => $record->items->sum('qty')) // menghitung total qty dari relasi items
                     ->sortable(),
                 TextColumn::make('total_jasa')
                     ->label('Total Jasa')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
                         self::calculateServiceTotal($record)
                     ))
                     ->color('warning')
@@ -86,31 +102,49 @@ class PenjualanReportResource extends Resource
                     ->label('Total Penjualan')
                     ->weight('bold')
                     ->color('success')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
                         self::calculateProductTotal($record) + self::calculateServiceTotal($record)
                     )) // format currency
+                    ->summarize([
+                        Summarizer::make()
+                            ->label('Total')
+                            ->using(fn ($query) => self::summarizeTotalPenjualan($query))
+                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                    ])
                     ->sortable(),
                 TextColumn::make('total_hpp')
                     ->label('Total HPP')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
                         self::calculateHppTotal($record)
                     )) // format currency
                     ->color('danger')
+                    ->summarize([
+                        Summarizer::make()
+                            ->label('Total')
+                            ->using(fn ($query) => self::summarizeTotalHpp($query))
+                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                    ])
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 TextColumn::make('total_margin')
                     ->label('Margin')
-                    ->state(fn (Penjualan $record) => self::formatCurrency(
+                    ->state(fn(Penjualan $record) => self::formatCurrency(
                         (self::calculateProductTotal($record) - self::calculateHppTotal($record)) + self::calculateServiceTotal($record)
                     )) // format currency
                     ->color('success')
                     ->weight('bold')
+                    ->summarize([
+                        Summarizer::make()
+                            ->label('Total')
+                            ->using(fn ($query) => self::summarizeTotalMargin($query))
+                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                    ])
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\Filter::make('periodik')
                     ->label('Periodik')
-                    ->default(fn (): array => [
+                    ->default(fn(): array => [
                         'isActive' => true,
                         'period_type' => 'monthly',
                         'month' => now()->month,
@@ -141,8 +175,8 @@ class PenjualanReportResource extends Resource
                                 11 => 'November',
                                 12 => 'Desember',
                             ])
-                            ->visible(fn (Get $get): bool => $get('period_type') === 'monthly')
-                            ->required(fn (Get $get): bool => $get('period_type') === 'monthly'),
+                            ->visible(fn(Get $get): bool => $get('period_type') === 'monthly')
+                            ->required(fn(Get $get): bool => $get('period_type') === 'monthly'),
                         \Filament\Forms\Components\Select::make('quarter')
                             ->label('Quarter')
                             ->options([
@@ -151,17 +185,17 @@ class PenjualanReportResource extends Resource
                                 3 => 'Q3 (Jul - Sep)',
                                 4 => 'Q4 (Okt - Des)',
                             ])
-                            ->visible(fn (Get $get): bool => $get('period_type') === 'quarterly')
-                            ->required(fn (Get $get): bool => $get('period_type') === 'quarterly'),
+                            ->visible(fn(Get $get): bool => $get('period_type') === 'quarterly')
+                            ->required(fn(Get $get): bool => $get('period_type') === 'quarterly'),
                         \Filament\Forms\Components\Select::make('year')
                             ->label('Tahun')
                             ->options(function (): array {
                                 $year = now()->year;
                                 return collect(range($year - 4, $year + 1))
-                                    ->mapWithKeys(fn (int $value) => [$value => (string) $value])
+                                    ->mapWithKeys(fn(int $value) => [$value => (string) $value])
                                     ->all();
                             })
-                            ->default(fn (): int => now()->year)
+                            ->default(fn(): int => now()->year)
                             ->required(),
                     ])
                     ->indicateUsing(function (array $data): array {
@@ -255,7 +289,7 @@ class PenjualanReportResource extends Resource
                 FilamentExportHeaderAction::make('export')
                     ->label('Download')
                     ->defaultFormat('pdf')
-                    ->filename('Laporan Penjualan'.'_'.date('d M Y'))
+                    ->filename('Laporan Penjualan' . '_' . date('d M Y'))
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('success')
                     ->modalHeading(false)
@@ -265,8 +299,125 @@ class PenjualanReportResource extends Resource
                         'tanggal' => now()->format('d-m-Y'),
                     ]),
             ])
-            ->actions([])
+            ->actions([
+                Action::make('detail')
+                    ->label('')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Detail Laporan Penjualan')
+                    ->modalWidth('5xl')
+                    ->modalSubmitAction(false)
+                    ->slideOver()
+                    ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
+            ])
             ->bulkActions([]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Detail Penjualan')
+                    ->schema([
+                        Split::make([
+                            InfoGroup::make([
+                                TextEntry::make('no_nota')
+                                    ->label('No. Nota')
+                                    ->weight('bold')
+                                    ->color('primary')
+                                    ->tooltip('Klik untuk melihat detail')
+                                    ->icon('heroicon-m-document-text')
+                                    ->url(fn (Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
+                                    ->openUrlInNewTab(),
+                                TextEntry::make('tanggal_penjualan')
+                                    ->label('Tanggal Penjualan')
+                                    ->date('d F Y')
+                                    ->icon('heroicon-m-calendar-days')
+                                    ->color('gray'),
+                            ]),
+                            InfoGroup::make([
+                                TextEntry::make('member.nama_member')
+                                    ->label('Member')
+                                    ->icon('heroicon-m-user-group')
+                                    ->placeholder('-'),
+                                TextEntry::make('karyawan.nama_karyawan')
+                                    ->label('Karyawan')
+                                    ->icon('heroicon-m-user')
+                                    ->placeholder('-'),
+                                TextEntry::make('sumber_transaksi')
+                                    ->label('Sumber Transaksi')
+                                    ->badge()
+                                    ->state(fn (Penjualan $record): string => strtoupper((string) ($record->sumber_transaksi ?? '-'))),
+                            ]),
+                            InfoGroup::make([
+                                TextEntry::make('total_qty')
+                                    ->label('Total Qty')
+                                    ->state(fn (Penjualan $record): int => (int) $record->items->sum('qty'))
+                                    ->icon('heroicon-m-clipboard-document-list'),
+                                TextEntry::make('total_jasa')
+                                    ->label('Total Jasa')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateServiceTotal($record)))
+                                    ->icon('heroicon-m-wrench-screwdriver'),
+
+                                TextEntry::make('total_margin')
+                                    ->label('Margin')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency(
+                                        (self::calculateProductTotal($record) - self::calculateHppTotal($record)) + self::calculateServiceTotal($record)
+                                    ))
+                                    ->icon('heroicon-m-sparkles')
+                                    ->color('success'),
+                            ]),
+                        ])->from('md'),
+                    ])
+                    ->compact(),
+                InfoSection::make('Pembayaran')
+                    ->schema([
+                        Grid::make(4)
+                            ->schema([
+                                TextEntry::make('subtotal_produk')
+                                    ->label('Subtotal Produk')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateProductTotal($record)))
+                                    ->icon('heroicon-m-cube'),
+                                TextEntry::make('subtotal_jasa')
+                                    ->label('Subtotal Jasa')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateServiceTotal($record)))
+                                    ->icon('heroicon-m-wrench-screwdriver'),
+                                TextEntry::make('diskon_total')
+                                    ->label('Diskon')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency((int) ($record->diskon_total ?? 0)))
+                                    ->icon('heroicon-m-ticket'),
+                                TextEntry::make('grand_total')
+                                    ->label('Grand Total')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency((int) ($record->grand_total ?? 0)))
+                                    ->icon('heroicon-m-banknotes')
+                                    ->color('success'),
+                                TextEntry::make('total_bayar')
+                                    ->label('Total Dibayar')
+                                    ->state(fn (Penjualan $record): string => self::formatCurrency((int) ($record->pembayaran_sum_jumlah ?? 0)))
+                                    ->icon('heroicon-m-wallet'),
+                                TextEntry::make('sisa_bayar')
+                                    ->label('Sisa Bayar')
+                                    ->state(function (Penjualan $record): string {
+                                        $grandTotal = (int) ($record->grand_total ?? 0);
+                                        $totalPaid = (int) ($record->pembayaran_sum_jumlah ?? 0);
+
+                                        return self::formatCurrency(max(0, $grandTotal - $totalPaid));
+                                    })
+                                    ->icon('heroicon-m-clock'),
+                                TextEntry::make('kelebihan_bayar')
+                                    ->label('Kelebihan Bayar')
+                                    ->state(function (Penjualan $record): string {
+                                        $grandTotal = (int) ($record->grand_total ?? 0);
+                                        $totalPaid = (int) ($record->pembayaran_sum_jumlah ?? 0);
+
+                                        return self::formatCurrency(max(0, $totalPaid - $grandTotal));
+                                    })
+                                    ->icon('heroicon-m-arrow-up-circle')
+                                    ->color('warning'),
+                            ]),
+                    ])
+                    ->compact(),
+            ]);
     }
 
     public static function getRelations(): array
@@ -284,7 +435,7 @@ class PenjualanReportResource extends Resource
     // format currency
     protected static function formatCurrency(int $value): string
     {
-        return 'Rp '.number_format($value, 0, ',', '.');
+        return 'Rp ' . number_format($value, 0, ',', '.');
     }
 
     protected static function calculateProductTotal(Penjualan $record): int
@@ -315,5 +466,87 @@ class PenjualanReportResource extends Resource
 
             return $harga * $qty;
         });
+    }
+
+    protected static function summarizeTotalPenjualan(QueryBuilder $query): int
+    {
+        $penjualan = new Penjualan();
+        $salesTable = $penjualan->getTable();
+        $salesKey = $penjualan->getKeyName();
+
+        $itemsSub = DB::table('tb_penjualan_item')
+            ->selectRaw('id_penjualan, COALESCE(SUM(qty * harga_jual), 0) as total_penjualan')
+            ->groupBy('id_penjualan');
+
+        $jasaSub = DB::table('tb_penjualan_jasa')
+            ->selectRaw('id_penjualan, COALESCE(SUM(qty * harga), 0) as total_jasa')
+            ->groupBy('id_penjualan');
+
+        $summaryQuery = clone $query;
+        $summaryQuery->orders = null;
+        $summaryQuery->limit = null;
+        $summaryQuery->offset = null;
+        $summaryQuery->columns = null;
+        $summaryQuery->columns = null;
+
+        $summary = $summaryQuery
+            ->leftJoinSub($itemsSub, 'items_sum', 'items_sum.id_penjualan', '=', "{$salesTable}.{$salesKey}")
+            ->leftJoinSub($jasaSub, 'jasa_sum', 'jasa_sum.id_penjualan', '=', "{$salesTable}.{$salesKey}")
+            ->selectRaw('COALESCE(SUM(COALESCE(items_sum.total_penjualan, 0) + COALESCE(jasa_sum.total_jasa, 0)), 0) as total')
+            ->value('total');
+
+        return (int) ($summary ?? 0);
+    }
+
+    protected static function summarizeTotalMargin(QueryBuilder $query): int
+    {
+        $penjualan = new Penjualan();
+        $salesTable = $penjualan->getTable();
+        $salesKey = $penjualan->getKeyName();
+
+        $itemsSub = DB::table('tb_penjualan_item')
+            ->selectRaw('id_penjualan, COALESCE(SUM(qty * harga_jual), 0) as total_penjualan, COALESCE(SUM(qty * hpp), 0) as total_hpp')
+            ->groupBy('id_penjualan');
+
+        $jasaSub = DB::table('tb_penjualan_jasa')
+            ->selectRaw('id_penjualan, COALESCE(SUM(qty * harga), 0) as total_jasa')
+            ->groupBy('id_penjualan');
+
+        $summaryQuery = clone $query;
+        $summaryQuery->orders = null;
+        $summaryQuery->limit = null;
+        $summaryQuery->offset = null;
+
+        $summary = $summaryQuery
+            ->leftJoinSub($itemsSub, 'items_sum', 'items_sum.id_penjualan', '=', "{$salesTable}.{$salesKey}")
+            ->leftJoinSub($jasaSub, 'jasa_sum', 'jasa_sum.id_penjualan', '=', "{$salesTable}.{$salesKey}")
+            ->selectRaw('COALESCE(SUM(COALESCE(items_sum.total_penjualan, 0) - COALESCE(items_sum.total_hpp, 0) + COALESCE(jasa_sum.total_jasa, 0)), 0) as total')
+            ->value('total');
+
+        return (int) ($summary ?? 0);
+    }
+
+    protected static function summarizeTotalHpp(QueryBuilder $query): int
+    {
+        $penjualan = new Penjualan();
+        $salesTable = $penjualan->getTable();
+        $salesKey = $penjualan->getKeyName();
+
+        $itemsSub = DB::table('tb_penjualan_item')
+            ->selectRaw('id_penjualan, COALESCE(SUM(qty * hpp), 0) as total_hpp')
+            ->groupBy('id_penjualan');
+
+        $summaryQuery = clone $query;
+        $summaryQuery->orders = null;
+        $summaryQuery->limit = null;
+        $summaryQuery->offset = null;
+        $summaryQuery->columns = null;
+
+        $summary = $summaryQuery
+            ->leftJoinSub($itemsSub, 'items_sum', 'items_sum.id_penjualan', '=', "{$salesTable}.{$salesKey}")
+            ->selectRaw('COALESCE(SUM(COALESCE(items_sum.total_hpp, 0)), 0) as total')
+            ->value('total');
+
+        return (int) ($summary ?? 0);
     }
 }
