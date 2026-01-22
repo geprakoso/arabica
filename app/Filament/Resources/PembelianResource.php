@@ -22,6 +22,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Set;
 use Filament\Infolists\Components\Grid as InfoGrid;
 use Filament\Infolists\Components\Group as InfoGroup;
@@ -277,6 +279,20 @@ class PembelianResource extends BaseResource
                                     ->default(1)
                                     ->required()
                                     ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Set $set, Get $get, ?int $state): void {
+                                        // Reset serials when qty changes
+                                        $qty = (int) ($state ?? 0);
+                                        $serials = $get('serials') ?? [];
+
+                                        // Adjust serials array to match qty
+                                        if (count($serials) > $qty) {
+                                            $serials = array_slice($serials, 0, $qty);
+                                        }
+                                        while (count($serials) < $qty) {
+                                            $serials[] = ['sn' => '', 'garansi' => ''];
+                                        }
+                                        $set('serials', $serials);
+                                    })
                                     ->columnSpan([
                                         'md' => 1,
                                         'xl' => 1,
@@ -335,19 +351,87 @@ class PembelianResource extends BaseResource
                                     })
                                     ->required(fn(Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
                                     ->columnSpan([
-                                        'md' => 3, // Sisa kolom
-                                        'xl' => 3,
+                                        'md' => 2,
+                                        'xl' => 2,
                                     ]),
+
+                                // Hidden field to store serial data
+                                Hidden::make('serials')
+                                    ->default([])
+                                    ->dehydrated(true),
+
+                                // Serial count display with modal action
+                                TextInput::make('serials_count')
+                                    ->label('SN & Garansi')
+                                    ->formatStateUsing(fn(Get $get): string => count(array_filter($get('serials') ?? [], fn($s) => !empty($s['sn']))) . ' SN')
+                                    ->live()
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffixAction(
+                                        FormAction::make('manage_serials')
+                                            ->label('Isi')
+                                            ->icon('heroicon-o-qr-code')
+                                            ->button()
+                                            ->color('info')
+                                            ->modalHeading('Serial Number & Garansi')
+                                            ->modalWidth('2xl')
+                                            ->fillForm(function (Get $get): array {
+                                                $existingSerials = $get('serials') ?? [];
+                                                $qty = (int) ($get('qty') ?? 0);
+
+                                                // If we have existing serials, use them
+                                                if (count($existingSerials) > 0) {
+                                                    return ['serials_temp' => $existingSerials];
+                                                }
+
+                                                // Otherwise, create empty rows based on qty
+                                                $serials = [];
+                                                for ($i = 0; $i < $qty; $i++) {
+                                                    $serials[] = ['sn' => '', 'garansi' => ''];
+                                                }
+
+                                                return ['serials_temp' => $serials];
+                                            })
+                                            ->form([
+                                                TableRepeater::make('serials_temp')
+                                                    ->label('')
+                                                    ->schema([
+                                                        TextInput::make('sn')
+                                                            ->label('Serial Number')
+                                                            ->placeholder('Masukkan SN'),
+                                                        TextInput::make('garansi')
+                                                            ->label('Garansi')
+                                                            ->placeholder('Contoh: 1 Tahun'),
+                                                    ])
+                                                    ->defaultItems(0)
+                                                    ->addActionLabel('+ Tambah Serial')
+                                                    ->reorderable(false)
+                                                    ->colStyles([
+                                                        'sn' => 'width: 60%;',
+                                                        'garansi' => 'width: 40%;',
+                                                    ]),
+                                            ])
+                                            ->action(function (Set $set, array $data): void {
+                                                $set('serials', $data['serials_temp'] ?? []);
+                                            })
+                                            ->after(function (Set $set, Get $get): void {
+                                                // Force refresh of serials_count
+                                                $serials = $get('serials') ?? [];
+                                                $filledCount = count(array_filter($serials, fn($s) => !empty($s['sn'])));
+                                                $set('serials_count', $filledCount . ' SN');
+                                            })
+                                    ),
 
                             ])
                             ->cloneable()
                             ->itemLabel(fn(array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null)
                             ->colStyles([
-                                'id_produk' => 'width:37%',
-                                'kondisi' => 'width:15%',
-                                'qty' => 'width:8%',
-                                'hpp' => 'width:20%',
-                                'harga_jual' => 'width:25%',
+                                'id_produk' => 'width: 30%;',
+                                'kondisi' => 'width: 12%;',
+                                'qty' => 'width: 8%;',
+                                'hpp' => 'width: 15%;',
+                                'harga_jual' => 'width: 15%;',
+                                'serials_count' => 'width: 20%;',
                             ])
 
                     ]),
@@ -840,6 +924,38 @@ class PembelianResource extends BaseResource
                         'success' => 'lunas',
                         'danger' => 'tempo',
                     ]),
+                TextColumn::make('items_serials')
+                    ->label('SN')
+                    ->hidden(true)
+                    ->state(function (Pembelian $record): string {
+                        $allSerials = $record->items
+                            ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
+                            ->filter()
+                            ->values();
+
+                        if ($allSerials->isEmpty()) {
+                            return '-';
+                        }
+
+                        return $allSerials->implode(', ');
+                    })
+                    ->wrap()
+                    ->limit(30)
+                    ->tooltip(function (Pembelian $record): ?string {
+                        $allSerials = $record->items
+                            ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
+                            ->filter()
+                            ->values();
+
+                        return $allSerials->count() > 0 ? $allSerials->implode(', ') : null;
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('items', function (Builder $q) use ($search): void {
+                            $q->whereRaw("JSON_SEARCH(serials, 'one', ?, NULL, '$[*].sn') IS NOT NULL", ["%{$search}%"]);
+                        });
+                    })
+                    ->toggleable()
+                    ->searchable(),
                 TextColumn::make('items_count')
                     ->label('Jml Item')
                     ->counts('items')

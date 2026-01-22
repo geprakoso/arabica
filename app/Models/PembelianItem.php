@@ -28,6 +28,11 @@ class PembelianItem extends Model
         'harga_jual',
         'subtotal',
         'kondisi',
+        'serials',
+    ];
+
+    protected $casts = [
+        'serials' => 'array',
     ];
 
     protected static function booted(): void
