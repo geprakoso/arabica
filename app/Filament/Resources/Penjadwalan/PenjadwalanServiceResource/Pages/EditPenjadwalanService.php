@@ -10,6 +10,10 @@ class EditPenjadwalanService extends EditRecord
 {
     protected static string $resource = PenjadwalanServiceResource::class;
 
+        protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
     protected function getHeaderActions(): array
     {
         return [

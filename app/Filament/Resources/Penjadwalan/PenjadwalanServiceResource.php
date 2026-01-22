@@ -300,6 +300,11 @@ class PenjadwalanServiceResource extends BaseResource
                     ->sortable()
                     ->searchable()
                     ->copyable(),
+                TextColumn::make('created_at')
+                    ->label('Waktu Penerimaan')
+                    ->dateTime('d M Y')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('member.nama_member')
                     ->label('Pelanggan')
                     ->sortable()
@@ -568,4 +573,5 @@ class PenjadwalanServiceResource extends BaseResource
             'edit' => Pages\EditPenjadwalanService::route('/{record}/edit'),
         ];
     }
+
 }
