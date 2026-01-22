@@ -81,6 +81,12 @@ Route::get('/penjadwalan-service/print/{record}', function (\App\Models\Penjadwa
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('penjadwalan-service.print');
+Route::get('/penjadwalan-service/invoice-simple/{record}', function (\App\Models\PenjadwalanService $record) {
+    return view('filament.resources.penjadwalan-service.invoice-simple', [
+        'record' => $record->load(['member', 'technician', 'jasa']),
+        'profile' => \App\Models\ProfilePerusahaan::first(),
+    ]);
+})->name('penjadwalan-service.invoice.simple');
 
 Route::get('/tukar-tambah/invoice/{tukarTambah}', function (\App\Models\TukarTambah $tukarTambah) {
     return view('tukar-tambah.invoice', [
