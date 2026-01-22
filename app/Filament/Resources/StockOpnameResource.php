@@ -44,7 +44,7 @@ class StockOpnameResource extends BaseResource
                         ->label('Kode Referensi')
                         ->prefixIcon('heroicon-o-tag')
                         ->disabled()
-                        ->default(fn () => StockOpname::generateKode())
+                        ->default(fn() => StockOpname::generateKode())
                         ->dehydrated()
                         ->helperText('Kode akan digenerate otomatis oleh sistem'),
                     DatePicker::make('tanggal')
@@ -75,6 +75,7 @@ class StockOpnameResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('kode')
                     ->label('Kode')
@@ -103,7 +104,7 @@ class StockOpnameResource extends BaseResource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->icon(fn (string $state): string => match ($state) {
+                    ->icon(fn(string $state): string => match ($state) {
                         'draft' => 'heroicon-m-pencil-square',
                         'posted' => 'heroicon-m-check-circle',
                         default => 'heroicon-m-question-mark-circle',
@@ -118,11 +119,11 @@ class StockOpnameResource extends BaseResource
                 Action::make('post')
                     ->button()
                     ->color('success')
-                    ->visible(fn (StockOpname $record) => ! $record->isPosted())
+                    ->visible(fn(StockOpname $record) => ! $record->isPosted())
                     ->icon('heroicon-m-paper-airplane')
                     ->label('Posting')
                     ->requiresConfirmation()
-                    ->action(fn (StockOpname $record) => $record->post(Auth::user()))
+                    ->action(fn(StockOpname $record) => $record->post(Auth::user()))
                     ->successNotificationTitle('Stock opname berhasil diposting.')
                     ->color('success'),
                 Tables\Actions\DeleteAction::make()
@@ -131,14 +132,14 @@ class StockOpnameResource extends BaseResource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->label('Hapus')
-                    ->visible(fn (StockOpname $record) => ! $record->isPosted()),
+                    ->visible(fn(StockOpname $record) => ! $record->isPosted()),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
                         ->color('warning'),
                     Tables\Actions\ViewAction::make(),
                 ])
                     ->label('Aksi')
-                    ->visible(fn (StockOpname $record) => ! $record->isPosted())
+                    ->visible(fn(StockOpname $record) => ! $record->isPosted())
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->tooltip('Menu Aksi'),
             ])
