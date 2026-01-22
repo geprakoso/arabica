@@ -926,7 +926,7 @@ class PembelianResource extends BaseResource
                     ]),
                 TextColumn::make('items_serials')
                     ->label('SN')
-                    ->hidden(true)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->state(function (Pembelian $record): string {
                         $allSerials = $record->items
                             ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
@@ -954,8 +954,7 @@ class PembelianResource extends BaseResource
                             $q->whereRaw("JSON_SEARCH(serials, 'one', ?, NULL, '$[*].sn') IS NOT NULL", ["%{$search}%"]);
                         });
                     })
-                    ->toggleable()
-                    ->searchable(),
+                    ->toggleable(),
                 TextColumn::make('items_count')
                     ->label('Jml Item')
                     ->counts('items')
