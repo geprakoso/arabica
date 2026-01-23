@@ -15,6 +15,7 @@ use App\Models\Supplier;
 use App\Models\TukarTambah;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Hidden;
@@ -26,7 +27,6 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -45,7 +45,6 @@ use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-
 
 class TukarTambahResource extends BaseResource
 {
@@ -75,7 +74,7 @@ class TukarTambahResource extends BaseResource
                             ->schema([
                                 TextInput::make('no_nota')
                                     ->label('No. Nota Utama')
-                                    ->default(fn() => TukarTambah::generateNoNota())
+                                    ->default(fn () => TukarTambah::generateNoNota())
                                     ->disabled()
                                     ->dehydrated()
                                     ->required()
@@ -99,7 +98,7 @@ class TukarTambahResource extends BaseResource
                                     ->relationship('karyawan', 'nama_karyawan')
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn() => Auth::user()?->karyawan?->id)
+                                    ->default(fn () => Auth::user()?->karyawan?->id)
                                     ->required()
                                     ->validationMessages([
                                         'required' => 'Perlu diisi',
@@ -108,7 +107,7 @@ class TukarTambahResource extends BaseResource
                                     ->columnSpan(1),
                                 Select::make('id_member')
                                     ->label('Pelanggan')
-                                    ->options(fn() => Member::query()
+                                    ->options(fn () => Member::query()
                                         ->orderBy('nama_member')
                                         ->pluck('nama_member', 'id')
                                         ->all())
@@ -120,7 +119,7 @@ class TukarTambahResource extends BaseResource
                                     ])
                                     ->prefixIcon('heroicon-m-user')
                                     ->createOptionModalHeading('Tambah Member')
-                                    ->createOptionAction(fn($action) => $action->label('Tambah Member'))
+                                    ->createOptionAction(fn ($action) => $action->label('Tambah Member'))
                                     ->createOptionForm([
                                         TextInput::make('nama_member')
                                             ->label('Nama Lengkap')
@@ -145,7 +144,7 @@ class TukarTambahResource extends BaseResource
                                                 ->nullable(),
                                         ]),
                                     ])
-                                    ->createOptionUsing(fn(array $data): int => (int) Member::query()->create($data)->getKey())
+                                    ->createOptionUsing(fn (array $data): int => (int) Member::query()->create($data)->getKey())
                                     ->columnSpan(1),
 
                             ]),
@@ -226,9 +225,22 @@ class TukarTambahResource extends BaseResource
                                                 $set('../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
                                             })
                                             ->schema([
+                                                \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
                                                 Select::make('id_produk')
                                                     ->label('Produk')
-                                                    ->options(fn() => \App\Filament\Resources\PenjualanResource::getAvailableProductOptions())
+                                                    ->options(function (Get $get): array {
+                                                        $options = \App\Filament\Resources\PenjualanResource::getAvailableProductOptions();
+                                                        $currentId = $get('id_produk');
+
+                                                        if ($currentId && ! array_key_exists($currentId, $options)) {
+                                                            $product = \App\Models\Produk::find($currentId);
+                                                            if ($product) {
+                                                                $options[$currentId] = $product->nama_produk.' (Stok Habis)';
+                                                            }
+                                                        }
+
+                                                        return $options;
+                                                    })
                                                     ->searchable()
                                                     ->preload()
                                                     ->required()
@@ -242,6 +254,7 @@ class TukarTambahResource extends BaseResource
                                                             $batch = \App\Filament\Resources\PenjualanResource::getOldestAvailableBatch($state);
                                                             if ($batch) {
                                                                 $set('harga_jual', $batch->harga_jual);
+                                                                $set('hpp', $batch->hpp);
                                                                 $set('kondisi', $batch->kondisi);
                                                             }
                                                         }
@@ -250,6 +263,7 @@ class TukarTambahResource extends BaseResource
                                                     ->label('Kondisi')
                                                     ->options(function (Get $get): array {
                                                         $productId = (int) ($get('id_produk') ?? 0);
+
                                                         return \App\Filament\Resources\PenjualanResource::getConditionOptions($productId);
                                                     })
                                                     ->native(false)
@@ -263,6 +277,7 @@ class TukarTambahResource extends BaseResource
                                                             $batch = \App\Filament\Resources\PenjualanResource::getOldestAvailableBatch($productId, $state);
                                                             if ($batch) {
                                                                 $set('harga_jual', $batch->harga_jual);
+                                                                $set('hpp', $batch->hpp);
                                                             }
                                                         }
                                                     }),
@@ -277,6 +292,7 @@ class TukarTambahResource extends BaseResource
                                                             return null;
                                                         }
                                                         $condition = $get('kondisi');
+
                                                         return \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition) ?: null;
                                                     })
                                                     ->required()
@@ -284,10 +300,10 @@ class TukarTambahResource extends BaseResource
                                                     ->extraInputAttributes(function (Get $get): array {
                                                         $productId = (int) ($get('id_produk') ?? 0);
                                                         $condition = $get('kondisi');
-                                                        $max = $productId > 0 
-                                                            ? \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition) 
+                                                        $max = $productId > 0
+                                                            ? \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition)
                                                             : null;
-                                                        
+
                                                         return [
                                                             'min' => 1,
                                                             'max' => $max,
@@ -301,7 +317,8 @@ class TukarTambahResource extends BaseResource
                                                         }
                                                         $condition = $get('kondisi');
                                                         $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
-                                                        return 'Stok: ' . number_format($available, 0, ',', '.');
+
+                                                        return 'Stok: '.number_format($available, 0, ',', '.');
                                                     })
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
@@ -313,10 +330,10 @@ class TukarTambahResource extends BaseResource
                                                         $qty = (int) ($state ?? 0);
                                                         $productId = (int) ($get('id_produk') ?? 0);
                                                         $condition = $get('kondisi');
-                                                        
+
                                                         if ($productId > 0) {
                                                             $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
-                                                            
+
                                                             // Clamp qty to min=1, max=available
                                                             if ($qty < 1 && $qty !== 0) {
                                                                 $set('qty', 1);
@@ -324,7 +341,7 @@ class TukarTambahResource extends BaseResource
                                                                 $set('qty', $available);
                                                             }
                                                         }
-                                                        
+
                                                         // Adjust serials array to match qty
                                                         $qty = (int) ($get('qty') ?? 0);
                                                         $serials = $get('serials') ?? [];
@@ -336,6 +353,38 @@ class TukarTambahResource extends BaseResource
                                                         }
                                                         $set('serials', $serials);
                                                     }),
+
+                                                TextInput::make('hpp')
+                                                    ->label('HPP')
+                                                    ->numeric()
+                                                    ->prefix('Rp')
+                                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->readOnly()
+                                                    ->dehydrated(true)
+                                                    ->afterStateHydrated(function (TextInput $component, $state, $record) {
+                                                        // If state is already filled, do nothing
+                                                        if (! empty($state)) {
+                                                            return;
+                                                        }
+
+                                                        // Attempt to fetch from database record if available
+                                                        if ($record instanceof \App\Models\PenjualanItem) {
+                                                            if ($record->hpp > 0) {
+                                                                $component->state($record->hpp);
+
+                                                                return;
+                                                            }
+
+                                                            // If still empty, try to get from batch (pembelian item)
+                                                            if ($record->id_pembelian_item) {
+                                                                $batch = \App\Models\PembelianItem::find($record->id_pembelian_item);
+                                                                if ($batch) {
+                                                                    $component->state($batch->hpp);
+                                                                }
+                                                            }
+                                                        }
+                                                    }),
+
                                                 TextInput::make('harga_jual')
                                                     ->label('Harga Satuan')
                                                     ->prefix('Rp')
@@ -352,7 +401,7 @@ class TukarTambahResource extends BaseResource
 
                                                 TextInput::make('serials_count')
                                                     ->label('Serial Number & Garansi')
-                                                    ->formatStateUsing(fn(Get $get): string => count($get('serials') ?? []) . ' serials')
+                                                    ->formatStateUsing(fn (Get $get): string => count($get('serials') ?? []).' serials')
                                                     ->live()
                                                     ->disabled()
                                                     ->dehydrated(true)
@@ -419,6 +468,7 @@ class TukarTambahResource extends BaseResource
                                                 'id_produk' => 'width: 30%;',
                                                 'kondisi' => 'width: 10%;',
                                                 'qty' => 'width: 10%;',
+                                                'hpp' => 'width: 15%;',
                                                 'harga_jual' => 'width: 15%;',
                                             ])
                                             ->defaultItems(1)
@@ -470,7 +520,7 @@ class TukarTambahResource extends BaseResource
                                                 Select::make('jasa_id')
                                                     ->label('Jasa')
                                                     ->prefixIcon('hugeicons-tools')
-                                                    ->options(fn() => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
+                                                    ->options(fn () => Jasa::query()->orderBy('nama_jasa')->pluck('nama_jasa', 'id')->all())
                                                     ->searchable()
                                                     ->required()
                                                     ->validationMessages([
@@ -513,7 +563,7 @@ class TukarTambahResource extends BaseResource
                                         // Summary Section
                                         Grid::make(1)
                                             ->schema([
-                                                
+
                                                 TextInput::make('total_price_summary')
                                                     ->label('Total Harga')
                                                     ->prefix('Rp')
@@ -620,7 +670,7 @@ class TukarTambahResource extends BaseResource
                                                 \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
                                                 Select::make('id_produk')
                                                     ->label('Produk')
-                                                    ->options(fn() => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
+                                                    ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
                                                     ->searchable()
                                                     ->required()
                                                     ->validationMessages([
@@ -806,7 +856,7 @@ class TukarTambahResource extends BaseResource
                                 // Calculate grand total
                                 $grandTotal = $penjualanTotal - $pembelianTotal;
 
-                                return 'Rp ' . number_format($grandTotal, 0, ',', '.');
+                                return 'Rp '.number_format($grandTotal, 0, ',', '.');
                             })
                             ->extraAttributes(['class' => 'text-xl font-bold text-primary-600'])
                             ->helperText('Total yang dibayar pelanggan setelah dikurangi nilai barang masuk'),
@@ -856,7 +906,7 @@ class TukarTambahResource extends BaseResource
                                         'required' => 'Perlu diisi',
                                     ])
                                     ->reactive(),
-                                
+
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
@@ -867,7 +917,7 @@ class TukarTambahResource extends BaseResource
                                     ->reactive(),
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi')
-                                    ->options(fn() => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
+                                    ->options(fn () => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
                                     ->searchable()
                                     ->required(fn (Get $get) => $get('metode_bayar') === 'transfer')
                                     ->validationMessages([
@@ -913,7 +963,7 @@ class TukarTambahResource extends BaseResource
                                                 $diskon = (int) ($formData['penjualan']['diskon_total'] ?? 0);
                                                 $total = max(0, ($productTotal + $serviceTotal) - $diskon);
 
-                                                return $total > 0 ? 'Saran: Rp ' . number_format($total, 0, ',', '.') : 'Total Penjualan';
+                                                return $total > 0 ? 'Saran: Rp '.number_format($total, 0, ',', '.') : 'Total Penjualan';
                                             } elseif ($tipeTransaksi === 'pembelian') {
                                                 // Calculate pembelian total from form data
                                                 $items = $formData['pembelian']['items'] ?? [];
@@ -925,7 +975,7 @@ class TukarTambahResource extends BaseResource
                                                     return $qty * $hpp;
                                                 });
 
-                                                return $total > 0 ? 'Saran: Rp ' . number_format($total, 0, ',', '.') : 'Total Pembelian';
+                                                return $total > 0 ? 'Saran: Rp '.number_format($total, 0, ',', '.') : 'Total Pembelian';
                                             }
                                         } catch (\Exception $e) {
                                             // Fallback if form data is not available
@@ -1037,7 +1087,7 @@ class TukarTambahResource extends BaseResource
             ->columns([
                 TextColumn::make('id_tukar_tambah')
                     ->label('Kode')
-                    ->state(fn(TukarTambah $record): string => $record->kode)
+                    ->state(fn (TukarTambah $record): string => $record->kode)
                     ->weight('bold')
                     ->copyable()
                     ->sortable(),
@@ -1073,19 +1123,20 @@ class TukarTambahResource extends BaseResource
                     ->icon('heroicon-m-document-text')
                     ->copyable(),
             ])
+            ->defaultSort('tanggal', 'desc')
             ->actions([
                 \Filament\Tables\Actions\ActionGroup::make([
                     Action::make('invoice')
                         ->label('Invoice')
                         ->icon('heroicon-m-printer')
                         ->color('primary')
-                        ->url(fn(TukarTambah $record) => route('tukar-tambah.invoice', $record))
+                        ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice', $record))
                         ->openUrlInNewTab(),
                     Action::make('invoice_simple')
                         ->label('Invoice Simple')
                         ->icon('heroicon-m-document-text')
                         ->color('gray')
-                        ->url(fn(TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
+                        ->url(fn (TukarTambah $record) => route('tukar-tambah.invoice.simple', $record))
                         ->openUrlInNewTab(),
                 ])->label('Print')
                     ->icon('heroicon-m-printer')
@@ -1096,7 +1147,7 @@ class TukarTambahResource extends BaseResource
                         ->label('Lihat')
                         ->icon('heroicon-m-eye')
                         ->color('primary')
-                        ->url(fn(TukarTambah $record) => TukarTambahResource::getUrl('view', ['record' => $record])),
+                        ->url(fn (TukarTambah $record) => TukarTambahResource::getUrl('view', ['record' => $record])),
                     Action::make('edit')
                         ->label('Edit')
                         ->icon('heroicon-m-pencil-square')
@@ -1157,7 +1208,7 @@ class TukarTambahResource extends BaseResource
                             if ($deleted > 0) {
                                 Notification::make()
                                     ->title('Tukar tambah dihapus')
-                                    ->body('Berhasil menghapus ' . $deleted . ' data.')
+                                    ->body('Berhasil menghapus '.$deleted.' data.')
                                     ->success()
                                     ->send();
                             }
@@ -1186,20 +1237,20 @@ class TukarTambahResource extends BaseResource
                                 ->native(false)
                                 ->placeholder('Pilih tanggal')
                                 ->prefixIcon('heroicon-m-calendar')
-                                ->hidden(fn(Get $get) => $get('range') !== 'custom'),
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
                             DatePicker::make('until')
                                 ->label('Sampai')
                                 ->native(false)
                                 ->placeholder('Pilih tanggal')
                                 ->prefixIcon('heroicon-m-calendar')
-                                ->hidden(fn(Get $get) => $get('range') !== 'custom'),
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
                         ]),
                     ])
                     ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
                         $range = $data['range'] ?? null;
 
                         // If no range selected, return unfiltered query
-                        if (!$range) {
+                        if (! $range) {
                             return $query;
                         }
 
@@ -1218,11 +1269,11 @@ class TukarTambahResource extends BaseResource
                             return $query
                                 ->when(
                                     $startDate,
-                                    fn(\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
+                                    fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
                                 )
                                 ->when(
                                     $endDate,
-                                    fn(\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
+                                    fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
                                 );
                         }
 
@@ -1236,7 +1287,7 @@ class TukarTambahResource extends BaseResource
 
                         return $query->when(
                             $targetDate,
-                            fn(\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', $date)
+                            fn (\Illuminate\Database\Eloquent\Builder $query, $date) => $query->whereDate('tanggal', $date)
                         );
                     })
                     ->indicateUsing(function (array $data): ?string {
@@ -1258,7 +1309,7 @@ class TukarTambahResource extends BaseResource
                                 $label .= \Carbon\Carbon::parse($from)->translatedFormat('d M Y');
                             }
                             if ($until) {
-                                $label .= ' s/d ' . \Carbon\Carbon::parse($until)->translatedFormat('d M Y');
+                                $label .= ' s/d '.\Carbon\Carbon::parse($until)->translatedFormat('d M Y');
                             }
 
                             return $label;
@@ -1271,7 +1322,7 @@ class TukarTambahResource extends BaseResource
                             '3_hari_lalu' => '3 Hari Lalu',
                         ];
 
-                        return isset($labels[$range]) ? 'Periode: ' . $labels[$range] : null;
+                        return isset($labels[$range]) ? 'Periode: '.$labels[$range] : null;
                     }),
             ])
             ->searchable()
@@ -1303,7 +1354,7 @@ class TukarTambahResource extends BaseResource
             ->distinct()
             ->orderBy('kondisi')
             ->pluck('kondisi')
-            ->mapWithKeys(fn(string $value): array => [$value => $labels[$value] ?? ucfirst($value)])
+            ->mapWithKeys(fn (string $value): array => [$value => $labels[$value] ?? ucfirst($value)])
             ->all();
     }
 
@@ -1346,7 +1397,7 @@ class TukarTambahResource extends BaseResource
         return PembelianItem::query()
             ->where($productColumn, $productId)
             ->where($qtyColumn, '>', 0)
-            ->when($condition, fn($query, $condition) => $query->where('kondisi', $condition))
+            ->when($condition, fn ($query, $condition) => $query->where('kondisi', $condition))
             ->orderBy('id_pembelian_item')
             ->first();
     }
@@ -1366,7 +1417,7 @@ class TukarTambahResource extends BaseResource
                                     ->icon('heroicon-m-document-text'),
                                 TextEntry::make('id_tukar_tambah')
                                     ->label('Kode')
-                                    ->state(fn(TukarTambah $record): string => $record->kode)
+                                    ->state(fn (TukarTambah $record): string => $record->kode)
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->icon('heroicon-m-arrows-right-left'),
@@ -1384,7 +1435,7 @@ class TukarTambahResource extends BaseResource
                                 TextEntry::make('penjualan.no_nota')
                                     ->label('Nota Penjualan')
                                     ->icon('heroicon-m-receipt-percent')
-                                    ->url(fn(TukarTambah $record) => $record->penjualan
+                                    ->url(fn (TukarTambah $record) => $record->penjualan
                                         ? PenjualanResource::getUrl('edit', ['record' => $record->penjualan])
                                         : null)
                                     ->openUrlInNewTab()
@@ -1392,7 +1443,7 @@ class TukarTambahResource extends BaseResource
                                 TextEntry::make('pembelian.no_po')
                                     ->label('Nota Pembelian')
                                     ->icon('heroicon-m-document-text')
-                                    ->url(fn(TukarTambah $record) => $record->pembelian
+                                    ->url(fn (TukarTambah $record) => $record->pembelian
                                         ? PembelianResource::getUrl('edit', ['record' => $record->pembelian])
                                         : null)
                                     ->openUrlInNewTab()
@@ -1407,6 +1458,18 @@ class TukarTambahResource extends BaseResource
                             ->markdown()
                             ->prose()
                             ->placeholder('Tidak ada catatan'),
+                    ]),
+
+                \Filament\Infolists\Components\Section::make('Bukti & Dokumentasi')
+                    ->icon('heroicon-o-camera')
+                    ->visible(fn (TukarTambah $record) => ! empty($record->foto_dokumen))
+                    ->schema([
+                        \Filament\Infolists\Components\ViewEntry::make('all_photos_gallery')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.tukar-tambah-photos-gallery')
+                            ->state(fn (TukarTambah $record) => [
+                                'allPhotos' => $record->foto_dokumen ?? [],
+                            ]),
                     ]),
             ]);
     }
