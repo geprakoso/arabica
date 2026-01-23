@@ -17,7 +17,7 @@
                 <tr class="bg-white dark:bg-transparent hover:bg-gray-50/70 dark:hover:bg-white/5">
                     <td class="px-3 py-3">
                         <div class="max-w-[22rem] truncate font-medium text-gray-900 dark:text-gray-100">
-                            {{ data_get($item, 'produk.nama_produk') ?? '-' }}
+                            {{ strtoupper(data_get($item, 'produk.nama_produk') ?? '-') }}
                         </div>
                     </td>
                     <td class="px-3 py-3 text-gray-700 dark:text-gray-200 whitespace-nowrap">
@@ -37,4 +37,3 @@
         </tbody>
     </table>
 </div>
-
