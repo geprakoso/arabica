@@ -4,16 +4,27 @@ namespace App\Filament\Resources;
 
 use Akaunting\Money\Money;
 use App\Filament\Resources\PembelianReportResource\Pages;
+use App\Filament\Resources\PembelianResource;
 use App\Models\Pembelian;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PembelianReportResource extends BaseResource
 {
@@ -42,11 +53,16 @@ class PembelianReportResource extends BaseResource
     {
         return $table
             ->modifyQueryUsing(fn(Builder $query) => $query->with(['supplier', 'karyawan', 'items'])) // Eager load relasi yang dibutuhkan
-            ->defaultSort('tanggal', 'desc')
+            ->defaultSort('created_at', 'desc')
+            ->recordAction('detail')
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
                     ->icon('heroicon-m-document-text')
+                    ->tooltip('Klik untuk melihat detail')
+                    ->url(fn (Pembelian $record) => PembelianResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab()
                     ->weight('bold')
                     ->color('primary')
                     ->searchable()
@@ -77,7 +93,7 @@ class PembelianReportResource extends BaseResource
                     ->color('gray')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('jenis_pembayaran')
-                    ->label('Status Pembayaran')
+                    ->label('Status ')
                     ->badge()
                     ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
@@ -88,6 +104,12 @@ class PembelianReportResource extends BaseResource
                     ->label('Total Pembayaran')
                     ->state(fn(Pembelian $record) => self::formatCurrency($record->calculateTotalPembelian()))
                     ->color('success')
+                    ->summarize([
+                        Summarizer::make()
+                            ->label('Total')
+                            ->using(fn ($query) => self::summarizeTotalPembelian($query))
+                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                    ])
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('total_dibayar')
                     ->label('Total Dibayar')
@@ -95,6 +117,12 @@ class PembelianReportResource extends BaseResource
                         $record->pembayaran()->sum('jumlah') ?? 0
                     ))
                     ->color('warning')
+                    ->summarize([
+                        Summarizer::make()
+                            ->label('Total')
+                            ->using(fn ($query) => self::summarizeTotalDibayar($query))
+                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                    ])
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('sisa_bayar')
                     ->label('Sisa Pembayaran')
@@ -104,6 +132,12 @@ class PembelianReportResource extends BaseResource
                         $dibayar = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
                         return self::formatCurrency(max(0, $total - $dibayar));
                     })
+                    ->summarize([
+                        Summarizer::make()
+                            ->label('Total')
+                            ->using(fn ($query) => self::summarizeSisaPembelian($query))
+                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                    ])
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -256,8 +290,105 @@ class PembelianReportResource extends BaseResource
                         'tanggal' => now()->format('d-m-Y'),
                     ]),
             ])
-            ->actions([])
+            ->actions([
+                Action::make('detail')
+                    ->label('')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Detail Laporan Pembelian')
+                    ->modalWidth('5xl')
+                    ->modalSubmitAction(false)
+                    ->slideOver()
+                    ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
+            ])
             ->bulkActions([]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Detail Pembelian')
+                    ->schema([
+                        Split::make([
+                            InfoGroup::make([
+                                TextEntry::make('no_po')
+                                    ->label('No. PO')
+                                    ->weight('bold')
+                                    ->icon('heroicon-m-document-text')
+                                    ->color('primary')
+                                    ->tooltip('Klik untuk melihat detail')
+                                    ->url(fn (Pembelian $record) => PembelianResource::getUrl('view', ['record' => $record]))
+                                    ->openUrlInNewTab(),
+                                TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->date('d F Y')
+                                    ->icon('heroicon-m-calendar-days')
+                                    ->color('gray'),
+                                TextEntry::make('nota_supplier')
+                                    ->label('Nota Referensi')
+                                    ->placeholder('-')
+                                    ->icon('heroicon-m-receipt-refund'),
+                            ]),
+                            InfoGroup::make([
+                                TextEntry::make('supplier.nama_supplier')
+                                    ->label('Supplier')
+                                    ->icon('heroicon-m-building-storefront')
+                                    ->placeholder('-'),
+                                TextEntry::make('karyawan.nama_karyawan')
+                                    ->label('Karyawan')
+                                    ->icon('heroicon-m-user')
+                                    ->placeholder('-'),
+                                TextEntry::make('jenis_pembayaran')
+                                    ->label('Status Pembayaran')
+                                    ->badge()
+                                    ->formatStateUsing(fn (?string $state): ?string => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                                    ->colors([
+                                        'success' => 'lunas',
+                                        'danger' => 'tempo',
+                                    ]),
+                            ]),
+                        ])->from('md'),
+                    ])
+                    ->compact(),
+                InfoSection::make('Pembayaran')
+                    ->schema([
+                        Grid::make(4)
+                            ->schema([
+                                TextEntry::make('total_pembelian')
+                                    ->label('Total Pembelian')
+                                    ->state(fn (Pembelian $record): string => self::formatCurrency($record->calculateTotalPembelian()))
+                                    ->icon('heroicon-m-banknotes')
+                                    ->color('success'),
+                                TextEntry::make('total_dibayar')
+                                    ->label('Total Dibayar')
+                                    ->state(fn (Pembelian $record): string => self::formatCurrency(
+                                        (int) ($record->pembayaran()->sum('jumlah') ?? 0)
+                                    ))
+                                    ->icon('heroicon-m-wallet'),
+                                TextEntry::make('sisa_bayar')
+                                    ->label('Sisa Pembayaran')
+                                    ->state(function (Pembelian $record): string {
+                                        $total = $record->calculateTotalPembelian();
+                                        $dibayar = (int) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                        return self::formatCurrency(max(0, $total - $dibayar));
+                                    })
+                                    ->icon('heroicon-m-clock'),
+                                TextEntry::make('kelebihan_bayar')
+                                    ->label('Kelebihan Bayar')
+                                    ->state(function (Pembelian $record): string {
+                                        $total = $record->calculateTotalPembelian();
+                                        $dibayar = (int) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                                        return self::formatCurrency(max(0, $dibayar - $total));
+                                    })
+                                    ->icon('heroicon-m-arrow-up-circle')
+                                    ->color('warning'),
+                            ]),
+                    ])
+                    ->compact(),
+            ]);
     }
 
     public static function getRelations(): array
@@ -281,5 +412,92 @@ class PembelianReportResource extends BaseResource
     {
 
         return Money::IDR($value * 100)->formatWithoutZeroes();
+    }
+
+    protected static function summarizeTotalPembelian(QueryBuilder $query): int
+    {
+        $pembelian = new Pembelian();
+        $purchaseTable = $pembelian->getTable();
+        $purchaseKey = $pembelian->getKeyName();
+
+        $itemsSub = DB::table('tb_pembelian_item')
+            ->selectRaw('id_pembelian, COALESCE(SUM(qty * hpp), 0) as total_items')
+            ->groupBy('id_pembelian');
+
+        $jasaSub = DB::table('tb_pembelian_jasa')
+            ->selectRaw('id_pembelian, COALESCE(SUM(qty * harga), 0) as total_jasa')
+            ->groupBy('id_pembelian');
+
+        $summaryQuery = clone $query;
+        $summaryQuery->orders = null;
+        $summaryQuery->limit = null;
+        $summaryQuery->offset = null;
+        $summaryQuery->columns = null;
+
+        $summary = $summaryQuery
+            ->leftJoinSub($itemsSub, 'items_sum', 'items_sum.id_pembelian', '=', "{$purchaseTable}.{$purchaseKey}")
+            ->leftJoinSub($jasaSub, 'jasa_sum', 'jasa_sum.id_pembelian', '=', "{$purchaseTable}.{$purchaseKey}")
+            ->selectRaw('COALESCE(SUM(COALESCE(items_sum.total_items, 0) + COALESCE(jasa_sum.total_jasa, 0)), 0) as total')
+            ->value('total');
+
+        return (int) ($summary ?? 0);
+    }
+
+    protected static function summarizeTotalDibayar(QueryBuilder $query): int
+    {
+        $pembelian = new Pembelian();
+        $purchaseTable = $pembelian->getTable();
+        $purchaseKey = $pembelian->getKeyName();
+
+        $paySub = DB::table('tb_pembelian_pembayaran')
+            ->selectRaw('id_pembelian, COALESCE(SUM(jumlah), 0) as total_paid')
+            ->groupBy('id_pembelian');
+
+        $summaryQuery = clone $query;
+        $summaryQuery->orders = null;
+        $summaryQuery->limit = null;
+        $summaryQuery->offset = null;
+        $summaryQuery->columns = null;
+
+        $summary = $summaryQuery
+            ->leftJoinSub($paySub, 'pay_sum', 'pay_sum.id_pembelian', '=', "{$purchaseTable}.{$purchaseKey}")
+            ->selectRaw('COALESCE(SUM(COALESCE(pay_sum.total_paid, 0)), 0) as total')
+            ->value('total');
+
+        return (int) ($summary ?? 0);
+    }
+
+    protected static function summarizeSisaPembelian(QueryBuilder $query): int
+    {
+        $pembelian = new Pembelian();
+        $purchaseTable = $pembelian->getTable();
+        $purchaseKey = $pembelian->getKeyName();
+
+        $itemsSub = DB::table('tb_pembelian_item')
+            ->selectRaw('id_pembelian, COALESCE(SUM(qty * hpp), 0) as total_items')
+            ->groupBy('id_pembelian');
+
+        $jasaSub = DB::table('tb_pembelian_jasa')
+            ->selectRaw('id_pembelian, COALESCE(SUM(qty * harga), 0) as total_jasa')
+            ->groupBy('id_pembelian');
+
+        $paySub = DB::table('tb_pembelian_pembayaran')
+            ->selectRaw('id_pembelian, COALESCE(SUM(jumlah), 0) as total_paid')
+            ->groupBy('id_pembelian');
+
+        $summaryQuery = clone $query;
+        $summaryQuery->orders = null;
+        $summaryQuery->limit = null;
+        $summaryQuery->offset = null;
+        $summaryQuery->columns = null;
+
+        $summary = $summaryQuery
+            ->leftJoinSub($itemsSub, 'items_sum', 'items_sum.id_pembelian', '=', "{$purchaseTable}.{$purchaseKey}")
+            ->leftJoinSub($jasaSub, 'jasa_sum', 'jasa_sum.id_pembelian', '=', "{$purchaseTable}.{$purchaseKey}")
+            ->leftJoinSub($paySub, 'pay_sum', 'pay_sum.id_pembelian', '=', "{$purchaseTable}.{$purchaseKey}")
+            ->selectRaw('COALESCE(SUM(GREATEST((COALESCE(items_sum.total_items, 0) + COALESCE(jasa_sum.total_jasa, 0)) - COALESCE(pay_sum.total_paid, 0), 0)), 0) as total')
+            ->value('total');
+
+        return (int) ($summary ?? 0);
     }
 }

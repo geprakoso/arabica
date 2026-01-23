@@ -19,6 +19,8 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class LaporanPengajuanCutiResource extends BaseResource
 {
@@ -52,6 +54,11 @@ class LaporanPengajuanCutiResource extends BaseResource
                     ->icon('heroicon-m-user-circle')
                     ->weight('bold')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Tanggal Pengajuan')
+                    ->date('d M Y')
+                    ->icon('heroicon-m-calendar')
                     ->sortable(),
                 TextColumn::make('liburCuti.keperluan')
                     ->label('Keperluan')
@@ -87,6 +94,61 @@ class LaporanPengajuanCutiResource extends BaseResource
                     }),
             ])
             ->filters([
+                SelectFilter::make('bulan')
+                    ->label('Bulan')
+                    ->options(function (): array {
+                        $monthKeys = LaporanPengajuanCuti::query()
+                            ->selectRaw("DATE_FORMAT(at_libur_cuti.mulai_tanggal, '%Y-%m') as month_key")
+                            ->join('at_libur_cuti', 'at_libur_cuti.id', '=', 'laporan_pengajuan_cutis.libur_cuti_id')
+                            ->whereNotNull('at_libur_cuti.mulai_tanggal')
+                            ->distinct()
+                            ->orderByDesc('month_key')
+                            ->pluck('month_key');
+
+                        $currentMonthKey = now()->format('Y-m');
+                        if (! $monthKeys->contains($currentMonthKey)) {
+                            $monthKeys->prepend($currentMonthKey);
+                        }
+
+                        return $monthKeys
+                            ->mapWithKeys(fn (string $monthKey) => [
+                                $monthKey => Carbon::createFromFormat('Y-m', $monthKey)->translatedFormat('F Y'),
+                            ])
+                            ->all();
+                    })
+                    ->default(now()->format('Y-m'))
+                    ->query(function (Builder $query, array $data): Builder {
+                        $monthKey = $data['value'] ?? null;
+                        if (! $monthKey) {
+                            return $query;
+                        }
+
+                        try {
+                            $start = Carbon::createFromFormat('Y-m', $monthKey)->startOfMonth();
+                        } catch (\Throwable) {
+                            return $query;
+                        }
+
+                        $end = $start->copy()->endOfMonth();
+
+                        return $query->whereHas('liburCuti', function (Builder $query) use ($start, $end): Builder {
+                            return $query->whereBetween('mulai_tanggal', [$start->toDateString(), $end->toDateString()]);
+                        });
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $monthKey = $data['value'] ?? null;
+                        if (! $monthKey) {
+                            return null;
+                        }
+
+                        try {
+                            $label = Carbon::createFromFormat('Y-m', $monthKey)->translatedFormat('F Y');
+                        } catch (\Throwable) {
+                            return null;
+                        }
+
+                        return 'Bulan: '.$label;
+                    }),
                 SelectFilter::make('status_pengajuan')
                     ->label('Status Akhir')
                     ->options(

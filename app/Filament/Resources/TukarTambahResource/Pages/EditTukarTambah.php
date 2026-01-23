@@ -139,6 +139,8 @@ class EditTukarTambah extends EditRecord
 
                         return [
                             'id_produk' => $item->id_produk,
+                            'id_pembelian_item' => $item->id_pembelian_item, // Added
+                            'hpp' => (int) ($item->hpp ?? 0), // Added
                             'kondisi' => $kondisi,
                             'qty' => (int) ($item->qty ?? 0),
                             'harga_jual' => $hargaJual === null ? null : (int) $hargaJual,
@@ -199,6 +201,39 @@ class EditTukarTambah extends EditRecord
                     ->all(),
             ];
         }
+
+        // Populate unified_pembayaran
+        $unifiedPayments = [];
+        
+        if ($penjualan) {
+            foreach ($penjualan->pembayaran as $payment) {
+                $unifiedPayments[] = [
+                    'tipe_transaksi' => 'penjualan',
+                    'tanggal' => $payment->tanggal,
+                    'metode_bayar' => $payment->metode_bayar,
+                    'akun_transaksi_id' => $payment->akun_transaksi_id,
+                    'jumlah' => (int) $payment->jumlah,
+                    'bukti_transfer' => $payment->bukti_transfer,
+                    'catatan' => $payment->catatan,
+                ];
+            }
+        }
+        
+        if ($pembelian) {
+            foreach ($pembelian->pembayaran as $payment) {
+                $unifiedPayments[] = [
+                    'tipe_transaksi' => 'pembelian',
+                    'tanggal' => $payment->tanggal,
+                    'metode_bayar' => $payment->metode_bayar,
+                    'akun_transaksi_id' => $payment->akun_transaksi_id,
+                    'jumlah' => (int) $payment->jumlah,
+                    'bukti_transfer' => $payment->bukti_transfer,
+                    'catatan' => $payment->catatan,
+                ];
+            }
+        }
+        
+        $data['unified_pembayaran'] = $unifiedPayments;
 
         return $data;
     }
@@ -479,6 +514,7 @@ class EditTukarTambah extends EditRecord
 
             PenjualanPembayaran::query()->create([
                 'id_penjualan' => $penjualan->getKey(),
+                'tanggal' => $item['tanggal'] ?? now(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,
@@ -503,6 +539,7 @@ class EditTukarTambah extends EditRecord
 
             PembelianPembayaran::query()->create([
                 'id_pembelian' => $pembelian->getKey(),
+                'tanggal' => $item['tanggal'] ?? now(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,

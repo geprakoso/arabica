@@ -18,7 +18,8 @@ class KalenderJadwal extends Page implements HasForms
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?string $navigationLabel = 'Kalender Jadwal';
     protected static ?string $title = 'Kalender Jadwal';
-    protected static ?int $navigationSort = -1;
+    protected static ?string $navigationGroup = 'Kalender';
+    protected static ?int $navigationSort = -3;
     protected static string $view = 'filament.pages.kalender-jadwal';
 
     public ?array $filters = [];
@@ -49,13 +50,13 @@ class KalenderJadwal extends Page implements HasForms
                     ->options($this->monthOptions())
                     ->native(false)
                     ->reactive()
-                    ->afterStateUpdated(fn () => $this->updateCalendarDate()),
+                    ->afterStateUpdated(fn() => $this->updateCalendarDate()),
                 Select::make('year')
                     ->label('Tahun')
                     ->options($this->yearOptions())
                     ->native(false)
                     ->reactive()
-                    ->afterStateUpdated(fn () => $this->updateCalendarDate()),
+                    ->afterStateUpdated(fn() => $this->updateCalendarDate()),
             ])
             ->columns(2)
             ->statePath('filters');

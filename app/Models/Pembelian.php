@@ -28,6 +28,7 @@ class Pembelian extends Model
         'tgl_tempo',
         'id_karyawan',
         'id_supplier',
+        'foto_dokumen',
     ];
 
     protected static function booted(): void
@@ -92,6 +93,7 @@ class Pembelian extends Model
         'tanggal' => 'date',
         'tgl_tempo' => 'date',
         'harga_jual' => 'decimal:2',
+        'foto_dokumen' => 'array',
     ];
 
     public function karyawan()

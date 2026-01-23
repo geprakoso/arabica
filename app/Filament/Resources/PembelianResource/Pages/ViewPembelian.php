@@ -2,21 +2,31 @@
 
 namespace App\Filament\Resources\PembelianResource\Pages;
 
-use Filament\Actions\Action;
 use App\Filament\Resources\PembelianResource;
 use App\Filament\Resources\PenjualanResource;
-use Filament\Resources\Pages\ViewRecord;
-use Illuminate\Validation\ValidationException;
+use App\Support\WebpUpload;
+use Filament\Actions\Action;
 use Filament\Actions\StaticAction;
+use Filament\Forms\Components\BaseFileUpload;
+use Filament\Forms\Components\FileUpload;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\Alignment;
+use Illuminate\Validation\ValidationException;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ViewPembelian extends ViewRecord
 {
     protected static string $resource = PembelianResource::class;
-    protected static ?String $title = 'Detail Pembelian';
+
+    protected static ?string $title = 'Detail Pembelian';
+
     public array $editBlockedPenjualanReferences = [];
+
     public array $deleteBlockedPenjualanReferences = [];
+
     public ?string $editBlockedMessage = null;
+
     public ?string $deleteBlockedMessage = null;
 
     public function resolveRecord(int|string $key): \Illuminate\Database\Eloquent\Model
@@ -35,6 +45,52 @@ class ViewPembelian extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('upload_dokumen')
+                ->label('Upload Foto')
+                ->icon('heroicon-m-camera')
+                ->color('success')
+                ->modalHeading('Upload Foto Dokumentasi')
+                ->modalDescription('Upload foto nota, invoice, atau bukti penerimaan barang.')
+                ->modalWidth('md')
+                ->form([
+                    FileUpload::make('foto')
+                        ->label('Foto Dokumentasi')
+                        ->image()
+                        ->multiple()
+                        ->reorderable()
+                        ->disk('public')
+                        ->visibility('public')
+                        ->directory('pembelian/dokumentasi')
+                        ->imageResizeMode('contain')
+                        ->imageResizeTargetWidth('1920')
+                        ->imageResizeTargetHeight('1080')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->saveUploadedFileUsing(function (BaseFileUpload $component, TemporaryUploadedFile $file): ?string {
+                            return WebpUpload::store($component, $file, 80);
+                        })
+                        ->required()
+                        ->openable()
+                        ->downloadable(),
+                ])
+                ->action(function (array $data): void {
+                    $existingPhotos = $this->record->foto_dokumen ?? [];
+                    $newPhotos = $data['foto'] ?? [];
+
+                    // Merge existing photos with new ones
+                    $allPhotos = array_merge($existingPhotos, $newPhotos);
+
+                    $this->record->update([
+                        'foto_dokumen' => $allPhotos,
+                    ]);
+
+                    Notification::make()
+                        ->title('Foto berhasil diupload')
+                        ->body(count($newPhotos).' foto ditambahkan')
+                        ->success()
+                        ->send();
+
+                    $this->refreshFormData(['foto_dokumen']);
+                }),
             Action::make('edit')
                 ->label('Ubah')
                 ->icon('heroicon-m-pencil-square')
@@ -111,9 +167,9 @@ class ViewPembelian extends ViewRecord
             ->filter(fn (array $reference) => ! empty($reference['id']))
             ->map(function (array $reference, int $index) {
                 $nota = $reference['nota'] ?? null;
-                $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
+                $label = $nota ? 'Lihat '.$nota : 'Lihat Penjualan';
 
-                return StaticAction::make('viewPenjualan' . $index)
+                return StaticAction::make('viewPenjualan'.$index)
                     ->button()
                     ->label($label)
                     ->url(PenjualanResource::getUrl('view', ['record' => $reference['id'] ?? 0]))

@@ -24,6 +24,7 @@ class EditPenjualan extends EditRecord
                 'id_produk' => $item->id_produk,
                 'kondisi' => $item->kondisi,
                 'qty' => $item->qty,
+                'hpp' => $item->hpp,
                 'harga_jual' => $item->harga_jual,
                 'serials' => $item->serials ?? [],
             ])
@@ -37,6 +38,7 @@ class EditPenjualan extends EditRecord
                     'id_produk' => $first['id_produk'],
                     'kondisi' => $first['kondisi'],
                     'qty' => $group->sum('qty'),
+                    'hpp' => $first['hpp'],
                     'harga_jual' => $first['harga_jual'],
                     'serials' => $allSerials,
                 ];

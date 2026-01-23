@@ -72,6 +72,45 @@ class ViewTukarTambah extends ViewRecord
                 ->color('warning')
                 ->url(fn() => route('tukar-tambah.invoice.simple', $this->record))
                 ->openUrlInNewTab(),
+            Action::make('upload_dokumen')
+                ->label('Upload Foto')
+                ->icon('heroicon-m-camera')
+                ->color('success')
+                ->modalHeading('Upload Foto Dokumentasi')
+                ->modalDescription('Upload foto nota, invoice, atau bukti penerimaan barang.')
+                ->modalWidth('md')
+                ->form([
+                    \Filament\Forms\Components\FileUpload::make('foto')
+                        ->label('Foto Dokumentasi')
+                        ->image()
+                        ->multiple()
+                        ->reorderable()
+                        ->imageResizeMode('contain')
+                        ->imageResizeTargetWidth('1920')
+                        ->imageResizeTargetHeight('1080')
+                        ->disk('public')
+                        ->directory('tukar-tambah/dokumentasi')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->saveUploadedFileUsing(function (\Filament\Forms\Components\BaseFileUpload $component, \Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file): ?string {
+                            return \App\Support\WebpUpload::store($component, $file, 80);
+                        }),
+                ])
+                ->action(function (array $data): void {
+                    $existingPhotos = $this->record->foto_dokumen ?? [];
+                    $newPhotos = $data['foto'] ?? [];
+                    
+                    // Merge existing photos with new ones
+                    $allPhotos = array_merge($existingPhotos, $newPhotos);
+                    
+                    $this->record->update([
+                        'foto_dokumen' => $allPhotos,
+                    ]);
+                    
+                    Notification::make()
+                        ->title('Foto berhasil diupload')
+                        ->success()
+                        ->send();
+                }),
         ];
     }
 
