@@ -139,6 +139,8 @@ class EditTukarTambah extends EditRecord
 
                         return [
                             'id_produk' => $item->id_produk,
+                            'id_pembelian_item' => $item->id_pembelian_item, // Added
+                            'hpp' => (int) ($item->hpp ?? 0), // Added
                             'kondisi' => $kondisi,
                             'qty' => (int) ($item->qty ?? 0),
                             'harga_jual' => $hargaJual === null ? null : (int) $hargaJual,

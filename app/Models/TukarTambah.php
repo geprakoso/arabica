@@ -23,10 +23,12 @@ class TukarTambah extends Model
         'id_member',
         'penjualan_id',
         'pembelian_id',
+        'foto_dokumen',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'foto_dokumen' => 'array',
     ];
 
     protected static function booted(): void
