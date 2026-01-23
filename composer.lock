@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3518418f39ea8fbcdcbaa766215df993",
+    "content-hash": "4acd3e49016e3e75d8ae4ff5bddfb5dd",
     "packages": [
         {
             "name": "afatmustafa/blade-hugeicons",
@@ -5671,85 +5671,6 @@
                 "source": "https://github.com/Masterminds/html5-php/tree/2.10.0"
             },
             "time": "2025-07-25T09:04:22+00:00"
-        },
-        {
-            "name": "moataz-01/filament-notification-sound",
-            "version": "v1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/moataz-01/filament-notification-sound.git",
-                "reference": "c608ddddff0331d1523588a74b6454dee883e8ca"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/moataz-01/filament-notification-sound/zipball/c608ddddff0331d1523588a74b6454dee883e8ca",
-                "reference": "c608ddddff0331d1523588a74b6454dee883e8ca",
-                "shasum": ""
-            },
-            "require": {
-                "filament/filament": "^3.0|^4.0",
-                "php": "^8.1",
-                "spatie/laravel-package-tools": "^1.15.0"
-            },
-            "require-dev": {
-                "larastan/larastan": "^2.0",
-                "laravel/pint": "^1.0",
-                "nunomaduro/collision": "^7.9",
-                "orchestra/testbench": "^8.0",
-                "pestphp/pest": "^2.1",
-                "pestphp/pest-plugin-arch": "^2.0",
-                "pestphp/pest-plugin-laravel": "^2.0",
-                "phpstan/extension-installer": "^1.1",
-                "phpstan/phpstan-deprecation-rules": "^1.0",
-                "phpstan/phpstan-phpunit": "^1.0",
-                "spatie/laravel-ray": "^1.26"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "FilamentNotificationSound": "Moataz01\\FilamentNotificationSound\\Facades\\FilamentNotificationSound"
-                    },
-                    "providers": [
-                        "Moataz01\\FilamentNotificationSound\\FilamentNotificationSoundServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Moataz01\\FilamentNotificationSound\\": "src/",
-                    "Moataz01\\FilamentNotificationSound\\Database\\Factories\\": "database/factories/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Moataz",
-                    "email": "moatazsayed119@gmail.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Add sound notifications to Filament database notifications",
-            "homepage": "https://github.com/moataz-01/filament-notification-sound",
-            "keywords": [
-                "filament-notification-sound",
-                "laravel",
-                "moataz-01"
-            ],
-            "support": {
-                "issues": "https://github.com/moataz-01/filament-notification-sound/issues",
-                "source": "https://github.com/moataz-01/filament-notification-sound"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/moataz-01",
-                    "type": "github"
-                }
-            ],
-            "time": "2025-11-30T09:36:59+00:00"
         },
         {
             "name": "mobiledetect/mobiledetectlib",

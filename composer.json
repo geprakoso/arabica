@@ -32,7 +32,6 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "laravolt/indonesia": "^0.38.0",
-        "moataz-01/filament-notification-sound": "^1.0",
         "mokhosh/filament-kanban": "^2.11",
         "nuxtifyts/dash-stack-theme": "^1.3",
         "oriondevelops/filament-greeter": "^0.2.2",
