@@ -15,10 +15,11 @@
     $memberAddress = $record->member?->alamat;
     $memberPhone = $record->member?->no_hp;
     $invoiceDate = $record->created_at ? $record->created_at->format('d.m.Y') : now()->format('d.m.Y');
-    $queueNumber = \App\Models\PenjadwalanService::query()
-        ->where('status', 'pending')
-        ->where('created_at', '<', $record->created_at)
-        ->count() + 1;
+    $queueNumber =
+        \App\Models\PenjadwalanService::query()
+            ->where('status', 'pending')
+            ->where('created_at', '<', $record->created_at)
+            ->count() + 1;
     $qrUrl = 'https://store.haen.co.id/';
     $qrSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(72)->margin(0)->generate($qrUrl);
 
@@ -87,8 +88,8 @@
         }
 
         .logo-box {
-            width: 17%;
-            height: 17%;
+            width: 60px;
+            height: 60px;
             rotate: -5deg;
             border-radius: 6px;
             display: flex;
@@ -186,6 +187,29 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+
+            .logo-box {
+                width: 50%;
+                height: 30%;
+                rotate: -5deg;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                color: #111111;
+            }
+
+            .brand-text p {
+                font-size: 12px;
+                color: #111111;
+            }
+
+            .brand-text p strong {
+                font-size: 14px;
+                color: #111111;
+            }
+
         }
     </style>
 </head>
