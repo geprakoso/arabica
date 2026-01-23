@@ -68,7 +68,7 @@ class JasaResource extends BaseResource
                             ->schema([
                                 Forms\Components\TextInput::make('nama_jasa')
                                     ->label('Nama Jasa')
-                                    ->dehydrateStateUsing(fn ($state) => Str::title($state))
+                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
                                     ->required()
                                     ->placeholder('Contoh: Service AC Split 1PK')
                                     ->unique(ignoreRecord: true)
@@ -115,8 +115,8 @@ class JasaResource extends BaseResource
                                         '04:00',
                                         '05:00',
                                     ])
-                                    ->dehydrateStateUsing(fn (?string $state) => $state ? Carbon::parse($state)->hour : null)
-                                    ->afterStateHydrated(fn ($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
+                                    ->dehydrateStateUsing(fn(?string $state) => $state ? Carbon::parse($state)->hour : null)
+                                    ->afterStateHydrated(fn($component, $state) => $component->state($state !== null ? sprintf('%02d:00', $state) : null)),
                             ]),
                     ]),
 
@@ -126,32 +126,32 @@ class JasaResource extends BaseResource
                     ->schema([
 
                         // Section 3: Gambar
-                        Section::make('Media')
-                            ->icon('heroicon-m-photo')
-                            ->schema([
-                                Forms\Components\FileUpload::make('image_url')
-                                    ->label('Foto Jasa')
-                                    ->image()
-                                    ->imageEditor()
-                                    ->disk('public')
-                                    ->directory(fn () => 'jasas/'.now()->format('Y/m/d'))
-                                    ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
-                                        $datePrefix = now()->format('ymd');
-                                        $slug = Str::slug($get('nama_jasa') ?? 'jasa');
-                                        $extension = $file->getClientOriginalExtension();
+                        // Section::make('Media')
+                        //     ->icon('heroicon-m-photo')
+                        //     ->schema([
+                        //         Forms\Components\FileUpload::make('image_url')
+                        //             ->label('Foto Jasa')
+                        //             ->image()
+                        //             ->imageEditor()
+                        //             ->disk('public')
+                        //             ->directory(fn() => 'jasas/' . now()->format('Y/m/d'))
+                        //             ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
+                        //                 $datePrefix = now()->format('ymd');
+                        //                 $slug = Str::slug($get('nama_jasa') ?? 'jasa');
+                        //                 $extension = $file->getClientOriginalExtension();
 
-                                        return "{$datePrefix}-{$slug}.{$extension}";
-                                    })
-                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
-                                    ->preserveFilenames(),
-                            ]),
+                        //                 return "{$datePrefix}-{$slug}.{$extension}";
+                        //             })
+                        //             ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                        //             ->preserveFilenames(),
+                        //     ]),
 
                         // Section 4: Identitas Teknis
                         Section::make('Identitas')
                             ->schema([
                                 Forms\Components\TextInput::make('sku')
                                     ->label('Kode SKU')
-                                    ->default(fn () => Jasa::generateSku())
+                                    ->default(fn() => Jasa::generateSku())
                                     ->disabled() // Tetap disabled
                                     ->dehydrated() // Agar tetap tersimpan ke DB
                                     ->required()
@@ -218,17 +218,17 @@ class JasaResource extends BaseResource
                     ->schema([
 
                         // Section 3: Gambar
-                        InfolistSection::make('Visual')
-                            ->schema([
-                                ImageEntry::make('image_url')
-                                    ->label('') // Label dikosongkan agar gambar fokus
-                                    ->disk('public')
-                                    ->height(200)
-                                    ->extraImgAttributes([
-                                        'class' => 'object-cover rounded-lg shadow-sm w-full',
-                                        'alt' => 'Foto Jasa',
-                                    ]),
-                            ]),
+                        // InfolistSection::make('Visual')
+                        //     ->schema([
+                        //         ImageEntry::make('image_url')
+                        //             ->label('') // Label dikosongkan agar gambar fokus
+                        //             ->disk('public')
+                        //             ->height(200)
+                        //             ->extraImgAttributes([
+                        //                 'class' => 'object-cover rounded-lg shadow-sm w-full',
+                        //                 'alt' => 'Foto Jasa',
+                        //             ]),
+                        //     ]),
 
                         // Section 4: Data Teknis
                         InfolistSection::make('Identitas')
@@ -263,7 +263,7 @@ class JasaResource extends BaseResource
                     ->color('primary')
                     ->weight('bold')
                     ->icon('heroicon-m-wrench-screwdriver')
-                    ->description(fn (Jasa $record) => $record->sku)
+                    ->description(fn(Jasa $record) => $record->sku)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('harga_formatted')

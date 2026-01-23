@@ -856,7 +856,7 @@ class PembelianResource extends BaseResource
                 'items',
                 'jasaItems',
             ]))
-            ->defaultSort('tanggal', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('no_po')
                     ->label('No. PO')
