@@ -17,10 +17,12 @@ class RequestOrder extends Model
         'tanggal',
         'catatan',
         'karyawan_id',
+        'foto_dokumen',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'foto_dokumen' => 'array',
     ];
 
     public static function generateRO(): string

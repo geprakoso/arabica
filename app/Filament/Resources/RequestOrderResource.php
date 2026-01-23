@@ -12,6 +12,10 @@ use Filament\Forms\Components\Split as FormsSplit;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -48,7 +52,7 @@ class RequestOrderResource extends BaseResource
                                 ->label('Nomor RO')
                                 ->prefixIcon('heroicon-o-hashtag')
                                 ->required()
-                                ->default(fn () => RequestOrder::generateRO())
+                                ->default(fn() => RequestOrder::generateRO())
                                 ->disabled()
                                 ->dehydrated()
                                 ->unique(ignoreRecord: true),
@@ -59,7 +63,7 @@ class RequestOrderResource extends BaseResource
                                 ->relationship('karyawan', 'nama_karyawan')
                                 ->searchable()
                                 ->preload()
-                                ->default(fn (Get $get) => auth()->user()->karyawan?->id)
+                                ->default(fn(Get $get) => auth()->user()->karyawan?->id)
                                 ->native(false)
                                 ->placeholder('Pilih Nama Karyawan')
                                 ->required(),
@@ -100,42 +104,52 @@ class RequestOrderResource extends BaseResource
                             ->minItems(1)
                             ->addActionLabel('Tambah Produk Lain')
                             ->schema([
+                                Forms\Components\Select::make('kategori_id')
+                                    ->label('Kategori')
+                                    ->prefixIcon('heroicon-o-tag')
+                                    ->options(fn() => \App\Models\Kategori::query()->orderBy('nama_kategori')->pluck('nama_kategori', 'id'))
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->native(false)
+                                    ->reactive()
+                                    ->afterStateHydrated(function ($state, callable $set, Get $get): void {
+                                        if ($state) {
+                                            return;
+                                        }
+
+                                        $produkId = $get('produk_id');
+                                        if (! $produkId) {
+                                            return;
+                                        }
+
+                                        $produk = \App\Models\Produk::find($produkId);
+                                        $set('kategori_id', $produk?->kategori_id);
+                                    })
+                                    ->afterStateUpdated(fn(callable $set) => $set('produk_id', null))
+                                    ->dehydrated(false),
                                 Forms\Components\Select::make('produk_id')
                                     ->label('Nama Produk')
                                     ->prefixIcon('heroicon-o-cube')
-                                    ->relationship('produk', 'nama_produk')
+                                    ->options(fn(Get $get) => $get('kategori_id')
+                                        ? \App\Models\Produk::query()
+                                            ->where('kategori_id', $get('kategori_id'))
+                                            ->orderBy('nama_produk')
+                                            ->get()
+                                            ->mapWithKeys(fn ($produk) => [$produk->id => strtoupper($produk->nama_produk)])
+                                            ->all()
+                                        : [])
                                     ->searchable()
                                     ->preload()
                                     ->required()
                                     ->native(false)
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->placeholder('Cari Produk...')
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state, callable $set) {
-                                        if (! $state) {
-                                            $set('kategori_nama', null);
-                                            $set('brand_nama', null);
-
-                                            return;
-                                        }
-                                        $product = \App\Models\Produk::with(['kategori', 'brand'])->find($state);
-                                        $set('kategori_nama', $product?->kategori?->nama_kategori ?? '-');
-                                        $set('brand_nama', $product?->brand?->nama_brand ?? '-');
-                                    })
-                                    ->columnSpan(2),
-                                Forms\Components\TextInput::make('kategori_nama')
-                                    ->label('Kategori')
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->prefixIcon('heroicon-o-tag'),
-                                Forms\Components\TextInput::make('brand_nama')
-                                    ->label('Brand')
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->prefixIcon('heroicon-o-star'),
+                                    ->disabled(fn(Get $get) => blank($get('kategori_id')))
+                                    ->reactive(),
                             ])
                             ->reorderable(true)
-                            ->columns(4)
+                            ->columns(2)
                             ->cloneable(),
                     ])
                     ->collapsible(),
@@ -198,6 +212,51 @@ class RequestOrderResource extends BaseResource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Informasi Utama')
+                    ->schema([
+                        TextEntry::make('no_ro')
+                            ->label('No. RO')
+                            ->icon('heroicon-m-hashtag'),
+                        TextEntry::make('tanggal')
+                            ->label('Tanggal')
+                            ->date('d F Y')
+                            ->icon('heroicon-m-calendar-days'),
+                        TextEntry::make('karyawan.nama_karyawan')
+                            ->label('Pemohon')
+                            ->icon('heroicon-m-user')
+                            ->placeholder('-'),
+                    ])
+                    ->columns(3),
+                InfoSection::make('Daftar Item')
+                    ->schema([
+                        ViewEntry::make('items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.request-order-items-table')
+                            ->state(fn(RequestOrder $record) => $record->items),
+                    ]),
+                InfoSection::make('Catatan')
+                    ->visible(fn(RequestOrder $record) => filled($record->catatan))
+                    ->schema([
+                        TextEntry::make('catatan')
+                            ->hiddenLabel()
+                            ->markdown(),
+                    ]),
+                InfoSection::make('Foto Dokumentasi')
+                    ->icon('heroicon-o-camera')
+                    ->visible(fn(RequestOrder $record) => ! empty($record->foto_dokumen))
+                    ->schema([
+                        ViewEntry::make('foto_dokumen')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.foto-dokumen-gallery')
+                            ->state(fn(RequestOrder $record) => $record->foto_dokumen ?? []),
+                    ]),
             ]);
     }
 
