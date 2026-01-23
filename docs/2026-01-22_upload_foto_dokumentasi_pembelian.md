@@ -147,3 +147,22 @@ InfoSection::make('Bukti & Dokumentasi')
   - Bukti pembayaran dari relasi `pembayaran.bukti_transfer`
   - Foto dokumentasi dari field `foto_dokumen`
 - Semua foto ditampilkan dalam grid 1:1 (100x100 pixel)
+
+---
+
+## Implementasi di PenjualanResource
+
+Fitur yang sama juga tersedia di PenjualanResource:
+
+| File | Keterangan |
+|------|------------|
+| `app/Filament/Resources/PenjualanResource/Pages/ViewPenjualan.php` | Header action "Upload Foto" |
+| `app/Filament/Resources/PenjualanResource.php` | Infolist section "Bukti & Dokumentasi" |
+| `resources/views/filament/infolists/components/penjualan-photos-gallery.blade.php` | Blade view gallery |
+| `app/Models/Penjualan.php` | Model dengan field `foto_dokumen` |
+| `database/migrations/2026_01_22_181035_add_foto_dokumen_to_tb_penjualan_table.php` | Migration |
+
+### Storage Directory
+- **Penjualan**: `penjualan/dokumentasi`
+- **Pembelian**: `pembelian/dokumentasi`
+

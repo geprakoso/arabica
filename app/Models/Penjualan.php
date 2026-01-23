@@ -37,11 +37,13 @@ class Penjualan extends Model
         'status_pembayaran',
         'gudang_id',
         'sumber_transaksi',
+        'foto_dokumen',
     ];
 
     protected $casts = [
         'tanggal_penjualan' => 'date',
         'metode_bayar' => MetodeBayar::class,
+        'foto_dokumen' => 'array',
     ];
 
     protected static function booted(): void
