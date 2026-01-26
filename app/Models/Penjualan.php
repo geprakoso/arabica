@@ -38,12 +38,14 @@ class Penjualan extends Model
         'gudang_id',
         'sumber_transaksi',
         'foto_dokumen',
+        'is_nerfed',
     ];
 
     protected $casts = [
         'tanggal_penjualan' => 'date',
         'metode_bayar' => MetodeBayar::class,
         'foto_dokumen' => 'array',
+        'is_nerfed' => 'boolean',
     ];
 
     protected static function booted(): void

@@ -382,6 +382,10 @@ class AdminPanelProvider extends PanelProvider
                 fn () => view('filament.hooks.absensi-geolocation-script')
 
             )
+            ->renderHook(
+                'panels::global-search.after',
+                fn () => view('filament.hooks.godmode-badge')
+            )
 
             // --- 5. DRAGGABLE SIDEBAR LOGIC (NEW) ---
             ->renderHook(

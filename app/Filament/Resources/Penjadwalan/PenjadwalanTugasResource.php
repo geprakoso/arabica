@@ -511,8 +511,8 @@ class PenjadwalanTugasResource extends BaseResource
                     ->visible(function ($record) {
                         $user = auth()->user();
 
-                        // Super admin can always edit
-                        if ($user->hasRole('super_admin')) {
+                        // Super admin or Godmode can always edit
+                        if ($user->hasRole(['super_admin', 'godmode'])) {
                             return true;
                         }
 
