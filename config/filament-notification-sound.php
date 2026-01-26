@@ -4,7 +4,7 @@ return [
     /*
      * Enable or disable notification sounds globally
      */
-    'enabled' => env('FILAMENT_NOTIFICATION_SOUND_ENABLED', false),
+    'enabled' => env('FILAMENT_NOTIFICATION_SOUND_ENABLED', true),
     /*
      * Path to the notification sound file
      */

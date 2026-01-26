@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Register filament-edit-profile Livewire components globally
+        // The plugin registers these in Filament's panel boot() which doesn't run for /livewire/update requests
+        $this->app->booted(function () {
+            if (class_exists(\Joaopaulolndev\FilamentEditProfile\Livewire\EditProfileForm::class)) {
+                Livewire::component('edit_profile_form', \Joaopaulolndev\FilamentEditProfile\Livewire\EditProfileForm::class);
+                Livewire::component('edit_password_form', \Joaopaulolndev\FilamentEditProfile\Livewire\EditPasswordForm::class);
+                Livewire::component('browser_sessions_form', \Joaopaulolndev\FilamentEditProfile\Livewire\BrowserSessionsForm::class);
+            }
+        });
         // Override Chatify messenger binding to gracefully handle push failures (e.g. offline Pusher).
         $this->app->bind(VendorChatifyMessenger::class, ChatifyMessenger::class);
         $this->app->bind('ChatifyMessenger', fn() => app(ChatifyMessenger::class));
