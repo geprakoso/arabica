@@ -696,6 +696,14 @@ class PenjualanResource extends BaseResource
                     })
                     ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                     ->alignCenter(),
+                TextColumn::make('is_nerfed')
+                    ->label('Nerf')
+                    ->badge()
+                    ->state(fn (Penjualan $record): ?string => $record->is_nerfed ? 'Nerf' : null)
+                    ->color('danger')
+                    ->icon('heroicon-m-fire')
+                    ->tooltip('Data pembelian terkait telah dihapus paksa')
+                    ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('sisa_bayar_display')
                     ->label('Sisa Bayar')
                     ->alignRight()
@@ -801,14 +809,40 @@ class PenjualanResource extends BaseResource
                     Tables\Actions\DeleteAction::make()
                         ->icon('heroicon-m-trash')
                         ->hidden(
-                            fn (Penjualan $record): bool => $record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()
+                            fn (Penjualan $record): bool => !auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
                         )
                         ->tooltip(
-                            fn (Penjualan $record): ?string => ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
+                            fn (Penjualan $record): ?string => (!auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()))
                                 ? 'Hapus dari Tukar Tambah'
                                 : null
-                        ),
+                        )
+                        ->action(function (Penjualan $record, \Filament\Tables\Actions\DeleteAction $action) {
+                            $livewire = $action->getLivewire();
+                            
+                            // Godmode / Advanced Flow
+                            if (auth()->user()?->hasRole('godmode')) {
+                                $livewire->deleteRecordId = $record->getKey();
+                                
+                                if ($record->is_nerfed) {
+                                     // Nerfed -> Step 3 (Password)
+                                     $livewire->replaceMountedAction('deleteStep3');
+                                } else {
+                                     // Normal -> Step 2 (Impact)
+                                     $livewire->replaceMountedAction('deleteStep2');
+                                }
+                                return;
+                            }
+
+                            // Regular User: Standard Delete
+                            $record->delete();
+                            \Filament\Notifications\Notification::make()->title('Penjualan dihapus')->success()->send();
+                        }),
                 ])->hidden(function (Penjualan $record): bool {
+                    // Godmode: Always show actions
+                    if (auth()->user()?->hasRole('godmode')) {
+                        return false;
+                    }
+
                     // Always show actions for Tukar Tambah records (at least View)
                     if ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()) {
                         return false;
@@ -856,6 +890,13 @@ class PenjualanResource extends BaseResource
                                     ->date('d F Y')
                                     ->icon('heroicon-m-calendar-days')
                                     ->color('gray'),
+
+                                TextEntry::make('is_nerfed')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->state(fn (Penjualan $record): ?string => $record->is_nerfed ? '⚠️ Nerf' : null)
+                                    ->color('danger')
+                                    ->visible(fn (Penjualan $record): bool => $record->is_nerfed ?? false),
                             ]),
 
                             // Tengah: Member & Karyawan

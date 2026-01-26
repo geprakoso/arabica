@@ -221,5 +221,68 @@ class Pembelian extends Model
         $this->forceFill([
             'jenis_pembayaran' => $status,
         ])->saveQuietly();
+    }    /**
+     * Force delete this Pembelian and mark affected Penjualan as "nerfed".
+     * This bypasses the regular validation that blocks deletion when items are used in Penjualan.
+     *
+     * @return array{deleted: bool, affected_penjualan: \Illuminate\Support\Collection}
+     */
+    public function forceDeleteWithCascade(): array
+    {
+        $affectedPenjualan = collect();
+
+        // Find all Penjualan that reference this Pembelian's items
+        $penjualanIds = $this->items()
+            ->whereHas('penjualanItems')
+            ->with(['penjualanItems.penjualan'])
+            ->get()
+            ->flatMap(fn($item) => $item->penjualanItems)
+            ->map(fn($item) => $item->penjualan?->getKey())
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($penjualanIds->isNotEmpty()) {
+            // Mark affected Penjualan as nerfed
+            Penjualan::whereIn('id_penjualan', $penjualanIds)->update(['is_nerfed' => true]);
+
+            // Get details for response
+            $affectedPenjualan = Penjualan::whereIn('id_penjualan', $penjualanIds)
+                ->select('id_penjualan', 'no_nota')
+                ->get();
+
+            // Orphan the PenjualanItem references (set id_pembelian_item to null)
+            PenjualanItem::whereHas('pembelianItem', function ($query) {
+                $query->where('id_pembelian', $this->id_pembelian);
+            })->update(['id_pembelian_item' => null]);
+        }
+
+        // Unlink from TukarTambah if exists (don't delete TukarTambah, just unlink)
+        if ($this->tukarTambah()->exists()) {
+            $this->tukarTambah()->update(['pembelian_id' => null]);
+        }
+
+        // Delete related records using DB queries to bypass model events
+        \Illuminate\Support\Facades\DB::table('tb_pembelian_jasa')
+            ->where('id_pembelian', $this->id_pembelian)
+            ->delete();
+        
+        \Illuminate\Support\Facades\DB::table('tb_pembelian_pembayaran')
+            ->where('id_pembelian', $this->id_pembelian)
+            ->delete();
+        
+        \Illuminate\Support\Facades\DB::table('tb_pembelian_item')
+            ->where('id_pembelian', $this->id_pembelian)
+            ->delete();
+
+        // Delete the Pembelian itself using DB query to bypass model events
+        \Illuminate\Support\Facades\DB::table('tb_pembelian')
+            ->where('id_pembelian', $this->id_pembelian)
+            ->delete();
+
+        return [
+            'deleted' => true,
+            'affected_penjualan' => $affectedPenjualan,
+        ];
     }
 }

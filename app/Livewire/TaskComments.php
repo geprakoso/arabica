@@ -52,12 +52,13 @@ class TaskComments extends Component
         ]);
 
         $user = auth()->user();
-        
-        // Authorization: Creator OR Assigned
+
+        // Authorization: Godmode/Super Admin OR Creator OR Assigned
+        $isSuperRole = $user->hasRole(['godmode', 'super_admin']);
         $isAssigned = $this->record->karyawan()->where('users.id', $user->id)->exists();
         $isCreator = $this->record->created_by == $user->id;
 
-        if (! $isAssigned && ! $isCreator) {
+        if (! $isSuperRole && ! $isAssigned && ! $isCreator) {
              \Filament\Notifications\Notification::make()
                 ->title('Akses Ditolak')
                 ->body('Anda tidak memiliki izin untuk mengomentari tugas ini.')

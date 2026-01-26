@@ -964,36 +964,46 @@ class PembelianResource extends BaseResource
             ])
             ->filters([])
             ->actions([
-                ActionGroup::make([
+                Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make()
                         ->icon('heroicon-m-eye')
                         ->color('primary')
                         ->tooltip('Lihat Detail'),
-                    Action::make('edit')
+                    Tables\Actions\EditAction::make()
                         ->label('Edit')
                         ->icon('heroicon-m-pencil-square')
                         ->color('warning')
                         ->tooltip('Edit')
-                        ->action(function (Pembelian $record, \Filament\Tables\Actions\Action $action): void {
+                        ->action(function (Pembelian $record, \Filament\Tables\Actions\EditAction $action): void {
                             $livewire = $action->getLivewire();
-                            // if ($record->isEditLocked()) {
-                            //     $livewire->editBlockedMessage = $record->getEditBlockedMessage();
-                            //     $livewire->editBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
-                            //     $livewire->replaceMountedAction('editBlocked');
-                            //     return;
-                            // }
                             $livewire->redirect(PembelianResource::getUrl('edit', ['record' => $record]));
                         }),
-                    // Tables\Actions\DeleteAction::make()
-                    //     ->icon('heroicon-m-trash')
-                    //     ->hidden(fn (Pembelian $record): bool =>
-                    //         $record->tukarTambah()->exists()
-                    //     )
-                    //     ->tooltip(fn (Pembelian $record): ?string =>
-                    //         $record->tukarTambah()->exists()
-                    //             ? 'Hapus dari Tukar Tambah'
-                    //             : null
-                    //     ),
+                    Tables\Actions\DeleteAction::make()
+                        ->icon('heroicon-m-trash')
+                        ->action(function (Pembelian $record, \Filament\Tables\Actions\DeleteAction $action) {
+                            try {
+                                $record->delete();
+                            } catch (ValidationException $exception) {
+                                $livewire = $action->getLivewire();
+                                
+                                // Godmode: Start Force Delete Flow (Step 1 -> Step 2)
+                                if (auth()->user()?->hasRole('godmode')) {
+                                    $livewire->forceDeleteRecordId = $record->id_pembelian;
+                                    $livewire->forceDeleteAffectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
+                                    $livewire->replaceMountedAction('forceDeleteStep2');
+                                    return;
+                                }
+
+                                // Regular User: Show Blocked Modal
+                                $messages = collect($exception->errors())
+                                    ->flatten()
+                                    ->implode(' ');
+
+                                $livewire->deleteBlockedMessage = $messages ?: 'Gagal menghapus pembelian.';
+                                $livewire->deleteBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
+                                $livewire->replaceMountedAction('deleteBlocked');
+                            }
+                        }),
                 ])
                     ->label('Aksi')
                     ->tooltip('Aksi'),
