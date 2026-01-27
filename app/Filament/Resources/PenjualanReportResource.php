@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
+use App\Filament\Actions\SummaryExportHeaderAction;
 use App\Filament\Resources\PenjualanReportResource\Pages;
 use App\Models\Penjualan;
 use Filament\Forms\Get;
@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 class PenjualanReportResource extends Resource
 {
@@ -286,7 +287,7 @@ class PenjualanReportResource extends Resource
                     ->placeholder('Semua'),
             ])
             ->headerActions([
-                FilamentExportHeaderAction::make('export')
+                SummaryExportHeaderAction::make('export')
                     ->label('Download')
                     ->defaultFormat('pdf')
                     ->filename('Laporan Penjualan' . '_' . date('d M Y'))
@@ -297,7 +298,32 @@ class PenjualanReportResource extends Resource
                         'title' => 'Haen Komputer',
                         'subtitle' => 'Laporan Penjualan',
                         'tanggal' => now()->format('d-m-Y'),
-                    ]),
+                    ])
+                    ->summaryResolver(function (Builder $query, Collection $records): array {
+                        $baseQuery = $query->toBase();
+                        $totalPenjualan = self::summarizeTotalPenjualan($baseQuery);
+                        $totalHpp = self::summarizeTotalHpp($baseQuery);
+                        $totalMargin = self::summarizeTotalMargin($baseQuery);
+
+                        return [
+                            [
+                                'label' => 'Total Transaksi',
+                                'value' => number_format($records->count(), 0, ',', '.'),
+                            ],
+                            [
+                                'label' => 'Total Penjualan',
+                                'value' => self::formatCurrency($totalPenjualan),
+                            ],
+                            [
+                                'label' => 'Total HPP',
+                                'value' => self::formatCurrency($totalHpp),
+                            ],
+                            [
+                                'label' => 'Total Margin',
+                                'value' => self::formatCurrency($totalMargin),
+                            ],
+                        ];
+                    }),
             ])
             ->actions([
                 Action::make('detail')

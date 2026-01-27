@@ -60,5 +60,4 @@ class CreateStockOpname extends CreateRecord
     {
         return [];
     }
-
 }

@@ -3,8 +3,9 @@
 namespace App\Filament\Resources;
 
 use Akaunting\Money\Money;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
+use App\Filament\Actions\SummaryExportHeaderAction;
 use App\Filament\Resources\InventoryResource\Pages;
+use App\Models\Kategori;
 use App\Models\PembelianItem;
 use App\Models\Produk;
 use Filament\Actions\StaticAction;
@@ -28,6 +29,7 @@ use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -57,7 +59,6 @@ class InventoryResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('nama_produk')
             ->columns([
                 TableSplit::make([
                     ImageColumn::make('image_url')
@@ -156,7 +157,7 @@ class InventoryResource extends BaseResource
                     ->preload(),
             ])
             ->headerActions([
-                FilamentExportHeaderAction::make('export_inventory_pdf')
+                SummaryExportHeaderAction::make('export_inventory_pdf')
                     ->label('Download')
                     ->icon('heroicon-m-arrow-down-tray')
                     ->color('success')
@@ -197,7 +198,8 @@ class InventoryResource extends BaseResource
                         'sort_key' => 'kategori.nama_kategori',
                         'group_by' => 'kategori.nama_kategori',
                         'group_label' => 'Kategori',
-                    ]),
+                    ])
+                    ->summaryResolver(fn (Builder $query, Collection $records) => self::buildExportSummary($records)),
 
             ])
             ->actions([
@@ -326,6 +328,7 @@ class InventoryResource extends BaseResource
     protected static function applyInventoryScopes(Builder $query): Builder
     {
         $produkTable = (new Produk)->getTable();
+        $kategoriTable = (new Kategori)->getTable();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
 
         $query
@@ -338,6 +341,11 @@ class InventoryResource extends BaseResource
             ])
             ->withSum(['pembelianItems as total_qty' => fn($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
             ->withCount(['pembelianItems as batch_count' => fn($q) => $q->where($qtySisaColumn, '>', 0)]);
+
+        $query->orderBy(
+            Kategori::select('nama_kategori')
+                ->whereColumn("{$kategoriTable}.id", "{$produkTable}.kategori_id")
+        )->orderBy('nama_produk');
 
         return $query;
     }
@@ -363,7 +371,7 @@ class InventoryResource extends BaseResource
      *     latest_batch: array<string, mixed>|null
      * }
      */
-    protected static function getInventorySnapshot(Produk $record): array
+    public static function getInventorySnapshot(Produk $record): array
     {
         $cacheKey = $record->getKey();
 
@@ -486,5 +494,42 @@ class InventoryResource extends BaseResource
         $amount = (int) ($value ?? 0);
 
         return Money::IDR($amount, true)->formatWithoutZeroes();
+    }
+
+    public static function buildExportSummary(Collection $records): array
+    {
+        $totalProduk = $records->count();
+        $totalStok = $records->sum(fn (Produk $record) => (int) ($record->total_qty ?? 0));
+        $totalHpp = 0;
+        $totalHargaJual = 0;
+
+        foreach ($records as $record) {
+            $snapshot = self::getInventorySnapshot($record);
+            $qty = (int) ($record->total_qty ?? 0);
+            $hpp = (int) ($snapshot['latest_batch']['hpp'] ?? 0);
+            $hargaJual = (int) ($snapshot['latest_batch']['harga_jual'] ?? 0);
+
+            $totalHpp += $qty * $hpp;
+            $totalHargaJual += $qty * $hargaJual;
+        }
+
+        return [
+            [
+                'label' => 'Total Produk',
+                'value' => self::formatNumber($totalProduk),
+            ],
+            [
+                'label' => 'Total Stok Sistem',
+                'value' => self::formatNumber($totalStok),
+            ],
+            [
+                'label' => 'Estimasi Nilai HPP',
+                'value' => self::formatCurrency($totalHpp),
+            ],
+            [
+                'label' => 'Estimasi Nilai Jual',
+                'value' => self::formatCurrency($totalHargaJual),
+            ],
+        ];
     }
 }
