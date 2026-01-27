@@ -2,16 +2,16 @@
 
 ## Overview
 
-This document describes the implementation of softer, more readable colors for Filament action buttons. The button colors now **exactly match Filament's badge colors** for a cohesive, beautiful design.
+This document describes the implementation of softer, more readable colors for Filament action buttons. The button colors now **exactly match Filament's badge colors** for a cohesive, beautiful design. Both **light mode** and **dark mode** are supported.
 
 ## File Modified
-**`app/Providers/Filament/AdminPanelProvider.php`** (Lines 377-469)
+**`app/Providers/Filament/AdminPanelProvider.php`** (Lines 377-566)
 
 CSS rules added to the inline `<style>` block within `renderHook('panels::head.end')`.
 
 ---
 
-## Color Reference (Matching Badges)
+## Light Mode Color Reference
 
 | Button Type | Background | Border | Text |
 |:---|:---|:---|:---|
@@ -23,7 +23,21 @@ CSS rules added to the inline `<style>` block within `renderHook('panels::head.e
 
 ---
 
+## Dark Mode Color Reference
+
+| Button Type | Background | Border | Text |
+|:---|:---|:---|:---|
+| **Info/Primary** | `rgba(59 130 246 / 0.15)` | `rgba(59 130 246 / 0.3)` | `rgb(147, 197, 253)` |
+| **Success** | `rgba(34 197 94 / 0.15)` | `rgba(34 197 94 / 0.3)` | `rgb(134, 239, 172)` |
+| **Danger** | `rgba(239 68 68 / 0.15)` | `rgba(239 68 68 / 0.3)` | `rgb(252, 165, 165)` |
+| **Warning** | `rgba(245 158 11 / 0.15)` | `rgba(245 158 11 / 0.3)` | `rgb(253, 230, 138)` |
+| **Gray** | `rgba(161 161 170 / 0.15)` | `rgba(161 161 170 / 0.3)` | `rgb(212, 212, 216)` |
+
+---
+
 ## CSS Code
+
+### Light Mode
 
 ```css
 /* --- SOFTER ACTION BUTTON COLORS (Matching Badge Colors) --- */
@@ -44,12 +58,6 @@ CSS rules added to the inline `<style>` block within `renderHook('panels::head.e
     background-color: rgb(219 234 254) !important;
     border-color: rgb(147 197 253) !important;
 }
-.fi-btn.fi-color-info.bg-custom-600 svg,
-.fi-btn.fi-btn-color-info.bg-custom-600 svg,
-.fi-btn.fi-color-primary.bg-custom-600 svg,
-.fi-btn.fi-btn-color-primary.bg-custom-600 svg {
-    color: rgb(37 99 235) !important;
-}
 
 /* Success buttons - Soft green (matches badge success) */
 .fi-btn.fi-color-success.bg-custom-600,
@@ -57,15 +65,6 @@ CSS rules added to the inline `<style>` block within `renderHook('panels::head.e
     background-color: rgb(240 253 244) !important;
     color: rgb(22 163 74) !important;
     border: 1px solid rgb(187 247 208) !important;
-}
-.fi-btn.fi-color-success.bg-custom-600:hover,
-.fi-btn.fi-btn-color-success.bg-custom-600:hover {
-    background-color: rgb(220 252 231) !important;
-    border-color: rgb(134 239 172) !important;
-}
-.fi-btn.fi-color-success.bg-custom-600 svg,
-.fi-btn.fi-btn-color-success.bg-custom-600 svg {
-    color: rgb(22 163 74) !important;
 }
 
 /* Danger buttons - Soft red (matches badge danger) */
@@ -75,15 +74,6 @@ CSS rules added to the inline `<style>` block within `renderHook('panels::head.e
     color: rgb(220 38 38) !important;
     border: 1px solid rgb(254 202 202) !important;
 }
-.fi-btn.fi-color-danger.bg-custom-600:hover,
-.fi-btn.fi-btn-color-danger.bg-custom-600:hover {
-    background-color: rgb(254 226 226) !important;
-    border-color: rgb(252 165 165) !important;
-}
-.fi-btn.fi-color-danger.bg-custom-600 svg,
-.fi-btn.fi-btn-color-danger.bg-custom-600 svg {
-    color: rgb(220 38 38) !important;
-}
 
 /* Warning buttons - Soft amber (matches badge warning) */
 .fi-btn.fi-color-warning.bg-custom-600,
@@ -91,15 +81,6 @@ CSS rules added to the inline `<style>` block within `renderHook('panels::head.e
     background-color: rgb(255 251 235) !important;
     color: rgb(217 119 6) !important;
     border: 1px solid rgb(253 230 138) !important;
-}
-.fi-btn.fi-color-warning.bg-custom-600:hover,
-.fi-btn.fi-btn-color-warning.bg-custom-600:hover {
-    background-color: rgb(254 243 199) !important;
-    border-color: rgb(252 211 77) !important;
-}
-.fi-btn.fi-color-warning.bg-custom-600 svg,
-.fi-btn.fi-btn-color-warning.bg-custom-600 svg {
-    color: rgb(217 119 6) !important;
 }
 
 /* Gray buttons - Soft gray (matches badge gray) */
@@ -109,14 +90,62 @@ CSS rules added to the inline `<style>` block within `renderHook('panels::head.e
     color: rgb(82 82 91) !important;
     border: 1px solid rgb(228 228 231) !important;
 }
-.fi-btn.fi-color-gray.bg-custom-600:hover,
-.fi-btn.fi-btn-color-gray.bg-custom-600:hover {
-    background-color: rgb(244 244 245) !important;
-    border-color: rgb(212 212 216) !important;
+```
+
+### Dark Mode
+
+```css
+/* ============================================= */
+/* DARK MODE BUTTON COLORS                       */
+/* ============================================= */
+
+/* Info/Primary buttons - Dark mode */
+.dark .fi-btn.fi-color-info.bg-custom-600,
+.dark .fi-btn.fi-btn-color-info.bg-custom-600,
+.dark .fi-btn.fi-color-primary.bg-custom-600,
+.dark .fi-btn.fi-btn-color-primary.bg-custom-600 {
+    background-color: rgba(59 130 246 / 0.15) !important;
+    color: rgb(147 197 253) !important;
+    border: 1px solid rgba(59 130 246 / 0.3) !important;
 }
-.fi-btn.fi-color-gray.bg-custom-600 svg,
-.fi-btn.fi-btn-color-gray.bg-custom-600 svg {
-    color: rgb(82 82 91) !important;
+.dark .fi-btn.fi-color-info.bg-custom-600:hover,
+.dark .fi-btn.fi-btn-color-info.bg-custom-600:hover,
+.dark .fi-btn.fi-color-primary.bg-custom-600:hover,
+.dark .fi-btn.fi-btn-color-primary.bg-custom-600:hover {
+    background-color: rgba(59 130 246 / 0.25) !important;
+    border-color: rgba(59 130 246 / 0.5) !important;
+}
+
+/* Success buttons - Dark mode */
+.dark .fi-btn.fi-color-success.bg-custom-600,
+.dark .fi-btn.fi-btn-color-success.bg-custom-600 {
+    background-color: rgba(34 197 94 / 0.15) !important;
+    color: rgb(134 239 172) !important;
+    border: 1px solid rgba(34 197 94 / 0.3) !important;
+}
+
+/* Danger buttons - Dark mode */
+.dark .fi-btn.fi-color-danger.bg-custom-600,
+.dark .fi-btn.fi-btn-color-danger.bg-custom-600 {
+    background-color: rgba(239 68 68 / 0.15) !important;
+    color: rgb(252 165 165) !important;
+    border: 1px solid rgba(239 68 68 / 0.3) !important;
+}
+
+/* Warning buttons - Dark mode */
+.dark .fi-btn.fi-color-warning.bg-custom-600,
+.dark .fi-btn.fi-btn-color-warning.bg-custom-600 {
+    background-color: rgba(245 158 11 / 0.15) !important;
+    color: rgb(253 230 138) !important;
+    border: 1px solid rgba(245 158 11 / 0.3) !important;
+}
+
+/* Gray buttons - Dark mode */
+.dark .fi-btn.fi-color-gray.bg-custom-600,
+.dark .fi-btn.fi-btn-color-gray.bg-custom-600 {
+    background-color: rgba(161 161 170 / 0.15) !important;
+    color: rgb(212 212 216) !important;
+    border: 1px solid rgba(161 161 170 / 0.3) !important;
 }
 ```
 
@@ -133,6 +162,12 @@ Filament buttons use CSS variables and classes like `fi-btn fi-color-custom bg-c
 - **Dark contrasting text** - Excellent readability
 - **Subtle borders** - Added definition without harshness
 - **Hover states** - Slightly darker on hover for feedback
+
+### Dark Mode Strategy
+- **Background**: Semi-transparent (15% opacity) version of the main color
+- **Text**: Light/pastel version of each color for readability on dark backgrounds
+- **Border**: Semi-transparent (30% opacity) for subtle definition
+- **Hover**: Slightly more opaque (25% bg, 50% border) for feedback
 
 ### Affected Areas
 - Header actions on view pages (Proses, Selesai, Batal, Edit)

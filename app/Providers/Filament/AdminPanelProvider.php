@@ -466,6 +466,101 @@ class AdminPanelProvider extends PanelProvider
                         .fi-btn.fi-btn-color-gray.bg-custom-600 svg {
                             color: rgb(82 82 91) !important;
                         }
+
+                        /* ============================================= */
+                        /* DARK MODE BUTTON COLORS                       */
+                        /* ============================================= */
+
+                        /* Info/Primary buttons - Dark mode */
+                        .dark .fi-btn.fi-color-info.bg-custom-600,
+                        .dark .fi-btn.fi-btn-color-info.bg-custom-600,
+                        .dark .fi-btn.fi-color-primary.bg-custom-600,
+                        .dark .fi-btn.fi-btn-color-primary.bg-custom-600 {
+                            background-color: rgba(59 130 246 / 0.15) !important;
+                            color: rgb(147 197 253) !important;
+                            border: 1px solid rgba(59 130 246 / 0.3) !important;
+                        }
+                        .dark .fi-btn.fi-color-info.bg-custom-600:hover,
+                        .dark .fi-btn.fi-btn-color-info.bg-custom-600:hover,
+                        .dark .fi-btn.fi-color-primary.bg-custom-600:hover,
+                        .dark .fi-btn.fi-btn-color-primary.bg-custom-600:hover {
+                            background-color: rgba(59 130 246 / 0.25) !important;
+                            border-color: rgba(59 130 246 / 0.5) !important;
+                        }
+                        .dark .fi-btn.fi-color-info.bg-custom-600 svg,
+                        .dark .fi-btn.fi-btn-color-info.bg-custom-600 svg,
+                        .dark .fi-btn.fi-color-primary.bg-custom-600 svg,
+                        .dark .fi-btn.fi-btn-color-primary.bg-custom-600 svg {
+                            color: rgb(147 197 253) !important;
+                        }
+
+                        /* Success buttons - Dark mode */
+                        .dark .fi-btn.fi-color-success.bg-custom-600,
+                        .dark .fi-btn.fi-btn-color-success.bg-custom-600 {
+                            background-color: rgba(34 197 94 / 0.15) !important;
+                            color: rgb(134 239 172) !important;
+                            border: 1px solid rgba(34 197 94 / 0.3) !important;
+                        }
+                        .dark .fi-btn.fi-color-success.bg-custom-600:hover,
+                        .dark .fi-btn.fi-btn-color-success.bg-custom-600:hover {
+                            background-color: rgba(34 197 94 / 0.25) !important;
+                            border-color: rgba(34 197 94 / 0.5) !important;
+                        }
+                        .dark .fi-btn.fi-color-success.bg-custom-600 svg,
+                        .dark .fi-btn.fi-btn-color-success.bg-custom-600 svg {
+                            color: rgb(134 239 172) !important;
+                        }
+
+                        /* Danger buttons - Dark mode */
+                        .dark .fi-btn.fi-color-danger.bg-custom-600,
+                        .dark .fi-btn.fi-btn-color-danger.bg-custom-600 {
+                            background-color: rgba(239 68 68 / 0.15) !important;
+                            color: rgb(252 165 165) !important;
+                            border: 1px solid rgba(239 68 68 / 0.3) !important;
+                        }
+                        .dark .fi-btn.fi-color-danger.bg-custom-600:hover,
+                        .dark .fi-btn.fi-btn-color-danger.bg-custom-600:hover {
+                            background-color: rgba(239 68 68 / 0.25) !important;
+                            border-color: rgba(239 68 68 / 0.5) !important;
+                        }
+                        .dark .fi-btn.fi-color-danger.bg-custom-600 svg,
+                        .dark .fi-btn.fi-btn-color-danger.bg-custom-600 svg {
+                            color: rgb(252 165 165) !important;
+                        }
+
+                        /* Warning buttons - Dark mode */
+                        .dark .fi-btn.fi-color-warning.bg-custom-600,
+                        .dark .fi-btn.fi-btn-color-warning.bg-custom-600 {
+                            background-color: rgba(245 158 11 / 0.15) !important;
+                            color: rgb(253 230 138) !important;
+                            border: 1px solid rgba(245 158 11 / 0.3) !important;
+                        }
+                        .dark .fi-btn.fi-color-warning.bg-custom-600:hover,
+                        .dark .fi-btn.fi-btn-color-warning.bg-custom-600:hover {
+                            background-color: rgba(245 158 11 / 0.25) !important;
+                            border-color: rgba(245 158 11 / 0.5) !important;
+                        }
+                        .dark .fi-btn.fi-color-warning.bg-custom-600 svg,
+                        .dark .fi-btn.fi-btn-color-warning.bg-custom-600 svg {
+                            color: rgb(253 230 138) !important;
+                        }
+
+                        /* Gray buttons - Dark mode */
+                        .dark .fi-btn.fi-color-gray.bg-custom-600,
+                        .dark .fi-btn.fi-btn-color-gray.bg-custom-600 {
+                            background-color: rgba(161 161 170 / 0.15) !important;
+                            color: rgb(212 212 216) !important;
+                            border: 1px solid rgba(161 161 170 / 0.3) !important;
+                        }
+                        .dark .fi-btn.fi-color-gray.bg-custom-600:hover,
+                        .dark .fi-btn.fi-btn-color-gray.bg-custom-600:hover {
+                            background-color: rgba(161 161 170 / 0.25) !important;
+                            border-color: rgba(161 161 170 / 0.5) !important;
+                        }
+                        .dark .fi-btn.fi-color-gray.bg-custom-600 svg,
+                        .dark .fi-btn.fi-btn-color-gray.bg-custom-600 svg {
+                            color: rgb(212 212 216) !important;
+                        }
                     </style>
                 HTML
             )
