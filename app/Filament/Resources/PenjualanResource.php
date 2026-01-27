@@ -708,7 +708,7 @@ class PenjualanResource extends BaseResource
                     ->label('Sisa Bayar')
                     ->alignRight()
                     ->state(function (Penjualan $record): string {
-                        $grandTotal = (float) ($record->grand_total ?? 0);
+                        $grandTotal = self::calculateGrandTotal($record);
                         $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
 
                         $sisa = max(0, $grandTotal - $totalPaid);
