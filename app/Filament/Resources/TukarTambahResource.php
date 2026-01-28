@@ -31,6 +31,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
@@ -281,6 +282,13 @@ class TukarTambahResource extends BaseResource
                                                             }
                                                         }
                                                     }),
+                                                Hidden::make('_original_qty')
+                                                    ->dehydrated(false)
+                                                    ->afterStateHydrated(function ($component, $state, Get $get) {
+                                                        // Store the original qty when the form is loaded for editing
+                                                        $qty = (int) ($get('qty') ?? 0);
+                                                        $component->state($qty);
+                                                    }),
                                                 TextInput::make('qty')
                                                     ->label('Qty')
                                                     ->numeric()
@@ -292,8 +300,13 @@ class TukarTambahResource extends BaseResource
                                                             return null;
                                                         }
                                                         $condition = $get('kondisi');
+                                                        $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
 
-                                                        return \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition) ?: null;
+                                                        // Add back the original qty if editing an existing item
+                                                        $originalQty = (int) ($get('_original_qty') ?? 0);
+                                                        $available += $originalQty;
+
+                                                        return $available > 0 ? $available : null;
                                                     })
                                                     ->required()
                                                     ->live(onBlur: true)
@@ -303,6 +316,12 @@ class TukarTambahResource extends BaseResource
                                                         $max = $productId > 0
                                                             ? \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition)
                                                             : null;
+
+                                                        // Add back the original qty if editing an existing item
+                                                        if ($max !== null) {
+                                                            $originalQty = (int) ($get('_original_qty') ?? 0);
+                                                            $max += $originalQty;
+                                                        }
 
                                                         return [
                                                             'min' => 1,
@@ -317,6 +336,10 @@ class TukarTambahResource extends BaseResource
                                                         }
                                                         $condition = $get('kondisi');
                                                         $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+
+                                                        // Add back the original qty if editing an existing item
+                                                        $originalQty = (int) ($get('_original_qty') ?? 0);
+                                                        $available += $originalQty;
 
                                                         return 'Stok: '.number_format($available, 0, ',', '.');
                                                     })
@@ -333,6 +356,10 @@ class TukarTambahResource extends BaseResource
 
                                                         if ($productId > 0) {
                                                             $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+
+                                                            // Add back the original qty if editing an existing item
+                                                            $originalQty = (int) ($get('_original_qty') ?? 0);
+                                                            $available += $originalQty;
 
                                                             // Clamp qty to min=1, max=available
                                                             if ($qty < 1 && $qty !== 0) {
@@ -991,10 +1018,48 @@ class TukarTambahResource extends BaseResource
                                     ->disk('public')
                                     ->visibility('public')
                                     ->directory('tukar-tambah/bukti-transfer')
-                                    ->imageResizeMode('contain')
-                                    ->imageResizeTargetWidth('1920')
-                                    ->imageResizeTargetHeight('1080')
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->saveUploadedFileUsing(function ($file, $get) {
+                                        $directory = 'tukar-tambah/bukti-transfer';
+                                        $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                                        $filename = \Illuminate\Support\Str::slug($filename).'-'.uniqid().'.webp';
+
+                                        // Create temp path for processed image
+                                        $tempPath = sys_get_temp_dir().'/'.$filename;
+
+                                        // Get image dimensions
+                                        $imageInfo = getimagesize($file->getRealPath());
+                                        $width = $imageInfo[0] ?? 0;
+                                        $height = $imageInfo[1] ?? 0;
+
+                                        // FHD limits
+                                        $maxWidth = 1920;
+                                        $maxHeight = 1080;
+
+                                        // Use Spatie Image
+                                        $image = \Spatie\Image\Image::load($file->getRealPath());
+
+                                        // Only resize if image is larger than FHD
+                                        if ($width > $maxWidth || $height > $maxHeight) {
+                                            $image->width($maxWidth)
+                                                ->height($maxHeight)
+                                                ->fit(\Spatie\Image\Enums\Fit::Contain);
+                                        }
+
+                                        // Convert to webp with 80% quality and save
+                                        $image->format('webp')
+                                            ->quality(80)
+                                            ->save($tempPath);
+
+                                        // Store to disk
+                                        $path = $directory.'/'.$filename;
+                                        \Illuminate\Support\Facades\Storage::disk('public')->put($path, file_get_contents($tempPath));
+
+                                        // Cleanup temp file
+                                        @unlink($tempPath);
+
+                                        return $path;
+                                    })
                                     ->openable()
                                     ->downloadable()
                                     ->previewable(false)
@@ -1406,9 +1471,11 @@ class TukarTambahResource extends BaseResource
     {
         return $infolist
             ->schema([
+                // === BAGIAN ATAS: HEADER DOKUMEN ===
                 InfoSection::make()
                     ->schema([
                         Split::make([
+                            // Kiri: Identitas Nota
                             InfoGroup::make([
                                 TextEntry::make('no_nota')
                                     ->label('No. Nota')
@@ -1427,16 +1494,27 @@ class TukarTambahResource extends BaseResource
                                     ->icon('heroicon-m-calendar-days')
                                     ->color('gray'),
                             ]),
+
+                            // Tengah: Pelanggan & Karyawan
                             InfoGroup::make([
+                                TextEntry::make('penjualan.member.nama_member')
+                                    ->label('Pelanggan')
+                                    ->icon('heroicon-m-user-circle')
+                                    ->color('primary')
+                                    ->placeholder('-'),
                                 TextEntry::make('karyawan.nama_karyawan')
                                     ->label('Karyawan')
                                     ->icon('heroicon-m-user')
                                     ->placeholder('-'),
+                            ]),
+
+                            // Kanan: Linked Notas
+                            InfoGroup::make([
                                 TextEntry::make('penjualan.no_nota')
                                     ->label('Nota Penjualan')
                                     ->icon('heroicon-m-receipt-percent')
                                     ->url(fn (TukarTambah $record) => $record->penjualan
-                                        ? PenjualanResource::getUrl('edit', ['record' => $record->penjualan])
+                                        ? PenjualanResource::getUrl('view', ['record' => $record->penjualan])
                                         : null)
                                     ->openUrlInNewTab()
                                     ->placeholder('-'),
@@ -1444,31 +1522,289 @@ class TukarTambahResource extends BaseResource
                                     ->label('Nota Pembelian')
                                     ->icon('heroicon-m-document-text')
                                     ->url(fn (TukarTambah $record) => $record->pembelian
-                                        ? PembelianResource::getUrl('edit', ['record' => $record->pembelian])
+                                        ? PembelianResource::getUrl('view', ['record' => $record->pembelian])
                                         : null)
                                     ->openUrlInNewTab()
                                     ->placeholder('-'),
                             ])->grow(false),
                         ])->from('md'),
                     ]),
-                InfoSection::make()
+
+                // === DAFTAR BARANG KELUAR (PENJUALAN ITEMS) ===
+                InfoSection::make('Daftar Barang Keluar')
+                    ->description('Item yang dijual ke pelanggan')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->visible(fn (TukarTambah $record) => $record->penjualan?->items->isNotEmpty())
                     ->schema([
-                        TextEntry::make('catatan')
-                            ->label('Catatan')
-                            ->markdown()
-                            ->prose()
-                            ->placeholder('Tidak ada catatan'),
+                        \Filament\Infolists\Components\ViewEntry::make('penjualan_items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.tukar-tambah-barang-keluar-table')
+                            ->state(fn (TukarTambah $record) => $record->penjualan?->items->load('produk') ?? collect()),
                     ]),
 
-                \Filament\Infolists\Components\Section::make('Bukti & Dokumentasi')
+                // === DAFTAR JASA (PENJUALAN JASA ITEMS) ===
+                InfoSection::make('Daftar Jasa')
+                    ->icon('hugeicons-tools')
+                    ->visible(fn (TukarTambah $record) => $record->penjualan?->jasaItems->isNotEmpty())
+                    ->schema([
+                        RepeatableEntry::make('penjualan.jasaItems')
+                            ->hiddenLabel()
+                            ->schema([
+                                TextEntry::make('jasa.nama_jasa')
+                                    ->label('Jasa')
+                                    ->weight(FontWeight::Medium),
+                                TextEntry::make('qty')
+                                    ->label('Qty')
+                                    ->extraAttributes(['class' => 'text-center']),
+                                TextEntry::make('harga')
+                                    ->label('Harga')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp '),
+                                TextEntry::make('subtotal')
+                                    ->label('Subtotal')
+                                    ->state(fn ($record) => ($record->qty ?? 0) * ($record->harga ?? 0))
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->weight(FontWeight::Bold),
+                                TextEntry::make('catatan')
+                                    ->label('Catatan')
+                                    ->placeholder('-'),
+                            ])
+                            ->columns(5),
+                    ]),
+
+                // === DAFTAR BARANG MASUK (PEMBELIAN ITEMS) ===
+                InfoSection::make('Daftar Barang Masuk')
+                    ->description('Item yang dibeli dari pelanggan')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->visible(fn (TukarTambah $record) => $record->pembelian?->items->isNotEmpty())
+                    ->schema([
+                        \Filament\Infolists\Components\ViewEntry::make('pembelian_items_table')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.components.tukar-tambah-barang-masuk-table')
+                            ->state(fn (TukarTambah $record) => $record->pembelian?->items->load('produk') ?? collect()),
+                    ]),
+
+                // === RINGKASAN PEMBAYARAN (SPLIT LAYOUT) ===
+                InfoSection::make('Ringkasan Pembayaran')
+                    ->icon('heroicon-o-calculator')
+                    ->schema([
+                        Split::make([
+                            InfoGroup::make([
+                                TextEntry::make('total_penjualan')
+                                    ->label('Total Penjualan')
+                                    ->state(function (TukarTambah $record): float {
+                                        $penjualan = $record->penjualan;
+                                        if (! $penjualan) {
+                                            return 0;
+                                        }
+                                        $productTotal = $penjualan->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga_jual ?? 0));
+                                        $serviceTotal = $penjualan->jasaItems->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
+                                        $diskon = (int) ($penjualan->diskon_total ?? 0);
+
+                                        return max(0, ($productTotal + $serviceTotal) - $diskon);
+                                    })
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('success'),
+
+                                TextEntry::make('total_pembelian')
+                                    ->label('Total Pembelian')
+                                    ->state(function (TukarTambah $record): float {
+                                        $pembelian = $record->pembelian;
+                                        if (! $pembelian) {
+                                            return 0;
+                                        }
+
+                                        return $pembelian->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->hpp ?? 0));
+                                    })
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('warning'),
+                            ]),
+
+                            InfoGroup::make([
+                                TextEntry::make('grand_total')
+                                    ->label('Grand Total (Penjualan - Pembelian)')
+                                    ->state(function (TukarTambah $record): float {
+                                        $penjualan = $record->penjualan;
+                                        $pembelian = $record->pembelian;
+
+                                        $penjualanTotal = 0;
+                                        if ($penjualan) {
+                                            $productTotal = $penjualan->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga_jual ?? 0));
+                                            $serviceTotal = $penjualan->jasaItems->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
+                                            $diskon = (int) ($penjualan->diskon_total ?? 0);
+                                            $penjualanTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
+                                        }
+
+                                        $pembelianTotal = 0;
+                                        if ($pembelian) {
+                                            $pembelianTotal = $pembelian->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->hpp ?? 0));
+                                        }
+
+                                        return $penjualanTotal - $pembelianTotal;
+                                    })
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->color('primary'),
+
+                                TextEntry::make('total_dibayar_penjualan')
+                                    ->label('Dibayar (Penjualan)')
+                                    ->state(fn (TukarTambah $record): float => (float) ($record->penjualan?->pembayaran->sum('jumlah') ?? 0))
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->color('success'),
+
+                                TextEntry::make('total_dibayar_pembelian')
+                                    ->label('Dibayar (Pembelian)')
+                                    ->state(fn (TukarTambah $record): float => (float) ($record->pembelian?->pembayaran->sum('jumlah') ?? 0))
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->color('warning'),
+                            ])->grow(false),
+                        ])->from('md'),
+                    ]),
+
+                // === RINCIAN PEMBAYARAN PENJUALAN ===
+                InfoSection::make('Rincian Pembayaran Penjualan')
+                    ->icon('heroicon-o-banknotes')
+                    ->visible(fn (TukarTambah $record) => $record->penjualan?->pembayaran->isNotEmpty())
+                    ->collapsible()
+                    ->collapsed(fn (TukarTambah $record) => $record->penjualan?->pembayaran->isEmpty())
+                    ->schema([
+                        RepeatableEntry::make('penjualan.pembayaran')
+                            ->hiddenLabel()
+                            ->schema([
+                                TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->date('d M Y'),
+                                TextEntry::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->badge()
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                        default => $state,
+                                    })
+                                    ->color('primary'),
+                                TextEntry::make('akunTransaksi.nama_akun')
+                                    ->label('Akun')
+                                    ->icon('heroicon-m-building-library')
+                                    ->placeholder('-'),
+                                TextEntry::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->weight(FontWeight::Bold),
+                            ])
+                            ->columns(4),
+                    ]),
+
+                // === RINCIAN PEMBAYARAN PEMBELIAN ===
+                InfoSection::make('Rincian Pembayaran Pembelian')
+                    ->icon('heroicon-o-banknotes')
+                    ->visible(fn (TukarTambah $record) => $record->pembelian?->pembayaran->isNotEmpty())
+                    ->collapsible()
+                    ->collapsed(fn (TukarTambah $record) => $record->pembelian?->pembayaran->isEmpty())
+                    ->schema([
+                        RepeatableEntry::make('pembelian.pembayaran')
+                            ->hiddenLabel()
+                            ->schema([
+                                TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->date('d M Y'),
+                                TextEntry::make('metode_bayar')
+                                    ->label('Metode')
+                                    ->badge()
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'cash' => 'Tunai',
+                                        'transfer' => 'Transfer',
+                                        default => $state,
+                                    })
+                                    ->color('warning'),
+                                TextEntry::make('akunTransaksi.nama_akun')
+                                    ->label('Akun')
+                                    ->icon('heroicon-m-building-library')
+                                    ->placeholder('-'),
+                                TextEntry::make('jumlah')
+                                    ->label('Jumlah')
+                                    ->numeric(
+                                        decimalPlaces: 0,
+                                        decimalSeparator: ',',
+                                        thousandsSeparator: '.',
+                                    )
+                                    ->prefix('Rp ')
+                                    ->weight(FontWeight::Bold),
+                            ])
+                            ->columns(4),
+                    ]),
+
+                // === CATATAN ===
+                InfoSection::make('Catatan')
+                    ->icon('heroicon-o-pencil-square')
+                    ->visible(fn (TukarTambah $record) => filled($record->catatan))
+                    ->collapsible()
+                    ->schema([
+                        TextEntry::make('catatan')
+                            ->hiddenLabel()
+                            ->markdown()
+                            ->prose(),
+                    ]),
+
+                // === BUKTI & DOKUMENTASI ===
+                InfoSection::make('Bukti & Dokumentasi')
                     ->icon('heroicon-o-camera')
-                    ->visible(fn (TukarTambah $record) => ! empty($record->foto_dokumen))
+                    ->visible(fn (TukarTambah $record) => ! empty($record->foto_dokumen) ||
+                        $record->penjualan?->pembayaran->whereNotNull('bukti_transfer')->isNotEmpty() ||
+                        $record->pembelian?->pembayaran->whereNotNull('bukti_transfer')->isNotEmpty()
+                    )
                     ->schema([
                         \Filament\Infolists\Components\ViewEntry::make('all_photos_gallery')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.tukar-tambah-photos-gallery')
                             ->state(fn (TukarTambah $record) => [
-                                'allPhotos' => $record->foto_dokumen ?? [],
+                                'foto_dokumen' => $record->foto_dokumen ?? [],
+                                'bukti_penjualan' => $record->penjualan?->pembayaran->whereNotNull('bukti_transfer')->pluck('bukti_transfer')->toArray() ?? [],
+                                'bukti_pembelian' => $record->pembelian?->pembayaran->whereNotNull('bukti_transfer')->pluck('bukti_transfer')->toArray() ?? [],
                             ]),
                     ]),
             ]);

@@ -1,6 +1,11 @@
 @php
     $state = $getState();
-    $allPhotos = $state['allPhotos'] ?? [];
+    $fotoDokumen = $state['foto_dokumen'] ?? [];
+    $buktiPenjualan = $state['bukti_penjualan'] ?? [];
+    $buktiPembelian = $state['bukti_pembelian'] ?? [];
+    
+    // Merge all photos into a single array
+    $allPhotos = array_merge($buktiPenjualan, $buktiPembelian, $fotoDokumen);
 @endphp
 
 <div class="flex flex-wrap gap-3">

@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 class ViewTukarTambah extends ViewRecord
 {
     protected static string $resource = TukarTambahResource::class;
+
+    public function getRelationManagers(): array
+    {
+        return [];
+    }
     public array $editBlockedPenjualanReferences = [];
     public array $deleteBlockedPenjualanReferences = [];
     public ?string $editBlockedMessage = null;

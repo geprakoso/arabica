@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\TukarTambahResource\Pages;
 
-use App\Filament\Resources\TukarTambahResource;
 use App\Filament\Resources\PenjualanResource;
+use App\Filament\Resources\TukarTambahResource;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\PembelianPembayaran;
@@ -24,8 +24,15 @@ use Illuminate\Validation\ValidationException;
 class EditTukarTambah extends EditRecord
 {
     protected static string $resource = TukarTambahResource::class;
+
     public array $deleteBlockedPenjualanReferences = [];
+
     public ?string $deleteBlockedMessage = null;
+
+    public function getRelationManagers(): array
+    {
+        return [];
+    }
 
     protected function getHeaderActions(): array
     {
@@ -96,9 +103,9 @@ class EditTukarTambah extends EditRecord
             ->filter(fn (array $reference) => ! empty($reference['id']))
             ->map(function (array $reference, int $index) {
                 $nota = $reference['nota'] ?? null;
-                $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
+                $label = $nota ? 'Lihat '.$nota : 'Lihat Penjualan';
 
-                return StaticAction::make('viewPenjualan' . $index)
+                return StaticAction::make('viewPenjualan'.$index)
                     ->button()
                     ->label($label)
                     ->url(PenjualanResource::getUrl('view', ['record' => $reference['id'] ?? 0]))
@@ -150,7 +157,7 @@ class EditTukarTambah extends EditRecord
                     ->values()
                     ->all(),
                 'jasa_items' => $penjualan->jasaItems
-                    ->map(fn(PenjualanJasa $item): array => [
+                    ->map(fn (PenjualanJasa $item): array => [
                         'jasa_id' => $item->jasa_id,
                         'qty' => (int) ($item->qty ?? 0),
                         'harga' => (int) ($item->harga ?? 0),
@@ -158,7 +165,7 @@ class EditTukarTambah extends EditRecord
                     ->values()
                     ->all(),
                 'pembayaran' => $penjualan->pembayaran
-                    ->map(fn(PenjualanPembayaran $item): array => [
+                    ->map(fn (PenjualanPembayaran $item): array => [
                         'metode_bayar' => $item->metode_bayar,
                         'akun_transaksi_id' => $item->akun_transaksi_id,
                         'jumlah' => (int) ($item->jumlah ?? 0),
@@ -192,7 +199,7 @@ class EditTukarTambah extends EditRecord
                     ->values()
                     ->all(),
                 'pembayaran' => $pembelian->pembayaran
-                    ->map(fn(PembelianPembayaran $item): array => [
+                    ->map(fn (PembelianPembayaran $item): array => [
                         'metode_bayar' => $item->metode_bayar,
                         'akun_transaksi_id' => $item->akun_transaksi_id,
                         'jumlah' => (int) ($item->jumlah ?? 0),
@@ -204,7 +211,7 @@ class EditTukarTambah extends EditRecord
 
         // Populate unified_pembayaran
         $unifiedPayments = [];
-        
+
         if ($penjualan) {
             foreach ($penjualan->pembayaran as $payment) {
                 $unifiedPayments[] = [
@@ -218,7 +225,7 @@ class EditTukarTambah extends EditRecord
                 ];
             }
         }
-        
+
         if ($pembelian) {
             foreach ($pembelian->pembayaran as $payment) {
                 $unifiedPayments[] = [
@@ -232,8 +239,13 @@ class EditTukarTambah extends EditRecord
                 ];
             }
         }
-        
+
         $data['unified_pembayaran'] = $unifiedPayments;
+
+        // Populate id_member at root level for the form field
+        if ($penjualan && $penjualan->id_member) {
+            $data['id_member'] = $penjualan->id_member;
+        }
 
         return $data;
     }
@@ -252,25 +264,25 @@ class EditTukarTambah extends EditRecord
             $unifiedPayments = $data['unified_pembayaran'] ?? [];
             $penjualanPayments = [];
             $pembelianPayments = [];
-            
+
             foreach ($unifiedPayments as $payment) {
-                if (!is_array($payment)) {
+                if (! is_array($payment)) {
                     continue;
                 }
-                
+
                 $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
-                
+
                 // Remove tipe_transaksi from payment data before saving
                 $paymentData = $payment;
                 unset($paymentData['tipe_transaksi']);
-                
+
                 if ($tipeTransaksi === 'penjualan') {
                     $penjualanPayments[] = $paymentData;
                 } elseif ($tipeTransaksi === 'pembelian') {
                     $pembelianPayments[] = $paymentData;
                 }
             }
-            
+
             // Override pembayaran arrays with unified payments
             $penjualanPayload['pembayaran'] = $penjualanPayments;
             $pembelianPayload['pembayaran'] = $pembelianPayments;
@@ -337,9 +349,9 @@ class EditTukarTambah extends EditRecord
             })
             ->with(['penjualanItems.penjualan'])
             ->get()
-            ->flatMap(fn(PembelianItem $item) => $item->penjualanItems)
-            ->filter(fn($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
-            ->map(fn($item) => $item->penjualan?->no_nota)
+            ->flatMap(fn (PembelianItem $item) => $item->penjualanItems)
+            ->filter(fn ($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
+            ->map(fn ($item) => $item->penjualan?->no_nota)
             ->filter()
             ->unique()
             ->values();
@@ -347,6 +359,7 @@ class EditTukarTambah extends EditRecord
         if ($externalPenjualanNotas->isNotEmpty()) {
             $pembelian->pembayaran()->get()->each->delete();
             $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+
             return;
         }
 
@@ -412,11 +425,11 @@ class EditTukarTambah extends EditRecord
         }
 
         $batches = $batchesQuery->get();
-        $available = (int) $batches->sum(fn(PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
+        $available = (int) $batches->sum(fn (PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
 
         if ($available < $qty) {
             throw ValidationException::withMessages([
-                'penjualan.items' => 'Qty melebihi stok tersedia (' . $available . ').',
+                'penjualan.items' => 'Qty melebihi stok tersedia ('.$available.').',
             ]);
         }
 
@@ -519,6 +532,7 @@ class EditTukarTambah extends EditRecord
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,
                 'catatan' => $item['catatan'] ?? null,
+                'bukti_transfer' => $item['bukti_transfer'] ?? null,
             ]);
         }
     }
@@ -544,6 +558,7 @@ class EditTukarTambah extends EditRecord
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => (int) $jumlah,
                 'catatan' => $item['catatan'] ?? null,
+                'bukti_transfer' => $item['bukti_transfer'] ?? null,
             ]);
         }
     }
