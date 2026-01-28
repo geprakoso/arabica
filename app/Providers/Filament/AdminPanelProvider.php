@@ -562,86 +562,162 @@ class AdminPanelProvider extends PanelProvider
                             color: rgb(212 212 216) !important;
                         }
 
-                        /* --- CALENDAR EVENTS (Global Style - High Specificity) --- */
-                        /* Force override of Event Calendar variables and styles */
+
+                        /* --- CALENDAR EVENTS (Modern UI with Tailwind Variables) --- */
                         
-                        /* Base Rounder */
+                        /* 1. Container & Global Overrides */
+                        .ec {
+                            border: none !important;
+                            --ec-border-color: rgba(var(--gray-200), 0.4) !important;
+                            --ec-text-color: rgb(var(--gray-700)) !important;
+                            --ec-bg-color: transparent !important;
+                        }
+                        html.dark .ec {
+                            --ec-border-color: rgba(var(--gray-700), 0.4) !important;
+                            --ec-text-color: rgb(var(--gray-300)) !important;
+                        }
+
+                        /* 2. Modern Toolbar (Glassmorphism) */
+                        .ec .ec-header .ec-toolbar {
+                            background-color: rgba(255, 255, 255, 0.7) !important;
+                            backdrop-filter: blur(12px) !important;
+                            border: 1px solid rgba(var(--gray-200), 0.5) !important;
+                            border-radius: 1.5rem !important; /* rounded-3xl */
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important; /* shadow-lg soft */
+                            padding: 0.75rem 1.25rem !important;
+                            margin-bottom: 1.5rem !important;
+                        }
+                        html.dark .ec .ec-header .ec-toolbar {
+                            background-color: rgba(24, 24, 27, 0.6) !important; /* zinc-950 alpha */
+                            border-color: rgba(var(--gray-700), 0.5) !important;
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+                        }
+
+                        /* Toolbar Buttons (Pill Shape) */
+                        .ec .ec-toolbar .ec-button {
+                            border-radius: 9999px !important;
+                            border: 1px solid transparent !important;
+                            font-weight: 500 !important;
+                            padding: 0.4rem 1rem !important;
+                            transition: all 0.2s ease !important;
+                        }
+                        .ec .ec-toolbar .ec-button:hover {
+                            background-color: rgba(var(--primary-500), 0.1) !important;
+                            color: rgb(var(--primary-600)) !important;
+                        }
+                        .ec .ec-toolbar .ec-button.ec-active {
+                            background-color: rgb(var(--primary-500)) !important;
+                            color: white !important;
+                            box-shadow: 0 4px 6px -1px rgba(var(--primary-500), 0.3) !important;
+                        }
+
+                        /* 3. Grid & Typography */
+                        .ec-day-header {
+                            text-transform: uppercase !important;
+                            font-size: 0.75rem !important;
+                            letter-spacing: 0.05em !important;
+                            font-weight: 600 !important;
+                            color: rgb(var(--gray-500)) !important;
+                            padding-bottom: 10px !important;
+                        }
+
+                        /* Today Cell Indicator */
+                        .ec .ec-day.ec-today {
+                            background-color: transparent !important;
+                        }
+                        .ec .ec-day.ec-today .ec-day-header::before {
+                            /* Dot indicator or highlight for today */
+                            content: '';
+                            display: inline-block;
+                            width: 6px;
+                            height: 6px;
+                            background-color: rgb(var(--primary-500));
+                            border-radius: 50%;
+                            margin-right: 4px;
+                            margin-bottom: 1px;
+                        }
+                        .ec .ec-day.ec-today .ec-day-header {
+                            color: rgb(var(--primary-600)) !important;
+                            font-weight: 700 !important;
+                        }
+
+                        /* 4. Events (Modern Pill & Interactive) */
                         body .ec .ec-event {
-                            border-radius: 6px !important;
-                            box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Optional: add subtle shadow */
+                            border-radius: 8px !important; /* Soft Squircle */
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+                            border: 1px solid transparent !important;
+                            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+                            margin-bottom: 2px !important;
+                            font-size: 0.85rem !important;
+                            padding: 2px 6px !important;
+                        }
+                        
+                        body .ec .ec-event:hover {
+                            transform: translateY(-2px) scale(1.01) !important;
+                            box-shadow: 0 8px 12px -3px rgba(0,0,0,0.1) !important;
+                            z-index: 50 !important;
                         }
 
-                        /* Info/Primary - Light Mode */
+                        /* --- Event Color Variants (Tailwind Variables) --- */
+
+                        /* INFO / PROCESS (Blue) */
                         body .ec .ec-event.event-info {
-                            background-color: rgb(239, 246, 255) !important;
-                            color: rgb(37, 99, 235) !important;
-                            border: 1px solid rgb(191, 219, 254) !important;
+                            background-color: rgba(var(--info-50), 0.8) !important;
+                            color: rgb(var(--info-700)) !important;
+                            border-color: rgba(var(--info-200), 0.5) !important;
                         }
-                        
-                        /* Success - Light Mode */
-                        body .ec .ec-event.event-success {
-                            background-color: rgb(240, 253, 244) !important;
-                            color: rgb(22, 163, 74) !important;
-                            border: 1px solid rgb(187, 247, 208) !important;
-                        }
-
-                        /* Danger - Light Mode */
-                        body .ec .ec-event.event-danger {
-                            background-color: rgb(254, 242, 242) !important;
-                            color: rgb(220, 38, 38) !important;
-                            border: 1px solid rgb(254, 202, 202) !important;
-                        }
-
-                        /* Warning - Light Mode */
-                        body .ec .ec-event.event-warning {
-                            background-color: rgb(255, 251, 235) !important;
-                            color: rgb(217, 119, 6) !important;
-                            border: 1px solid rgb(253, 230, 138) !important;
-                        }
-
-                        /* Gray - Light Mode */
-                        body .ec .ec-event.event-gray {
-                            background-color: rgb(250, 250, 250) !important;
-                            color: rgb(82, 82, 91) !important;
-                            border: 1px solid rgb(228, 228, 231) !important;
-                        }
-
-
-                        /* --- DARK MODE --- */
-                        
-                        /* Info - Dark Mode */
                         html.dark body .ec .ec-event.event-info {
-                            background-color: rgba(59, 130, 246, 0.15) !important;
-                            color: rgb(147, 197, 253) !important;
-                            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+                            background-color: rgba(var(--info-900), 0.3) !important;
+                            color: rgb(var(--info-300)) !important;
+                            border-color: rgba(var(--info-700), 0.3) !important;
                         }
 
-                        /* Success - Dark Mode */
+                        /* SUCCESS / DONE (Green) */
+                        body .ec .ec-event.event-success {
+                            background-color: rgba(var(--success-50), 0.8) !important;
+                            color: rgb(var(--success-700)) !important;
+                            border-color: rgba(var(--success-200), 0.5) !important;
+                        }
                         html.dark body .ec .ec-event.event-success {
-                            background-color: rgba(34, 197, 94, 0.15) !important;
-                            color: rgb(134, 239, 172) !important;
-                            border: 1px solid rgba(34, 197, 94, 0.3) !important;
+                            background-color: rgba(var(--success-900), 0.3) !important;
+                            color: rgb(var(--success-300)) !important;
+                            border-color: rgba(var(--success-700), 0.3) !important;
                         }
 
-                        /* Danger - Dark Mode */
-                        html.dark body .ec .ec-event.event-danger {
-                            background-color: rgba(239, 68, 68, 0.15) !important;
-                            color: rgb(252, 165, 165) !important;
-                            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+                        /* WARNING / PENDING (Amber) */
+                        body .ec .ec-event.event-warning {
+                            background-color: rgba(var(--warning-50), 0.8) !important;
+                            color: rgb(var(--warning-700)) !important;
+                            border-color: rgba(var(--warning-200), 0.5) !important;
                         }
-
-                        /* Warning - Dark Mode */
                         html.dark body .ec .ec-event.event-warning {
-                            background-color: rgba(245, 158, 11, 0.15) !important;
-                            color: rgb(253, 230, 138) !important;
-                            border: 1px solid rgba(245, 158, 11, 0.3) !important;
+                            background-color: rgba(var(--warning-900), 0.3) !important;
+                            color: rgb(var(--warning-300)) !important;
+                            border-color: rgba(var(--warning-700), 0.3) !important;
                         }
 
-                        /* Gray - Dark Mode */
-                        html.dark body .ec .ec-event.event-gray {
-                            background-color: rgba(161, 161, 170, 0.15) !important;
-                            color: rgb(212, 212, 216) !important;
-                            border: 1px solid rgba(161, 161, 170, 0.3) !important;
+                        /* DANGER / CANCEL (Red) */
+                        body .ec .ec-event.event-danger {
+                            background-color: rgba(var(--danger-50), 0.8) !important;
+                            color: rgb(var(--danger-700)) !important;
+                            border-color: rgba(var(--danger-200), 0.5) !important;
+                        }
+                        html.dark body .ec .ec-event.event-danger {
+                            background-color: rgba(var(--danger-900), 0.3) !important;
+                            color: rgb(var(--danger-300)) !important;
+                            border-color: rgba(var(--danger-700), 0.3) !important;
+                        }
+
+                        /* GRAY / DEFAULT */
+                        body .ec .ec-event.event-gray {
+                            background-color: rgba(var(--gray-50), 0.8) !important;
+                            color: rgb(var(--gray-700)) !important;
+                            border-color: rgba(var(--gray-200), 0.5) !important;
+                        }
+                         html.dark body .ec .ec-event.event-gray {
+                            background-color: rgba(var(--gray-800), 0.5) !important;
+                            color: rgb(var(--gray-300)) !important;
+                            border-color: rgba(var(--gray-600), 0.3) !important;
                         }
                     </style>
                 HTML
