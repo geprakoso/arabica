@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use Akaunting\Money\Money;
+use App\Filament\Actions\SummaryExportHeaderAction;
 use App\Filament\Resources\PembelianReportResource\Pages;
 use App\Filament\Resources\PembelianResource;
 use App\Models\Pembelian;
@@ -23,6 +24,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +63,7 @@ class PembelianReportResource extends BaseResource
                     ->label('No. PO')
                     ->icon('heroicon-m-document-text')
                     ->tooltip('Klik untuk melihat detail')
-                    ->url(fn (Pembelian $record) => PembelianResource::getUrl('view', ['record' => $record]))
+                    ->url(fn(Pembelian $record) => PembelianResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab()
                     ->weight('bold')
                     ->color('primary')
@@ -107,8 +109,8 @@ class PembelianReportResource extends BaseResource
                     ->summarize([
                         Summarizer::make()
                             ->label('Total')
-                            ->using(fn ($query) => self::summarizeTotalPembelian($query))
-                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                            ->using(fn($query) => self::summarizeTotalPembelian($query))
+                            ->formatStateUsing(fn($state) => self::formatCurrency((int) $state)),
                     ])
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('total_dibayar')
@@ -120,8 +122,8 @@ class PembelianReportResource extends BaseResource
                     ->summarize([
                         Summarizer::make()
                             ->label('Total')
-                            ->using(fn ($query) => self::summarizeTotalDibayar($query))
-                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                            ->using(fn($query) => self::summarizeTotalDibayar($query))
+                            ->formatStateUsing(fn($state) => self::formatCurrency((int) $state)),
                     ])
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('sisa_bayar')
@@ -135,8 +137,8 @@ class PembelianReportResource extends BaseResource
                     ->summarize([
                         Summarizer::make()
                             ->label('Total')
-                            ->using(fn ($query) => self::summarizeSisaPembelian($query))
-                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                            ->using(fn($query) => self::summarizeSisaPembelian($query))
+                            ->formatStateUsing(fn($state) => self::formatCurrency((int) $state)),
                     ])
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -277,7 +279,7 @@ class PembelianReportResource extends BaseResource
                     }),
             ])
             ->headerActions([
-                \AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction::make('export')
+                SummaryExportHeaderAction::make('export')
                     ->label('Download')
                     ->filename('Laporan Pembelian' . '_' . date('d M Y'))
                     ->defaultFormat('pdf')
@@ -288,7 +290,32 @@ class PembelianReportResource extends BaseResource
                         'title' => 'Haen Komputer',
                         'subtitle' => 'Laporan Pembelian',
                         'tanggal' => now()->format('d-m-Y'),
-                    ]),
+                    ])
+                    ->summaryResolver(function (Builder $query, Collection $records): array {
+                        $baseQuery = $query->toBase();
+                        $totalPembelian = self::summarizeTotalPembelian($baseQuery);
+                        $totalDibayar = self::summarizeTotalDibayar($baseQuery);
+                        $totalSisa = self::summarizeSisaPembelian($baseQuery);
+
+                        return [
+                            [
+                                'label' => 'Total Transaksi',
+                                'value' => number_format($records->count(), 0, ',', '.'),
+                            ],
+                            [
+                                'label' => 'Total Pembelian',
+                                'value' => self::formatCurrency($totalPembelian),
+                            ],
+                            [
+                                'label' => 'Total Dibayar',
+                                'value' => self::formatCurrency($totalDibayar),
+                            ],
+                            [
+                                'label' => 'Sisa Pembayaran',
+                                'value' => self::formatCurrency($totalSisa),
+                            ],
+                        ];
+                    }),
             ])
             ->actions([
                 Action::make('detail')
@@ -299,7 +326,7 @@ class PembelianReportResource extends BaseResource
                     ->modalWidth('5xl')
                     ->modalSubmitAction(false)
                     ->slideOver()
-                    ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
             ])
             ->bulkActions([]);
     }
@@ -318,7 +345,7 @@ class PembelianReportResource extends BaseResource
                                     ->icon('heroicon-m-document-text')
                                     ->color('primary')
                                     ->tooltip('Klik untuk melihat detail')
-                                    ->url(fn (Pembelian $record) => PembelianResource::getUrl('view', ['record' => $record]))
+                                    ->url(fn(Pembelian $record) => PembelianResource::getUrl('view', ['record' => $record]))
                                     ->openUrlInNewTab(),
                                 TextEntry::make('tanggal')
                                     ->label('Tanggal')
@@ -342,7 +369,7 @@ class PembelianReportResource extends BaseResource
                                 TextEntry::make('jenis_pembayaran')
                                     ->label('Status Pembayaran')
                                     ->badge()
-                                    ->formatStateUsing(fn (?string $state): ?string => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                                    ->formatStateUsing(fn(?string $state): ?string => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                                     ->colors([
                                         'success' => 'lunas',
                                         'danger' => 'tempo',
@@ -357,12 +384,12 @@ class PembelianReportResource extends BaseResource
                             ->schema([
                                 TextEntry::make('total_pembelian')
                                     ->label('Total Pembelian')
-                                    ->state(fn (Pembelian $record): string => self::formatCurrency($record->calculateTotalPembelian()))
+                                    ->state(fn(Pembelian $record): string => self::formatCurrency($record->calculateTotalPembelian()))
                                     ->icon('heroicon-m-banknotes')
                                     ->color('success'),
                                 TextEntry::make('total_dibayar')
                                     ->label('Total Dibayar')
-                                    ->state(fn (Pembelian $record): string => self::formatCurrency(
+                                    ->state(fn(Pembelian $record): string => self::formatCurrency(
                                         (int) ($record->pembayaran()->sum('jumlah') ?? 0)
                                     ))
                                     ->icon('heroicon-m-wallet'),

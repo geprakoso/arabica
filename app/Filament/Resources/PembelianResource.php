@@ -876,6 +876,7 @@ class PembelianResource extends BaseResource
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
                     ->toggleable()
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('nota_supplier')
                     ->label('Nota Supplier')
@@ -942,7 +943,7 @@ class PembelianResource extends BaseResource
                     })
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('items', function (Builder $q) use ($search): void {
-                            $q->whereRaw("JSON_SEARCH(serials, 'one', ?, NULL, '$[*].sn') IS NOT NULL", ["%{$search}%"]);
+                            $q->whereRaw('LOWER(serials) LIKE ?', ['%' . strtolower($search) . '%']);
                         });
                     })
                     ->toggleable(),

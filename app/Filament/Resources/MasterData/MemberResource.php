@@ -324,6 +324,13 @@ class MemberResource extends BaseResource
     {
         return $table
             ->columns([
+                TextColumn::make('kode_member')
+                    ->label('ID Member')
+                    ->badge()
+                    ->color('gray')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('nama_member')
                     ->label('Member')
                     ->formatStateUsing(fn($state) => Str::title($state))

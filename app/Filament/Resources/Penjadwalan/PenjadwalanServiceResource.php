@@ -294,6 +294,7 @@ class PenjadwalanServiceResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('no_resi')
                     ->label('No. Resi')
@@ -354,7 +355,25 @@ class PenjadwalanServiceResource extends BaseResource
                         'progress' => 'Sedang Dikerjakan',
                         'done' => 'Selesai',
                         'cancel' => 'Dibatalkan',
-                    ]),
+                    ])
+                    ->default('pending')
+                    ->indicateUsing(function (array $data): ?string {
+                        $status = $data['value'] ?? null;
+                        if (! $status) {
+                            return null;
+                        }
+
+                        $labels = [
+                            'pending' => 'Menunggu Antrian',
+                            'diagnosa' => 'Sedang Diagnosa',
+                            'waiting_part' => 'Menunggu Sparepart',
+                            'progress' => 'Sedang Dikerjakan',
+                            'done' => 'Selesai',
+                            'cancel' => 'Dibatalkan',
+                        ];
+
+                        return 'Status: ' . ($labels[$status] ?? $status);
+                    }),
                 SelectFilter::make('technician_id')
                     ->label('Teknisi')
                     ->relationship('technician', 'name'),
