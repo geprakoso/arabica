@@ -24,6 +24,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Guava\Calendar\Widgets\CalendarWidget;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\Absensi\LiburCutiResource;
 use App\Filament\Resources\Penjadwalan\KalenderEventResource;
@@ -31,6 +32,8 @@ use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
 
 class JadwalKalenderWidget extends CalendarWidget
 {
+    use InteractsWithForms; // Trait for Forms
+
     protected string | \Closure | \Illuminate\Support\HtmlString | null $heading = 'Kalender Jadwal';
 
     protected int | string | array $columnSpan = 'full';
@@ -40,16 +43,40 @@ class JadwalKalenderWidget extends CalendarWidget
     protected bool $eventClickEnabled = true;
     protected bool $dateSelectEnabled = true;
 
-    #[On('calendar-date-set')]
-    public function setCalendarDate(string $date): void
+    protected static string $view = 'filament.widgets.jadwal-kalender-widget';
+
+    public ?int $month = null;
+    public ?int $year = null;
+
+    public function mount(): void
     {
-        $this->setOption('date', $date);
+        $now = Carbon::now();
+        $this->month = $this->month ?? $now->month;
+        $this->year = $this->year ?? $now->year;
+        $this->setOption('date', sprintf('%04d-%02d-01', $this->year, $this->month));
     }
+
+    public function updatedMonth(): void
+    {
+        $this->updateCalendarView();
+    }
+
+    public function updatedYear(): void
+    {
+        $this->updateCalendarView();
+    }
+
+    public function updateCalendarView(): void
+    {
+        $this->setOption('date', sprintf('%04d-%02d-01', $this->year, $this->month));
+    }
+
 
     public function getEvents(array $fetchInfo = []): Collection | array
     {
         $events = [];
 
+        // 1. Libur & Cuti
         $liburCutis = LiburCuti::query()
             ->select([
                 'id',
@@ -97,6 +124,8 @@ class JadwalKalenderWidget extends CalendarWidget
             ];
         }
 
+
+        // 2. Tugas
         $tugas = PenjadwalanTugas::query()
             ->select([
                 'id',
@@ -137,6 +166,8 @@ class JadwalKalenderWidget extends CalendarWidget
             ];
         }
 
+
+        // 3. Event & Meeting (KalenderEvent)
         $kalenderEvents = KalenderEvent::query()
             ->select([
                 'id',
