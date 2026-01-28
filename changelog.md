@@ -15,6 +15,13 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
   - Memindahkan seluruh CSS kustom kalender ke `AdminPanelProvider.php` sebagai gaya global dengan spesifisitas tinggi (`body .ec ...`). Hal ini menjamin gaya terkunci dan tidak perlu dideklarasikan ulang di setiap view.
   - Membersihkan kode CSS lokal dari file Blade untuk pemeliharaan yang lebih bersih.
   - Meningkatkan ketahanan widget dengan menambahkan properti `className` sebagai fallback selain `classNames`.
+- **Modernisasi Filter Kalender**:
+  - **Inline Header Filters**: Memindahkan filter Bulan dan Tahun langsung ke dalam header widget, berdampingan dengan tombol aksi (Buat Tugas/Event).
+  - **Clean & Soft UI**:
+    - Menggunakan dropdown manual dengan gaya "Ghost" (`bg-gray-50`) yang bersih.
+    - Menambahkan efek hover **Soft Primary** (`hover:bg-primary-50` & `text-primary-600`) yang memberikan umpan balik visual yang nyaman.
+  - **Penyederhanaan UX**: Menghapus filter "Tipe Event" yang jarang digunakan untuk tampilan yang lebih minimalis dan fokus.
+  - **Technical Debt**: Menghapus wrapper form legacy pada halaman `KalenderJadwal` dan menggantinya dengan integrasi Livewire `wire:model.live` langsung pada widget.
 
 ## 2026.01.26
 ### Fitur Godmode & Manajemen Data Tingkat Lanjut

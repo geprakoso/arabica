@@ -43,9 +43,9 @@ class TugasWidget extends AdvancedTableWidget
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn (StatusTugas|string|null $state) => $state instanceof StatusTugas ? $state->getLabel() : (filled($state) ? StatusTugas::from($state)->getLabel() : null))
-                    ->icon(fn (StatusTugas|string|null $state) => $state instanceof StatusTugas ? $state->getIcon() : (filled($state) ? StatusTugas::from($state)->getIcon() : null))
-                    ->color(fn (StatusTugas|string|null $state) => $state instanceof StatusTugas ? $state->getColor() : (filled($state) ? StatusTugas::from($state)->getColor() : null)),
+                    ->formatStateUsing(fn(StatusTugas|string|null $state) => $state instanceof StatusTugas ? $state->getLabel() : (filled($state) ? StatusTugas::from($state)->getLabel() : null))
+                    ->icon(fn(StatusTugas|string|null $state) => $state instanceof StatusTugas ? $state->getIcon() : (filled($state) ? StatusTugas::from($state)->getIcon() : null))
+                    ->color(fn(StatusTugas|string|null $state) => $state instanceof StatusTugas ? $state->getColor() : (filled($state) ? StatusTugas::from($state)->getColor() : null)),
                 Tables\Columns\TextColumn::make('prioritas')
                     ->badge()
                     ->colors([
@@ -57,16 +57,16 @@ class TugasWidget extends AdvancedTableWidget
                     ->label('Deadline')
                     ->date('d M Y')
                     ->sortable(),
-            ])
+            ])->paginated(10)
             ->recordAction('view')
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->label(false)
                     ->icon(null)
                     ->slideOver()
-                    ->modalHeading(fn (PenjadwalanTugas $record) => $record->judul)
+                    ->modalHeading(fn(PenjadwalanTugas $record) => $record->judul)
                     ->modalWidth('6xl')
-                    ->infolist(fn (Infolist $infolist) => PenjadwalanTugasResource::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => PenjadwalanTugasResource::infolist($infolist)),
             ]);
     }
 }
