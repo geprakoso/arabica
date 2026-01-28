@@ -109,7 +109,7 @@ class AdminPanelProvider extends PanelProvider
             ->userMenuItems([
                 MenuItem::make('My Profile')
                     ->label('My Profile')
-                    ->url(fn (): string => EditProfilePage::getUrl())
+                    ->url(fn(): string => EditProfilePage::getUrl())
                     ->icon('heroicon-o-user'),
             ])
             ->navigationGroups([
@@ -124,7 +124,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class])
             ->renderHook(
                 'panels::head.end',
-                fn (): string => <<<'HTML'
+                fn(): string => <<<'HTML'
                     <style>
                         /* --- 0. SIDEBAR SETTINGS --- */
                         :root {
@@ -561,24 +561,106 @@ class AdminPanelProvider extends PanelProvider
                         .dark .fi-btn.fi-btn-color-gray.bg-custom-600 svg {
                             color: rgb(212 212 216) !important;
                         }
+
+                        /* --- CALENDAR EVENTS (Global Style - High Specificity) --- */
+                        /* Force override of Event Calendar variables and styles */
+                        
+                        /* Base Rounder */
+                        body .ec .ec-event {
+                            border-radius: 6px !important;
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Optional: add subtle shadow */
+                        }
+
+                        /* Info/Primary - Light Mode */
+                        body .ec .ec-event.event-info {
+                            background-color: rgb(239, 246, 255) !important;
+                            color: rgb(37, 99, 235) !important;
+                            border: 1px solid rgb(191, 219, 254) !important;
+                        }
+                        
+                        /* Success - Light Mode */
+                        body .ec .ec-event.event-success {
+                            background-color: rgb(240, 253, 244) !important;
+                            color: rgb(22, 163, 74) !important;
+                            border: 1px solid rgb(187, 247, 208) !important;
+                        }
+
+                        /* Danger - Light Mode */
+                        body .ec .ec-event.event-danger {
+                            background-color: rgb(254, 242, 242) !important;
+                            color: rgb(220, 38, 38) !important;
+                            border: 1px solid rgb(254, 202, 202) !important;
+                        }
+
+                        /* Warning - Light Mode */
+                        body .ec .ec-event.event-warning {
+                            background-color: rgb(255, 251, 235) !important;
+                            color: rgb(217, 119, 6) !important;
+                            border: 1px solid rgb(253, 230, 138) !important;
+                        }
+
+                        /* Gray - Light Mode */
+                        body .ec .ec-event.event-gray {
+                            background-color: rgb(250, 250, 250) !important;
+                            color: rgb(82, 82, 91) !important;
+                            border: 1px solid rgb(228, 228, 231) !important;
+                        }
+
+
+                        /* --- DARK MODE --- */
+                        
+                        /* Info - Dark Mode */
+                        html.dark body .ec .ec-event.event-info {
+                            background-color: rgba(59, 130, 246, 0.15) !important;
+                            color: rgb(147, 197, 253) !important;
+                            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+                        }
+
+                        /* Success - Dark Mode */
+                        html.dark body .ec .ec-event.event-success {
+                            background-color: rgba(34, 197, 94, 0.15) !important;
+                            color: rgb(134, 239, 172) !important;
+                            border: 1px solid rgba(34, 197, 94, 0.3) !important;
+                        }
+
+                        /* Danger - Dark Mode */
+                        html.dark body .ec .ec-event.event-danger {
+                            background-color: rgba(239, 68, 68, 0.15) !important;
+                            color: rgb(252, 165, 165) !important;
+                            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+                        }
+
+                        /* Warning - Dark Mode */
+                        html.dark body .ec .ec-event.event-warning {
+                            background-color: rgba(245, 158, 11, 0.15) !important;
+                            color: rgb(253, 230, 138) !important;
+                            border: 1px solid rgba(245, 158, 11, 0.3) !important;
+                        }
+
+                        /* Gray - Dark Mode */
+                        html.dark body .ec .ec-event.event-gray {
+                            background-color: rgba(161, 161, 170, 0.15) !important;
+                            color: rgb(212, 212, 216) !important;
+                            border: 1px solid rgba(161, 161, 170, 0.3) !important;
+                        }
                     </style>
                 HTML
             )
 
             ->renderHook(
                 'panels::body.end',
-                fn () => view('filament.hooks.absensi-geolocation-script')
+                fn() => view('filament.hooks.absensi-geolocation-script')
 
             )
             ->renderHook(
                 'panels::global-search.after',
-                fn () => view('filament.hooks.godmode-badge')
+                fn() => view('filament.hooks.godmode-badge')
             )
 
             // --- 5. DRAGGABLE SIDEBAR LOGIC (NEW) ---
             ->renderHook(
                 'panels::body.end',
-                fn (): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
+                fn(): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
                     <div id="sidebar-resizer" class="hidden md:block"></div>
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {
@@ -648,7 +730,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 'panels::body.end',
-                fn (): string => <<<'HTML'
+                fn(): string => <<<'HTML'
                     <script>
                         document.addEventListener('click', function (event) {
                             // Ensure it's a real user click

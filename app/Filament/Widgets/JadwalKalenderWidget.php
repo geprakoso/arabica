@@ -85,8 +85,8 @@ class JadwalKalenderWidget extends CalendarWidget
                 'start' => $start,
                 'end' => $end,
                 'allDay' => true,
-                'backgroundColor' => $this->liburColor($libur->status_pengajuan),
-                'textColor' => '#ffffff',
+                'classNames' => [$this->liburClass($libur->status_pengajuan)],
+                'className' => $this->liburClass($libur->status_pengajuan),
                 'extendedProps' => [
                     'model' => $libur::class,
                     'key' => $libur->getKey(),
@@ -125,8 +125,8 @@ class JadwalKalenderWidget extends CalendarWidget
                 'start' => $start,
                 'end' => $end,
                 'allDay' => true,
-                'backgroundColor' => $this->tugasColor($task->status),
-                'textColor' => '#ffffff',
+                'classNames' => [$this->tugasClass($task->status)],
+                'className' => $this->tugasClass($task->status),
                 'extendedProps' => [
                     'model' => $task::class,
                     'key' => $task->getKey(),
@@ -193,35 +193,35 @@ class JadwalKalenderWidget extends CalendarWidget
         return empty($parts) ? 'Libur/Cuti' : implode(' - ', $parts);
     }
 
-    private function liburColor(?StatusPengajuan $status): string
+    private function liburClass(?StatusPengajuan $status): string
     {
         return match ($status) {
-            StatusPengajuan::Diterima => '#16a34a',
-            StatusPengajuan::Pending => '#f59e0b',
-            StatusPengajuan::Ditolak => '#ef4444',
-            default => '#6b7280',
+            StatusPengajuan::Diterima => 'event-success',
+            StatusPengajuan::Pending => 'event-warning',
+            StatusPengajuan::Ditolak => 'event-danger',
+            default => 'event-gray',
         };
     }
 
-    private function tugasColor(?StatusTugas $status): string
+    private function tugasClass(?StatusTugas $status): string
     {
         return match ($status) {
-            StatusTugas::Selesai => '#16a34a',
-            StatusTugas::Proses => '#0ea5e9',
-            StatusTugas::Pending => '#f59e0b',
-            StatusTugas::Batal => '#ef4444',
-            default => '#6b7280',
+            StatusTugas::Selesai => 'event-success',
+            StatusTugas::Proses => 'event-info',
+            StatusTugas::Pending => 'event-warning',
+            StatusTugas::Batal => 'event-danger',
+            default => 'event-gray',
         };
     }
 
-    private function kalenderEventColor(string $type): string
+    private function kalenderEventClass(string $type): string
     {
         return match ($type) {
-            'libur' => '#ef4444',
-            'meeting' => '#0ea5e9',
-            'event' => '#22c55e',
-            'catatan' => '#f59e0b',
-            default => '#6b7280',
+            'libur' => 'event-danger',
+            'meeting' => 'event-info',
+            'event' => 'event-success',
+            'catatan' => 'event-warning',
+            default => 'event-gray',
         };
     }
 
@@ -268,8 +268,8 @@ class JadwalKalenderWidget extends CalendarWidget
                 'start' => $start,
                 'end' => $end,
                 'allDay' => true,
-                'backgroundColor' => $this->kalenderEventColor($event->tipe),
-                'textColor' => '#ffffff',
+                'classNames' => [$this->kalenderEventClass($event->tipe)],
+                'className' => $this->kalenderEventClass($event->tipe),
                 'extendedProps' => [
                     'model' => $event::class,
                     'key' => $event->getKey(),
@@ -285,8 +285,8 @@ class JadwalKalenderWidget extends CalendarWidget
             'start' => Carbon::parse($rawMulai)->toIso8601String(),
             'end' => Carbon::parse($rawSelesai)->toIso8601String(),
             'allDay' => false,
-            'backgroundColor' => $this->kalenderEventColor($event->tipe),
-            'textColor' => '#ffffff',
+            'classNames' => [$this->kalenderEventClass($event->tipe)],
+            'className' => $this->kalenderEventClass($event->tipe),
             'extendedProps' => [
                 'model' => $event::class,
                 'key' => $event->getKey(),

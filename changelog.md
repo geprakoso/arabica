@@ -2,6 +2,20 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.28
+### Peningkatan UI Widget Kalender
+- **Soft Button Colors**:
+  - Mengimplementasikan palet "Soft Colors" (warna pastel lembut) pada widget Kalender Jadwal, menggantikan warna solid yang terlalu kontras.
+  - Warna disesuaikan dengan status tugas/event: **Biru (Proses/Meeting)**, **Hijau (Selesai/Event)**, **Kuning (Pending/Catatan)**, **Merah (Batal/Libur)**.
+  - Mendukung **Dark Mode** secara native dengan penyesuaian opasitas latar belakang dan border yang elegan.
+- **Konsistensi Gaya (Rounder)**:
+  - Menerapkan sudut tumpul (`border-radius: 6px`) yang konsisten pada seluruh event di kalender agar selaras dengan bahasa desain aplikasi lainnya.
+  - Menambahkan bayangan halus (`box-shadow`) untuk memberikan kedalaman pada blok event.
+- **Refactoring & Optimasi Styling**:
+  - Memindahkan seluruh CSS kustom kalender ke `AdminPanelProvider.php` sebagai gaya global dengan spesifisitas tinggi (`body .ec ...`). Hal ini menjamin gaya terkunci dan tidak perlu dideklarasikan ulang di setiap view.
+  - Membersihkan kode CSS lokal dari file Blade untuk pemeliharaan yang lebih bersih.
+  - Meningkatkan ketahanan widget dengan menambahkan properti `className` sebagai fallback selain `classNames`.
+
 ## 2026.01.26
 ### Fitur Godmode & Manajemen Data Tingkat Lanjut
 - **Godmode Force Delete (Pembelian)**:
