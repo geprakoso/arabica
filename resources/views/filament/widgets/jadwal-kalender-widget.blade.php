@@ -36,7 +36,7 @@
             }
 
             & .ec-now-indicator {
-                z-index:40;
+                z-index: 40;
             }
         }
 
@@ -55,7 +55,8 @@
     </style>
 
     <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-        <div class="fi-section-header flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
+        <div
+            class="fi-section-header flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
             {{-- Heading --}}
             <div class="flex items-center gap-x-3">
                 <h2 class="text-base font-semibold leading-6 text-gray-950 dark:text-white">
@@ -67,11 +68,9 @@
             <div class="flex items-center gap-x-3">
                 {{-- Form Filters (Month/Year) --}}
                 <div class="flex items-center gap-2">
-                    <select
-                        wire:model.live="month"
-                        class="block w-full rounded-lg border-none bg-gray-50 py-1.5 px-3 text-sm font-medium text-gray-950 ring-1 ring-gray-950/10 hover:bg-primary-50 hover:text-primary-600 hover:ring-primary-600 focus:ring-2 focus:ring-primary-600 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:hover:bg-primary-400/10 dark:hover:text-primary-400 dark:hover:ring-primary-400"
-                        style="min-width: 100px;"
-                    >
+                    <select wire:model.live="month"
+                        class="block w-full rounded-lg border-none bg-gray-50 py-1.5 px-3 text-sm font-medium text-gray-950 ring-1 ring-gray-950/10 hover:bg-primary-50 hover:text-primary-600 hover:ring-primary-600 focus:ring-2 focus:ring-primary-600 dark:bg-gray-50 dark:text-primary-600"
+                        style="min-width: 100px;">
                         <option value="1">Januari</option>
                         <option value="2">Februari</option>
                         <option value="3">Maret</option>
@@ -86,11 +85,9 @@
                         <option value="12">Desember</option>
                     </select>
 
-                    <select
-                        wire:model.live="year"
-                        class="block w-full rounded-lg border-none bg-gray-50 py-1.5 px-3 text-sm font-medium text-gray-950 ring-1 ring-gray-950/10 hover:bg-primary-50 hover:text-primary-600 hover:ring-primary-600 focus:ring-2 focus:ring-primary-600 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:hover:bg-primary-400/10 dark:hover:text-primary-400 dark:hover:ring-primary-400"
-                        style="min-width: 80px;"
-                    >
+                    <select wire:model.live="year"
+                        class="block w-full rounded-lg border-none bg-gray-50 py-1.5 px-3 text-sm font-medium text-gray-950 ring-1 ring-gray-950/10 hover:bg-primary-50 hover:text-primary-600 hover:ring-primary-600 focus:ring-2 focus:ring-primary-600 dark:bg-gray-50 dark:text-primary-600"
+                        style="min-width: 80px;">
                         @php
                             $currentYear = \Carbon\Carbon::now()->year;
                             $years = range($currentYear - 3, $currentYear + 3);
@@ -113,10 +110,7 @@
         </div>
 
         <div class="fi-section-content p-6">
-            <div
-                wire:ignore
-                x-ignore
-                ax-load
+            <div wire:ignore x-ignore ax-load
                 ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('calendar-widget', 'guava/calendar') }}"
                 x-data="calendarWidget({
                     view: @js($this->getCalendarView()),
@@ -143,14 +137,13 @@
                     hasEventClickContextMenu: @js($hasEventClickContextMenu),
                     hasNoEventsClickContextMenu: @js($hasNoEventsClickContextMenu),
                     options: @js($this->getOptions()),
-                    dayHeaderFormat: {{$dayHeaderFormatJs}},
-                    slotLabelFormat: {{$slotLabelFormatJs}},
-                })"
-            >
+                    dayHeaderFormat: {{ $dayHeaderFormatJs }},
+                    slotLabelFormat: {{ $slotLabelFormatJs }},
+                })">
                 <div id="calendar"></div>
-                <x-guava-calendar::context-menu/>
+                <x-guava-calendar::context-menu />
             </div>
         </div>
     </div>
-    <x-filament-actions::modals/>
+    <x-filament-actions::modals />
 </x-filament-widgets::widget>
