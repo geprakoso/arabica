@@ -668,6 +668,7 @@ class PenjualanResource extends BaseResource
                     ->placeholder('-')
                     ->weight('medium')
                     ->toggleable()
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')

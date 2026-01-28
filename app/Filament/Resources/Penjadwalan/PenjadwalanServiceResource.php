@@ -294,6 +294,7 @@ class PenjadwalanServiceResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('no_resi')
                     ->label('No. Resi')
