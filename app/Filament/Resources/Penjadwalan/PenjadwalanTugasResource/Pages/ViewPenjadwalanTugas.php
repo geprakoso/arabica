@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource\Pages;
 
 use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
-use Filament\Resources\Pages\ViewRecord;
 use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewPenjadwalanTugas extends ViewRecord
 {
@@ -18,8 +18,8 @@ class ViewPenjadwalanTugas extends ViewRecord
     {
         $user = auth()->user();
 
-        // Super admin can always modify
-        if ($user->hasRole('super_admin')) {
+        // Super admin or Godmode can always modify
+        if ($user->hasRole(['super_admin', 'godmode'])) {
             return true;
         }
 
@@ -72,7 +72,7 @@ class ViewPenjadwalanTugas extends ViewRecord
         ];
     }
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 

@@ -2,6 +2,37 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.26
+### Fitur Godmode & Manajemen Data Tingkat Lanjut
+- **Godmode Force Delete (Pembelian)**:
+  - Mengimplementasikan alur penghapusan paksa 3-langkah untuk transaksi pembelian yang terkunci.
+  - Sistem otomatis menangani *cascade deletion* untuk item, pembayaran, dan jasa terkait tanpa error integritas database.
+  - Memberikan tanda "Nerfed" pada penjualan yang terkait dengan pembelian yang dihapus paksa.
+- **Smart Delete Penjualan**:
+  - Pengguna Godmode kini dapat menghapus penjualan yang sudah "Lunas" dengan alur konfirmasi bertingkat.
+  - Menampilkan ringkasan dampak (*Impact Summary*) sebelum penghapusan, merinci item, pembayaran, dan transaksi tukar tambah yang akan terhapus.
+- **Indikator Visual Godmode**:
+  - Menambahkan badge "Godmode" di top bar admin panel (sebelah pencarian global) sebagai pengingat visual status *super user*.
+- **Perbaikan Integritas Data**:
+  - Memperbarui skema database (`tb_tukar_tambah`, `tb_penjualan_item`) agar kolom foreign key bersifat *nullable*, mencegah *crash* saat induk dihapus paksa.
+
+## 2026.01.23
+### Perbaikan Harga Pokok & Upload Dokumen Pembelian
+- **Fix Tampilan HPP**: 
+  - Memperbaiki masalah HPP yang tidak muncul pada saat edit *existing record* di tabel barang keluar (`TukarTambahResource`).
+  - Mengimplementasikan *hydration hook* untuk menarik data HPP dari item penjualan atau batch pembelian secara otomatis.
+- **Upload Foto Dokumen**:
+  - Menambahkan fitur upload foto dokumen umum (faktur, surat jalan) pada halaman *View* Pembelian.
+  - Foto tersimpan dalam format JSON dan ditampilkan pada bagian khusus di *Infolist*.
+
+## 2026.01.22
+### Manajemen Serial Number & Pencarian
+- **Pencarian Serial Number**:
+  - Kolom Serial Number pada tabel Pembelian kini dapat dicari (*searchable*), menelusuri data di dalam array JSON `serials`.
+- **Input Serial Number Pembelian**:
+  - Mengimplementasikan UI input serial number pada repeater item pembelian, serupa dengan fitur di modul Penjualan.
+  - Modal input dinamis menyesuaikan jumlah field berdasarkan kuantitas item.
+
 ## 2026.01.18
 ### Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah
 

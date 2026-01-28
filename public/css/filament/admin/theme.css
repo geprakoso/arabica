@@ -6450,3 +6450,97 @@ input:focus-visible+.\[input\:focus-visible\+\&\]\:ring-gray-950\/10 {
 input:focus-visible+.dark\:\[input\:focus-visible\+\&\]\:ring-white\/20:is(.dark *) {
   --tw-ring-color: rgb(255 255 255 / 0.2);
 }
+/* Softer Action Button Colors with Better Readability */
+:root {
+    /* Info - Softer blue */
+    --fi-btn-info-bg: rgb(224 242 254);
+    --fi-btn-info-bg-hover: rgb(186 230 253);
+    --fi-btn-info-text: rgb(3 105 161);
+
+    /* Success - Softer green */
+    --fi-btn-success-bg: rgb(220 252 231);
+    --fi-btn-success-bg-hover: rgb(187 247 208);
+    --fi-btn-success-text: rgb(21 128 61);
+
+    /* Danger - Softer red */
+    --fi-btn-danger-bg: rgb(254 226 226);
+    --fi-btn-danger-bg-hover: rgb(254 202 202);
+    --fi-btn-danger-text: rgb(185 28 28);
+
+    /* Warning - Softer amber */
+    --fi-btn-warning-bg: rgb(254 243 199);
+    --fi-btn-warning-bg-hover: rgb(253 230 138);
+    --fi-btn-warning-text: rgb(180 83 9);
+
+    /* Primary - Softer purple */
+    --fi-btn-primary-bg: rgb(233 213 255);
+    --fi-btn-primary-bg-hover: rgb(216 180 254);
+    --fi-btn-primary-text: rgb(107 33 168);
+}
+
+/* Apply softer colors to filled action buttons */
+.fi-btn.fi-color-info:not(.fi-btn-outlined) {
+    background-color: var(--fi-btn-info-bg) !important;
+    color: var(--fi-btn-info-text) !important;
+}
+
+.fi-btn.fi-color-info:not(.fi-btn-outlined):hover {
+    background-color: var(--fi-btn-info-bg-hover) !important;
+}
+
+.fi-btn.fi-color-success:not(.fi-btn-outlined) {
+    background-color: var(--fi-btn-success-bg) !important;
+    color: var(--fi-btn-success-text) !important;
+}
+
+.fi-btn.fi-color-success:not(.fi-btn-outlined):hover {
+    background-color: var(--fi-btn-success-bg-hover) !important;
+}
+
+.fi-btn.fi-color-danger:not(.fi-btn-outlined) {
+    background-color: var(--fi-btn-danger-bg) !important;
+    color: var(--fi-btn-danger-text) !important;
+}
+
+.fi-btn.fi-color-danger:not(.fi-btn-outlined):hover {
+    background-color: var(--fi-btn-danger-bg-hover) !important;
+}
+
+.fi-btn.fi-color-warning:not(.fi-btn-outlined) {
+    background-color: var(--fi-btn-warning-bg) !important;
+    color: var(--fi-btn-warning-text) !important;
+}
+
+.fi-btn.fi-color-warning:not(.fi-btn-outlined):hover {
+    background-color: var(--fi-btn-warning-bg-hover) !important;
+}
+
+.fi-btn.fi-color-primary:not(.fi-btn-outlined) {
+    background-color: var(--fi-btn-primary-bg) !important;
+    color: var(--fi-btn-primary-text) !important;
+}
+
+.fi-btn.fi-color-primary:not(.fi-btn-outlined):hover {
+    background-color: var(--fi-btn-primary-bg-hover) !important;
+}
+
+/* Ensure icon colors match text */
+.fi-btn.fi-color-info:not(.fi-btn-outlined) svg {
+    color: var(--fi-btn-info-text) !important;
+}
+
+.fi-btn.fi-color-success:not(.fi-btn-outlined) svg {
+    color: var(--fi-btn-success-text) !important;
+}
+
+.fi-btn.fi-color-danger:not(.fi-btn-outlined) svg {
+    color: var(--fi-btn-danger-text) !important;
+}
+
+.fi-btn.fi-color-warning:not(.fi-btn-outlined) svg {
+    color: var(--fi-btn-warning-text) !important;
+}
+
+.fi-btn.fi-color-primary:not(.fi-btn-outlined) svg {
+    color: var(--fi-btn-primary-text) !important;
+}

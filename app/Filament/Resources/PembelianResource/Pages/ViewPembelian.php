@@ -114,6 +114,16 @@ class ViewPembelian extends ViewRecord
                     try {
                         $this->record->delete();
                     } catch (ValidationException $exception) {
+                        // Godmode: Start Force Delete Flow (Step 1 -> Step 2)
+                        if (auth()->user()?->hasRole('godmode')) {
+                            // Pre-fetch references just like ListPembelians, though ViewPembelian uses $this->record directly
+                            // $this->replaceMountedAction('forceDeleteStep2');
+                            // Actually, let's keep it consistent by calling step 2
+                            $this->replaceMountedAction('forceDeleteStep2');
+
+                            return;
+                        }
+
                         $messages = collect($exception->errors())
                             ->flatten()
                             ->implode(' ');
@@ -142,6 +152,105 @@ class ViewPembelian extends ViewRecord
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
             ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->color('danger');
+    }
+
+    // Force Delete Step 2: Show affected Penjualan
+    public function forceDeleteStep2Action(): Action
+    {
+        return Action::make('forceDeleteStep2')
+            ->modalHeading('⚠️ Perhatian!')
+            ->modalDescription(function () {
+                $record = $this->record;
+                $isTukarTambah = $record->tukarTambah()->exists();
+
+                $desc = '';
+
+                if ($isTukarTambah) {
+                    $ttKode = $record->tukarTambah?->kode ?? 'TT-XXXXX';
+                    $desc .= "⚠️ Dengan menghapus pembelian ini, Tukar Tambah ({$ttKode}) akan diputus. dan mungkin akan tidak dapat diakses lagi.\n\n";
+                }
+
+                $affectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
+                if (empty($affectedNotas)) {
+                    $desc .= 'Tidak ada Penjualan yang terpengaruh. Lanjutkan untuk konfirmasi password.';
+                } else {
+                    $notaList = implode(', ', $affectedNotas);
+                    $desc .= "Penjualan berikut akan ditandai sebagai 'Nerf' (kehilangan referensi batch pembelian):\n\n**{$notaList}**";
+                }
+
+                return $desc;
+            })
+            ->modalIcon('heroicon-o-exclamation-circle')
+            ->modalIconColor('warning')
+            ->modalWidth('md')
+            ->modalSubmitActionLabel('Lanjutkan ke Konfirmasi Password')
+            ->action(function (): void {
+                $this->replaceMountedAction('forceDeleteStep3');
+            })
+            ->color('warning');
+    }
+
+    // Force Delete Step 3: Password Confirmation + Final List
+    public function forceDeleteStep3Action(): Action
+    {
+        return Action::make('forceDeleteStep3')
+            ->modalHeading('🔐 Konfirmasi Password')
+            ->modalDescription(function () {
+                $affectedNotas = $this->record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
+
+                $desc = "Masukkan password Anda untuk mengkonfirmasi penghapusan permanen.\n\n";
+                if (! empty($affectedNotas)) {
+                    $notaList = implode(', ', $affectedNotas);
+                    $desc .= "**Penjualan yang akan di-Nerf:** {$notaList}";
+                }
+
+                return $desc;
+            })
+            ->modalIcon('heroicon-o-lock-closed')
+            ->modalIconColor('danger')
+            ->modalWidth('md')
+            ->form([
+                \Filament\Forms\Components\TextInput::make('password')
+                    ->label('Password')
+                    ->password()
+                    ->required()
+                    ->placeholder('Masukkan password akun Anda'),
+            ])
+            ->modalSubmitActionLabel('🔥 Hapus Permanen')
+            ->action(function (array $data): void {
+                $user = auth()->user();
+
+                // Verify password
+                if (! $user || ! \Illuminate\Support\Facades\Hash::check($data['password'], $user->password)) {
+                    \Filament\Notifications\Notification::make()
+                        ->title('Password salah')
+                        ->body('Password yang Anda masukkan tidak sesuai.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                // Execute force delete
+                $result = $this->record->forceDeleteWithCascade();
+
+                $affectedCount = $result['affected_penjualan']->count();
+                $affectedNotas = $result['affected_penjualan']->pluck('no_nota')->implode(', ');
+
+                $body = 'Pembelian berhasil dihapus.';
+                if ($affectedCount > 0) {
+                    $body .= " {$affectedCount} Penjualan ditandai sebagai Nerf: {$affectedNotas}";
+                }
+
+                \Filament\Notifications\Notification::make()
+                    ->title('Force Delete Berhasil')
+                    ->body($body)
+                    ->success()
+                    ->send();
+
+                $this->redirect(PembelianResource::getUrl('index'));
+            })
             ->color('danger');
     }
 

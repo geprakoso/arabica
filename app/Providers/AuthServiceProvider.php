@@ -107,6 +107,19 @@ class AuthServiceProvider extends ServiceProvider
 
         // Align super admin bypass with Shield config (falls back to Filament Spatie config for safety).
         Gate::before(function ($user, $ability) {
+            // Godmode: Double Verification (Role + Email Whitelist)
+            if ($user->hasRole('godmode')) {
+                $godmodeEmailsEnv = config('godmode.emails');
+                // Handle comma-separated string if provided
+                $godmodeEmails = is_array($godmodeEmailsEnv) 
+                    ? $godmodeEmailsEnv 
+                    : array_filter(array_map('trim', explode(',', $godmodeEmailsEnv ?? '')));
+                
+                if (in_array($user->email, $godmodeEmails)) {
+                    return true;
+                }
+            }
+
             $superAdminRole = config('filament-shield.super_admin.name')
                 ?? config('filament-spatie-roles-permissions.super_admin_role_name')
                 ?? 'super_admin';
