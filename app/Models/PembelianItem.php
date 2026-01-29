@@ -121,7 +121,7 @@ class PembelianItem extends Model
 
     public function produk()
     {
-        return $this->belongsTo(Produk::class, self::productForeignKey());
+        return $this->belongsTo(Produk::class, self::productForeignKey())->withTrashed();
     }
 
     public function penjualanItems()
