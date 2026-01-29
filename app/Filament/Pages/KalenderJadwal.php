@@ -20,9 +20,10 @@ class KalenderJadwal extends Page
         ];
     }
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationLabel = 'Kalender Jadwal';
-    protected static ?string $title = 'Kalender Jadwal';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    protected static ?string $navigationLabel = 'Kalender Kerja';
+    protected static ?string $title = 'Kalender Kerja';
+    protected static ?string $icon = 'heroicon-o-calendar';
     protected static ?string $navigationGroup = 'Kalender';
     protected static ?int $navigationSort = -3;
     protected static string $view = 'filament.pages.kalender-jadwal';

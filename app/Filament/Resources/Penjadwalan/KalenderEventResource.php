@@ -27,7 +27,11 @@ class KalenderEventResource extends Resource
 
     protected static ?string $navigationGroup = 'Kalender';
 
-    protected static ?string $navigationLabel = 'Kalender Event';
+    protected static ?string $navigationLabel = 'Jadwal Event';
+
+    protected static ?string $title = 'Jadwal Event';
+
+    protected static ?string $pluralModelLabel = 'Jadwal Event';
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 

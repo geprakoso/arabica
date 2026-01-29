@@ -50,6 +50,10 @@
                 background-color: rgb(var(--gray-20));
                 border-radius: 0 0 10px 10px;
             }
+
+            & .ec-today {
+                background-color: rgb(var(--primary-100)) !important;
+            }
         }
 
         .dark .ec {
@@ -73,6 +77,10 @@
             & .ec-body {
                 background-color: rgba(255, 255, 255, 0.02);
             }
+
+            & .ec-today {
+                background-color: rgba(var(--primary-500), 0.15) !important;
+            }
         }
     </style>
 
@@ -80,10 +88,26 @@
         <div
             class="fi-section-header flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
             {{-- Heading --}}
-            <div class="flex items-center gap-x-3">
-                <h2 class="text-base font-semibold leading-6 text-gray-950 dark:text-white">
-                    {{ $this->getHeading() }}
-                </h2>
+
+            <div class="flex items-center gap-x-4">
+                @if ($icon = $this->getIcon())
+                    <x-filament::icon
+                        :icon="$icon"
+                        class="h-10 w-10 text-primary-600 dark:text-primary-400"
+                    />
+                @endif
+
+                <div class="grid gap-y-1">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
+                        {{ $this->getHeading() }}
+                    </h2>
+
+                    @if ($description = $this->getDescription())
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ $description }}
+                        </p>
+                    @endif
+                </div>
             </div>
 
             {{-- Filters & Actions Wrapper --}}

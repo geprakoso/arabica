@@ -2,6 +2,12 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.29
+### Peningkatan UI Widget Kalender
+- **Header Informatif**: Menambahkan ikon dan deskripsi "Kelola jadwal tugas dan agenda kegiatan disini" pada header widget kalender.
+- **Visual Upgrade**: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna **Primary**, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan menonjol.
+- **Highlight Hari Ini**: Memperjelas warna latar belakang untuk tanggal hari ini (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.
+
 ## 2026.01.28
 ### Peningkatan UI Widget Kalender
 - **Soft Button Colors**:

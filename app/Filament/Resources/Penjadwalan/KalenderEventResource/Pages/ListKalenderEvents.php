@@ -14,7 +14,8 @@ class ListKalenderEvents extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Buat Event'),
+                ->label('Buat Event')
+                ->icon('heroicon-o-plus'),
         ];
     }
 }

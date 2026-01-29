@@ -34,16 +34,28 @@ class JadwalKalenderWidget extends CalendarWidget
 {
     use InteractsWithForms; // Trait for Forms
 
-    protected string | \Closure | \Illuminate\Support\HtmlString | null $heading = 'Kalender Jadwal';
+    protected string | \Closure | \Illuminate\Support\HtmlString | null $heading = 'Kalender Kerja';
 
     protected int | string | array $columnSpan = 'full';
     protected bool $dayMaxEvents = true;
-    protected string $icon = 'heroicon-o-calendar';
+    protected ?string $icon = 'heroicon-o-calendar-days';
     protected ?string $locale = 'id';
     protected bool $eventClickEnabled = true;
     protected bool $dateSelectEnabled = true;
 
     protected static string $view = 'filament.widgets.jadwal-kalender-widget';
+
+    protected string | \Closure | \Illuminate\Support\HtmlString | null $description = 'Ringkasan jadwal harian, tugas, dan event';
+
+    public function getDescription(): string | \Illuminate\Support\HtmlString | null
+    {
+        return $this->description;
+    }
+
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
 
     public ?int $month = null;
     public ?int $year = null;
