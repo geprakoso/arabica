@@ -2,6 +2,38 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.01.28
+### Peningkatan Fitur & Perbaikan Sistem (Deep Scan)
+
+#### 1. Perbaikan Upload & Galeri Tukar Tambah
+- **Fix Upload Bukti Pembayaran**:
+  - Memperbaiki masalah gambar bukti transfer yang hilang setelah penyimpanan pada `TukarTambahResource`.
+  - Memastikan persistensi data pada field `bukti_transfer` saat edit record.
+- **Galeri Foto Terpusat**:
+  - Mengimplementasikan komponen `tukar-tambah-photos-gallery` untuk menampilkan seluruh bukti foto (Penjualan, Pembelian, Dokumen) dalam satu tampilan grid yang rapi.
+  - Memperbaiki layout tabel barang keluar dan masuk pada infolist.
+
+#### 2. Fitur Kode Member Otomatis
+- **Generator Kode Unik**:
+  - Menambahkan kolom `kode_member` pada tabel member (via migrasi).
+  - Implementasi logika *auto-generate* kode (Format: `XXXX-0001`) berdasarkan nama dan tanggal daftar.
+  - Melakukan *backfill* otomatis kode member untuk data member lama.
+- **UI Updates**:
+  - Menampilkan `kode_member` sebagai badge yang dapat dicari (*searchable*) dan disalin (*copyable*) pada tabel Member.
+
+#### 3. Peningkatan Fitur Export & Laporan
+- **Custom Header Export**:
+  - Refactoring `InventoryExportHeaderAction` dan `SummaryExportHeaderAction` untuk kustomisasi header laporan excel/pdf.
+  - Memperbarui template PDF ekspor (`pdf.blade.php`) untuk tampilan laporan yang lebih profesional.
+- **Laporan Harian**:
+  - Pembaruan pada `PembelianReportResource` dan `PenjualanReportResource` untuk sinkronisasi dengan format baru.
+
+## 2026.01.27
+### Penyesuaian Tampilan Tombol
+- **Styling Kustom Tombol**:
+  - Menyamakan gaya tombol aksi dengan skema warna Badge Filament (Info, Success, Warning, Danger, Gray).
+  - Mengimplementasikan CSS kustom pada `AdminPanelProvider` untuk konsistensi visual antara tombol dan badge.
+
 ## 2026.01.26
 ### Fitur Godmode & Manajemen Data Tingkat Lanjut
 - **Godmode Force Delete (Pembelian)**:
