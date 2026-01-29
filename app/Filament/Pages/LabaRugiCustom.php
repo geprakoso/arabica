@@ -9,6 +9,8 @@ use App\Models\KodeAkun;
 use App\Models\PembelianItem;
 use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
+use Barryvdh\DomPDF\Facade\Pdf;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
@@ -16,17 +18,17 @@ use Filament\Forms\Form;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Pages\Page;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 use Spatie\SimpleExcel\SimpleExcelWriter;
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class LabaRugiCustom extends Page
 {
     use HasPageShield;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $title = 'Laporan Laba Rugi';
+
     protected static string $view = 'filament.pages.laba-rugi-custom';
 
     public ?array $data = [];
@@ -78,8 +80,7 @@ class LabaRugiCustom extends Page
     public function getBreadcrumbs(): array
     {
         return [
-            \App\Filament\Resources\Akunting\LaporanLabaRugiResource::getUrl('index')
-                => \App\Filament\Resources\Akunting\LaporanLabaRugiResource::getBreadcrumb(),
+            \App\Filament\Resources\Akunting\LaporanLabaRugiResource::getUrl('index') => \App\Filament\Resources\Akunting\LaporanLabaRugiResource::getBreadcrumb(),
             'Detail',
         ];
     }
@@ -207,7 +208,7 @@ class LabaRugiCustom extends Page
         $fileName = $this->exportFileName('xlsx', $start, $end);
         $rows = $this->buildExportRows($start, $end);
 
-        $path = sys_get_temp_dir() . '/laba-rugi-' . uniqid('', true) . '.xlsx';
+        $path = sys_get_temp_dir().'/laba-rugi-'.uniqid('', true).'.xlsx';
 
         SimpleExcelWriter::create($path)
             ->addRows($rows)
@@ -274,7 +275,9 @@ class LabaRugiCustom extends Page
     {
         $total = PembelianItem::query()
             ->whereHas('pembelian', fn ($query) => $query->whereBetween('tanggal', [$start, $end]))
-            ->selectRaw('SUM(COALESCE(hpp, 0) * COALESCE(qty, 0)) as total')
+            ->whereHas('penjualanItems')
+            ->join('tb_penjualan_item', 'tb_pembelian_item.id_pembelian_item', '=', 'tb_penjualan_item.id_pembelian_item')
+            ->selectRaw('SUM(tb_pembelian_item.hpp * tb_penjualan_item.qty) as total')
             ->value('total') ?? 0;
 
         return (float) $total;
@@ -282,9 +285,9 @@ class LabaRugiCustom extends Page
 
     protected function fetchKategoriRows(Carbon $start, Carbon $end, KategoriAkun $kategori): array
     {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $jenisAkunTable = (new JenisAkun())->getTable();
-        $kodeAkunTable = (new KodeAkun())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $jenisAkunTable = (new JenisAkun)->getTable();
+        $kodeAkunTable = (new KodeAkun)->getTable();
 
         return InputTransaksiToko::query()
             ->selectRaw("{$kodeAkunTable}.kode_akun as kode_akun")
@@ -314,9 +317,9 @@ class LabaRugiCustom extends Page
 
     protected function fetchBebanUsahaRows(Carbon $start, Carbon $end): array
     {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $jenisAkunTable = (new JenisAkun())->getTable();
-        $kodeAkunTable = (new KodeAkun())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $jenisAkunTable = (new JenisAkun)->getTable();
+        $kodeAkunTable = (new KodeAkun)->getTable();
         $kodeBebanUsaha = ['51', '52', '61', '81'];
 
         return JenisAkun::query()
@@ -346,9 +349,9 @@ class LabaRugiCustom extends Page
 
     protected function fetchPendapatanLainRows(Carbon $start, Carbon $end): array
     {
-        $transaksiTable = (new InputTransaksiToko())->getTable();
-        $jenisAkunTable = (new JenisAkun())->getTable();
-        $kodeAkunTable = (new KodeAkun())->getTable();
+        $transaksiTable = (new InputTransaksiToko)->getTable();
+        $jenisAkunTable = (new JenisAkun)->getTable();
+        $kodeAkunTable = (new KodeAkun)->getTable();
         $kodePendapatanLain = ['41', '71'];
 
         return JenisAkun::query()
@@ -453,10 +456,10 @@ class LabaRugiCustom extends Page
     protected function formatPeriodeLabel(Carbon $start, Carbon $end): string
     {
         if ($start->isSameMonth($end) && $start->isSameYear($end)) {
-            return $this->formatMonthLabel($start) . ' ' . $start->year;
+            return $this->formatMonthLabel($start).' '.$start->year;
         }
 
-        return $this->formatTanggal($start) . ' - ' . $this->formatTanggal($end);
+        return $this->formatTanggal($start).' - '.$this->formatTanggal($end);
     }
 
     protected function formatMonthLabel(Carbon $date): string
@@ -483,6 +486,6 @@ class LabaRugiCustom extends Page
     {
         $monthLabel = $this->formatMonthLabel($date);
 
-        return $date->format('d') . ' ' . $monthLabel . ' ' . $date->year;
+        return $date->format('d').' '.$monthLabel.' '.$date->year;
     }
 }

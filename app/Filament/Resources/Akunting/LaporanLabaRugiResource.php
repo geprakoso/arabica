@@ -174,8 +174,17 @@ class LaporanLabaRugiResource extends BaseResource
         $hppSub = Pembelian::query()
             ->selectRaw("DATE_FORMAT({$pembelianTable}.tanggal, '%Y-%m-01') as month_start")
             ->selectRaw("DATE_FORMAT({$pembelianTable}.tanggal, '%Y-%m') as month_key")
-            ->selectRaw("SUM({$itemsTable}.hpp * {$itemsTable}.qty) as total_hpp")
+            ->selectRaw("SUM({$itemsTable}.hpp * COALESCE(sold_items.qty_terjual, 0)) as total_hpp")
             ->join($itemsTable, "{$itemsTable}.id_pembelian", '=', "{$pembelianTable}.id_pembelian")
+            ->joinSub(
+                DB::table($penjualanItemsTable)
+                    ->select('id_pembelian_item', DB::raw('SUM(qty) as qty_terjual'))
+                    ->groupBy('id_pembelian_item'),
+                'sold_items',
+                'sold_items.id_pembelian_item',
+                '=',
+                "{$itemsTable}.id_pembelian_item"
+            )
             ->groupBy('month_start', 'month_key');
 
         $bebanSub = InputTransaksiToko::query()
