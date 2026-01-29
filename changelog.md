@@ -28,11 +28,36 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - **Laporan Harian**:
   - Pembaruan pada `PembelianReportResource` dan `PenjualanReportResource` untuk sinkronisasi dengan format baru.
 
+### Peningkatan UI Widget Kalender
+- **Soft Button Colors**:
+  - Mengimplementasikan palet "Soft Colors" (warna pastel lembut) pada widget Kalender Jadwal, menggantikan warna solid yang terlalu kontras.
+  - Warna disesuaikan dengan status tugas/event: **Biru (Proses/Meeting)**, **Hijau (Selesai/Event)**, **Kuning (Pending/Catatan)**, **Merah (Batal/Libur)**.
+  - Mendukung **Dark Mode** secara native dengan penyesuaian opasitas latar belakang dan border yang elegan.
+- **Konsistensi Gaya (Rounder)**:
+  - Menerapkan sudut tumpul (`border-radius: 6px`) yang konsisten pada seluruh event di kalender agar selaras dengan bahasa desain aplikasi lainnya.
+  - Menambahkan bayangan halus (`box-shadow`) untuk memberikan kedalaman pada blok event.
+- **Refactoring & Optimasi Styling**:
+  - Memindahkan seluruh CSS kustom kalender ke `AdminPanelProvider.php` sebagai gaya global dengan spesifisitas tinggi (`body .ec ...`). Hal ini menjamin gaya terkunci dan tidak perlu dideklarasikan ulang di setiap view.
+  - Membersihkan kode CSS lokal dari file Blade untuk pemeliharaan yang lebih bersih.
+  - Meningkatkan ketahanan widget dengan menambahkan properti `className` sebagai fallback selain `classNames`.
+- **Modernisasi Filter Kalender**:
+  - **Inline Header Filters**: Memindahkan filter Bulan dan Tahun langsung ke dalam header widget, berdampingan dengan tombol aksi (Buat Tugas/Event).
+  - **Clean & Soft UI**:
+    - Menggunakan dropdown manual dengan gaya "Ghost" (`bg-gray-50`) yang bersih.
+    - Menambahkan efek hover **Soft Primary** (`hover:bg-primary-50` & `text-primary-600`) yang memberikan umpan balik visual yang nyaman.
+  - **Penyederhanaan UX**: Menghapus filter "Tipe Event" yang jarang digunakan untuk tampilan yang lebih minimalis dan fokus.
+  - **Technical Debt**: Menghapus wrapper form legacy pada halaman `KalenderJadwal` dan menggantinya dengan integrasi Livewire `wire:model.live` langsung pada widget.
+
 ## 2026.01.27
 ### Penyesuaian Tampilan Tombol
 - **Styling Kustom Tombol**:
   - Menyamakan gaya tombol aksi dengan skema warna Badge Filament (Info, Success, Warning, Danger, Gray).
   - Mengimplementasikan CSS kustom pada `AdminPanelProvider` untuk konsistensi visual antara tombol dan badge.
+## 2026.01.29
+### Peningkatan UI Widget Kalender
+- **Header Informatif**: Menambahkan ikon dan deskripsi "Kelola jadwal tugas dan agenda kegiatan disini" pada header widget kalender.
+- **Visual Upgrade**: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna **Primary**, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan menonjol.
+- **Highlight Hari Ini**: Memperjelas warna latar belakang untuk tanggal hari ini (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.
 
 ## 2026.01.26
 ### Fitur Godmode & Manajemen Data Tingkat Lanjut

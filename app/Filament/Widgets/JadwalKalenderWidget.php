@@ -24,6 +24,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Guava\Calendar\Widgets\CalendarWidget;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\Absensi\LiburCutiResource;
 use App\Filament\Resources\Penjadwalan\KalenderEventResource;
@@ -31,25 +32,63 @@ use App\Filament\Resources\Penjadwalan\PenjadwalanTugasResource;
 
 class JadwalKalenderWidget extends CalendarWidget
 {
-    protected string | \Closure | \Illuminate\Support\HtmlString | null $heading = 'Kalender Jadwal';
+    use InteractsWithForms; // Trait for Forms
+
+    protected string | \Closure | \Illuminate\Support\HtmlString | null $heading = 'Kalender Kerja';
 
     protected int | string | array $columnSpan = 'full';
     protected bool $dayMaxEvents = true;
-    protected string $icon = 'heroicon-o-calendar';
+    protected ?string $icon = 'heroicon-o-calendar-days';
     protected ?string $locale = 'id';
     protected bool $eventClickEnabled = true;
     protected bool $dateSelectEnabled = true;
 
-    #[On('calendar-date-set')]
-    public function setCalendarDate(string $date): void
+    protected static string $view = 'filament.widgets.jadwal-kalender-widget';
+
+    protected string | \Closure | \Illuminate\Support\HtmlString | null $description = 'Ringkasan jadwal harian, tugas, dan event';
+
+    public function getDescription(): string | \Illuminate\Support\HtmlString | null
     {
-        $this->setOption('date', $date);
+        return $this->description;
     }
+
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
+
+    public ?int $month = null;
+    public ?int $year = null;
+
+    public function mount(): void
+    {
+        $now = Carbon::now();
+        $this->month = $this->month ?? $now->month;
+        $this->year = $this->year ?? $now->year;
+        $this->setOption('date', sprintf('%04d-%02d-01', $this->year, $this->month));
+    }
+
+    public function updatedMonth(): void
+    {
+        $this->updateCalendarView();
+    }
+
+    public function updatedYear(): void
+    {
+        $this->updateCalendarView();
+    }
+
+    public function updateCalendarView(): void
+    {
+        $this->setOption('date', sprintf('%04d-%02d-01', $this->year, $this->month));
+    }
+
 
     public function getEvents(array $fetchInfo = []): Collection | array
     {
         $events = [];
 
+        // 1. Libur & Cuti
         $liburCutis = LiburCuti::query()
             ->select([
                 'id',
@@ -85,8 +124,8 @@ class JadwalKalenderWidget extends CalendarWidget
                 'start' => $start,
                 'end' => $end,
                 'allDay' => true,
-                'backgroundColor' => $this->liburColor($libur->status_pengajuan),
-                'textColor' => '#ffffff',
+                'classNames' => [$this->liburClass($libur->status_pengajuan)],
+                'className' => $this->liburClass($libur->status_pengajuan),
                 'extendedProps' => [
                     'model' => $libur::class,
                     'key' => $libur->getKey(),
@@ -97,6 +136,8 @@ class JadwalKalenderWidget extends CalendarWidget
             ];
         }
 
+
+        // 2. Tugas
         $tugas = PenjadwalanTugas::query()
             ->select([
                 'id',
@@ -125,8 +166,8 @@ class JadwalKalenderWidget extends CalendarWidget
                 'start' => $start,
                 'end' => $end,
                 'allDay' => true,
-                'backgroundColor' => $this->tugasColor($task->status),
-                'textColor' => '#ffffff',
+                'classNames' => [$this->tugasClass($task->status)],
+                'className' => $this->tugasClass($task->status),
                 'extendedProps' => [
                     'model' => $task::class,
                     'key' => $task->getKey(),
@@ -137,6 +178,8 @@ class JadwalKalenderWidget extends CalendarWidget
             ];
         }
 
+
+        // 3. Event & Meeting (KalenderEvent)
         $kalenderEvents = KalenderEvent::query()
             ->select([
                 'id',
@@ -193,35 +236,35 @@ class JadwalKalenderWidget extends CalendarWidget
         return empty($parts) ? 'Libur/Cuti' : implode(' - ', $parts);
     }
 
-    private function liburColor(?StatusPengajuan $status): string
+    private function liburClass(?StatusPengajuan $status): string
     {
         return match ($status) {
-            StatusPengajuan::Diterima => '#16a34a',
-            StatusPengajuan::Pending => '#f59e0b',
-            StatusPengajuan::Ditolak => '#ef4444',
-            default => '#6b7280',
+            StatusPengajuan::Diterima => 'event-success',
+            StatusPengajuan::Pending => 'event-warning',
+            StatusPengajuan::Ditolak => 'event-danger',
+            default => 'event-gray',
         };
     }
 
-    private function tugasColor(?StatusTugas $status): string
+    private function tugasClass(?StatusTugas $status): string
     {
         return match ($status) {
-            StatusTugas::Selesai => '#16a34a',
-            StatusTugas::Proses => '#0ea5e9',
-            StatusTugas::Pending => '#f59e0b',
-            StatusTugas::Batal => '#ef4444',
-            default => '#6b7280',
+            StatusTugas::Selesai => 'event-success',
+            StatusTugas::Proses => 'event-info',
+            StatusTugas::Pending => 'event-warning',
+            StatusTugas::Batal => 'event-danger',
+            default => 'event-gray',
         };
     }
 
-    private function kalenderEventColor(string $type): string
+    private function kalenderEventClass(string $type): string
     {
         return match ($type) {
-            'libur' => '#ef4444',
-            'meeting' => '#0ea5e9',
-            'event' => '#22c55e',
-            'catatan' => '#f59e0b',
-            default => '#6b7280',
+            'libur' => 'event-danger',
+            'meeting' => 'event-info',
+            'event' => 'event-success',
+            'catatan' => 'event-warning',
+            default => 'event-gray',
         };
     }
 
@@ -268,8 +311,8 @@ class JadwalKalenderWidget extends CalendarWidget
                 'start' => $start,
                 'end' => $end,
                 'allDay' => true,
-                'backgroundColor' => $this->kalenderEventColor($event->tipe),
-                'textColor' => '#ffffff',
+                'classNames' => [$this->kalenderEventClass($event->tipe)],
+                'className' => $this->kalenderEventClass($event->tipe),
                 'extendedProps' => [
                     'model' => $event::class,
                     'key' => $event->getKey(),
@@ -285,8 +328,8 @@ class JadwalKalenderWidget extends CalendarWidget
             'start' => Carbon::parse($rawMulai)->toIso8601String(),
             'end' => Carbon::parse($rawSelesai)->toIso8601String(),
             'allDay' => false,
-            'backgroundColor' => $this->kalenderEventColor($event->tipe),
-            'textColor' => '#ffffff',
+            'classNames' => [$this->kalenderEventClass($event->tipe)],
+            'className' => $this->kalenderEventClass($event->tipe),
             'extendedProps' => [
                 'model' => $event::class,
                 'key' => $event->getKey(),

@@ -109,7 +109,7 @@ class AdminPanelProvider extends PanelProvider
             ->userMenuItems([
                 MenuItem::make('My Profile')
                     ->label('My Profile')
-                    ->url(fn (): string => EditProfilePage::getUrl())
+                    ->url(fn(): string => EditProfilePage::getUrl())
                     ->icon('heroicon-o-user'),
             ])
             ->navigationGroups([
@@ -124,7 +124,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class])
             ->renderHook(
                 'panels::head.end',
-                fn (): string => <<<'HTML'
+                fn(): string => <<<'HTML'
                     <style>
                         /* --- 0. SIDEBAR SETTINGS --- */
                         :root {
@@ -561,24 +561,182 @@ class AdminPanelProvider extends PanelProvider
                         .dark .fi-btn.fi-btn-color-gray.bg-custom-600 svg {
                             color: rgb(212 212 216) !important;
                         }
+
+
+                        /* --- CALENDAR EVENTS (Modern UI with Tailwind Variables) --- */
+                        
+                        /* 1. Container & Global Overrides */
+                        .ec {
+                            border: none !important;
+                            --ec-border-color: rgba(var(--gray-200), 0.4) !important;
+                            --ec-text-color: rgb(var(--gray-700)) !important;
+                            --ec-bg-color: transparent !important;
+                        }
+                        html.dark .ec {
+                            --ec-border-color: rgba(var(--gray-700), 0.4) !important;
+                            --ec-text-color: rgb(var(--gray-300)) !important;
+                        }
+
+                        /* 2. Modern Toolbar (Glassmorphism) */
+                        .ec .ec-header .ec-toolbar {
+                            background-color: rgba(255, 255, 255, 0.7) !important;
+                            backdrop-filter: blur(12px) !important;
+                            border: 1px solid rgba(var(--gray-200), 0.5) !important;
+                            border-radius: 1.5rem !important; /* rounded-3xl */
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important; /* shadow-lg soft */
+                            padding: 0.75rem 1.25rem !important;
+                            margin-bottom: 1.5rem !important;
+                        }
+                        html.dark .ec .ec-header .ec-toolbar {
+                            background-color: rgba(24, 24, 27, 0.6) !important; /* zinc-950 alpha */
+                            border-color: rgba(var(--gray-700), 0.5) !important;
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+                        }
+
+                        /* Toolbar Buttons (Pill Shape) */
+                        .ec .ec-toolbar .ec-button {
+                            border-radius: 9999px !important;
+                            border: 1px solid transparent !important;
+                            font-weight: 500 !important;
+                            padding: 0.4rem 1rem !important;
+                            transition: all 0.2s ease !important;
+                        }
+                        .ec .ec-toolbar .ec-button:hover {
+                            background-color: rgba(var(--primary-500), 0.1) !important;
+                            color: rgb(var(--primary-600)) !important;
+                        }
+                        .ec .ec-toolbar .ec-button.ec-active {
+                            background-color: rgb(var(--primary-500)) !important;
+                            color: white !important;
+                            box-shadow: 0 4px 6px -1px rgba(var(--primary-500), 0.3) !important;
+                        }
+
+                        /* 3. Grid & Typography */
+                        .ec-day-header {
+                            text-transform: uppercase !important;
+                            font-size: 0.75rem !important;
+                            letter-spacing: 0.05em !important;
+                            font-weight: 600 !important;
+                            color: rgb(var(--gray-500)) !important;
+                            padding-bottom: 10px !important;
+                        }
+
+                        /* Today Cell Indicator */
+                        .ec .ec-day.ec-today {
+                            background-color: transparent !important;
+                        }
+                        .ec .ec-day.ec-today .ec-day-header::before {
+                            /* Dot indicator or highlight for today */
+                            content: '';
+                            display: inline-block;
+                            width: 6px;
+                            height: 6px;
+                            background-color: rgb(var(--primary-500));
+                            border-radius: 50%;
+                            margin-right: 4px;
+                            margin-bottom: 1px;
+                        }
+                        .ec .ec-day.ec-today .ec-day-header {
+                            color: rgb(var(--primary-600)) !important;
+                            font-weight: 700 !important;
+                        }
+
+                        /* 4. Events (Modern Pill & Interactive) */
+                        body .ec .ec-event {
+                            border-radius: 8px !important; /* Soft Squircle */
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+                            border: 1px solid transparent !important;
+                            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+                            margin-bottom: 2px !important;
+                            font-size: 0.85rem !important;
+                            padding: 2px 6px !important;
+                        }
+                        
+                        body .ec .ec-event:hover {
+                            transform: translateY(-2px) scale(1.01) !important;
+                            box-shadow: 0 8px 12px -3px rgba(0,0,0,0.1) !important;
+                            z-index: 50 !important;
+                        }
+
+                        /* --- Event Color Variants (Tailwind Variables) --- */
+
+                        /* INFO / PROCESS (Blue) */
+                        body .ec .ec-event.event-info {
+                            background-color: rgba(var(--info-50), 0.8) !important;
+                            color: rgb(var(--info-700)) !important;
+                            border-color: rgba(var(--info-200), 0.5) !important;
+                        }
+                        html.dark body .ec .ec-event.event-info {
+                            background-color: rgba(var(--info-900), 0.3) !important;
+                            color: rgb(var(--info-300)) !important;
+                            border-color: rgba(var(--info-700), 0.3) !important;
+                        }
+
+                        /* SUCCESS / DONE (Green) */
+                        body .ec .ec-event.event-success {
+                            background-color: rgba(var(--success-50), 0.8) !important;
+                            color: rgb(var(--success-700)) !important;
+                            border-color: rgba(var(--success-200), 0.5) !important;
+                        }
+                        html.dark body .ec .ec-event.event-success {
+                            background-color: rgba(var(--success-900), 0.3) !important;
+                            color: rgb(var(--success-300)) !important;
+                            border-color: rgba(var(--success-700), 0.3) !important;
+                        }
+
+                        /* WARNING / PENDING (Amber) */
+                        body .ec .ec-event.event-warning {
+                            background-color: rgba(var(--warning-50), 0.8) !important;
+                            color: rgb(var(--warning-700)) !important;
+                            border-color: rgba(var(--warning-200), 0.5) !important;
+                        }
+                        html.dark body .ec .ec-event.event-warning {
+                            background-color: rgba(var(--warning-900), 0.3) !important;
+                            color: rgb(var(--warning-300)) !important;
+                            border-color: rgba(var(--warning-700), 0.3) !important;
+                        }
+
+                        /* DANGER / CANCEL (Red) */
+                        body .ec .ec-event.event-danger {
+                            background-color: rgba(var(--danger-50), 0.8) !important;
+                            color: rgb(var(--danger-700)) !important;
+                            border-color: rgba(var(--danger-200), 0.5) !important;
+                        }
+                        html.dark body .ec .ec-event.event-danger {
+                            background-color: rgba(var(--danger-900), 0.3) !important;
+                            color: rgb(var(--danger-300)) !important;
+                            border-color: rgba(var(--danger-700), 0.3) !important;
+                        }
+
+                        /* GRAY / DEFAULT */
+                        body .ec .ec-event.event-gray {
+                            background-color: rgba(var(--gray-50), 0.8) !important;
+                            color: rgb(var(--gray-700)) !important;
+                            border-color: rgba(var(--gray-200), 0.5) !important;
+                        }
+                         html.dark body .ec .ec-event.event-gray {
+                            background-color: rgba(var(--gray-800), 0.5) !important;
+                            color: rgb(var(--gray-300)) !important;
+                            border-color: rgba(var(--gray-600), 0.3) !important;
+                        }
                     </style>
                 HTML
             )
 
             ->renderHook(
                 'panels::body.end',
-                fn () => view('filament.hooks.absensi-geolocation-script')
+                fn() => view('filament.hooks.absensi-geolocation-script')
 
             )
             ->renderHook(
                 'panels::global-search.after',
-                fn () => view('filament.hooks.godmode-badge')
+                fn() => view('filament.hooks.godmode-badge')
             )
 
             // --- 5. DRAGGABLE SIDEBAR LOGIC (NEW) ---
             ->renderHook(
                 'panels::body.end',
-                fn (): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
+                fn(): string => \Illuminate\Support\Facades\Blade::render(<<<'HTML'
                     <div id="sidebar-resizer" class="hidden md:block"></div>
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {
@@ -648,7 +806,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 'panels::body.end',
-                fn (): string => <<<'HTML'
+                fn(): string => <<<'HTML'
                     <script>
                         document.addEventListener('click', function (event) {
                             // Ensure it's a real user click
