@@ -8,11 +8,14 @@ use App\Models\Kategori;
 use App\Models\PembelianItem;
 use App\Models\PenjualanItem;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 
 class Produk extends Model
 {
     //
+    use SoftDeletes;
+
     protected $table = 'md_produk';
 
     protected $fillable = [
@@ -36,6 +39,7 @@ class Produk extends Model
         'panjang' => 'decimal:2',
         'lebar' => 'decimal:2',
         'tinggi' => 'decimal:2',
+        'deleted_at' => 'datetime',
     ];
 
     protected static function booted()

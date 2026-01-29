@@ -25,10 +25,16 @@
             border-radius: 1.25rem;
             padding: 1rem;
             background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(34, 197, 94, 0.06));
+            --calendar-today-bg: rgba(var(--primary-500), 0.12);
+            --calendar-today-border: rgba(var(--primary-500), 0.35);
+            --calendar-today-text: rgb(var(--primary-700));
         }
 
         .dark .calendar-shell {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(2, 6, 23, 0.8));
+            --calendar-today-bg: rgba(var(--primary-400), 0.2);
+            --calendar-today-border: rgba(var(--primary-400), 0.45);
+            --calendar-today-text: rgb(var(--primary-200));
         }
 
         .calendar-hero {
@@ -109,6 +115,7 @@
             --ec-button-bg-color: rgba(255, 255, 255, 1.0);
             --ec-button-active-bg-color: rgba(226, 232, 240, 0.8);
             --ec-button-active-border-color: var(--ec-button-border-color);
+            --ec-today-bg-color: var(--calendar-today-bg);
         }
 
         .dark .calendar-shell .ec {
@@ -118,6 +125,7 @@
             --ec-button-bg-color: rgba(15, 23, 42, 0.8);
             --ec-button-active-bg-color: rgba(30, 41, 59, 0.9);
             --ec-button-active-border-color: var(--ec-button-border-color);
+            --ec-today-bg-color: var(--calendar-today-bg);
         }
 
         .calendar-shell .ec .ec-toolbar {
@@ -148,8 +156,16 @@
             border-radius: 0.85rem;
         }
 
-        .calendar-shell .ec .ec-day-today {
-            background: rgba(14, 165, 233, 0.08);
+        .calendar-shell .ec .ec-day.ec-today {
+            background: var(--calendar-today-bg) !important;
+            border: 1px solid var(--calendar-today-border);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            border-radius: 0.85rem;
+        }
+
+        .calendar-shell .ec .ec-day.ec-today .ec-day-head time {
+            color: var(--calendar-today-text);
+            font-weight: 700;
         }
 
         .calendar-shell .ec .ec-event {

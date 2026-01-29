@@ -29,31 +29,40 @@
             --ec-button-bg-color: rgba(255, 255, 255, 1.0);
             --ec-button-active-bg-color: rgba(var(--gray-50), 1.0);
             --ec-button-active-border-color: var(--ec-button-border-color);
+            --ec-today-bg-color: rgba(16, 88, 221, 0.14);
+        }
 
-            & .ec-event.ec-preview {
+        .ec .ec-event.ec-preview {
                 --ec-event-bg-color: rgb(var(--primary-400));
                 z-index: 30;
-            }
+        }
 
-            & .ec-now-indicator {
+        .ec .ec-now-indicator {
                 z-index: 40;
-            }
+        }
 
-            & .ec-header {
+        .ec .ec-header {
                 background-color: rgb(var(--primary-50));
                 color: rgb(var(--primary-700));
                 border-bottom: 1px solid var(--ec-border-color);
                 border-radius: 10px 10px 0 0;
-            }
+        }
 
-            & .ec-body {
+        .ec .ec-body {
                 background-color: rgb(var(--gray-20));
                 border-radius: 0 0 10px 10px;
-            }
+        }
 
-            & .ec-today {
-                background-color: rgb(var(--primary-100)) !important;
-            }
+        .ec .ec-today,
+        .ec .ec-day.ec-today {
+            background-color: var(--ec-today-bg-color) !important;
+            border: 1px solid rgba(16, 88, 221, 0.14);
+            border-radius: 10px;
+        }
+
+        .ec .ec-day.ec-today .ec-day-head time {
+            color: rgb(2, 132, 199);
+            font-weight: 700;
         }
 
         .dark .ec {
@@ -63,24 +72,32 @@
             --ec-button-bg-color: rgba(255, 255, 255, 0.05);
             --ec-button-active-bg-color: rgba(255, 255, 255, 0.1);
             --ec-button-active-border-color: var(--ec-button-border-color);
+            --ec-today-bg-color: rgba(var(--primary-600), 0.14);
+        }
 
-            & .ec-event.ec-preview {
+        .dark .ec .ec-event.ec-preview {
                 --ec-event-bg-color: rgb(var(--primary-300));
-            }
+        }
 
-            & .ec-header {
+        .dark .ec .ec-header {
                 background-color: rgba(var(--primary-500), 0.1);
                 color: rgb(var(--primary-400));
                 border-bottom: 1px solid var(--ec-border-color);
-            }
+        }
 
-            & .ec-body {
+        .dark .ec .ec-body {
                 background-color: rgba(255, 255, 255, 0.02);
-            }
+        }
 
-            & .ec-today {
-                background-color: rgba(var(--primary-500), 0.15) !important;
-            }
+        .dark .ec .ec-today,
+        .dark .ec .ec-day.ec-today {
+            background-color: var(--ec-today-bg-color) !important;
+            border: 1px solid rgba(var(--primary-600), 0.14);
+        }
+
+        .dark .ec .ec-day.ec-today .ec-day-head time {
+            color: rgb(186, 230, 253);
+            font-weight: 700;
         }
     </style>
 
