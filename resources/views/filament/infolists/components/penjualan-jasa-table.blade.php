@@ -37,11 +37,16 @@
                     <td class="px-4 py-3">
                         <div class="max-w-[14rem] truncate text-gray-600 dark:text-gray-400 text-xs">
                             @php
-                                $pembelianItem = data_get($item, 'pembelianItem');
-                                $pembelian = data_get($pembelianItem, 'pembelian');
-                                $pItemProduk = data_get($pembelianItem, 'produk');
+                                $pembelianJasa = data_get($item, 'pembelianJasa');
+                                $pembelian = data_get($pembelianJasa, 'pembelian');
+                                $jasaNama = data_get($pembelianJasa, 'jasa.nama_jasa');
                                 $nota = data_get($pembelian, 'no_po') ?? data_get($pembelian, 'nota_supplier');
-                                $pNama = data_get($pItemProduk, 'nama_produk');
+
+                                $pembelianItem = $pembelianItem ?? data_get($item, 'pembelianItem');
+                                $pembelian = $pembelian ?? data_get($pembelianItem, 'pembelian');
+                                $pItemProduk = data_get($pembelianItem, 'produk');
+                                $nota = $nota ?? data_get($pembelian, 'no_po') ?? data_get($pembelian, 'nota_supplier');
+                                $pNama = $jasaNama ?? data_get($pItemProduk, 'nama_produk');
                             @endphp
                             @if($nota)
                                 <span class="font-bold text-primary-600 dark:text-primary-400">{{ $nota }}</span>

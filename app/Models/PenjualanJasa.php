@@ -17,6 +17,7 @@ class PenjualanJasa extends Model
         'id_penjualan',
         'jasa_id',
         'pembelian_item_id',
+        'pembelian_jasa_id',
         'qty',
         'harga',
         'catatan',
@@ -40,5 +41,10 @@ class PenjualanJasa extends Model
     public function pembelianItem()
     {
         return $this->belongsTo(PembelianItem::class, 'pembelian_item_id', 'id_pembelian_item');
+    }
+
+    public function pembelianJasa()
+    {
+        return $this->belongsTo(PembelianJasa::class, 'pembelian_jasa_id', 'id_pembelian_jasa');
     }
 }
