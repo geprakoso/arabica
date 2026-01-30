@@ -29,6 +29,13 @@ class KodeAkunResource extends BaseResource
     protected static ?string $navigationParentItem = 'Akun Keuangan';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'nama_akun';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_akun', 'kode_akun'];
+    }
     
     public static function shouldRegisterNavigation(): bool
     {

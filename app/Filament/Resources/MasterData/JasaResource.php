@@ -50,6 +50,13 @@ class JasaResource extends BaseResource
 
     protected static ?int $navigationSort = 5;
 
+    protected static ?string $recordTitleAttribute = 'nama_jasa';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_jasa', 'sku', 'deskripsi'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -51,6 +51,11 @@ class InventoryResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'Inventory';
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_produk', 'sku', 'brand.nama_brand', 'kategori.nama_kategori'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([]);

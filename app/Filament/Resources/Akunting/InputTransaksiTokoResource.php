@@ -29,6 +29,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 
 class InputTransaksiTokoResource extends BaseResource
@@ -44,6 +45,24 @@ class InputTransaksiTokoResource extends BaseResource
     protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?int $navigationSort = 2;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['keterangan_transaksi', 'jenisAkun.nama_jenis_akun'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return $record->keterangan_transaksi ?? 'Transaksi';
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Nominal' => money($record->nominal_transaksi, 'IDR')->formatWithoutZeroes(),
+            'Tanggal' => $record->tanggal_transaksi->format('d M Y'),
+        ];
+    }
 
     public static function shouldRegisterNavigation(): bool
     {

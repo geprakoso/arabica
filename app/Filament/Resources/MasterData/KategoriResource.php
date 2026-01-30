@@ -32,6 +32,13 @@ class KategoriResource extends BaseResource
 
     protected static ?int $navigationSort = 3;
 
+    protected static ?string $recordTitleAttribute = 'nama_kategori';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_kategori', 'slug'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

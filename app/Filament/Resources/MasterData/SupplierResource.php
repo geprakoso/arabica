@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MasterData;
 
+use App\Filament\Resources\BaseResource;
 use Filament\Forms;
 // use App\Filament\Resources\MasterData\SupplierResource\RelationManagers;
 use Filament\Tables;
@@ -12,7 +13,6 @@ use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Filament\Infolists\Infolist;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Tabs;
 use Laravolt\Indonesia\Models\City;
@@ -36,7 +36,7 @@ use App\Filament\Resources\MasterData\SupplierResource\Pages;
 use Filament\Infolists\Components\Section as InfolistSection;
 use App\Filament\Resources\MasterData\SupplierResource\RelationManagers\AgentsRelationManager;
 
-class SupplierResource extends Resource
+class SupplierResource extends BaseResource
 {
     protected static ?string $model = Supplier::class;
 
@@ -47,6 +47,13 @@ class SupplierResource extends Resource
     protected static ?string $navigationLabel = 'Supplier';
     protected static ?string $pluralLabel = 'Supplier';
     protected static ?int $navigationSort = 6;
+
+    protected static ?string $recordTitleAttribute = 'nama_supplier';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_supplier', 'no_hp', 'email', 'alamat'];
+    }
 
     public static function form(Form $form): Form
     {

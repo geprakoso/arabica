@@ -32,6 +32,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -51,6 +52,24 @@ class AbsensiResource extends BaseResource
     protected static ?string $navigationLabel = 'Absensi';
 
     protected static ?int $navigationSort = 1;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['user.name', 'keterangan'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return "Absensi: " . $record->user->name;
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Tanggal' => $record->tanggal->format('d M Y'),
+            'Status' => ucfirst($record->status),
+        ];
+    }
 
     public static function canViewAny(): bool
     {

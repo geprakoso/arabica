@@ -2,22 +2,29 @@
 
 namespace App\Filament\Resources\Penjadwalan\Service;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Penjadwalan\Service\ListOsResource\Pages;
 use App\Filament\Resources\Penjadwalan\Service\ListOsResource\RelationManagers;
 use App\Models\ListOs;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ListOsResource extends Resource
+class ListOsResource extends BaseResource
 {
     protected static ?string $model = ListOs::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cpu-chip';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
     
     public static function shouldRegisterNavigation(): bool
     {

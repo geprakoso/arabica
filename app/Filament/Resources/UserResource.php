@@ -54,6 +54,11 @@ class UserResource extends BaseResource
 
     protected static ?int $navigationSort = 11;
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['email', 'karyawan.nama_karyawan', 'karyawan.telepon', 'roles.name'];
+    }
+
     public static function canViewAny(): bool
     {
         $user = Filament::auth()->user();
