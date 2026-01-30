@@ -124,15 +124,19 @@ class Penjualan extends Model
 
     public function recalculateTotals(): void
     {
-        $total = (float) ($this->items()
+        $barangTotal = (float) ($this->items()
             ->selectRaw('COALESCE(SUM(qty * harga_jual), 0) as total')
             ->value('total') ?? 0);
 
+        $jasaTotal = (float) ($this->jasaItems()
+            ->selectRaw('COALESCE(SUM(qty * harga), 0) as total')
+            ->value('total') ?? 0);
+
         $discount = (float) ($this->diskon_total ?? 0);
-        $grandTotal = max(0, $total - $discount);
+        $grandTotal = max(0, ($barangTotal + $jasaTotal) - $discount);
 
         $this->forceFill([
-            'total' => $total,
+            'total' => $barangTotal + $jasaTotal,
             'grand_total' => $grandTotal,
         ])->saveQuietly();
     }

@@ -52,7 +52,10 @@ class PenjualanReportResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['items', 'jasaItems', 'member', 'karyawan'])) // eager loading data relasi
+            ->modifyQueryUsing(fn(Builder $query) => $query
+                ->with(['items', 'jasaItems', 'member', 'karyawan'])
+                ->withSum('pembayaran', 'jumlah')
+            ) // eager loading data relasi
             ->defaultSort('created_at', 'desc') // default sort
             ->recordAction('detail')
             ->recordUrl(null)
@@ -83,6 +86,18 @@ class PenjualanReportResource extends BaseResource
                     ->label('Karyawan')
                     ->icon('heroicon-m-user')
                     ->color('secondary')
+                    ->toggleable(),
+                TextColumn::make('status_pembayaran')
+                    ->label('Status Pembayaran')
+                    ->badge()
+                    ->state(function (Penjualan $record): string {
+                        $grandTotal = (float) ($record->grand_total ?? 0);
+                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
+                        $sisa = max(0, $grandTotal - $totalPaid);
+
+                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                    })
+                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                     ->toggleable(),
                 TextColumn::make('total_qty')
                     ->label('Total Qty')
@@ -399,6 +414,18 @@ class PenjualanReportResource extends BaseResource
                     ->schema([
                         Grid::make(4)
                             ->schema([
+                                TextEntry::make('status_pembayaran')
+                                    ->label('Status Pembayaran')
+                                    ->badge()
+                                    ->state(function (Penjualan $record): string {
+                                        $grandTotal = (float) ($record->grand_total ?? 0);
+                                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
+                                        $sisa = max(0, $grandTotal - $totalPaid);
+
+                                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                                    })
+                                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                                    ->icon('heroicon-m-check-badge'),
                                 TextEntry::make('subtotal_produk')
                                     ->label('Subtotal Produk')
                                     ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateProductTotal($record)))

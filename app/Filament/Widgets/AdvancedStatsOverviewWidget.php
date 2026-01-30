@@ -31,7 +31,7 @@ class AdvancedStatsOverviewWidget extends BaseWidget
         // -----------------------------------------------------------------------
         // [LOGIKA WAKTU] Menentukan Rentang Waktu (Start & End Date)
         // -----------------------------------------------------------------------
-        
+
         // Periode Bulan Ini (Misal: 1 Des - 31 Des)
         // copy() digunakan agar variabel $now asli tidak berubah saat dimanipulasi
         $startOfMonth = $now->copy()->startOfMonth();
@@ -64,11 +64,11 @@ class AdvancedStatsOverviewWidget extends BaseWidget
             Stat::make('Pendapatan Bulan Ini', $this->formatCurrency($thisMonthTotal))
                 ->icon('heroicon-o-banknotes')
                 ->iconColor('success') // Warna ikon hijau
-                // Logika ternary untuk menampilkan deskripsi naik/turun
+                // Logika ternary untuk menampilkan deskripsi naik/turun (termasuk jasa)
                 ->description($delta !== null ? ($delta >= 0 ? "+{$delta}% dibanding bulan lalu" : "{$delta}% dibanding bulan lalu") : 'Data bulan lalu tidak tersedia')
                 ->descriptionIcon($delta === null || $delta >= 0 ? 'heroicon-o-chevron-up' : 'heroicon-o-chevron-down', 'before')
                 ->descriptionColor($delta === null || $delta >= 0 ? 'success' : 'danger')
-                
+
                 // [RELASI-C] CHART SPARKLINE (Grafik Garis Kecil)
                 // Memanggil fungsi getDailyPendapatanChart untuk data grafik
                 ->chart($this->getDailyPendapatanChart($startOfMonth, $endOfMonth))
@@ -110,7 +110,7 @@ class AdvancedStatsOverviewWidget extends BaseWidget
                 ->iconColor('primary')
                 // Note: Kamu memanggil getDailyBarangChart disini, apakah sengaja? 
                 // Seharusnya mungkin getDailyPembelianChart (lihat penjelasan bawah)
-                ->chart($this->getDailyBarangChart($startOfMonth, $endOfMonth)) 
+                ->chart($this->getDailyBarangChart($startOfMonth, $endOfMonth))
                 ->chartColor('info')
         ];
     }
@@ -139,14 +139,16 @@ class AdvancedStatsOverviewWidget extends BaseWidget
     protected function sumTotalPenjualanForPeriod(Carbon $from, Carbon $to): int
     {
         // // [DEBUG] Cek range tanggal: dd($from, $to);
-        
+
         return Penjualan::whereBetween('tanggal_penjualan', [$from, $to])
-            ->with('items') // Eager loading relasi 'items' agar lebih cepat (mengurangi query N+1)
+            ->with(['items', 'jasaItems']) // Eager loading relasi untuk items dan jasa
             ->get() // Ambil semua data (Hati-hati jika datanya ribuan, bisa berat!)
             // Koleksi PHP (Processing di level PHP, bukan Database)
-            ->sum(fn ($penjualan) => $penjualan->items->sum(
-                fn ($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0)
-            ));
+            ->sum(
+                fn($penjualan) =>
+                $penjualan->items->sum(fn($item) => (int) ($item->harga_jual ?? 0) * (int) ($item->qty ?? 0))
+                    + $penjualan->jasaItems->sum(fn($item) => (int) ($item->harga ?? 0) * (int) ($item->qty ?? 0))
+            );
     }
 
     // [RELASI-B] Implementasi Menghitung Qty Barang Terjual
@@ -155,21 +157,26 @@ class AdvancedStatsOverviewWidget extends BaseWidget
         return Penjualan::whereBetween('tanggal_penjualan', [$from, $to])
             ->with('items')
             ->get()
-            ->sum(fn ($penjualan) => $penjualan->items->sum(fn ($item) => (int) ($item->qty ?? 0)));
+            ->sum(fn($penjualan) => $penjualan->items->sum(fn($item) => (int) ($item->qty ?? 0)));
     }
 
     // [RELASI-E] Implementasi Menghitung Total Pembelian (Modal Keluar)
     protected function sumTotalPembelianForPeriod(Carbon $from, Carbon $to): int
     {
         $pembelians = Pembelian::whereBetween('created_at', [$from, $to]) 
-            ->with('items') 
+            ->with(['items', 'jasaItems']) 
             ->get();
         
         return $pembelians->sum(function ($record) {
-            return $record->items->sum(function ($item) {
+            $barangTotal = $record->items->sum(function ($item) {
                 // Menghitung HPP * Qty
                 return (int) ($item->hpp ?? 0) * (int) ($item->qty ?? 0);
             });
+            $jasaTotal = $record->jasaItems->sum(function ($item) {
+                return (int) ($item->harga ?? 0) * (int) ($item->qty ?? 0);
+            });
+
+            return $barangTotal + $jasaTotal;
         });
     }
 
@@ -184,7 +191,8 @@ class AdvancedStatsOverviewWidget extends BaseWidget
         $period = CarbonPeriod::create($start, $end);
 
         return collect($period)
-            ->map(fn (Carbon $date) => 
+            ->map(
+                fn(Carbon $date) =>
                 // Memanggil ulang fungsi [RELASI-A] tapi hanya untuk 1 hari (startOfDay s/d endOfDay)
                 $this->sumTotalPenjualanForPeriod($date->copy()->startOfDay(), $date->copy()->endOfDay())
             )
@@ -198,7 +206,8 @@ class AdvancedStatsOverviewWidget extends BaseWidget
         $period = CarbonPeriod::create($start, $end);
 
         return collect($period)
-            ->map(fn (Carbon $date) => 
+            ->map(
+                fn(Carbon $date) =>
                 $this->sumTotalQtyForPeriod($date->copy()->startOfDay(), $date->copy()->endOfDay())
             )
             ->values()
@@ -211,7 +220,8 @@ class AdvancedStatsOverviewWidget extends BaseWidget
         $period = CarbonPeriod::create($start, $end);
 
         return collect($period)
-            ->map(fn (Carbon $date) => 
+            ->map(
+                fn(Carbon $date) =>
                 $this->sumTotalPembelianForPeriod($date->copy()->startOfDay(), $date->copy()->endOfDay())
             )
             ->values()

@@ -28,6 +28,17 @@ class PenjualanJasa extends Model
         'harga' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (PenjualanJasa $item): void {
+            self::recalculatePenjualanTotals($item);
+        });
+
+        static::deleted(function (PenjualanJasa $item): void {
+            self::recalculatePenjualanTotals($item);
+        });
+    }
+
     public function penjualan()
     {
         return $this->belongsTo(Penjualan::class, 'id_penjualan', 'id_penjualan');
@@ -46,5 +57,22 @@ class PenjualanJasa extends Model
     public function pembelianJasa()
     {
         return $this->belongsTo(PembelianJasa::class, 'pembelian_jasa_id', 'id_pembelian_jasa');
+    }
+
+    protected static function recalculatePenjualanTotals(PenjualanJasa $item): void
+    {
+        $penjualanId = (int) ($item->id_penjualan ?? 0);
+
+        if (! $penjualanId) {
+            return;
+        }
+
+        $penjualan = Penjualan::query()->find($penjualanId);
+
+        if (! $penjualan) {
+            return;
+        }
+
+        $penjualan->recalculateTotals();
     }
 }
