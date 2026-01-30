@@ -16,6 +16,7 @@ class PenjualanJasa extends Model
     protected $fillable = [
         'id_penjualan',
         'jasa_id',
+        'pembelian_item_id',
         'qty',
         'harga',
         'catatan',
@@ -34,5 +35,10 @@ class PenjualanJasa extends Model
     public function jasa()
     {
         return $this->belongsTo(Jasa::class, 'jasa_id');
+    }
+
+    public function pembelianItem()
+    {
+        return $this->belongsTo(PembelianItem::class, 'pembelian_item_id', 'id_pembelian_item');
     }
 }

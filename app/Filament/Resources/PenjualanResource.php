@@ -421,15 +421,97 @@ class PenjualanResource extends BaseResource
                             ->defaultItems(0)
                             ->addActionLabel('Tambah Jasa')
                             ->colStyles([
-                                'jasa_id' => 'width: 35%;',
+                                'pembelian_item_id' => 'width: 20%;',
+                                'jasa_id' => 'width: 25%;',
                                 'qty' => 'width: 10%;',
-                                'harga' => 'width: 25%;',
-                                'catatan' => 'width: 30%;',
+                                'harga' => 'width: 20%;',
+                                'catatan' => 'width: 25%;',
                             ])
                             ->childComponents([
+                                Select::make('pembelian_item_id')
+                                    ->label('Referensi Nota')
+                                    ->relationship('pembelianItem', 'id_pembelian_item', function (Builder $query) {
+                                        $query->whereHas('pembelian', function ($q) {
+                                            $q->whereHas('jasaItems');
+                                        })->with(['pembelian', 'produk']);
+                                    })
+                                    ->getOptionLabelFromRecordUsing(function ($record) {
+                                        $nota = $record->pembelian->no_po ?? $record->pembelian->nota_supplier ?? 'No Nota';
+                                        $produk = $record->produk->nama_produk ?? 'Item';
+
+                                        return "{$nota} - {$produk}";
+                                    })
+                                    ->searchable(['id_pembelian_item', 'id_pembelian']) // We'll keep these but add the logic if needed, or use the relationship search
+                                    ->getSearchResultsUsing(function (string $search) {
+                                        return PembelianItem::query()
+                                            ->whereHas('pembelian', function ($q) use ($search) {
+                                                $q->whereHas('jasaItems')
+                                                    ->where(function ($qq) use ($search) {
+                                                        $qq->where('no_po', 'like', "%{$search}%")
+                                                            ->orWhere('nota_supplier', 'like', "%{$search}%");
+                                                    });
+                                            })
+                                            ->orWhereHas('produk', function ($q) use ($search) {
+                                                $q->where('nama_produk', 'like', "%{$search}%");
+                                            })
+                                            ->limit(50)
+                                            ->get()
+                                            ->mapWithKeys(function ($item) {
+                                                $nota = $item->pembelian->no_po ?? $item->pembelian->nota_supplier ?? 'No Nota';
+                                                $produk = $item->produk->nama_produk ?? 'Item';
+
+                                                return [$item->id_pembelian_item => "{$nota} - {$produk}"];
+                                            });
+                                    })
+                                    ->placeholder('Pilih Nota Pembelian')
+                                    ->preload()
+                                    ->native(false)
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
+                                        if ($state) {
+                                            $pembelianItem = PembelianItem::find($state);
+                                            if ($pembelianItem) {
+                                                $set('harga', $pembelianItem->harga_jual);
+
+                                                // Filter Jasa IDs available in this purchase
+                                                $jasaIds = \App\Models\PembelianJasa::where('id_pembelian', $pembelianItem->id_pembelian)
+                                                    ->pluck('jasa_id')
+                                                    ->toArray();
+
+                                                $currentJasaId = $get('jasa_id');
+                                                if ($currentJasaId && ! in_array($currentJasaId, $jasaIds)) {
+                                                    $set('jasa_id', null);
+                                                }
+
+                                                // If only one Jasa available in that purchase, auto-select it
+                                                if (count($jasaIds) === 1) {
+                                                    $set('jasa_id', $jasaIds[0]);
+                                                    $hargaJasa = \App\Models\Jasa::find($jasaIds[0])?->harga;
+                                                    if ($hargaJasa) {
+                                                        $set('harga', $hargaJasa);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }),
+
                                 Select::make('jasa_id')
                                     ->label('Jasa')
-                                    ->relationship('jasa', 'nama_jasa')
+                                    ->options(function (Get $get) {
+                                        $pembelianItemId = $get('pembelian_item_id');
+                                        $query = \App\Models\Jasa::query()->where('is_active', true);
+
+                                        if ($pembelianItemId) {
+                                            $pembelianItem = \App\Models\PembelianItem::find($pembelianItemId);
+                                            if ($pembelianItem) {
+                                                $jasaIds = \App\Models\PembelianJasa::where('id_pembelian', $pembelianItem->id_pembelian)
+                                                    ->pluck('jasa_id');
+                                                $query->whereIn('id', $jasaIds);
+                                            }
+                                        }
+
+                                        return $query->pluck('nama_jasa', 'id');
+                                    })
                                     ->searchable()
                                     ->preload()
                                     ->required()
@@ -810,27 +892,28 @@ class PenjualanResource extends BaseResource
                     Tables\Actions\DeleteAction::make()
                         ->icon('heroicon-m-trash')
                         ->hidden(
-                            fn (Penjualan $record): bool => !auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
+                            fn (Penjualan $record): bool => ! auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
                         )
                         ->tooltip(
-                            fn (Penjualan $record): ?string => (!auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()))
+                            fn (Penjualan $record): ?string => (! auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()))
                                 ? 'Hapus dari Tukar Tambah'
                                 : null
                         )
                         ->action(function (Penjualan $record, \Filament\Tables\Actions\DeleteAction $action) {
                             $livewire = $action->getLivewire();
-                            
+
                             // Godmode / Advanced Flow
                             if (auth()->user()?->hasRole('godmode')) {
                                 $livewire->deleteRecordId = $record->getKey();
-                                
+
                                 if ($record->is_nerfed) {
-                                     // Nerfed -> Step 3 (Password)
-                                     $livewire->replaceMountedAction('deleteStep3');
+                                    // Nerfed -> Step 3 (Password)
+                                    $livewire->replaceMountedAction('deleteStep3');
                                 } else {
-                                     // Normal -> Step 2 (Impact)
-                                     $livewire->replaceMountedAction('deleteStep2');
+                                    // Normal -> Step 2 (Impact)
+                                    $livewire->replaceMountedAction('deleteStep2');
                                 }
+
                                 return;
                             }
 
@@ -1000,7 +1083,7 @@ class PenjualanResource extends BaseResource
                         ViewEntry::make('jasa_items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.penjualan-jasa-table')
-                            ->state(fn (Penjualan $record) => $record->jasaItems()->with('jasa')->get()),
+                            ->state(fn (Penjualan $record) => $record->jasaItems()->with(['jasa', 'pembelianItem.pembelian', 'pembelianItem.produk'])->get()),
                     ]),
 
                 // === BAGIAN RINGKASAN PEMBAYARAN (SPLIT MATCHING PEMBELIAN) ===
