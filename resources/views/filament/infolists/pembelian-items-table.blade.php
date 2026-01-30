@@ -10,7 +10,7 @@
         $resolvedRows = $resolvedRows->all();
     }
 
-    $totalHpp = $totalHpp ?? collect($resolvedRows)->sum(fn ($row) => (float) ($row->hpp ?? 0) * (int) ($row->qty ?? 0));
+    $totalHpp = $totalHpp ?? collect($resolvedRows)->sum(fn ($row) => (float) ($row->hpp ?? 0) * (int) ($row->qty_terjual ?? 0));
 @endphp
 
 <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
@@ -44,7 +44,7 @@
                         {{ $row->produk?->nama_produk ?? '-' }}
                     </td>
                     <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-100 dark:group-hover:!bg-gray-800/70">
-                        {{ (int) ($row->qty ?? 0) }}
+                        {{ (int) ($row->qty_terjual ?? 0) }}
                     </td>
                     <td class="px-4 py-3 text-gray-800 dark:text-gray-100 dark:group-hover:!bg-gray-800/70">
                         {{ $pembelian?->supplier?->nama_supplier ?? '-' }}

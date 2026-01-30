@@ -35,7 +35,9 @@ class LabaRugiPembelianTable extends Component
 
         return PembelianItem::query()
             ->with(['produk', 'pembelian.supplier'])
+            ->withSum('penjualanItems as qty_terjual', 'qty')
             ->whereHas('pembelian', fn ($query) => $query->whereBetween('tanggal', [$start, $end]))
+            ->whereHas('penjualanItems')
             ->orderBy('id_pembelian_item')
             ->paginate($this->perPage, ['*'], $this->pageName);
     }
@@ -51,7 +53,9 @@ class LabaRugiPembelianTable extends Component
 
             $total = PembelianItem::query()
                 ->whereHas('pembelian', fn ($query) => $query->whereBetween('tanggal', [$start, $end]))
-                ->selectRaw('SUM(COALESCE(hpp, 0) * COALESCE(qty, 0)) as total')
+                ->whereHas('penjualanItems')
+                ->join('tb_penjualan_item', 'tb_pembelian_item.id_pembelian_item', '=', 'tb_penjualan_item.id_pembelian_item')
+                ->selectRaw('SUM(tb_pembelian_item.hpp * tb_penjualan_item.qty) as total')
                 ->value('total') ?? 0;
 
             return (float) $total;
