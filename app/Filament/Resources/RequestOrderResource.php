@@ -36,6 +36,11 @@ class RequestOrderResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['no_ro', 'karyawan.nama_karyawan'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

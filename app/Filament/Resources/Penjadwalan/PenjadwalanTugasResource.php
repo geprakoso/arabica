@@ -28,6 +28,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class PenjadwalanTugasResource extends BaseResource
 {
@@ -40,6 +41,22 @@ class PenjadwalanTugasResource extends BaseResource
     protected static ?string $navigationLabel = 'Tugas Harian';
 
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'judul';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['judul', 'deskripsi', 'karyawan.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        $karyawan = $record->karyawan->pluck('name')->implode(', ');
+        return [
+            'Ditugaskan kepada' => $karyawan,
+            'Status' => $record->status->getLabel(),
+        ];
+    }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {

@@ -29,6 +29,14 @@ class JenisAkunResource extends BaseResource
     protected static ?string $pluralLabel = 'Jenis Akun';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 2;
+
+    protected static ?string $recordTitleAttribute = 'nama_jenis_akun';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_jenis_akun', 'kode_jenis_akun'];
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return Filament::getCurrentPanel()?->getId() === 'admin'

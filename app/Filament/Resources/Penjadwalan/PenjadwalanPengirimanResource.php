@@ -33,6 +33,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class PenjadwalanPengirimanResource extends BaseResource
 {
@@ -47,6 +48,21 @@ class PenjadwalanPengirimanResource extends BaseResource
     protected static ?int $navigationSort = 4;
 
     protected static bool $shouldRegisterNavigation = false;
+
+    protected static ?string $recordTitleAttribute = 'no_resi';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['no_resi', 'penjualan.no_nota', 'member.nama_member', 'driver.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Pelanggan' => $record->member->nama_member,
+            'Tujuan' => $record->alamat,
+        ];
+    }
 
     public static function form(Form $form): Form
     {

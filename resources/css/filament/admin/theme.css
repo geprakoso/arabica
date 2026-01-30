@@ -96,3 +96,24 @@
 .fi-btn.fi-color-primary:not(.fi-btn-outlined) svg {
     color: var(--fi-btn-primary-text) !important;
 }
+
+/* Global search results styled as a modal */
+.fi-global-search-results-ctn {
+    position: fixed !important;
+    inset: 12vh auto auto 50% !important;
+    transform: translateX(-50%);
+    width: min(720px, calc(100vw - 2rem)) !important;
+    max-height: 70vh !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35) !important;
+    z-index: 60;
+}
+
+.fi-global-search-results-ctn::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: -1;
+}

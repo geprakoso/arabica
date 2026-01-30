@@ -28,6 +28,13 @@ class AkunTransaksiResource extends BaseResource
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 12;
 
+    protected static ?string $recordTitleAttribute = 'nama_akun';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_akun', 'kode_akun', 'nama_bank'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

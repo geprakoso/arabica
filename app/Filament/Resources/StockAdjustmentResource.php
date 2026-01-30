@@ -36,6 +36,11 @@ class StockAdjustmentResource extends BaseResource
 
     protected static ?string $pluralLabel = 'Penyesuaian Stok';
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['kode', 'gudang.nama_gudang', 'status'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

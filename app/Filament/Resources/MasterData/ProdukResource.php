@@ -60,6 +60,13 @@ class ProdukResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $recordTitleAttribute = 'nama_produk';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_produk', 'sku'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -138,11 +145,11 @@ class ProdukResource extends BaseResource
                                     ->image()
                                     ->imageEditor() // Fitur crop bawaan filament
                                     ->disk('public')
-                                    ->directory('produks/'.now()->format('Y/m/d'))
+                                    ->directory('produks/' . now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file, Get $get) => (now()->format('ymd').'-'.Str::slug($get('nama_produk') ?? 'produk').'.'.$file->getClientOriginalExtension())
+                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
                                     )
-                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                                    ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->openable()
                                     ->downloadable(),
                             ]),
@@ -257,7 +264,7 @@ class ProdukResource extends BaseResource
 
                                                 $volumetric = ($p * $l * $t) / 4000;
 
-                                                return number_format($volumetric, 2).' Kg';
+                                                return number_format($volumetric, 2) . ' Kg';
                                             })
                                             ->icon('heroicon-m-calculator')
                                             ->color('warning') // Pembeda visual bahwa ini hitungan sistem
@@ -340,9 +347,9 @@ class ProdukResource extends BaseResource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->size(TextColumnSize::Large)
-                            ->description(fn (Produk $record) => new HtmlString('<span class="font-mono">SKU: '.e($record->sku ?? '-').'</span>'))
+                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('kategori.nama_kategori')
@@ -350,7 +357,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-m-tag')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('brand.nama_brand')
@@ -358,7 +365,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-m-building-office-2')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                     ])->space(2),
@@ -368,20 +375,35 @@ class ProdukResource extends BaseResource
                 //
                 SelectFilter::make('kategori')->relationship('kategori', 'nama_kategori')->native(false),
                 SelectFilter::make('brand')->relationship('brand', 'nama_brand')->native(false),
-                TrashedFilter::make(),
+                TrashedFilter::make()
+                    ->native(false),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->button()
+                    ->color('success'),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->icon('heroicon-o-trash')
+                    ->button()
+                    ->color('danger'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->label('Pulihkan Data'),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->label('Hapus Selamanya'),
                 ]),
             ]);
     }

@@ -22,6 +22,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class LiburCutiResource extends BaseResource
@@ -35,6 +36,26 @@ class LiburCutiResource extends BaseResource
     protected static ?string $navigationLabel = 'Libur & Cuti';
 
     protected static ?int $navigationSort = 3;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['user.name', 'keperluan', 'keterangan'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        // Assuming 'keperluan' is cast to an enum with a getLabel() method
+        $keperluanLabel = $record->keperluan?->getLabel() ?? 'Cuti';
+        return $keperluanLabel . ": " . $record->user->name;
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Tanggal' => $record->mulai_tanggal->format('d M Y'),
+            'Status' => $record->status_pengajuan?->getLabel(),
+        ];
+    }
 
     public static function canViewAny(): bool
     {

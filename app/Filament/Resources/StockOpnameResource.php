@@ -33,6 +33,11 @@ class StockOpnameResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['kode', 'gudang.nama_gudang', 'status'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Penjadwalan;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Penjadwalan\KalenderEventResource\Pages;
 use App\Models\KalenderEvent;
 use Filament\Facades\Filament;
@@ -15,13 +16,12 @@ use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class KalenderEventResource extends Resource
+class KalenderEventResource extends BaseResource
 {
     protected static ?string $model = KalenderEvent::class;
 
@@ -36,6 +36,13 @@ class KalenderEventResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static ?int $navigationSort = -1;
+
+    protected static ?string $recordTitleAttribute = 'judul';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['judul', 'deskripsi', 'lokasi'];
+    }
 
     public static function form(Form $form): Form
     {

@@ -63,6 +63,17 @@ class TukarTambahResource extends BaseResource
 
     protected static ?int $navigationSort = 4;
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'no_nota',
+            'penjualan.member.nama_member',
+            'karyawan.nama_karyawan',
+            'penjualan.no_nota',
+            'pembelian.no_po',
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

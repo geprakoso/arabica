@@ -34,6 +34,13 @@ class BrandResource extends BaseResource
     protected static ?string $navigationLabel = 'Brand';
     protected static ?int $navigationSort = 4;
 
+    protected static ?string $recordTitleAttribute = 'nama_brand';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_brand', 'slug'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

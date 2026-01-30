@@ -53,6 +53,13 @@ class MemberResource extends BaseResource
     protected static ?string $navigationLabel = 'Member';
     protected static ?int $navigationSort = 5;
 
+    protected static ?string $recordTitleAttribute = 'nama_member';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_member', 'no_hp', 'email', 'kode_member'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

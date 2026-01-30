@@ -37,6 +37,13 @@ class GudangResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $recordTitleAttribute = 'nama_gudang';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_gudang', 'lokasi_gudang'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

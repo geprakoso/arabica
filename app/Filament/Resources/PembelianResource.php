@@ -45,6 +45,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
@@ -64,6 +65,21 @@ class PembelianResource extends BaseResource
     protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?int $navigationSort = 3;
+
+    protected static ?string $recordTitleAttribute = 'no_po';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['no_po', 'supplier.nama_supplier', 'nota_supplier'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Supplier' => $record->supplier->nama_supplier,
+            'Tanggal' => $record->tanggal->format('d M Y'),
+        ];
+    }
 
     public static function form(Form $form): Form
     {

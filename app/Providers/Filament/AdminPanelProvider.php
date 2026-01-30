@@ -40,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->databaseNotificationsPolling('10s')
             ->login()
-            ->globalSearch(false)
+            ->globalSearch(\App\Filament\GlobalSearch\NavigationGlobalSearchProvider::class)
             ->colors([
                 'primary' => Color::Blue,
                 'secondary' => Color::Green,

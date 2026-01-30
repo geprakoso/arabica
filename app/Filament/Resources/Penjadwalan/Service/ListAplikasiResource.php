@@ -2,22 +2,29 @@
 
 namespace App\Filament\Resources\Penjadwalan\Service;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\Penjadwalan\Service\ListAplikasiResource\Pages;
 use App\Filament\Resources\Penjadwalan\Service\ListAplikasiResource\RelationManagers;
 use App\Models\ListAplikasi;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ListAplikasiResource extends Resource
+class ListAplikasiResource extends BaseResource
 {
     protected static ?string $model = ListAplikasi::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
     
     public static function shouldRegisterNavigation(): bool
     {

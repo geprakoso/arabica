@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PenjualanResource\Pages;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\PenjualanResource\RelationManagers\ItemsRelationManager;
 use App\Filament\Resources\PenjualanResource\RelationManagers\JasaRelationManager;
 use App\Models\Member;
@@ -62,6 +63,21 @@ class PenjualanResource extends BaseResource
     protected static ?string $pluralLabel = 'Input Penjualan';
 
     protected static ?int $navigationSort = 4;
+
+    protected static ?string $recordTitleAttribute = 'no_nota';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['no_nota', 'member.nama_member'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Member' => $record->member?->nama_member ?? 'Umum',
+            'Tanggal' => $record->tanggal_penjualan->format('d M Y'),
+        ];
+    }
 
     public static function form(Form $form): Form
     {

@@ -91,4 +91,22 @@ abstract class BaseResource extends Resource
     {
         return static::shieldCan(Filament::auth()->user(), 'reorder');
     }
+
+    public static function getGlobalSearchResultUrl(Model $record): ?string
+    {
+        $canView = static::canView($record);
+
+        if (static::hasPage('view') && $canView) {
+            return static::getUrl('view', ['record' => $record]);
+        }
+
+        if ($canView) {
+            return static::getUrl(parameters: [
+                'tableAction' => 'view',
+                'tableActionRecord' => $record,
+            ]);
+        }
+
+        return null;
+    }
 }

@@ -20,6 +20,7 @@ use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class LemburResource extends BaseResource
@@ -33,6 +34,24 @@ class LemburResource extends BaseResource
     protected static ?string $navigationLabel = 'Lembur';
 
     protected static ?int $navigationSort = 2;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['user.name', 'keperluan'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return "Lembur: " . $record->user->name;
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Tanggal' => $record->tanggal->format('d M Y'),
+            'Keperluan' => $record->keperluan,
+        ];
+    }
 
     public static function canViewAny(): bool
     {
