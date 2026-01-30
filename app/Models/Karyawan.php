@@ -129,4 +129,8 @@ class Karyawan extends Model implements HasMedia
             ->values()
             ->all();
     }
+    public function gajiKaryawans()
+    {
+        return $this->hasMany(GajiKaryawan::class);
+    }
 }

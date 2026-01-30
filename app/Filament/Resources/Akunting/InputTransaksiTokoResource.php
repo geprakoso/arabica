@@ -359,18 +359,24 @@ class InputTransaksiTokoResource extends BaseResource
                         $range = $data['range'] ?? '1m';
 
                         $startDate = null;
-                        $endDate = now();
+                        // Default endDate covers the FULL current month (e.g. up to 31st even if today is 30th)
+                        $endDate = now()->endOfMonth();
 
                         if ($range !== 'custom') {
                             $startDate = match ($range) {
-                                '3m' => now()->copy()->subMonthsNoOverflow(3),
-                                '6m' => now()->copy()->subMonthsNoOverflow(6),
-                                '1y' => now()->copy()->subYear(),
-                                default => now()->copy()->subMonth(),
+                                // 1m = "This Month" (first date to last date)
+                                '1m' => now()->startOfMonth(),
+                                // 3m = "This Month + 2 Prev Months" = 3 Months Total
+                                '3m' => now()->subMonths(2)->startOfMonth(),
+                                // 6m = "This Month + 5 Prev Months"
+                                '6m' => now()->subMonths(5)->startOfMonth(),
+                                // 1y = "This Month + 11 Prev Months"
+                                '1y' => now()->subMonths(11)->startOfMonth(),
+                                default => now()->startOfMonth(),
                             };
                         } else {
                             $startDate = $data['from'] ?? null;
-                            $endDate = $data['until'] ?? $endDate;
+                            $endDate = $data['until'] ?? null;
                         }
 
                         return $query
