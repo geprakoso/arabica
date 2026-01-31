@@ -66,6 +66,20 @@ class JenisAkun extends Model
                 $jenisAkun->kode_jenis_akun = static::generateKodeJenisAkun($jenisAkun->kode_akun_id);
             }
         });
+
+        static::created(function (JenisAkun $jenisAkun) {
+            // Jika akun 5210 baru saja dibuat, trigger sync ulang semua data Gaji jika ada
+            if ($jenisAkun->kode_jenis_akun === '5210') {
+                // Ambil semua periode unik dari GajiKaryawan (kelompokkan by Y-m)
+                $periods = \App\Models\GajiKaryawan::selectRaw("DATE_FORMAT(tanggal_pemberian, '%Y-%m-01') as periode")
+                    ->distinct()
+                    ->pluck('periode');
+
+                foreach ($periods as $date) {
+                    \App\Models\GajiKaryawan::syncPeriod($date);
+                }
+            }
+        });
     }
 
     /**
