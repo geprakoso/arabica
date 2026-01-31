@@ -16,7 +16,15 @@ class GajiKaryawanResource extends Resource
 {
     protected static ?string $model = GajiKaryawan::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'hugeicons-money-bag-02';
+
+    protected static ?string $navigationGroup = 'Personalia';
+
+    protected static ?string $label = 'Gaji Karyawan';
+
+    protected static ?string $pluralLabel = 'Gaji Karyawan';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
