@@ -114,6 +114,345 @@
         </thead>
         <tbody>
 
+            <!-- 2026.01.31 - Modul Gaji Karyawan & Integrasi Transaksi -->
+            <tr>
+                <td class="date-cell">2026.01.31</td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Resource Gaji Karyawan Baru</td>
+                <td class="detail-cell">CRUD Lengkap: Mengimplementasikan resource baru untuk manajemen gaji karyawan
+                    dengan halaman Create, Edit, List, dan View.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Resource Gaji Karyawan Baru</td>
+                <td class="detail-cell">Field Komprehensif: Mendukung input Karyawan, Bulan/Tahun Gaji, Kategori Gaji
+                    (Gaji Pokok, Bonus), dan Jumlah Gaji.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Resource Gaji Karyawan Baru</td>
+                <td class="detail-cell">Migrasi Database: Menambahkan tabel `tb_gaji_karyawans` dengan struktur yang
+                    mendukung pencatatan gaji bulanan per karyawan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Integrasi Otomatis dengan Input Transaksi Toko</td>
+                <td class="detail-cell">Sinkronisasi Transaksi: Gaji karyawan kini otomatis tercatat sebagai transaksi
+                    beban pada `InputTransaksiToko` menggunakan Jenis Akun Kode 5210 (Beban Gaji).</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Integrasi Otomatis dengan Input Transaksi Toko</td>
+                <td class="detail-cell">Auto-Create Akun 5210: Jika Jenis Akun dengan kode `5210` belum ada, sistem akan
+                    membuatnya secara otomatis saat menyimpan gaji.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Integrasi Otomatis dengan Input Transaksi Toko</td>
+                <td class="detail-cell">Kalkulasi Total Bulanan: Sistem menghitung total seluruh gaji karyawan per bulan
+                    dan membuat/memperbarui satu transaksi gabungan di `InputTransaksiToko`.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Integrasi Otomatis dengan Input Transaksi Toko</td>
+                <td class="detail-cell">Cascade Update/Delete: Perubahan atau penghapusan data gaji akan otomatis
+                    memperbarui transaksi terkait.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Perbaikan &amp; Pembersihan</td>
+                <td class="detail-cell">Fix Upload Gaji: Memperbaiki masalah pada migrasi tabel gaji karyawan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Perbaikan &amp; Pembersihan</td>
+                <td class="detail-cell">Icon Update: Memperbarui ikon pada `GajiKaryawanResource` untuk konsistensi
+                    visual.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Modul Gaji Karyawan &amp; Integrasi Transaksi</td>
+                <td class="feature-cell">Perbaikan &amp; Pembersihan</td>
+                <td class="detail-cell">Pembersihan Seeder: Menghapus 21 file seeder yang tidak diperlukan untuk
+                    produksi (AbsensiSeeder, BrandSeeder, MemberSeeder, PenjualanSeeder, dll.) guna menjaga kebersihan
+                    kode.</td>
+            </tr>
+
+            <!-- 2026.01.30 - Peningkatan Fungsionalitas & Global Search -->
+            <tr>
+                <td class="date-cell">2026.01.30</td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Global Search Provider: Mengimplementasikan `GlobalSearchProvider` yang
+                    memungkinkan pencarian lintas resource.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Searchable Resources (Master Data): Produk, Brand, Gudang, Jasa, Kategori,
+                    Member, Supplier.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Searchable Resources (Transaksi): Pembelian, Penjualan, Tukar Tambah, Request
+                    Order, Pengiriman.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Searchable Resources (HRM): Absensi, Lembur, Pengajuan Cuti, Penjadwalan Tugas.
+                </td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Searchable Resources (Keuangan): Input Transaksi Toko, Jenis Akun, Kode Akun.
+                </td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Searchable Resources (Service &amp; Inventaris): Penjadwalan Service, Atribut
+                    Crosscheck, Inventory, Stock Adjustment, Stock Opname.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Fitur Pencarian Global</td>
+                <td class="detail-cell">Pencarian Produk Canggih: Produk dapat dicari berdasarkan nama, SKU, dan brand.
+                </td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Selector Jasa pada Penjualan</td>
+                <td class="detail-cell">Repeater Jasa: Menambahkan komponen repeater untuk menambahkan jasa pada
+                    transaksi penjualan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Selector Jasa pada Penjualan</td>
+                <td class="detail-cell">Model PenjualanJasa: Membuat model baru untuk relasi many-to-many antara
+                    Penjualan dan Jasa.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Selector Jasa pada Penjualan</td>
+                <td class="detail-cell">Migrasi Tabel Pivot: Menambahkan tabel `tb_penjualan_jasa` untuk menyimpan data
+                    jasa per penjualan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Selector Jasa pada Penjualan</td>
+                <td class="detail-cell">Referensi Nota: Jasa yang dipilih kini tercatat dengan referensi nota penjualan
+                    untuk pelacakan yang lebih baik.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Perbaikan Laporan Laba Rugi</td>
+                <td class="detail-cell">Fix Kalkulasi: Memperbaiki perhitungan pada `LaporanLabaRugiCustom` untuk
+                    akurasi laporan keuangan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Perbaikan Laporan Laba Rugi</td>
+                <td class="detail-cell">Optimasi Query: Memperbarui query pada tabel pembelian untuk performa yang lebih
+                    baik.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Perbaikan Laporan Laba Rugi</td>
+                <td class="detail-cell">Styling Tabel: Memperbaiki tampilan tabel laporan dengan penyesuaian kolom yang
+                    lebih rapi.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Perbaikan Widget Overview Penjualan</td>
+                <td class="detail-cell">Fix State Pendapatan: Memperbaiki perhitungan state widget overview untuk
+                    menampilkan total penjualan dan pendapatan dengan benar.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Perbaikan Widget Overview Penjualan</td>
+                <td class="detail-cell">Widget PenjualanTotals: Menambahkan widget baru untuk menampilkan ringkasan
+                    total penjualan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Dokumentasi</td>
+                <td class="detail-cell">Menambahkan `docs/global_search.md` - Panduan implementasi pencarian global.
+                </td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan Fungsionalitas &amp; Global Search</td>
+                <td class="feature-cell">Dokumentasi</td>
+                <td class="detail-cell">Menambahkan `docs/referensi_nota_jasa.md` - Dokumentasi fitur referensi nota
+                    jasa.</td>
+            </tr>
+
+            <!-- 2026.01.29 - Peningkatan UI Widget Kalender & Soft Delete Produk -->
+            <tr>
+                <td class="date-cell">2026.01.29</td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Peningkatan UI Widget Kalender</td>
+                <td class="detail-cell">Header Informatif: Menambahkan ikon dan deskripsi &quot;Kelola jadwal tugas dan
+                    agenda kegiatan disini&quot; pada header widget kalender.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Peningkatan UI Widget Kalender</td>
+                <td class="detail-cell">Visual Upgrade: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna
+                    Primary, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan
+                    menonjol.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Peningkatan UI Widget Kalender</td>
+                <td class="detail-cell">Highlight Hari Ini: Memperjelas warna latar belakang untuk tanggal hari ini
+                    (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Peningkatan UI Widget Kalender</td>
+                <td class="detail-cell">Fix Styling Kalender: Memperbaiki tampilan event pada kalender dengan
+                    penyesuaian CSS untuk konsistensi visual.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Fitur Soft Delete Produk</td>
+                <td class="detail-cell">Implementasi Soft Delete: Produk yang dihapus kini tidak dihapus permanen,
+                    melainkan di-soft delete agar data historis tetap terjaga.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Fitur Soft Delete Produk</td>
+                <td class="detail-cell">Restore &amp; Force Delete: Menambahkan aksi untuk memulihkan (restore) atau
+                    menghapus permanen (force delete) produk yang sudah di-soft delete.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Fitur Soft Delete Produk</td>
+                <td class="detail-cell">Filter Trashed: Menambahkan filter untuk menampilkan produk yang sudah dihapus
+                    (trashed) pada tabel list.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Fitur Soft Delete Produk</td>
+                <td class="detail-cell">Migrasi SoftDeletes: Menambahkan kolom `deleted_at` pada tabel produk melalui
+                    migrasi.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Fitur Soft Delete Produk</td>
+                <td class="detail-cell">Dokumentasi: Menambahkan `docs/produk-soft-delete.md` untuk panduan teknis fitur
+                    ini.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Perbaikan Fitur Tukar Tambah</td>
+                <td class="detail-cell">Fix Galeri: Memperbaiki tampilan galeri foto pada halaman Tukar Tambah.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Perbaikan Fitur Tukar Tambah</td>
+                <td class="detail-cell">Fix Quantity: Memperbaiki perhitungan kuantitas barang keluar/masuk.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Perbaikan Fitur Tukar Tambah</td>
+                <td class="detail-cell">Fix Data Pelanggan: Memperbaiki tampilan dan penyimpanan data pelanggan pada
+                    transaksi Tukar Tambah.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Perbaikan Laporan Laba Rugi</td>
+                <td class="detail-cell">Fix Report Calculation: Memperbaiki bug kalkulasi pada laporan laba rugi untuk
+                    hasil yang lebih akurat.</td>
+            </tr>
+
+            <tr>
+                <td class="date-cell"></td>
+                <td class="category-cell">Peningkatan UI Widget Kalender &amp; Soft Delete Produk</td>
+                <td class="feature-cell">Perbaikan Laporan Laba Rugi</td>
+                <td class="detail-cell">Dependency Update: Menambahkan dependensi baru pada `composer.json` untuk
+                    mendukung fitur laporan.</td>
+            </tr>
+
+            <!-- 2026.01.28 - Existing entries start here -->
             <tr>
                 <td class="date-cell">2026.01.28</td>
                 <td class="category-cell">Peningkatan Fitur &amp; Perbaikan Sistem (Deep Scan)</td>
@@ -317,31 +656,6 @@
                 <td class="feature-cell">Styling Kustom Tombol</td>
                 <td class="detail-cell">Mengimplementasikan CSS kustom pada `AdminPanelProvider` untuk konsistensi
                     visual antara tombol dan badge.</td>
-            </tr>
-
-            <tr>
-                <td class="date-cell">2026.01.29</td>
-                <td class="category-cell">Peningkatan UI Widget Kalender</td>
-                <td class="feature-cell"></td>
-                <td class="detail-cell">Header Informatif: Menambahkan ikon dan deskripsi &quot;Kelola jadwal tugas dan
-                    agenda kegiatan disini&quot; pada header widget kalender.</td>
-            </tr>
-
-            <tr>
-                <td class="date-cell"></td>
-                <td class="category-cell">Peningkatan UI Widget Kalender</td>
-                <td class="feature-cell"></td>
-                <td class="detail-cell">Visual Upgrade: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna
-                    Primary, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan
-                    menonjol.</td>
-            </tr>
-
-            <tr>
-                <td class="date-cell"></td>
-                <td class="category-cell">Peningkatan UI Widget Kalender</td>
-                <td class="feature-cell"></td>
-                <td class="detail-cell">Highlight Hari Ini: Memperjelas warna latar belakang untuk tanggal hari ini
-                    (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.</td>
             </tr>
 
             <tr>
