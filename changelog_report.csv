@@ -1,0 +1,316 @@
+Tanggal,Kategori,Fitur / Topik,Detail Perubahan
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Fix Upload Bukti Pembayaran,Memperbaiki masalah gambar bukti transfer yang hilang setelah penyimpanan pada `TukarTambahResource`.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Fix Upload Bukti Pembayaran,Memastikan persistensi data pada field `bukti_transfer` saat edit record.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Galeri Foto Terpusat,"Mengimplementasikan komponen `tukar-tambah-photos-gallery` untuk menampilkan seluruh bukti foto (Penjualan, Pembelian, Dokumen) dalam satu tampilan grid yang rapi."
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Galeri Foto Terpusat,Memperbaiki layout tabel barang keluar dan masuk pada infolist.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Generator Kode Unik,Menambahkan kolom `kode_member` pada tabel member (via migrasi).
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Generator Kode Unik,Implementasi logika *auto-generate* kode (Format: `XXXX-0001`) berdasarkan nama dan tanggal daftar.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Generator Kode Unik,Melakukan *backfill* otomatis kode member untuk data member lama.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),UI Updates,Menampilkan `kode_member` sebagai badge yang dapat dicari (*searchable*) dan disalin (*copyable*) pada tabel Member.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Custom Header Export,Refactoring `InventoryExportHeaderAction` dan `SummaryExportHeaderAction` untuk kustomisasi header laporan excel/pdf.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Custom Header Export,Memperbarui template PDF ekspor (`pdf.blade.php`) untuk tampilan laporan yang lebih profesional.
+2026.01.28,Peningkatan Fitur & Perbaikan Sistem (Deep Scan),Laporan Harian,Pembaruan pada `PembelianReportResource` dan `PenjualanReportResource` untuk sinkronisasi dengan format baru.
+2026.01.28,Peningkatan UI Widget Kalender,Soft Button Colors,"Mengimplementasikan palet ""Soft Colors"" (warna pastel lembut) pada widget Kalender Jadwal, menggantikan warna solid yang terlalu kontras."
+2026.01.28,Peningkatan UI Widget Kalender,Soft Button Colors,"Warna disesuaikan dengan status tugas/event: Biru (Proses/Meeting), Hijau (Selesai/Event), Kuning (Pending/Catatan), Merah (Batal/Libur)."
+2026.01.28,Peningkatan UI Widget Kalender,Soft Button Colors,Mendukung Dark Mode secara native dengan penyesuaian opasitas latar belakang dan border yang elegan.
+2026.01.28,Peningkatan UI Widget Kalender,Konsistensi Gaya (Rounder),Menerapkan sudut tumpul (`border-radius: 6px`) yang konsisten pada seluruh event di kalender agar selaras dengan bahasa desain aplikasi lainnya.
+2026.01.28,Peningkatan UI Widget Kalender,Konsistensi Gaya (Rounder),Menambahkan bayangan halus (`box-shadow`) untuk memberikan kedalaman pada blok event.
+2026.01.28,Peningkatan UI Widget Kalender,Refactoring & Optimasi Styling,Memindahkan seluruh CSS kustom kalender ke `AdminPanelProvider.php` sebagai gaya global dengan spesifisitas tinggi (`body .ec ...`). Hal ini menjamin gaya terkunci dan tidak perlu dideklarasikan ulang di setiap view.
+2026.01.28,Peningkatan UI Widget Kalender,Refactoring & Optimasi Styling,Membersihkan kode CSS lokal dari file Blade untuk pemeliharaan yang lebih bersih.
+2026.01.28,Peningkatan UI Widget Kalender,Refactoring & Optimasi Styling,Meningkatkan ketahanan widget dengan menambahkan properti `className` sebagai fallback selain `classNames`.
+2026.01.28,Peningkatan UI Widget Kalender,Modernisasi Filter Kalender,"Inline Header Filters: Memindahkan filter Bulan dan Tahun langsung ke dalam header widget, berdampingan dengan tombol aksi (Buat Tugas/Event)."
+2026.01.28,Peningkatan UI Widget Kalender,Clean & Soft UI,"Menggunakan dropdown manual dengan gaya ""Ghost"" (`bg-gray-50`) yang bersih."
+2026.01.28,Peningkatan UI Widget Kalender,Clean & Soft UI,Menambahkan efek hover Soft Primary (`hover:bg-primary-50` & `text-primary-600`) yang memberikan umpan balik visual yang nyaman.
+2026.01.28,Peningkatan UI Widget Kalender,Clean & Soft UI,"Penyederhanaan UX: Menghapus filter ""Tipe Event"" yang jarang digunakan untuk tampilan yang lebih minimalis dan fokus."
+2026.01.28,Peningkatan UI Widget Kalender,Clean & Soft UI,Technical Debt: Menghapus wrapper form legacy pada halaman `KalenderJadwal` dan menggantinya dengan integrasi Livewire `wire:model.live` langsung pada widget.
+2026.01.27,Penyesuaian Tampilan Tombol,Styling Kustom Tombol,"Menyamakan gaya tombol aksi dengan skema warna Badge Filament (Info, Success, Warning, Danger, Gray)."
+2026.01.27,Penyesuaian Tampilan Tombol,Styling Kustom Tombol,Mengimplementasikan CSS kustom pada `AdminPanelProvider` untuk konsistensi visual antara tombol dan badge.
+2026.01.29,Peningkatan UI Widget Kalender,,"Header Informatif: Menambahkan ikon dan deskripsi ""Kelola jadwal tugas dan agenda kegiatan disini"" pada header widget kalender."
+2026.01.29,Peningkatan UI Widget Kalender,,"Visual Upgrade: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna Primary, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan menonjol."
+2026.01.29,Peningkatan UI Widget Kalender,,Highlight Hari Ini: Memperjelas warna latar belakang untuk tanggal hari ini (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Godmode Force Delete (Pembelian),Mengimplementasikan alur penghapusan paksa 3-langkah untuk transaksi pembelian yang terkunci.
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Godmode Force Delete (Pembelian),"Sistem otomatis menangani *cascade deletion* untuk item, pembayaran, dan jasa terkait tanpa error integritas database."
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Godmode Force Delete (Pembelian),"Memberikan tanda ""Nerfed"" pada penjualan yang terkait dengan pembelian yang dihapus paksa."
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Smart Delete Penjualan,"Pengguna Godmode kini dapat menghapus penjualan yang sudah ""Lunas"" dengan alur konfirmasi bertingkat."
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Smart Delete Penjualan,"Menampilkan ringkasan dampak (*Impact Summary*) sebelum penghapusan, merinci item, pembayaran, dan transaksi tukar tambah yang akan terhapus."
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Indikator Visual Godmode,"Menambahkan badge ""Godmode"" di top bar admin panel (sebelah pencarian global) sebagai pengingat visual status *super user*."
+2026.01.26,Fitur Godmode & Manajemen Data Tingkat Lanjut,Perbaikan Integritas Data,"Memperbarui skema database (`tb_tukar_tambah`, `tb_penjualan_item`) agar kolom foreign key bersifat *nullable*, mencegah *crash* saat induk dihapus paksa."
+2026.01.23,Perbaikan Harga Pokok & Upload Dokumen Pembelian,Fix Tampilan HPP,Memperbaiki masalah HPP yang tidak muncul pada saat edit *existing record* di tabel barang keluar (`TukarTambahResource`).
+2026.01.23,Perbaikan Harga Pokok & Upload Dokumen Pembelian,Fix Tampilan HPP,Mengimplementasikan *hydration hook* untuk menarik data HPP dari item penjualan atau batch pembelian secara otomatis.
+2026.01.23,Perbaikan Harga Pokok & Upload Dokumen Pembelian,Upload Foto Dokumen,"Menambahkan fitur upload foto dokumen umum (faktur, surat jalan) pada halaman *View* Pembelian."
+2026.01.23,Perbaikan Harga Pokok & Upload Dokumen Pembelian,Upload Foto Dokumen,Foto tersimpan dalam format JSON dan ditampilkan pada bagian khusus di *Infolist*.
+2026.01.22,Manajemen Serial Number & Pencarian,Pencarian Serial Number,"Kolom Serial Number pada tabel Pembelian kini dapat dicari (*searchable*), menelusuri data di dalam array JSON `serials`."
+2026.01.22,Manajemen Serial Number & Pencarian,Input Serial Number Pembelian,"Mengimplementasikan UI input serial number pada repeater item pembelian, serupa dengan fitur di modul Penjualan."
+2026.01.22,Manajemen Serial Number & Pencarian,Input Serial Number Pembelian,Modal input dinamis menyesuaikan jumlah field berdasarkan kuantitas item.
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Proteksi Penghapusan Record Tukar Tambah: Record Penjualan dan Pembelian yang dibuat oleh Tukar Tambah sekarang tidak bisa dihapus langsung. Harus dihapus melalui Tukar Tambah untuk menjaga integritas data.
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Proteksi Cascade Deletion: Sistem menggunakan flag statis untuk memungkinkan Tukar Tambah menghapus record terkait sambil memblokir penghapusan langsung dari resource lain.
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,"Perbaikan Pencatatan Pembayaran Tukar Tambah: Pembayaran dari Tukar Tambah sekarang dicatat dengan benar di Penjualan dan Pembelian, termasuk tanggal pembayaran dan bukti transfer."
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,"Perbaikan Status Pembayaran: Status pembayaran tidak lagi menampilkan ""Tempo"" untuk transaksi yang sudah dibayar penuh."
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Perbaikan Form Submission: Menghapus `dehydrated(false)` dari field `unified_pembayaran` yang mencegah data pembayaran terkirim ke backend.
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Perbaikan Tampilan Member: Nama member sekarang ditampilkan dengan benar di tabel Tukar Tambah melalui relasi `penjualan.member`.
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,"Perbaikan ActionGroup: ActionGroup sekarang selalu muncul untuk record Tukar Tambah, menampilkan aksi View dan Edit (Delete disembunyikan)."
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Menambahkan static flag `$allowTukarTambahDeletion` pada model Penjualan dan Pembelian
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Menambahkan validasi di event `deleting` untuk memblokir penghapusan record Tukar Tambah
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,TukarTambah mengatur flag sebelum menghapus record terkait (cascade deletion)
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Menggunakan try-finally untuk memastikan flag di-reset setelah penghapusan
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Menambahkan field `tanggal` dan `bukti_transfer` pada method pembayaran
+2026.01.18,Proteksi Penghapusan & Perbaikan Pembayaran Tukar Tambah,,Menambahkan validasi untuk skip pembayaran dengan jumlah 0 atau kosong
+2026.01.17,Penyempurnaan Form Member Penjualan,,"Dropdown Lokasi Indonesia: Form member di PenjualanResource sekarang menggunakan dropdown untuk Provinsi, Kota/Kabupaten, dan Kecamatan dengan data dari package `laravolt/indonesia`."
+2026.01.17,Penyempurnaan Form Member Penjualan,,"Cascading Dropdown: Dropdown Kota bergantung pada Provinsi yang dipilih, dan dropdown Kecamatan bergantung pada Kota yang dipilih."
+2026.01.17,Penyempurnaan Form Member Penjualan,,Searchable Location Fields: Semua field lokasi sekarang searchable untuk memudahkan pencarian.
+2026.01.17,Penyempurnaan Form Member Penjualan,,"Auto-reset Child Fields: Saat Provinsi diubah, Kota dan Kecamatan otomatis di-reset. Saat Kota diubah, Kecamatan otomatis di-reset."
+2026.01.17,Penyempurnaan Form Member Penjualan,,"Mengubah TextInput menjadi Select untuk field `provinsi`, `kota`, dan `kecamatan`"
+2026.01.17,Penyempurnaan Form Member Penjualan,,"Menambahkan import untuk `Province`, `City`, dan `District` dari package `laravolt/indonesia`"
+2026.01.17,Penyempurnaan Form Member Penjualan,,Implementasi reactive dropdown dengan `live()` dan `afterStateUpdated()`
+2026.01.17,Penyempurnaan Form Member Penjualan,,Data lokasi di-cache di level query untuk performa optimal
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,Multi-File Upload: Menambahkan kemampuan upload banyak file sekaligus pada sistem komentar tugas dengan akumulasi file (bukan replace).
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,Thumbnail 64x64px: Gambar ditampilkan sebagai thumbnail kecil dengan ukuran konsisten 64x64 piksel.
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,Konversi WebP Otomatis: Gambar yang diupload otomatis di-resize ke maksimal 1080p dan dikonversi ke format WebP dengan kualitas 80%.
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,"Ikon Tipe File: Dokumen non-gambar (PDF, DOC, XLS, TXT, ZIP, dll.) ditampilkan dengan ikon sesuai ekstensinya."
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,iOS-style Close Button: Tombol hapus lampiran bergaya iOS dengan lingkaran abu-abu dan ikon X di pojok kanan atas.
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,Preview Upload: Menampilkan preview file sebelum dikirim dengan kemampuan hapus per-file.
+2026.01.21,Fitur Lampiran Multi-Upload pada Komentar Tugas,,Loading Indicator: Menampilkan indikator loading saat proses upload berlangsung.
+2026.01.21,Perbaikan Otorisasi Penjadwalan Tugas,,"Pembatasan Aksi Status: Tombol Proses, Selesai, dan Batal hanya dapat digunakan oleh Pemberi Tugas dan Ditugaskan Ke."
+2026.01.21,Perbaikan Otorisasi Penjadwalan Tugas,,"Pembatasan Edit: Fitur edit tugas hanya tersedia untuk super_admin, Pemberi Tugas, dan Ditugaskan Ke."
+2026.01.21,Perbaikan Otorisasi Penjadwalan Tugas,,Proteksi Halaman Edit: Menambahkan pengecekan otorisasi pada halaman edit dengan redirect dan notifikasi jika tidak memiliki izin.
+2026.01.21,Perbaikan Otorisasi Penjadwalan Tugas,,Visibility Tombol Edit: Menyembunyikan tombol edit pada tabel dan halaman view untuk pengguna yang tidak berwenang.
+2026.01.21,Perbaikan Filter Tabel,,"Clear Filter = Semua Data: Ketika filter di-clear, tabel sekarang menampilkan semua record (menghapus default ""Hari Ini"")."
+2026.01.21,Perbaikan Filter Tabel,,"Placeholder ""Semua Tanggal"": Menambahkan placeholder pada dropdown filter rentang waktu."
+2026.01.21,Peningkatan UI Dark Mode,,Warna Teks Komentar: Memperbaiki warna teks komentar pada dark mode menjadi lebih terang (`gray-200`).
+2026.01.21,Dokumentasi,,Menambahkan `docs/multi_upload_attachment_feature.md` - Dokumentasi lengkap fitur multi-upload lampiran.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Mengubah input serial number dari tampilan inline (nested table) menjadi modal popup untuk UI yang lebih bersih dan compact.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,"Menambahkan tombol ""Manage"" dengan ikon QR code yang menampilkan jumlah serial number (e.g., ""2 serials"")."
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,"Modal berisi `Repeater` untuk menambah, mengedit, dan menghapus serial number (`sn` dan `garansi`) secara individual."
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Implementasi data transfer antara hidden field (`serials`) dan modal repeater (`serials_temp`) menggunakan `fillForm` dan `action` callbacks.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Menambahkan `->button()` pada `FormAction` agar tombol menampilkan icon dan label secara bersamaan (bukan hanya icon).
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Known Issue: Count serial number belum update secara reactive setelah modal disimpan (ditunda untuk perbaikan masa depan).
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Perbaikan Penjualan (dari repository):
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Memperbaiki logika visibility tombol aksi pada tabel penjualan.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Modal Serial Number & Garansi,Menyesuaikan kondisi hidden untuk action group berdasarkan status pembayaran dan keberadaan line items.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Refactoring Email Invoice,Menyesuaikan sintaks anonymous function pada `InvoicePenjualanMail.php` untuk konsistensi kode.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Refactoring Email Invoice,Mengurutkan ulang import statements sesuai standar PSR-12.
+2026.01.21,Peningkatan UI/UX Tukar Tambah,Refactoring Email Invoice,Dokumentasi: Menambahkan dokumentasi teknis lengkap untuk implementasi modal serial number (`docs/2026-01-15_modal_serial_number_tukar_tambah.md`).
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Optimasi Upload Gambar RichEditor,Memperbaiki error `BadMethodCallException` pada upload gambar di deskripsi tugas.
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Optimasi Upload Gambar RichEditor,"Mengimplementasikan standarisasi upload: Resize otomatis ke 1080p, konversi ke WebP, dan kompresi 80% quality."
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Optimasi Upload Gambar RichEditor,Menyimpan file secara terpusat di disk `public`.
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Filter Canggih Penjadwalan Tugas,"Tab Status Filter: Menambahkan tab navigasi cepat untuk memfilter tugas berdasarkan status: Proses (termasuk Pending), Selesai, Batal, dan Semua."
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Filter Canggih Penjadwalan Tugas,"Filter Periode: Menambahkan filter rentang waktu (Hari Ini, Kemarin, 2 Hari Lalu, 3 Hari Lalu, Custom) di dalam menu filter tabel."
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Filter Canggih Penjadwalan Tugas,Memastikan integrasi ikon yang intuitif pada setiap tab filter.
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Filter Canggih Penjadwalan Tugas,Dokumentasi: Update panduan teknis upload gambar RichEditor (`docs/rich-editor-image-standard.md`) dengan kode yang terverifikasi.
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Fitur Edit Absensi (Admin),Mengaktifkan fitur Edit pada tabel Absensi khusus untuk role `super_admin` dan `admin`.
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Fitur Edit Absensi (Admin),Modal Edit: Menggunakan modal box (bukan halaman terpisah) untuk pengeditan cepat.
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Fitur Edit Absensi (Admin),"Field Fleksibel: Memungkinkan pengubahan Tanggal, Jam Masuk, Jam Keluar, dan Keterangan."
+2026.01.14,Perbaikan & Peningkatan Penjadwalan Tugas,Fitur Edit Absensi (Admin),"Keamanan: Menambahkan konfirmasi ""Alasan Perubahan"" yang wajib diisi dan proteksi `visible()` berbasis role."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Redesign UI Lembur (`LemburResource`),Mengubah layout Form dan Infolist menjadi Standard Enterprise Card Layout yang lebih profesional dan rapi.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Redesign UI Lembur (`LemburResource`),"Mengganti gaya tombol aksi menjadi Solid Colors (""Buat Lembur"" biru, ""Selesai"" hijau, ""Terima"" hijau, ""Tolak"" merah) untuk kejelasan visual."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Redesign UI Lembur (`LemburResource`),Menyederhanakan tombol Edit & Delete menjadi gaya minimalis berwarna netral (gray/white).
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Redesign UI Lembur (`LemburResource`),"Menambahkan kolom preview gambar (square) pada tabel list untuk ""Bukti""."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Fitur Upload Bukti Lembur,"Menambahkan kolom upload gambar ""Bukti"" dengan konversi otomatis ke format WebP dan *resize* (max Full HD) untuk optimasi penyimpanan."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Fitur Upload Bukti Lembur,"Memperbaiki validasi upload agar menerima `jpeg`, `png`, dan `webp` dengan benar."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Logika & Workflow,Menambahkan fitur Redirect otomatis ke halaman *List* setelah berhasil membuat record baru (Create -> Redirect -> List).
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Logika & Workflow,"Mengimplementasikan logika tombol dinamis pada header list: Tombol ""Selesai Lembur"" hanya muncul jika user memiliki lembur aktif hari ini."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Logika & Workflow,Menambahkan validasi tombol Approval (Terima/Tolak) yang hanya muncul untuk Admin pada status Pending.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Filter Absensi,"Menambahkan filter tanggal canggih pada `AbsensiResource` dengan opsi preset: Hari Ini (Default), Kemarin, 2 Hari Lalu, 3 Hari Lalu, dan Custom Range."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Filter Absensi,Menambahkan indikator visual (badge) pada filter aktif.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,Multi-Assignee: Mengubah sistem penugasan dari 1 karyawan menjadi Banyak Karyawan sekaligus (Many-to-Many).
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,"Selector Durasi Cerdas: Menambahkan pilihan cepat durasi (1 Hari, 2 Hari, 3 Hari) yang otomatis mengatur tanggal dan menyembunyikan input manual."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,"Validasi Server-Side: Memastikan logika tanggal tersimpan akurat (Today -> Today) menggunakan *mutation hooks*, mencegah bug pada input tersembunyi."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,"Tombol Status Cepat: Menambahkan tombol aksi Proses, Selesai, dan Batal pada halaman detail tugas untuk mempercepat workflow status."
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,Sistem Komentar Native: Menambahkan fitur diskusi interaktif pada detail tugas.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,Indikator Pesan Baru: Badge notifikasi (Hijau) pada list tugas jika ada komentar yang belum dibaca.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Peningkatan Penjadwalan Tugas,Integrasi Notifikasi: Notifikasi in-app kepada Creator & Assignees saat ada komentar baru.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Smart Navigation Badge,Indikator personal (hanya untuk tugas terkait).
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Smart Navigation Badge,Split Info: New 🆕 (Belum dilihat) dan Chat 💬 (Komentar baru).
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Smart Navigation Badge,Optimasi Performa: Eager Loading untuk mencegah N+1 Query pada indikator diskusi.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Smart Navigation Badge,Terintegrasi langsung di halaman View (Infolist).
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Smart Navigation Badge,Keamanan akses: Hanya Creator dan Assignee yang bisa berkomentar.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Smart Navigation Badge,Menggunakan teknologi Livewire untuk pengalaman pengguna yang responsif.
+2026.01.13,Peningkatan UI/UX Lembur & Filter Absensi,Kompatibilitas iPhone,Menambahkan dukungan format HEIC/HEIF pada upload bukti lembur.
+2026.01.12,,,Menambahkan My Profile dengan fitur upload avatar yang tersinkronisasi.
+2026.01.12,,,Perbaikan Upload Avatar: Memindahkan penyimpanan ke disk `public` untuk mengatasi error 403 Forbidden.
+2026.01.12,,,Refactoring User Model: Menggunakan observer untuk sinkronisasi otomatis avatar antara tabel `users` dan `karyawan`.
+2026.01.12,,,Migrasi Database: Menambahkan kolom `avatar_url` pada tabel `users`.
+2026.01.12,,,Konfigurasi Plugin: Memaksa `edit-profile` plugin menggunakan disk `public`.
+2026.01.12,,,Dokumentasi teknis perbaikan tersedia di `/docs/perbaikan_sinkronisasi_avatar.md`.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Lokasi Gudang (`GudangResource`),Mengimplementasikan Interactive Map Picker (Leaflet/OSM) untuk pemilihan lokasi visual.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Lokasi Gudang (`GudangResource`),Menambahkan fitur Reverse Geocoding otomatis dan dropdown wilayah Indonesia (Provinsi s/d Kelurahan).
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Lokasi Gudang (`GudangResource`),Menambahkan pengaturan Radius (km) untuk toleransi jarak absensi.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Karyawan (`UserResource`),Menggabungkan fungsionalitas `KaryawanResource` ke dalam `UserResource` untuk manajemen terpusat.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Karyawan (`UserResource`),Menambahkan fitur Penugasan Gudang (`gudang_id`) untuk menetapkan lokasi kerja karyawan.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Karyawan (`UserResource`),"Memperbaiki tombol ""Tambah Karyawan"" agar tampil inline di header halaman list."
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Manajemen Karyawan (`UserResource`),Fix Foto Profil: Memperbaiki masalah gambar tidak tampil saat edit dengan menambahkan `visibility('public')` dan logika ekstraksi path JSON yang robust.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Validasi Absensi Geofencing,Mengimplementasikan validasi lokasi ketat pada `AbsensiResource` menggunakan koordinat gudang yang ditugaskan.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Validasi Absensi Geofencing,Menggunakan formula Haversine untuk perhitungan jarak akurat dan menolak absensi di luar radius gudang.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Perbaikan Sistem,Mengatasi masalah routing `MethodNotAllowedHttpException` pada login dengan pembersihan cache menyeluruh.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Perbaikan Sistem,Mengoptimalkan struktur navigasi dengan menyembunyikan resource karyawan yang redundan.
+2026.01.11,Integrasi Gudang & Absensi Berbasis Lokasi,Perbaikan Sistem,"Fix Navigasi Filament Shield: Memperbaiki menu Roles yang tersangkut di grup ""Master Data"". Masalah disebabkan oleh file terjemahan Indonesia (`resources/lang/vendor/filament-shield/id/filament-shield.php`) yang meng-override konfigurasi utama. Solusi: update file lang ke 'Pengaturan'."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Fitur Crosscheck & Kelengkapan Unit,"Mengimplementasikan sistem input checklist bertingkat (Parent-Child). Jika item induk dicentang, sub-item akan muncul."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Fitur Crosscheck & Kelengkapan Unit,"Memisahkan atribut menjadi 4 kategori tab: Crosscheck (Fisik), Aplikasi, Game, dan OS."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Fitur Crosscheck & Kelengkapan Unit,"Menambahkan halaman manajemen master data terpusat ""Atribut Crosscheck"" di bawah menu Penerimaan Service."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Import Data Pelanggan,"Menambahkan fitur ""Import dari Nota Penjualan"" pada form service. User dapat mencari nomor nota, dan sistem otomatis mengisi data pelanggan (Nama, HP, Alamat) tanpa mengetik ulang."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Pencetakan Dokumen (Print Views),"Pemisahan Dokumen: Memisahkan ""Cetak Invoice"" (Tanda Terima untuk customer) dan ""Cetak Checklist"" (Lembar kerja teknisi/detail)."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Pencetakan Dokumen (Print Views),"Cetak Checklist: Layout khusus A4 yang menampilkan seluruh detail item yang dicentang (Apps, Game, Kondisi fisik) dengan tampilan grid yang rapi."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Perbaikan UI/UX,"Grouped Actions: Mengelompokkan tombol aksi tabel (View, Edit, Print) ke dalam satu menu dropdown (Menu) agar tampilan tabel lebih ringkas."
+2026.01.09,Peningkatan Modul Penjadwalan Service (Service Center),Perbaikan UI/UX,Custom Saving Logic: Mengimplementasikan logika penyimpanan relasi many-to-many kustom pada `Create` dan `Edit` page untuk menangani form dinamis.
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Cetak Invoice Service,"Membuat tampilan cetak (print view) yang rapi ala invoice untuk `PenjadwalanService`, lengkap dengan informasi dinamis perusahaan (Haen Komputer)."
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Cetak Invoice Service,"Menghapus kolom harga/subtotal untuk menyederhanakan tampilan (hanya perangkat & layanan), serta menyelaraskan teks ""Nama Perangkat"" ke kiri."
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Cetak Invoice Service,Menambahkan tombol aksi cetak praktis pada halaman *List* dan *View* service.
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Perbaikan Bug & Environment,Mengatasi error `stty: invalid argument` saat menjalankan `php artisan shield:generate` dengan menambahkan flag `--panel=admin`. Gunakan php `artisan shield:generate --minimal --panel=admin`.
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Perbaikan Bug & Environment,Memperbaiki error `SvgNotFound` pada Filament Shield yang disebabkan oleh isu *case-sensitivity* pada Linux (`APP_LOCALE=ID` vs folder `id`).
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Perbaikan Bug & Environment,"Menambahkan konfigurasi ketahanan (`resilience`) pada `config/app.php` untuk otomatis memaksa locale menjadi lowercase, sehingga memperbaiki error translasi global (dashboard, media manager)."
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Lokalisasi,Menambahkan file translasi Bahasa Indonesia manual untuk Filament Media Manager guna memperbaiki tampilan menu yang sebelumnya menampilkan kode raw (`Filament-media-manager::messages...`).
+2026.01.07,Fitur Cetak Service & Perbaikan Sistem,Lokalisasi,"Mengubah grup navigasi Shield/Peran dari ""Pelindung"" menjadi ""Master Data"" melalui penyesuaian file translasi."
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,"Memperbaiki bug upload file database backup berukuran besar (>2MB) yang menyebabkan error ""Upload gagal""."
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,"Menambahkan server-router.php untuk menangani static files (CSS, JS, gambar) pada development server dengan benar."
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,Memperbarui ServeWithLink.php untuk menggunakan PHP built-in server dengan konfigurasi upload yang lebih besar:
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,`upload_max_filesize = 128M`
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,`post_max_size = 130M`
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,`memory_limit = 512M`
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,`max_execution_time = 300s`
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,`max_input_time = 300s`
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,Memperbarui config/livewire.php: meningkatkan `max_upload_time` dari 5 menit menjadi 30 menit untuk mendukung upload file besar.
+2026.01.06,Perbaikan Fitur Database Backup & Restore,,Menambahkan public/.user.ini untuk konfigurasi PHP upload pada development server lokal.
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),,Migrasi Database: Memindahkan database aplikasi dari container Docker MySQL ke layanan MariaDB aaPanel host untuk menghemat memori (~400MB) dan menyatukan manajemen database.
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Standarisasi Environment,"Memperbarui `docker-compose.yml` dengan `profiles: [""local""]` agar file yang sama dapat digunakan untuk development (dengan DB container) dan production (tanpa DB container)."
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Standarisasi Environment,"Menambahkan script automatisasi deployment `deploy.sh` yang menangani pull code, build container, migrasi database, dan pembersihan cache secara aman."
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Perbaikan Koneksi Redis/Cache,Mengubah driver cache dari `database` ke `file` pada `.env` untuk mencegah error koneksi jaringan saat proses deployment/booting awal container.
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Perbaikan Keamanan & Kompatibilitas,"Menambahkan middleware autentikasi (`web`, `auth`) pada upload file Livewire untuk mencegah error 401 saat impor database."
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Perbaikan Keamanan & Kompatibilitas,Menghapus opsi `--skip-ssl` yang tidak didukung pada perintah backup/restore database untuk kompatibilitas dengan MariaDB client terbaru.
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Perbaikan Keamanan & Kompatibilitas,Konfigurasi Firewall: Menambahkan aturan firewall (iptables & ufw) untuk mengizinkan komunikasi aman antara Docker container dan MariaDB host.
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Perbaikan Keamanan & Kompatibilitas,Fixed (Prioritas): Mengatasi 500 Error pada pembuatan `Pembelian` (Error `Grid::isContained`) dengan memperbarui paket Filament ke `v3.3.46` dan menambahkan langkah `composer install` pada `deploy.sh` untuk memastikan sinkronisasi library.
+2026.01.06,Migrasi Infrastruktur Database & Perbaikan Bug (New),Perbaikan Keamanan & Kompatibilitas,Menghapus view publish yang usang `resources/views/vendor/filament/components/loading-section.blade.php` yang menyebabkan konflik.
+2026.01.06,Perbaikan Stabilitas & Coding (Update Terlupakan),,"WebpUpload: Menambahkan *failsafe mechanism* dan logging. Jika konversi gambar ke WebP gagal, sistem otomatis menggunakan file asli (fallback) agar upload tidak gagal total."
+2026.01.06,Perbaikan Stabilitas & Coding (Update Terlupakan),,JadwalKalenderWidget: Memperbaiki query event dengan menambahkan `user_id` (select) untuk memastikan validasi kepemilikan data berjalan benar.
+2026.01.06,Konfigurasi Docker untuk Production,,Memperbarui Dockerfile:
+2026.01.06,Konfigurasi Docker untuk Production,,Menambahkan paket `default-mysql-client` untuk mengaktifkan perintah `mysqldump` dan `mysql` yang dibutuhkan fitur export/import database.
+2026.01.06,Konfigurasi Docker untuk Production,,Menambahkan konfigurasi PHP upload (128M) dan timeout (300s) melalui `/usr/local/etc/php/conf.d/uploads.ini`.
+2026.01.06,Konfigurasi Docker untuk Production,,Memperbarui docker/nginx/conf.d/app.conf:
+2026.01.06,Konfigurasi Docker untuk Production,,Meningkatkan `client_max_body_size` dari 100M menjadi 128M.
+2026.01.06,Konfigurasi Docker untuk Production,,"Menambahkan pengaturan timeout untuk upload file besar: `client_body_timeout`, `send_timeout`, `proxy_read_timeout` (300s)."
+2026.01.06,Konfigurasi Docker untuk Production,,Menambahkan `fastcgi_read_timeout` dan `fastcgi_send_timeout` (300s) untuk operasi yang berjalan lama.
+2025.12.28,,,"Menambahkan Kode Akun default (11, 12, 21, 22, 31, 41, 51, 52, 61, 71, 81) melalui seeder baru dan mengaitkannya ke `DatabaseSeeder` agar otomatis tersedia saat deploy/seed."
+2025.12.28,,,"Menyempurnakan Laba Rugi Detail: baris Beban Usaha kini diambil dari Jenis Akun dengan kode akun 51/52/61/81 dan baris Pendapatan Lain‑lain dari kode akun 41/71, termasuk pengurutan dan perhitungan total per jenis akun."
+2025.12.28,,,"Menyaring baris Beban Usaha agar hanya menampilkan nominal yang terisi (total 0 disembunyikan), serta menampilkan label berdasarkan nama_jenis_akun tanpa prefix kode."
+2025.12.28,,,"Menambahkan aksi Export berbentuk dropdown tunggal pada halaman detail laba rugi untuk CSV/XLSX/PDF, berikut template PDF khusus yang menyamai tampilan infolist."
+2025.12.28,,,"Menyesuaikan tampilan infolist laba rugi: format angka negatif menggunakan tanda minus, dan menambahkan jarak atas 10px pada baris judul tebal (kecuali Pendapatan)."
+2025.12.28,,,Menambahkan ikon pada tab Bulanan/Detail dan memastikan tab aktif tidak tersangkut ketika kembali dari detail ke list.
+2025.12.28,,,Menambahkan badge Kategori Akun pada tabel Jenis Akun dengan label dan warna mengikuti enum.
+2025.12.27,,,Tidak ada perubahan terkomit di git pada tanggal ini.
+2025.12.26,,,Tidak ada perubahan terkomit di git pada tanggal ini.
+2025.12.25,,,"Menambahkan Laporan Neraca lengkap (resource, list/view pages, model, migrasi kolom `kelompok_neraca`, dan enum KelompokNeraca)."
+2025.12.25,,,Menambahkan field Kelompok Neraca pada Kode Akun serta penyesuaian logika filter/komposisi laporan neraca berdasarkan kategori akun.
+2025.12.25,,,Menyusun tampilan infolist Neraca (template tabel + layout) dan mendaftarkan resource neraca pada panel akunting.
+2025.12.25,,,"Menambahkan pengujian InventoryResource (render list, filter inventaris aktif, serta kalkulasi snapshot)."
+2025.12.25,,,Menambahkan bagian Catatan Testing di `README_PEST` untuk setup dan tips debugging.
+2025.12.24,,,Memoles tampilan Laporan Absensi: penyesuaian ikon jam hadir/keluar dengan warna status dan penegasan nama karyawan pada tabel.
+2025.12.24,,,"Menyempurnakan Lembur dan Laporan Absensi: ikon kolom informatif, dropdown action, lokalisasi tanggal Indonesia, serta ringkasan kehadiran berbentuk badge berwarna dengan ikon."
+2025.12.24,,,"Mengubah Absensi ke tampilan detail Slide-over dua kolom, merapikan wizard form, dan memastikan seluruh format tanggal berbahasa Indonesia."
+2025.12.24,,,"Merombak Stock Adjustment: layout 3 kolom, repeater inline, serta perbaikan bug pada field `created_at` dan konflik tipe `Action`."
+2025.12.23,,,Menambahkan integrasi PWA (laravel-pwa) beserta ikon/splash screen dan `serviceworker.js` untuk cache dasar.
+2025.12.23,,,"Memperluas modul Laba Rugi dan Input Transaksi Toko (filter tab, detail infolist, dan penyesuaian perhitungan subtotal)."
+2025.12.23,,,"Menambahkan/menyelaraskan komponen tampilan untuk Beban, Pembelian, dan Penjualan pada laporan (infolist & livewire table), termasuk perbaikan format tampilan item."
+2025.12.23,,,Menyempurnakan tampilan Penjualan (items & jasa) serta relasi tampilan laporan agar konsisten di halaman view.
+2025.12.23,,,"Memperhalus UI Request Order, Stock Opname, dan widget dashboard (Active Members, Recent Transactions, Top Selling Products)."
+2024.12.20,,,Menginisialisasi berkas `changelog.md`.
+2024.12.20,,,Menambahkan relation manager pada resource Jasa.
+2024.12.19,,,Menyempurnakan UI/UX header tabs.
+2024.12.18,,,Memperbaiki logika perhitungan laporan absensi (telat/jam hadir).
+2024.12.17,,,Menambahkan tombol Create dengan ikon plus pada header list view.
+2024.12.16,,,Mengoptimasi resource-panel pasca migrasi dan memperbaiki bug minor pasca merge.
+2024.12.16,,,Menstabilkan widget absensi.
+2024.12.15,,,Memperbaiki widget kalkulasi penyesuaian stok.
+2024.12.15,,,Mengintegrasikan pembaruan besar dari branch Laporan-Cuti dan menyinkronkan branch Keuangan ke main.
+2024.12.15,,,Menambahkan Modal Helper View.
+2024.12.14,,,Menyelesaikan merge branch keuangan dan menyelesaikan konflik.
+2024.12.14,,,Menyesuaikan format ekspor akuntansi.
+2025.12.23,,,"Menambahkan ringkasan Laporan Laba Rugi: total penjualan (pendapatan) dan laba kotor (pendapatan - HPP), serta memperbarui judul halaman view agar menampilkan bulan laporan."
+2025.12.23,,,"Menyelaraskan perhitungan Laporan Laba Rugi: total penjualan kini mencakup penjualan produk + jasa, laba kotor/laba rugi dihitung dari total gabungan, serta memastikan bulan dengan penjualan jasa saja tetap muncul."
+2025.12.23,,,Memperbaiki daftar tahun pada filter Laporan Laba Rugi agar mencakup tahun yang hanya memiliki data penjualan.
+2025.12.23,,,"Menambahkan pagination Livewire (25 baris per halaman) pada tabel daftar penjualan, beban, dan pembelian; total pada bagian bawah kini dihitung untuk seluruh bulan, bukan hanya halaman aktif."
+2025.12.23,,,Menormalkan logika Daftar Beban agar data beban konsisten antara tabel dan agregasi bulanan dengan mengacu ke kategori transaksi atau kategori akun terkait.
+2025.12.23,,,Menonaktifkan widget TopExpensesTable pada Laporan Input Transaksi tanpa menghapus kodenya.
+2025.12.23,,,"Menambahkan filter rentang waktu pada daftar Input Transaksi Toko (1m/3m/6m/1y/custom) dan tab header kategori (Aktiva, Pasiva, Pendapatan, Beban, Semua)."
+2025.12.22,,,Mengotomatisasi kategori transaksi di Input Transaksi Toko berdasarkan Kode/Jenis Akun agar konsisten dengan klasifikasi akun.
+2025.12.22,,,"Menjadikan Kode Akun dan Jenis Akun sebagai submenu dari Input Transaksi Toko, termasuk perbaikan breadcrumb/heading di halaman list."
+2025.12.22,,,Memperbaiki aksi `view/edit` pada beberapa resource akunting agar navigasi tidak lagi memicu error `GET livewire/update`.
+2025.12.22,,,Menyesuaikan breadcrumb Pengaturan Akunting agar mengarah ke AppDashboard.
+2025.12.22,,,"Menyempurnakan tampilan dark mode untuk infolist Detail Beban, Produk Pembelian, dan Produk Terjual (hover, border/divider, header), plus penegasan garis pemisah via override CSS."
+2025.12.22,,,Meningkatkan keterbacaan label total pada dark mode di tab laba rugi.
+2025.12.21,,,Tidak ada perubahan terkomit di git pada tanggal ini.
+2025.12.20,,,"Menambahkan modul laporan laba rugi (resource Filament, halaman list/view, model, dan migrasi tabel)."
+2025.12.20,,,Menambahkan aset CSS/JS laporan (filament-reports) beserta dependensi pendukungnya.
+2025.12.20,,,Menambahkan dokumen PLUGIN.md untuk daftar plugin pihak ketiga.
+2025.12.20,,,Menyesuaikan alur redirect login/halaman utama agar memakai route AppDashboard per panel.
+2025.12.20,,,*Merge* dengan branch `main`.
+2025.12.19,,,Menyelaraskan ikon widget tabel ke Hugeicons dan memperbaiki nama ikon yang salah.
+2025.12.19,,,Mengaktifkan tampilan ikon/deskripsi pada ServiceWidget dengan Advanced Table Widget.
+2025.12.19,,,Menambahkan dukungan `infolist` untuk aksi `view` pada widget Service dan Tugas (termasuk impor class yang dibutuhkan).
+2025.12.19,,,"Membuat widget dashboard lebih interaktif (dapat diklik) untuk navigasi ke detail pada berbagai widget statistik, tabel, cuaca, stok, dan tugas."
+2025.12.19,,,Menyegarkan gaya tema admin serta komponen tabel/loader untuk mendukung widget interaktif.
+2025.12.19,,,Menyesuaikan konfigurasi Tailwind dan stylesheet aplikasi/Filament agar tampilan widget konsisten.
+2025.12.18,,,"Meningkatkan UX mobile untuk tabel `infolist` (scroll horizontal) dan tata letak bergaya tabel untuk daftar item Pembelian, Penjualan, dan Request Order."
+2025.12.18,,,"Menambahkan `infolist` Penjualan dengan total yang dikalkulasi (*computed totals*); total sekarang dihitung ulang otomatis berdasarkan item saat `create`, `update`, atau `delete`."
+2025.12.18,,,"Menambahkan modal pembuatan ""Tambah Member"" secara *inline* dari menu select member di Penjualan."
+2025.12.18,,,"Menyempurnakan `repeater` form Request Order (dependensi kategori → produk, *placeholders*, dan tampilan HPP/harga jual yang terisi otomatis dari harga *batch* terbaru)."
+2025.12.18,,,"Memperbaiki beberapa error `500` terkait Filament (konflik import, enum/class yang tidak valid) dan memindahkan aksi `create/edit` Pembelian ke header halaman."
+2025.12.18,,,Memindahkan aksi `create` & `edit` Stock Adjustment / Stock Opname ke header halaman (menghapus tombol aksi di bawah form) dan meningkatkan alur `create` Stock Adjustment agar redirect ke halaman edit untuk penambahan item.
+2025.12.16,,,Menambahkan `infolist` Pembelian untuk catatan pembelian (*purchase records*).
+2025.12.16,,,Memperbaiki kompatibilitas pemformatan kolom `filament-export`.
+2025.12.16,,,Memperbaiki label jamak (*plural labels*) dan teks tombol tambah; memperbaiki widget absensi dan bug minor lainnya.
+2025.12.15,,,Menambahkan konfigurasi Docker dan penyesuaian port MySQL.
+2025.12.15,,,Memperkenalkan dukungan `view helper` untuk modal.
+2025.12.15,,,"Memperbaiki widget (termasuk stock adjustment), unduhan `infolist`, tombol ekspor, label jamak, dan *wiring* panel provider."
+2025.12.15,,,Menggabungkan (*merge*) branch Keuangan dan Laporan-Cuti yang sedang berjalan.
+2025.12.14,,,Memperbaiki pemformatan ekspor akuntansi dan *merge* pembaruan keuangan.
+2025.12.13,,,Memperbarui navigasi Finansial.
+2025.12.13,,,Menambahkan alur pengajuan cuti dan perbaikan ekspor; *merge* perubahan Laporan-Cuti.
+2025.12.11,,,Perbaikan minor sebelum beralih ke master data Brand; menyempurnakan penanganan *return* pada master data.
+2025.12.11,,,Melanjutkan pengerjaan laporan keuangan.
+2025.12.10,,,Memperbaiki tab pada pengaturan keuangan dan masalah pada `infolist`.
+2025.12.10,,,Menangani navigasi untuk *user* dan error akses role (`403`); menstabilkan penanganan role setelah *revert*.
+2025.12.09,,,Menambahkan Jenis Akun dan Kode Akun ke modul keuangan.
+2025.12.09,,,"Menandai modul keuangan sebagai selesai secara fungsional, menunggu perbaikan *breadcrumb*."
+2025.12.08,,,Melanjutkan pengerjaan jenis akun/kode akun untuk pengaturan keuangan.
+2025.12.07,,,Membangun tampilan Dashboard dan persiapan perubahan kebijakan role (*policy*).
+2025.12.07,,,Menerapkan `view policy` untuk catatan absensi aktif; memperbaiki penanganan role di widget utama dan widget terkait.
+2025.12.05,,,Penyesuaian dan pemolesan UI (*Polish*).
+2025.12.04,,,Memperbaiki role Filament Shield; menyempurnakan dashboard POS dan widget karyawan.
+2025.12.04,,,Menambahkan widget cuaca; *merge* branch reporting.
+2025.12.03,,,Menetapkan tampilan dan nuansa UI baru; menyelaraskan navigasi master data.
+2025.12.03,,,*Merge* perubahan dari branch `main`.
+2025.12.01,,,"Menambahkan dokumentasi dan penyesuaian tata letak (navigasi, layout adjustments hingga lembur)."
+2025.12.01,,,Memperbarui gaya kolom; menyempurnakan penanganan *return* dan total pada POS.
+2025.12.01,,,"Meningkatkan Navigation Bar (termasuk sidebar yang dapat digeser/*draggable*), memodernisasi navigasi, ikon, dan perbaikan minor `infolist`/produk."
+2025.12.01,,,*Merge* branch POS dan Pengaturan-Navigasi.
+2025.11.30,,,Memperbarui *navigation bar* dengan sidebar navigasi yang dapat digeser.
+2025.11.29,,,Meningkatkan *wizard* Absensi dan logika *check-in*.
+2025.11.28,,,"Menambahkan penjadwalan servis, peningkatan pengiriman, dan peningkatan POS multi-aplikasi."
+2025.11.28,,,*Merge* branch POS kembali ke `main`.
+2025.11.27,,,Commit persiapan sebelum *branching* untuk penjadwalan tugas (*task scheduling*); push terakhir untuk pekerjaan yang ada.
+2025.11.26,,,Menghapus cache `npm` yang ikut terkomit.
+2025.11.26,,,Menambahkan penanganan Lembur (*Overtime*).
+2025.11.26,,,"*Merge* alur kerja inventaris, penjualan, dan pembelian dengan pembaruan absensi."
+2025.11.24,,,Menambahkan fitur Absensi-Libur-Cuti dan mengurutkan ulang alasan cuti/libur.
+2025.11.24,,,Meningkatkan perilaku *collapse* sidebar pada desktop.
+2025.11.23,,,Menambahkan pengambilan foto (*photo capture*) untuk absensi dan tampilan `infolist` absensi.
+2025.11.22,,,Upgrade ke Filament Shield untuk *roles/permissions*.
+2025.11.22,,,*Merge* branch Absensi; penyesuaian stock opname; otomatis menandai alpha untuk absensi terlambat.
+2025.11.21,,,Menambahkan plugin mata uang (*currency*) dan halaman Company Profile.
+2025.11.21,,,"Otomatis memilih karyawan yang sedang login, waktu, dan tanggal dengan penanganan UTC+7."
+2025.11.20,,,Rename modul POS; *merge* branch POS ke `main`.
+2025.11.20,,,Menambahkan laporan penjualan dan pembelian; *auto-fetch* longitude/latitude.
+2025.11.19,,,Menambahkan pembuatan Penjualan dan alurnya.
+2025.11.19,,,Meningkatkan obrolan grup Chatify dengan daftar anggota dan avatar; menginstal media manager sebagai persiapan POS.
+2025.11.18,,,Menambahkan fitur Pembelian dan Inventaris; menyesuaikan akun transaksi dan penyelarasan master data.
+2025.11.18,,,Melanjutkan perbaikan inventaris dan memperkenalkan prototipe ruang obrolan (Chatify).
+2025.11.16,,,Mengimplementasikan pemrosesan Akun Transaksi.
+2025.11.15,,,"Menambahkan pengaturan *roles & permissions*, pendaftaran pengguna, dan halaman login/pemilihan role untuk karyawan."
+2025.11.15,,,Memperkenalkan alur Request Order.
+2025.11.15,,,*Merge* branch Master-Data dan Inventaris.
+2025.11.14,,,"Menambahkan manajemen hubungan member, supplier, dan agen."
+2025.11.14,,,Menambahkan master data Gudang dan menyatukan tata letak tabel dengan foto profil.
+2025.11.14,,,Memperkenalkan fondasi *role/permission/authentication*.
+2025.11.13,,,"Menyelesaikan master data inti untuk Brand, Jasa, Kategori, dan Produk."
+2025.11.12,,,Menambahkan kerangka dasar (*scaffolding*) master data awal.
+2025.11.11,,,Project dimulai
+2025.11.11,,,"Membuat migrasi (*migrations*) untuk tabel produk, jasa, brand, dan kategori (awal proyek)."
