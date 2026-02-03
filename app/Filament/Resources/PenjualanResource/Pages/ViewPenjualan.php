@@ -40,6 +40,10 @@ class ViewPenjualan extends ViewRecord
                         ->reorderable()
                         ->disk('public')
                         ->visibility('public')
+                        ->default(fn() => $this->record->foto_dokumen ?? [])
+                        ->panelLayout('grid')
+                        ->panelAspectRatio('1:1')
+                        ->imagePreviewHeight('100')
                         ->directory('penjualan/dokumentasi')
                         ->imageResizeMode('contain')
                         ->imageResizeTargetWidth('1920')
@@ -53,19 +57,13 @@ class ViewPenjualan extends ViewRecord
                         ->downloadable(),
                 ])
                 ->action(function (array $data): void {
-                    $existingPhotos = $this->record->foto_dokumen ?? [];
-                    $newPhotos = $data['foto'] ?? [];
-
-                    // Merge existing photos with new ones
-                    $allPhotos = array_merge($existingPhotos, $newPhotos);
-
                     $this->record->update([
-                        'foto_dokumen' => $allPhotos,
+                        'foto_dokumen' => $data['foto'] ?? [],
                     ]);
 
                     Notification::make()
                         ->title('Foto berhasil diupload')
-                        ->body(count($newPhotos).' foto ditambahkan')
+                        ->body(count($data['foto'] ?? []) . ' foto ditambahkan')
                         ->success()
                         ->send();
 
@@ -76,13 +74,13 @@ class ViewPenjualan extends ViewRecord
                 ->label('Invoice')
                 ->icon('heroicon-m-printer')
                 ->color('primary')
-                ->url(fn () => route('penjualan.invoice', $this->record))
+                ->url(fn() => route('penjualan.invoice', $this->record))
                 ->openUrlInNewTab(),
             Action::make('invoice_simple')
                 ->label('Invoice Simple')
                 ->icon('heroicon-m-document-text')
                 ->color('warning')
-                ->url(fn () => route('penjualan.invoice.simple', $this->record))
+                ->url(fn() => route('penjualan.invoice.simple', $this->record))
                 ->openUrlInNewTab(),
             Action::make('email_invoice')
                 ->label('Email Invoice')
@@ -134,7 +132,7 @@ class ViewPenjualan extends ViewRecord
                     Notification::make()
                         ->success()
                         ->title('Invoice dikirim.')
-                        ->body('Invoice dikirim ke '.$memberEmail)
+                        ->body('Invoice dikirim ke ' . $memberEmail)
                         ->send();
                 }),
         ];
