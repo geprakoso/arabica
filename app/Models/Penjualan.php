@@ -5,19 +5,18 @@ namespace App\Models;
 use App\Enums\MetodeBayar;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\AkunTransaksi;
-use App\Models\PenjualanPembayaran;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Penjualan extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'tb_penjualan';
 
     protected $primaryKey = 'id_penjualan';
-    
+
     // Flag to allow TukarTambah cascade deletion
     public static bool $allowTukarTambahDeletion = false;
 
@@ -46,25 +45,29 @@ class Penjualan extends Model
         'metode_bayar' => MetodeBayar::class,
         'foto_dokumen' => 'array',
         'is_nerfed' => 'boolean',
+        'deleted_at' => 'datetime',
     ];
 
     protected static function booted(): void
     {
         static::deleting(function (Penjualan $penjualan): void {
             // Allow deletion if triggered by TukarTambah cascade
-            if (!self::$allowTukarTambahDeletion) {
+            if (! self::$allowTukarTambahDeletion) {
                 // Check if this penjualan belongs to a Tukar Tambah
                 if ($penjualan->sumber_transaksi === 'tukar_tambah' || $penjualan->tukarTambah()->exists()) {
                     $ttKode = $penjualan->tukarTambah?->kode ?? 'TT-XXXXX';
-                    
+
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'id_penjualan' => "Tidak bisa hapus: Penjualan ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
                     ]);
                 }
             }
-            
-            $penjualan->items()->get()->each->delete();
-            $penjualan->jasaItems()->get()->each->delete();
+
+            // Only delete items if this is a FORCE delete, not soft delete
+            if ($penjualan->isForceDeleting()) {
+                $penjualan->items()->get()->each->delete();
+                $penjualan->jasaItems()->get()->each->delete();
+            }
         });
 
         static::creating(function ($model) {
@@ -81,19 +84,19 @@ class Penjualan extends Model
     {
         return DB::transaction(function () use ($prefixCode) {
             $date = now()->format('Ym');
-            $prefix = $prefixCode . '-' . $date . '-';
+            $prefix = $prefixCode.'-'.$date.'-';
 
-            $latest = static::where('no_nota', 'like', $prefix . '%')
+            $latest = static::where('no_nota', 'like', $prefix.'%')
                 ->orderBy('no_nota', 'desc')
                 ->lockForUpdate()
                 ->first();
 
             $next = 1;
-            if ($latest && preg_match('/' . preg_quote($prefix) . '(\d+)$/', $latest->no_nota, $m)) {
+            if ($latest && preg_match('/'.preg_quote($prefix).'(\d+)$/', $latest->no_nota, $m)) {
                 $next = (int) $m[1] + 1;
             }
 
-            return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+            return $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
         });
     }
 

@@ -39,10 +39,12 @@ use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Laravolt\Indonesia\Models\City;
@@ -744,19 +746,23 @@ class PenjualanResource extends BaseResource
                     ->label('Member')
                     ->icon('heroicon-m-user-group')
                     ->placeholder('-')
+                    ->description(fn (Penjualan $record) => $record->member?->email ?: $record->member?->no_hp)
                     ->weight('medium')
                     ->toggleable()
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('member', function (Builder $q) use ($search): void {
                             $q->where('nama_member', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
                                 ->orWhere('no_hp', 'like', "%{$search}%");
                         });
                     })
                     ->sortable(),
-                TextColumn::make('karyawan.nama_karyawan')
+                Tables\Columns\ImageColumn::make('karyawan.user.avatar_url')
                     ->label('Karyawan')
-                    ->icon('heroicon-m-user')
-                    ->color('secondary')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/icons/icon-512x512.png'))
+                    ->tooltip(fn (Penjualan $record): ?string => $record->karyawan?->nama_karyawan)
                     ->toggleable()
                     ->sortable(),
                 TextColumn::make('items_count')
@@ -780,14 +786,6 @@ class PenjualanResource extends BaseResource
                     })
                     ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                     ->alignCenter(),
-                TextColumn::make('is_nerfed')
-                    ->label('Nerf')
-                    ->badge()
-                    ->state(fn (Penjualan $record): ?string => $record->is_nerfed ? 'Nerf' : null)
-                    ->color('danger')
-                    ->icon('heroicon-m-fire')
-                    ->tooltip('Data pembelian terkait telah dihapus paksa')
-                    ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('sisa_bayar_display')
                     ->label('Sisa Bayar')
                     ->alignRight()
@@ -836,6 +834,14 @@ class PenjualanResource extends BaseResource
                             $q->whereRaw("JSON_SEARCH(serials, 'one', ?, NULL, '$[*].sn') IS NOT NULL", ["%{$search}%"]);
                         });
                     }),
+                TextColumn::make('is_nerfed')
+                    ->label('Nerf')
+                    ->badge()
+                    ->state(fn (Penjualan $record): ?string => $record->is_nerfed ? 'Nerf' : null)
+                    ->color('danger')
+                    ->icon('heroicon-m-fire')
+                    ->tooltip('Data pembelian terkait telah dihapus paksa')
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 Tables\Filters\Filter::make('periode')
@@ -863,6 +869,8 @@ class PenjualanResource extends BaseResource
                     ])
                     ->native(false)
                     ->placeholder('Semua'),
+                TrashedFilter::make()
+                    ->native(false),
             ])
             ->actions([
                 ActionGroup::make([
@@ -922,6 +930,24 @@ class PenjualanResource extends BaseResource
                             $record->delete();
                             \Filament\Notifications\Notification::make()->title('Penjualan dihapus')->success()->send();
                         }),
+                    Tables\Actions\RestoreAction::make()
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->button()
+                        ->color('success'),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->icon('heroicon-o-trash')
+                        ->button()
+                        ->color('danger')
+                        ->before(function (Tables\Actions\ForceDeleteAction $action, Penjualan $record) {
+                            // Always redirect to password confirmation flow for ANY force delete
+                            $livewire = $action->getLivewire();
+                            $livewire->forceDeleteRecordId = $record->getKey();
+                            $livewire->replaceMountedAction('forceDeleteStep2');
+                            $action->cancel();
+                        })
+                        ->after(function () {
+                            Penjualan::$allowTukarTambahDeletion = false;
+                        }),
                 ])->hidden(function (Penjualan $record): bool {
                     // Godmode: Always show actions
                     if (auth()->user()?->hasRole('godmode')) {
@@ -949,8 +975,68 @@ class PenjualanResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Tables\Actions\DeleteBulkAction $action, \Illuminate\Database\Eloquent\Collection $records) {
+                            // Check if any selected records are TukarTambah
+                            $hasProtected = $records->contains(function (Penjualan $record) {
+                                return $record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists();
+                            });
+
+                            if ($hasProtected && ! auth()->user()?->hasRole('godmode')) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Tidak dapat menghapus')
+                                    ->body('Beberapa data yang dipilih adalah bagian dari Tukar Tambah. Hapus satu per satu atau hapus dari resource Tukar Tambah.')
+                                    ->danger()
+                                    ->send();
+
+                                $action->cancel();
+                            }
+
+                            // For godmode, allow soft delete without password (just set flag)
+                            if ($hasProtected) {
+                                Penjualan::$allowTukarTambahDeletion = true;
+                            }
+                        })
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            // Normal delete for all records
+                            $records->each->delete();
+                            \Filament\Notifications\Notification::make()
+                                ->title('Data berhasil dihapus')
+                                ->success()
+                                ->send();
+                        })
+                        ->after(function () {
+                            Penjualan::$allowTukarTambahDeletion = false;
+                        }),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->label('Pulihkan Data'),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->label('Hapus Selamanya')
+                        ->before(function (Tables\Actions\ForceDeleteBulkAction $action, \Illuminate\Database\Eloquent\Collection $records) {
+                            // Always redirect to password confirmation flow for ANY bulk force delete
+                            $livewire = $action->getLivewire();
+                            $livewire->bulkForceDeleteRecordIds = $records->pluck('id_penjualan')->toArray();
+                            $livewire->replaceMountedAction('bulkForceDeleteStep2');
+                            $action->cancel();
+                        })
+                        ->after(function () {
+                            Penjualan::$allowTukarTambahDeletion = false;
+                        }),
                 ]),
+            ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
             ]);
     }
 
