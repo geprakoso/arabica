@@ -2,44 +2,41 @@
 
 namespace App\Filament\Resources\MasterData;
 
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\MasterData\MemberResource\Pages;
 use App\Filament\Resources\MasterData\MemberResource\RelationManagers\PenjualanItemsRelationManager;
 use App\Filament\Resources\MasterData\MemberResource\RelationManagers\PenjualanJasaRelationManager;
 use App\Models\Member;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
-use Filament\Forms\Components\FileUpload;
+use App\Support\WebpUpload;
 use Filament\Forms\Components\BaseFileUpload;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Group;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Split;
-use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
-use App\Filament\Resources\BaseResource;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Group as InfolistGroup;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Infolist;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\Group as InfolistGroup;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Support\Enums\FontWeight;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use App\Support\WebpUpload;
 use Laravolt\Indonesia\Models\City;
 use Laravolt\Indonesia\Models\District;
 use Laravolt\Indonesia\Models\Province;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class MemberResource extends BaseResource
 {
@@ -47,10 +44,15 @@ class MemberResource extends BaseResource
 
     // protected static ?string $cluster = MasterData::class;
     protected static ?string $navigationIcon = 'hugeicons-contact';
+
     protected static ?string $navigationGroup = 'Master Data';
+
     protected static ?string $navigationParentItem = 'User & Supplier';
+
     protected static ?string $pluralLabel = 'Member';
+
     protected static ?string $navigationLabel = 'Member';
+
     protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'nama_member';
@@ -78,7 +80,7 @@ class MemberResource extends BaseResource
                             ->schema([
                                 TextInput::make('nama_member')
                                     ->label('Nama Lengkap')
-                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
+                                    ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                     ->required()
                                     ->placeholder('Masukan nama lengkap')
                                     ->columnSpanFull(), // Agar nama terlihat dominan
@@ -89,8 +91,9 @@ class MemberResource extends BaseResource
                                             ->label('Nomor WhatsApp / HP')
                                             ->tel()
                                             ->required()
+                                            ->prefix('+62')
                                             ->unique(ignoreRecord: true)
-                                            ->placeholder('08xxxxxxxxxx'),
+                                            ->placeholder('823-0000-0000'),
 
                                         TextInput::make('email')
                                             ->label('Alamat Email')
@@ -106,7 +109,7 @@ class MemberResource extends BaseResource
                             ->schema([
                                 Textarea::make('alamat') // Ganti textinput jadi textarea agar muat banyak
                                     ->label('Alamat Lengkap')
-                                    ->dehydrateStateUsing(fn($state) => Str::title($state))
+                                    ->dehydrateStateUsing(fn ($state) => Str::title($state))
                                     ->rows(3)
                                     ->placeholder('Nama jalan, nomor rumah, RT/RW...')
                                     ->columnSpanFull(),
@@ -116,7 +119,7 @@ class MemberResource extends BaseResource
                                         Select::make('provinsi')
                                             ->label('Provinsi')
                                             ->searchable()
-                                            ->options(fn() => Province::query()
+                                            ->options(fn () => Province::query()
                                                 ->orderBy('name')
                                                 ->pluck('name', 'name')
                                                 ->all())
@@ -131,7 +134,7 @@ class MemberResource extends BaseResource
                                             ->searchable()
                                             ->options(function (Get $get): array {
                                                 $provinceName = $get('provinsi');
-                                                if (!$provinceName) {
+                                                if (! $provinceName) {
                                                     return [];
                                                 }
 
@@ -139,7 +142,7 @@ class MemberResource extends BaseResource
                                                     ->where('name', $provinceName)
                                                     ->value('code');
 
-                                                if (!$provinceCode) {
+                                                if (! $provinceCode) {
                                                     return [];
                                                 }
 
@@ -150,14 +153,14 @@ class MemberResource extends BaseResource
                                                     ->all();
                                             })
                                             ->live()
-                                            ->afterStateUpdated(fn($set) => $set('kecamatan', null))
+                                            ->afterStateUpdated(fn ($set) => $set('kecamatan', null))
                                             ->placeholder('Pilih kota/kabupaten'),
                                         Select::make('kecamatan')
                                             ->label('Kecamatan')
                                             ->searchable()
                                             ->options(function (Get $get): array {
                                                 $cityName = $get('kota');
-                                                if (!$cityName) {
+                                                if (! $cityName) {
                                                     return [];
                                                 }
 
@@ -165,7 +168,7 @@ class MemberResource extends BaseResource
                                                     ->where('name', $cityName)
                                                     ->value('code');
 
-                                                if (!$cityCode) {
+                                                if (! $cityCode) {
                                                     return [];
                                                 }
 
@@ -196,14 +199,15 @@ class MemberResource extends BaseResource
                                     ->imageEditor()
                                     ->circleCropper() // Agar cropnya bulat (opsional, bagus untuk profil)
                                     ->disk('public')
-                                    ->directory('members/' . now()->format('Y/m/d')) // Fix: Folder members
+                                    ->directory('members/'.now()->format('Y/m/d')) // Fix: Folder members
                                     ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file, Get $get) {
                                         $datePrefix = now()->format('ymd');
                                         $slug = Str::slug($get('nama_member') ?? 'member'); // Fix: Slug dari nama_member
                                         $extension = $file->getClientOriginalExtension();
+
                                         return "{$datePrefix}-{$slug}.{$extension}";
                                     })
-                                    ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->preserveFilenames(),
                             ]),
                     ]),
@@ -240,14 +244,14 @@ class MemberResource extends BaseResource
                                             ->label('Email')
                                             ->icon('heroicon-m-envelope')
                                             ->copyable() // Fitur copy
-                                            ->url(fn($record) => "mailto:{$record->email}") // Klik untuk kirim email
+                                            ->url(fn ($record) => "mailto:{$record->email}") // Klik untuk kirim email
                                             ->color('info')
                                             ->placeholder('-'),
 
                                         TextEntry::make('no_hp')
                                             ->label('WhatsApp / Telepon')
                                             ->icon('heroicon-m-device-phone-mobile')
-                                            ->url(fn($record) => "tel:{$record->no_hp}") // Klik untuk telepon
+                                            ->url(fn ($record) => "tel:{$record->no_hp}") // Klik untuk telepon
                                             ->color('success'),
                                     ]),
                             ]),
@@ -340,8 +344,8 @@ class MemberResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('nama_member')
                     ->label('Member')
-                    ->formatStateUsing(fn($state) => Str::title($state))
-                    ->description(fn(Member $record) => $record->email ?: $record->no_hp)
+                    ->formatStateUsing(fn ($state) => Str::title($state))
+                    ->description(fn (Member $record) => $record->email ?: $record->no_hp)
                     ->icon('heroicon-m-user')
                     ->searchable()
                     ->sortable(),
@@ -350,7 +354,7 @@ class MemberResource extends BaseResource
                     ->icon('heroicon-m-device-phone-mobile')
                     ->copyable()
                     ->color('success')
-                    ->url(fn(Member $record) => $record->no_hp ? 'https://wa.me/' . $record->no_hp : null, true)
+                    ->url(fn (Member $record) => $record->no_hp ? 'https://wa.me/'.$record->no_hp : null, true)
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('kota')

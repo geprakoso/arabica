@@ -2,6 +2,31 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.02.03
+### Soft Delete & Proteksi Hapus Data Penjualan
+
+#### 1. Implementasi Soft Delete Penjualan
+- **Data Safety**: Data penjualan kini tidak dihapus permanen, melainkan di-*soft delete* agar dapat dipulihkan jika tidak sengaja terhapus.
+- **Migration**: Menambahkan kolom `deleted_at` pada tabel `tb_penjualan`.
+- **UI Actions**:
+  - **Trashed Filter**: Tab navigasi baru untuk melihat data penjualan yang telah dihapus.
+  - **Restore Action**: Fitur untuk memulihkan data penjualan yang terhapus (single & bulk).
+  - **Force Delete**: Aksi hapus permanen hanya tersedia pada tab "Trashed".
+
+#### 2. Proteksi Hapus Data Tingkat Lanjut (Universal Force Delete Protection)
+- **3-Layer Warning**: Implementasi peringatan bertingkat untuk **setiap aksi hapus permanen** (Force Delete).
+  1. Ringkasan dampak (jumlah item & nota).
+  2. Detail data yang akan hilang.
+  3. **Password Confirmation**: Mewajibkan input password login untuk konfirmasi akhir.
+- **Tukar Tambah Protection**:
+  - Soft delete untuk data Tukar Tambah aman dilakukan tanpa password.
+  - Force delete data Tukar Tambah memberikan peringatan khusus bahwa relasi akan terputus permanen.
+- **Bulk Protection**: Proteksi canggih ini juga berlaku untuk penghapusan massal (*bulk delete*).
+
+#### 3. Perbaikan Pencarian Member
+- Menambahkan kemampuan pencarian berdasarkan nomor telepon pada selector Member.
+
+
 ## 2026.01.31
 ### Modul Gaji Karyawan & Integrasi Transaksi
 
