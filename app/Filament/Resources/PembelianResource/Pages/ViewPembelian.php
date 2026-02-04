@@ -58,6 +58,10 @@ class ViewPembelian extends ViewRecord
                         ->image()
                         ->multiple()
                         ->reorderable()
+                        ->default(fn() => $this->record->foto_dokumen ?? [])
+                        ->panelLayout('grid')
+                        ->panelAspectRatio('1:1')
+                        ->imagePreviewHeight('100')
                         ->disk('public')
                         ->visibility('public')
                         ->directory('pembelian/dokumentasi')
@@ -73,19 +77,13 @@ class ViewPembelian extends ViewRecord
                         ->downloadable(),
                 ])
                 ->action(function (array $data): void {
-                    $existingPhotos = $this->record->foto_dokumen ?? [];
-                    $newPhotos = $data['foto'] ?? [];
-
-                    // Merge existing photos with new ones
-                    $allPhotos = array_merge($existingPhotos, $newPhotos);
-
                     $this->record->update([
-                        'foto_dokumen' => $allPhotos,
+                        'foto_dokumen' => $data['foto'] ?? [],
                     ]);
 
                     Notification::make()
                         ->title('Foto berhasil diupload')
-                        ->body(count($newPhotos).' foto ditambahkan')
+                        ->body(count($data['foto'] ?? []) . ' foto ditambahkan')
                         ->success()
                         ->send();
 
@@ -143,15 +141,15 @@ class ViewPembelian extends ViewRecord
     {
         return Action::make('deleteBlocked')
             ->modalHeading('Gagal menghapus')
-            ->modalDescription(fn () => $this->deleteBlockedMessage ?? 'Gagal menghapus pembelian.')
+            ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus pembelian.')
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->modalIconColor('danger')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
@@ -258,27 +256,27 @@ class ViewPembelian extends ViewRecord
     {
         return Action::make('editBlocked')
             ->modalHeading('Tidak bisa edit')
-            ->modalDescription(fn () => $this->editBlockedMessage ?? 'Pembelian tidak bisa diedit.')
+            ->modalDescription(fn() => $this->editBlockedMessage ?? 'Pembelian tidak bisa diedit.')
             ->modalIcon('heroicon-o-lock-closed')
             ->modalIconColor('warning')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->editBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->editBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
     protected function buildPenjualanFooterActions(array $references): array
     {
         return collect($references)
-            ->filter(fn (array $reference) => ! empty($reference['id']))
+            ->filter(fn(array $reference) => ! empty($reference['id']))
             ->map(function (array $reference, int $index) {
                 $nota = $reference['nota'] ?? null;
-                $label = $nota ? 'Lihat '.$nota : 'Lihat Penjualan';
+                $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
 
-                return StaticAction::make('viewPenjualan'.$index)
+                return StaticAction::make('viewPenjualan' . $index)
                     ->button()
                     ->label($label)
                     ->url(PenjualanResource::getUrl('view', ['record' => $reference['id'] ?? 0]))
