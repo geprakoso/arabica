@@ -2,6 +2,112 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.02.03
+### Soft Delete & Proteksi Hapus Data Penjualan
+
+#### 1. Implementasi Soft Delete Penjualan
+- **Data Safety**: Data penjualan kini tidak dihapus permanen, melainkan di-*soft delete* agar dapat dipulihkan jika tidak sengaja terhapus.
+- **Migration**: Menambahkan kolom `deleted_at` pada tabel `tb_penjualan`.
+- **UI Actions**:
+  - **Trashed Filter**: Tab navigasi baru untuk melihat data penjualan yang telah dihapus.
+  - **Restore Action**: Fitur untuk memulihkan data penjualan yang terhapus (single & bulk).
+  - **Force Delete**: Aksi hapus permanen hanya tersedia pada tab "Trashed".
+
+#### 2. Proteksi Hapus Data Tingkat Lanjut (Universal Force Delete Protection)
+- **3-Layer Warning**: Implementasi peringatan bertingkat untuk **setiap aksi hapus permanen** (Force Delete).
+  1. Ringkasan dampak (jumlah item & nota).
+  2. Detail data yang akan hilang.
+  3. **Password Confirmation**: Mewajibkan input password login untuk konfirmasi akhir.
+- **Tukar Tambah Protection**:
+  - Soft delete untuk data Tukar Tambah aman dilakukan tanpa password.
+  - Force delete data Tukar Tambah memberikan peringatan khusus bahwa relasi akan terputus permanen.
+- **Bulk Protection**: Proteksi canggih ini juga berlaku untuk penghapusan massal (*bulk delete*).
+
+#### 3. Perbaikan Pencarian Member
+- Menambahkan kemampuan pencarian berdasarkan nomor telepon pada selector Member.
+
+
+## 2026.01.31
+### Modul Gaji Karyawan & Integrasi Transaksi
+
+#### 1. Resource Gaji Karyawan Baru (`GajiKaryawanResource`)
+- **CRUD Lengkap**: Mengimplementasikan resource baru untuk manajemen gaji karyawan dengan halaman Create, Edit, List, dan View.
+- **Field Komprehensif**:
+  - Mendukung input Karyawan, Bulan/Tahun Gaji, Kategori Gaji (Gaji Pokok, Bonus), dan Jumlah Gaji.
+  - Menambahkan field Keterangan untuk catatan tambahan.
+- **Migrasi Database**: Menambahkan tabel `tb_gaji_karyawans` dengan struktur yang mendukung pencatatan gaji bulanan per karyawan.
+
+#### 2. Integrasi Otomatis dengan Input Transaksi Toko
+- **Sinkronisasi Transaksi**: Gaji karyawan kini otomatis tercatat sebagai transaksi beban pada `InputTransaksiToko` menggunakan **Jenis Akun Kode 5210** (Beban Gaji).
+- **Auto-Create Akun 5210**: Jika Jenis Akun dengan kode `5210` belum ada, sistem akan membuatnya secara otomatis saat menyimpan gaji.
+- **Kalkulasi Total Bulanan**: Sistem menghitung total seluruh gaji karyawan per bulan dan membuat/memperbarui satu transaksi gabungan di `InputTransaksiToko`.
+- **Cascade Update/Delete**: Perubahan atau penghapusan data gaji akan otomatis memperbarui transaksi terkait.
+
+#### 3. Perbaikan & Pembersihan
+- **Fix Upload Gaji**: Memperbaiki masalah pada migrasi tabel gaji karyawan.
+- **Icon Update**: Memperbarui ikon pada `GajiKaryawanResource` untuk konsistensi visual.
+- **Pembersihan Seeder**: Menghapus 21 file seeder yang tidak diperlukan untuk produksi (AbsensiSeeder, BrandSeeder, MemberSeeder, PenjualanSeeder, dll.) guna menjaga kebersihan kode.
+
+## 2026.01.30
+### Peningkatan Fungsionalitas & Global Search
+
+#### 1. Fitur Pencarian Global (Global Search)
+- **Global Search Provider**: Mengimplementasikan `GlobalSearchProvider` yang memungkinkan pencarian lintas resource.
+- **Searchable Resources**: Menambahkan atribut `$recordTitleAttribute` dan method `getGloballySearchableAttributes()` pada berbagai resource:
+  - **Master Data**: Produk, Brand, Gudang, Jasa, Kategori, Member, Supplier
+  - **Transaksi**: Pembelian, Penjualan, Tukar Tambah, Request Order, Pengiriman
+  - **HRM**: Absensi, Lembur, Pengajuan Cuti, Penjadwalan Tugas
+  - **Keuangan**: Input Transaksi Toko, Jenis Akun, Kode Akun
+  - **Service**: Penjadwalan Service, Atribut Crosscheck
+  - **Inventaris**: Inventory, Stock Adjustment, Stock Opname
+- **Pencarian Produk Canggih**: Produk dapat dicari berdasarkan nama, SKU, dan brand.
+
+#### 2. Selector Jasa pada Penjualan
+- **Repeater Jasa**: Menambahkan komponen repeater untuk menambahkan jasa pada transaksi penjualan.
+- **Model PenjualanJasa**: Membuat model baru untuk relasi many-to-many antara Penjualan dan Jasa.
+- **Migrasi Tabel Pivot**: Menambahkan tabel `tb_penjualan_jasa` untuk menyimpan data jasa per penjualan.
+- **Referensi Nota**: Jasa yang dipilih kini tercatat dengan referensi nota penjualan untuk pelacakan yang lebih baik.
+
+#### 3. Perbaikan Laporan Laba Rugi
+- **Fix Kalkulasi**: Memperbaiki perhitungan pada `LaporanLabaRugiCustom` untuk akurasi laporan keuangan.
+- **Optimasi Query**: Memperbarui query pada tabel pembelian untuk performa yang lebih baik.
+- **Styling Tabel**: Memperbaiki tampilan tabel laporan dengan penyesuaian kolom yang lebih rapi.
+
+#### 4. Perbaikan Widget Overview Penjualan
+- **Fix State Pendapatan**: Memperbaiki perhitungan state widget overview untuk menampilkan total penjualan dan pendapatan dengan benar.
+- **Widget PenjualanTotals**: Menambahkan widget baru untuk menampilkan ringkasan total penjualan.
+- **Model PenjualanJasa Update**: Memperbarui model untuk mendukung accessor tambahan.
+
+#### 5. Dokumentasi
+- Menambahkan dokumentasi teknis:
+  - `docs/global_search.md` - Panduan implementasi pencarian global.
+  - `docs/referensi_nota_jasa.md` - Dokumentasi fitur referensi nota jasa.
+
+## 2026.01.29
+### Peningkatan UI Widget Kalender & Soft Delete Produk
+
+#### 1. Peningkatan UI Widget Kalender
+- **Header Informatif**: Menambahkan ikon dan deskripsi "Kelola jadwal tugas dan agenda kegiatan disini" pada header widget kalender.
+- **Visual Upgrade**: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna **Primary**, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan menonjol.
+- **Highlight Hari Ini**: Memperjelas warna latar belakang untuk tanggal hari ini (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.
+- **Fix Styling Kalender**: Memperbaiki tampilan event pada kalender dengan penyesuaian CSS untuk konsistensi visual.
+
+#### 2. Fitur Soft Delete Produk
+- **Implementasi Soft Delete**: Produk yang dihapus kini tidak dihapus permanen, melainkan di-*soft delete* agar data historis tetap terjaga.
+- **Restore & Force Delete**: Menambahkan aksi untuk memulihkan (*restore*) atau menghapus permanen (*force delete*) produk yang sudah di-soft delete.
+- **Filter Trashed**: Menambahkan filter untuk menampilkan produk yang sudah dihapus (trashed) pada tabel list.
+- **Migrasi SoftDeletes**: Menambahkan kolom `deleted_at` pada tabel produk melalui migrasi.
+- **Dokumentasi**: Menambahkan `docs/produk-soft-delete.md` untuk panduan teknis fitur ini.
+
+#### 3. Perbaikan Fitur Tukar Tambah
+- **Fix Galeri**: Memperbaiki tampilan galeri foto pada halaman Tukar Tambah.
+- **Fix Quantity**: Memperbaiki perhitungan kuantitas barang keluar/masuk.
+- **Fix Data Pelanggan**: Memperbaiki tampilan dan penyimpanan data pelanggan pada transaksi Tukar Tambah.
+
+#### 4. Perbaikan Laporan Laba Rugi
+- **Fix Report Calculation**: Memperbaiki bug kalkulasi pada laporan laba rugi untuk hasil yang lebih akurat.
+- **Dependency Update**: Menambahkan dependensi baru pada `composer.json` untuk mendukung fitur laporan.
+
 ## 2026.01.28
 ### Peningkatan Fitur & Perbaikan Sistem (Deep Scan)
 
@@ -53,11 +159,6 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - **Styling Kustom Tombol**:
   - Menyamakan gaya tombol aksi dengan skema warna Badge Filament (Info, Success, Warning, Danger, Gray).
   - Mengimplementasikan CSS kustom pada `AdminPanelProvider` untuk konsistensi visual antara tombol dan badge.
-## 2026.01.29
-### Peningkatan UI Widget Kalender
-- **Header Informatif**: Menambahkan ikon dan deskripsi "Kelola jadwal tugas dan agenda kegiatan disini" pada header widget kalender.
-- **Visual Upgrade**: Mengubah ukuran ikon menjadi lebih besar (`h-12`) dengan warna **Primary**, serta memperbesar tipografi judul (`text-2xl`) untuk tampilan yang lebih modern dan menonjol.
-- **Highlight Hari Ini**: Memperjelas warna latar belakang untuk tanggal hari ini (*Today*) menggunakan `rgba` yang lebih kontras agar penanda waktu saat ini tidak terlewatkan.
 
 ## 2026.01.26
 ### Fitur Godmode & Manajemen Data Tingkat Lanjut
