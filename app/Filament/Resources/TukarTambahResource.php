@@ -40,6 +40,7 @@ use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
@@ -1166,38 +1167,79 @@ class TukarTambahResource extends BaseResource
                     ->state(fn (TukarTambah $record): string => $record->kode)
                     ->weight('bold')
                     ->copyable()
+                    ->hidden(true)
+                    ->toggleable()
                     ->sortable(),
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
                     ->icon('heroicon-m-document-text')
                     ->copyable()
+                    ->toggleable()
                     ->searchable()
+                    ->color('primary')
+                    ->weight('bold')
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d/m/y')
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
+                    ->toggleable()
                     ->sortable(),
                 TextColumn::make('penjualan.member.nama_member')
                     ->label('Pelanggan')
                     ->icon('heroicon-m-user-circle')
                     ->searchable(['nama_member', 'no_hp'])
+                    ->toggleable()
+                    ->limit(20)
+                    ->tooltip(fn (TukarTambah $record): ?string => $record->penjualan?->member?->nama_member)
                     ->description(fn (TukarTambah $record): ?string => $record->penjualan?->member?->no_hp)
                     ->sortable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
                     ->icon('heroicon-m-user')
+                    ->toggleable()
+                    ->visible(false)
                     ->color('primary')
+                    ->sortable(),
+                ImageColumn::make('karyawan.user.avatar_url')
+                    ->label('Karyawan')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/icons/icon-512x512.png'))
+                    ->tooltip(fn (TukarTambah $record): ?string => $record->karyawan?->nama_karyawan)
+                    ->toggleable()
                     ->sortable(),
                 TextColumn::make('penjualan.no_nota')
                     ->label('Nota Penjualan')
                     ->icon('heroicon-m-receipt-percent')
+                    ->toggleable()
+                    ->visible(false)
                     ->copyable(),
                 TextColumn::make('pembelian.no_po')
                     ->label('Nota Pembelian')
                     ->icon('heroicon-m-document-text')
+                    ->toggleable()
+                    ->visible(false)
                     ->copyable(),
+                TextColumn::make('grand_total')
+                    ->label('Grand Total')
+                    ->weight('bold')
+                    ->color('success')
+                    ->toggleable()
+                    ->sortable()
+                    ->state(fn (TukarTambah $record): string => 'Rp '.number_format(self::calculateGrandTotal($record), 0, ',', '.')),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->state(fn (TukarTambah $record): string => self::calculatePaymentStatus($record))
+                    ->color(fn (string $state): string => match ($state) {
+                        'Lunas' => 'success',
+                        'Dibayar Sebagian' => 'warning',
+                        'Belum Dibayar' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
             ])
             ->defaultSort('tanggal', 'desc')
             ->actions([
@@ -1837,5 +1879,53 @@ class TukarTambahResource extends BaseResource
             PenjualanRelationManager::class,
             PembelianRelationManager::class,
         ];
+    }
+
+    /**
+     * Hitung grand total: Penjualan - Pembelian
+     */
+    protected static function calculateGrandTotal(TukarTambah $record): int
+    {
+        // Calculate Penjualan total (products + services)
+        $productTotal = $record->penjualan?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->harga_jual ?? 0)) ?? 0;
+        $serviceTotal = $record->penjualan?->jasaItems?->sum(fn ($jasa) => (int) ($jasa->qty ?? 0) * (int) ($jasa->harga ?? 0)) ?? 0;
+        $penjualanTotal = $productTotal + $serviceTotal;
+
+        // Calculate Pembelian total (qty * hpp)
+        $pembelianTotal = $record->pembelian?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->hpp ?? 0)) ?? 0;
+
+        // Grand Total = Penjualan - Pembelian
+        return $penjualanTotal - $pembelianTotal;
+    }
+
+    /**
+     * Hitung status pembayaran: Lunas, Dibayar Sebagian, Belum Dibayar
+     */
+    protected static function calculatePaymentStatus(TukarTambah $record): string
+    {
+        // Calculate Penjualan total (products + services)
+        $productTotal = $record->penjualan?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->harga_jual ?? 0)) ?? 0;
+        $serviceTotal = $record->penjualan?->jasaItems?->sum(fn ($jasa) => (int) ($jasa->qty ?? 0) * (int) ($jasa->harga ?? 0)) ?? 0;
+        $totalPenjualan = $productTotal + $serviceTotal;
+
+        // Calculate Pembelian total (qty * hpp)
+        $totalPembelian = $record->pembelian?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->hpp ?? 0)) ?? 0;
+
+        // Calculate total paid for penjualan and pembelian
+        $totalDibayarPenjualan = $record->penjualan?->pembayaran?->sum('jumlah') ?? 0;
+        $totalDibayarPembelian = $record->pembelian?->pembayaran?->sum('jumlah') ?? 0;
+
+        // Belum Dibayar: both payments are 0
+        if ($totalDibayarPenjualan == 0 && $totalDibayarPembelian == 0) {
+            return 'Belum Dibayar';
+        }
+
+        // Lunas: both fully paid
+        if ($totalPenjualan == $totalDibayarPenjualan && $totalPembelian == $totalDibayarPembelian) {
+            return 'Lunas';
+        }
+
+        // Dibayar Sebagian: partial payment
+        return 'Dibayar Sebagian';
     }
 }

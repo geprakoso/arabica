@@ -738,7 +738,7 @@ class PenjualanResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('tanggal_penjualan')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d/m/y')
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
@@ -746,7 +746,16 @@ class PenjualanResource extends BaseResource
                     ->label('Member')
                     ->icon('heroicon-m-user-group')
                     ->placeholder('-')
-                    ->description(fn (Penjualan $record) => $record->member?->email ?: $record->member?->no_hp)
+                    ->limit(20)
+                    ->tooltip(fn (Penjualan $record): ?string => $record->member?->nama_member)
+                    ->description(function (Penjualan $record): ?string {
+                        $contact = $record->member?->email ?: $record->member?->no_hp;
+                        if (! $contact) {
+                            return null;
+                        }
+
+                        return \Illuminate\Support\Str::limit($contact, 20);
+                    })
                     ->weight('medium')
                     ->toggleable()
                     ->searchable(query: function (Builder $query, string $search): Builder {
@@ -769,12 +778,13 @@ class PenjualanResource extends BaseResource
                     ->label('Item & Jasa')
                     ->badge()
                     ->toggleable()
+                    ->visible(false)
                     ->icon('heroicon-m-shopping-cart')
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('status_pembayaran')
-                    ->label('Status Pembayaran')
+                    ->label('Status')
                     ->badge()
                     ->copyable()
                     ->state(function (Penjualan $record): string {
@@ -839,6 +849,7 @@ class PenjualanResource extends BaseResource
                     ->badge()
                     ->state(fn (Penjualan $record): ?string => $record->is_nerfed ? 'Nerf' : null)
                     ->color('danger')
+                    ->visible(false)
                     ->icon('heroicon-m-fire')
                     ->tooltip('Data pembelian terkait telah dihapus paksa')
                     ->toggleable(isToggledHiddenByDefault: false),
