@@ -40,8 +40,10 @@ use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
@@ -883,7 +885,7 @@ class PembelianResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d/m/y')
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
@@ -891,6 +893,8 @@ class PembelianResource extends BaseResource
                     ->label('Supplier')
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
+                    ->limit(9)
+                    ->tooltip(fn(Pembelian $record): ?string => $record->supplier?->nama_supplier)
                     ->toggleable()
                     ->searchable()
                     ->sortable(),
@@ -909,29 +913,50 @@ class PembelianResource extends BaseResource
                         ->map(fn($ro) => '#' . $ro->no_ro)
                         ->toArray())
                     ->separator(',')
+                    ->hidden()
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
                     ->icon('heroicon-m-user')
                     ->color('secondary')
                     ->toggleable()
+                    ->hidden()
                     ->sortable(),
                 TextColumn::make('tipe_pembelian')
                     ->label('Tipe')
                     ->badge()
+                    ->hidden()
                     ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'ppn',
                         'gray' => 'non_ppn',
                     ]),
-                TextColumn::make('jenis_pembayaran')
+                TextColumn::make('status_pembayaran')
                     ->label('Pembayaran')
                     ->badge()
-                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
-                    ->colors([
-                        'success' => 'lunas',
-                        'danger' => 'tempo',
-                    ]),
+                    ->state(function (Pembelian $record): string {
+                        $grandTotal = (float) $record->calculateTotalPembelian();
+                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                        // TEMPO: No payment made
+                        if ($totalPaid == 0) {
+                            return 'TEMPO';
+                        }
+
+                        // LUNAS: Fully paid
+                        if ($totalPaid >= $grandTotal) {
+                            return 'LUNAS';
+                        }
+
+                        // DP: Partial payment
+                        return 'DP';
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'LUNAS' => 'success',
+                        'DP' => 'warning',
+                        'TEMPO' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('items_serials')
                     ->label('SN')
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -945,10 +970,11 @@ class PembelianResource extends BaseResource
                             return '-';
                         }
 
-                        return $allSerials->implode(', ');
+                        $serialsString = $allSerials->implode(', ');
+
+                        return \Illuminate\Support\Str::limit($serialsString, 9);
                     })
                     ->wrap()
-                    ->limit(30)
                     ->tooltip(function (Pembelian $record): ?string {
                         $allSerials = $record->items
                             ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
@@ -968,36 +994,155 @@ class PembelianResource extends BaseResource
                     ->counts('items')
                     ->icon('heroicon-m-shopping-cart')
                     ->badge()
+                    ->hidden()
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('total_pembayaran')
-                    ->label('Total Pembayaran')
+                    ->label('Grand Total')
                     ->icon('heroicon-m-banknotes')
                     ->state(fn(Pembelian $record) => $record->calculateTotalPembelian())
                     ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
                     ->color('success')
                     ->sortable(),
+                TextColumn::make('sisa_bayar_display')
+                    ->label('Sisa Bayar')
+                    ->alignRight()
+                    ->state(function (Pembelian $record): string {
+                        $grandTotal = (float) $record->calculateTotalPembelian();
+                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                        $sisa = max(0, $grandTotal - $totalPaid);
+
+                        return 'Rp ' . number_format((int) $sisa, 0, ',', '.');
+                    })
+                    ->copyable()
+                    ->color('danger')
+                    ->weight('bold'),
+
+                ImageColumn::make('karyawan.user.avatar_url')
+                    ->label('')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(
+                        fn(Pembelian $record): string => 'https://ui-avatars.com/api/?name=' . urlencode($record->karyawan?->nama_karyawan ?? 'User') .
+                            '&color=FFFFFF&background=0D9488&size=128&bold=true'
+                    )
+                    ->tooltip(fn(Pembelian $record): ?string => $record->karyawan?->nama_karyawan)
+                    ->toggleable(),
             ])
             ->filters([
-                Tables\Filters\Filter::make('periode')
-                    ->label('Periode')
+                SelectFilter::make('id_karyawan')
+                    ->label('Karyawan')
+                    ->relationship(
+                        'karyawan',
+                        'nama_karyawan',
+                        fn(Builder $query) => $query->whereHas('pembelian')
+                    )
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('id_supplier')
+                    ->label('Supplier')
+                    ->relationship(
+                        'supplier',
+                        'nama_supplier',
+                        fn(Builder $query) => $query->whereHas('pembelian')
+                    )
+                    ->searchable()
+                    ->preload(),
+                \Filament\Tables\Filters\Filter::make('periode')
                     ->form([
-                        DatePicker::make('from')
-                            ->native(false)
-                            ->default(now()->subMonth())
-                            ->label('Dari'),
-                        DatePicker::make('until')
-                            ->native(false)
-                            ->default(now())
-                            ->label('Sampai'),
+                        Grid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    'hari_ini' => 'Hari Ini',
+                                    'kemarin' => 'Kemarin',
+                                    '2_hari_lalu' => '2 Hari Lalu',
+                                    '3_hari_lalu' => '3 Hari Lalu',
+                                    'custom' => 'Custom',
+                                ])
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn(Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn(Get $get) => $get('range') !== 'custom'),
+                        ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['from'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal', '>=', $date))
-                            ->when($data['until'] ?? null, fn(Builder $q, string $date) => $q->whereDate('tanggal', '<=', $date));
+                        $range = $data['range'] ?? null;
+
+                        if (! $range) {
+                            return $query;
+                        }
+
+                        if ($range === 'hari_ini') {
+                            return $query->whereDate('tanggal', now());
+                        }
+
+                        if ($range === 'custom') {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? null;
+
+                            return $query
+                                ->when(
+                                    $startDate,
+                                    fn(Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
+                                )
+                                ->when(
+                                    $endDate,
+                                    fn(Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
+                                );
+                        }
+
+                        $targetDate = match ($range) {
+                            'kemarin' => now()->subDay(),
+                            '2_hari_lalu' => now()->subDays(2),
+                            '3_hari_lalu' => now()->subDays(3),
+                            default => null,
+                        };
+
+                        return $query->when(
+                            $targetDate,
+                            fn(Builder $query, $date) => $query->whereDate('tanggal', $date)
+                        );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $range = $data['range'] ?? null;
+                        if (! $range) {
+                            return null;
+                        }
+
+                        if ($range === 'custom') {
+                            $from = $data['from'] ?? null;
+                            $until = $data['until'] ?? null;
+
+                            if (! $from && ! $until) {
+                                return null;
+                            }
+
+                            return 'Periode: ' . ($from ? \Carbon\Carbon::parse($from)->format('d/m/Y') : '...') . ' - ' . ($until ? \Carbon\Carbon::parse($until)->format('d/m/Y') : '...');
+                        }
+
+                        return 'Periode: ' . match ($range) {
+                            'hari_ini' => 'Hari Ini',
+                            'kemarin' => 'Kemarin',
+                            '2_hari_lalu' => '2 Hari Lalu',
+                            '3_hari_lalu' => '3 Hari Lalu',
+                            default => ucfirst(str_replace('_', ' ', $range)),
+                        };
                     }),
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
             ->actions([
@@ -1028,6 +1173,7 @@ class PembelianResource extends BaseResource
                                     $livewire->forceDeleteRecordId = $record->id_pembelian;
                                     $livewire->forceDeleteAffectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
                                     $livewire->replaceMountedAction('forceDeleteStep2');
+
                                     return;
                                 }
 
@@ -1040,6 +1186,25 @@ class PembelianResource extends BaseResource
                                 $livewire->deleteBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
                                 $livewire->replaceMountedAction('deleteBlocked');
                             }
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->button()
+                        ->color('success'),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->icon('heroicon-o-trash')
+                        ->button()
+                        ->color('danger')
+                        ->before(function (Tables\Actions\ForceDeleteAction $action, Pembelian $record) {
+                            // Always redirect to password confirmation flow for ANY force delete
+                            $livewire = $action->getLivewire();
+                            $livewire->forceDeleteRecordId = $record->getKey();
+                            $livewire->forceDeleteAffectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
+                            $livewire->replaceMountedAction('forceDeleteStep2');
+                            $action->cancel();
+                        })
+                        ->after(function () {
+                            Pembelian::$allowTukarTambahDeletion = false;
                         }),
                 ])
                     ->label('Aksi')
@@ -1090,6 +1255,8 @@ class PembelianResource extends BaseResource
                                     ->send();
                             }
                         }),
+                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }

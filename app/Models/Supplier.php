@@ -27,4 +27,9 @@ class Supplier extends Model
     {
         return $this->hasMany(SupplierAgent::class);
     }
+
+    public function pembelian(): HasMany
+    {
+        return $this->hasMany(Pembelian::class, 'id_supplier');
+    }
 }

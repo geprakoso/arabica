@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Collection;
 
@@ -70,6 +72,13 @@ class Pembelian extends Model
                     'id_pembelian' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
                 ]);
             }
+
+            // Only delete related items if this is a FORCE delete, not soft delete
+            if ($pembelian->isForceDeleting()) {
+                $pembelian->items()->get()->each->delete();
+                $pembelian->jasaItems()->get()->each->delete();
+                $pembelian->pembayaran()->get()->each->delete();
+            }
         });
     }
 
@@ -95,6 +104,7 @@ class Pembelian extends Model
         'tgl_tempo' => 'date',
         'harga_jual' => 'decimal:2',
         'foto_dokumen' => 'array',
+        'deleted_at' => 'datetime',
     ];
 
     public function karyawan()

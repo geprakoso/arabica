@@ -738,7 +738,7 @@ class PenjualanResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('tanggal_penjualan')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d/m/y')
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
@@ -746,7 +746,16 @@ class PenjualanResource extends BaseResource
                     ->label('Member')
                     ->icon('heroicon-m-user-group')
                     ->placeholder('-')
-                    ->description(fn (Penjualan $record) => $record->member?->email ?: $record->member?->no_hp)
+                    ->limit(20)
+                    ->tooltip(fn (Penjualan $record): ?string => $record->member?->nama_member)
+                    ->description(function (Penjualan $record): ?string {
+                        $contact = $record->member?->email ?: $record->member?->no_hp;
+                        if (! $contact) {
+                            return null;
+                        }
+
+                        return \Illuminate\Support\Str::limit($contact, 20);
+                    })
                     ->weight('medium')
                     ->toggleable()
                     ->searchable(query: function (Builder $query, string $search): Builder {
@@ -757,35 +766,49 @@ class PenjualanResource extends BaseResource
                         });
                     })
                     ->sortable(),
-                Tables\Columns\ImageColumn::make('karyawan.user.avatar_url')
-                    ->label('Karyawan')
-                    ->disk('public')
-                    ->circular()
-                    ->defaultImageUrl(url('/images/icons/icon-512x512.png'))
-                    ->tooltip(fn (Penjualan $record): ?string => $record->karyawan?->nama_karyawan)
-                    ->toggleable()
-                    ->sortable(),
                 TextColumn::make('items_count')
                     ->label('Item & Jasa')
                     ->badge()
                     ->toggleable()
+                    ->visible(false)
                     ->icon('heroicon-m-shopping-cart')
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('status_pembayaran')
-                    ->label('Status Pembayaran')
+                    ->label('Status')
                     ->badge()
                     ->copyable()
                     ->state(function (Penjualan $record): string {
                         $grandTotal = (float) ($record->grand_total ?? 0);
                         $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
-                        $sisa = max(0, $grandTotal - $totalPaid);
 
-                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                        // TEMPO: No payment made
+                        if ($totalPaid == 0) {
+                            return 'TEMPO';
+                        }
+
+                        // LUNAS: Fully paid
+                        if ($totalPaid >= $grandTotal) {
+                            return 'LUNAS';
+                        }
+
+                        // DP: Partial payment
+                        return 'DP';
                     })
-                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                    ->color(fn (string $state): string => match ($state) {
+                        'LUNAS' => 'success',
+                        'DP' => 'warning',
+                        'TEMPO' => 'danger',
+                        default => 'gray',
+                    })
                     ->alignCenter(),
+                TextColumn::make('grand_total_display')
+                    ->label('Grand Total')
+                    ->weight('bold')
+                    ->color('success')
+                    ->alignRight()
+                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
                 TextColumn::make('sisa_bayar_display')
                     ->label('Sisa Bayar')
                     ->alignRight()
@@ -797,13 +820,9 @@ class PenjualanResource extends BaseResource
 
                         return self::formatCurrency((int) $sisa);
                     })
-                    ->copyable(),
-                TextColumn::make('grand_total_display')
-                    ->label('Grand Total')
-                    ->weight('bold')
-                    ->color('success')
-                    ->alignRight()
-                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
+                    ->copyable()
+                    ->color('danger')
+                    ->weight('bold'),
                 TextColumn::make('items_serials')
                     ->label('SN')
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -839,28 +858,128 @@ class PenjualanResource extends BaseResource
                     ->badge()
                     ->state(fn (Penjualan $record): ?string => $record->is_nerfed ? 'Nerf' : null)
                     ->color('danger')
+                    ->visible(false)
                     ->icon('heroicon-m-fire')
                     ->tooltip('Data pembelian terkait telah dihapus paksa')
                     ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\ImageColumn::make('karyawan.user.avatar_url')
+                    ->label('Karyawan')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(fn (Penjualan $record): string => 'https://ui-avatars.com/api/?name='.urlencode($record->karyawan?->nama_karyawan ?? 'User').
+                        '&color=FFFFFF&background=0D9488&size=128&bold=true'
+                    )
+                    ->tooltip(fn (Penjualan $record): ?string => $record->karyawan?->nama_karyawan)
+                    ->toggleable(),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('id_karyawan')
+                    ->label('Karyawan')
+                    ->relationship('karyawan', 'nama_karyawan', fn (Builder $query) => $query->whereHas('penjualan')
+                    )
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('id_member')
+                    ->label('Pelanggan')
+                    ->relationship('member', 'nama_member', fn (Builder $query) => $query->whereHas('penjualan')
+                    )
+                    ->searchable()
+                    ->preload(),
+
                 Tables\Filters\Filter::make('periode')
-                    ->label('Periode')
                     ->form([
-                        DatePicker::make('from')
-                            ->native(false)
-                            ->default(now()->subMonth())
-                            ->label('Dari'),
-                        DatePicker::make('until')
-                            ->native(false)
-                            ->default(now())
-                            ->label('Sampai'),
+                        Grid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    'hari_ini' => 'Hari Ini',
+                                    'kemarin' => 'Kemarin',
+                                    '2_hari_lalu' => '2 Hari Lalu',
+                                    '3_hari_lalu' => '3 Hari Lalu',
+                                    'custom' => 'Custom',
+                                ])
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '>=', $date))
-                            ->when($data['until'] ?? null, fn (Builder $q, string $date) => $q->whereDate('tanggal_penjualan', '<=', $date));
+                        $range = $data['range'] ?? null;
+
+                        if (! $range) {
+                            return $query;
+                        }
+
+                        if ($range === 'hari_ini') {
+                            return $query->whereDate('tanggal_penjualan', now());
+                        }
+
+                        if ($range === 'custom') {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? null;
+
+                            return $query
+                                ->when(
+                                    $startDate,
+                                    fn (Builder $query, $date) => $query->whereDate('tanggal_penjualan', '>=', $date),
+                                )
+                                ->when(
+                                    $endDate,
+                                    fn (Builder $query, $date) => $query->whereDate('tanggal_penjualan', '<=', $date),
+                                );
+                        }
+
+                        $targetDate = match ($range) {
+                            'kemarin' => now()->subDay(),
+                            '2_hari_lalu' => now()->subDays(2),
+                            '3_hari_lalu' => now()->subDays(3),
+                            default => null,
+                        };
+
+                        return $query->when(
+                            $targetDate,
+                            fn (Builder $query, $date) => $query->whereDate('tanggal_penjualan', $date)
+                        );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $range = $data['range'] ?? null;
+                        if (! $range) {
+                            return null;
+                        }
+
+                        if ($range === 'custom') {
+                            $from = $data['from'] ?? null;
+                            $until = $data['until'] ?? null;
+
+                            if (! $from && ! $until) {
+                                return null;
+                            }
+
+                            return 'Periode: '.($from ? \Carbon\Carbon::parse($from)->format('d/m/Y') : '...').' - '.($until ? \Carbon\Carbon::parse($until)->format('d/m/Y') : '...');
+                        }
+
+                        return 'Periode: '.match ($range) {
+                            'hari_ini' => 'Hari Ini',
+                            'kemarin' => 'Kemarin',
+                            '2_hari_lalu' => '2 Hari Lalu',
+                            '3_hari_lalu' => '3 Hari Lalu',
+                            default => ucfirst(str_replace('_', ' ', $range)),
+                        };
                     }),
+
                 Tables\Filters\SelectFilter::make('sumber_transaksi')
                     ->label('Sumber Transaksi')
                     ->options([
