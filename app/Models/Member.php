@@ -84,4 +84,9 @@ class Member extends Model
             'id_penjualan'
         );
     }
+
+    public function tukarTambah()
+    {
+        return $this->hasMany(TukarTambah::class, 'id_member');
+    }
 }

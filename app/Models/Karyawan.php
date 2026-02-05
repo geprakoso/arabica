@@ -133,4 +133,19 @@ class Karyawan extends Model implements HasMedia
     {
         return $this->hasMany(GajiKaryawan::class);
     }
+
+    public function pembelian()
+    {
+        return $this->hasMany(Pembelian::class, 'id_karyawan');
+    }
+
+    public function penjualan()
+    {
+        return $this->hasMany(Penjualan::class, 'id_karyawan');
+    }
+
+    public function tukarTambah()
+    {
+        return $this->hasMany(TukarTambah::class, 'id_karyawan');
+    }
 }

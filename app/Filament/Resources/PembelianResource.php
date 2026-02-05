@@ -42,6 +42,7 @@ use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
@@ -892,7 +893,7 @@ class PembelianResource extends BaseResource
                     ->label('Supplier')
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
-                    ->limit(15)
+                    ->limit(9)
                     ->tooltip(fn (Pembelian $record): ?string => $record->supplier?->nama_supplier)
                     ->toggleable()
                     ->searchable()
@@ -930,14 +931,32 @@ class PembelianResource extends BaseResource
                         'success' => 'ppn',
                         'gray' => 'non_ppn',
                     ]),
-                TextColumn::make('jenis_pembayaran')
+                TextColumn::make('status_pembayaran')
                     ->label('Pembayaran')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
-                    ->colors([
-                        'success' => 'lunas',
-                        'danger' => 'tempo',
-                    ]),
+                    ->state(function (Pembelian $record): string {
+                        $grandTotal = (float) $record->calculateTotalPembelian();
+                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                        // TEMPO: No payment made
+                        if ($totalPaid == 0) {
+                            return 'TEMPO';
+                        }
+
+                        // LUNAS: Fully paid
+                        if ($totalPaid >= $grandTotal) {
+                            return 'LUNAS';
+                        }
+
+                        // DP: Partial payment
+                        return 'DP';
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'LUNAS' => 'success',
+                        'DP' => 'warning',
+                        'TEMPO' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('items_serials')
                     ->label('SN')
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -953,7 +972,7 @@ class PembelianResource extends BaseResource
 
                         $serialsString = $allSerials->implode(', ');
 
-                        return \Illuminate\Support\Str::limit($serialsString, 10);
+                        return \Illuminate\Support\Str::limit($serialsString, 9);
                     })
                     ->wrap()
                     ->tooltip(function (Pembelian $record): ?string {
@@ -980,22 +999,142 @@ class PembelianResource extends BaseResource
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('total_pembayaran')
-                    ->label('Total Pembayaran')
+                    ->label('Grand Total')
                     ->icon('heroicon-m-banknotes')
                     ->state(fn (Pembelian $record) => $record->calculateTotalPembelian())
                     ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.'))
                     ->color('success')
                     ->sortable(),
+                TextColumn::make('sisa_bayar_display')
+                    ->label('Sisa Bayar')
+                    ->alignRight()
+                    ->state(function (Pembelian $record): string {
+                        $grandTotal = (float) $record->calculateTotalPembelian();
+                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+
+                        $sisa = max(0, $grandTotal - $totalPaid);
+
+                        return 'Rp '.number_format((int) $sisa, 0, ',', '.');
+                    })
+                    ->copyable()
+                    ->color('danger')
+                    ->weight('bold'),
+
                 ImageColumn::make('karyawan.user.avatar_url')
-                    ->label('Karyawan')
+                    ->label('')
                     ->disk('public')
                     ->circular()
-                    ->defaultImageUrl(url('/images/icons/icon-512x512.png'))
+                    ->defaultImageUrl(fn (Pembelian $record): string => 'https://ui-avatars.com/api/?name='.urlencode($record->karyawan?->nama_karyawan ?? 'User').
+                        '&color=FFFFFF&background=0D9488&size=128&bold=true'
+                    )
                     ->tooltip(fn (Pembelian $record): ?string => $record->karyawan?->nama_karyawan)
-                    ->toggleable()
-                    ->sortable(),
+                    ->toggleable(),
             ])
             ->filters([
+                SelectFilter::make('id_karyawan')
+                    ->label('Karyawan')
+                    ->relationship('karyawan', 'nama_karyawan', fn (Builder $query) => $query->whereHas('pembelian')
+                    )
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('id_supplier')
+                    ->label('Supplier')
+                    ->relationship('supplier', 'nama_supplier', fn (Builder $query) => $query->whereHas('pembelian')
+                    )
+                    ->searchable()
+                    ->preload(),
+                \Filament\Tables\Filters\Filter::make('periode')
+                    ->form([
+                        Grid::make(2)->schema([
+                            Select::make('range')
+                                ->label('Rentang Waktu')
+                                ->options([
+                                    'hari_ini' => 'Hari Ini',
+                                    'kemarin' => 'Kemarin',
+                                    '2_hari_lalu' => '2 Hari Lalu',
+                                    '3_hari_lalu' => '3 Hari Lalu',
+                                    'custom' => 'Custom',
+                                ])
+                                ->native(false)
+                                ->reactive()
+                                ->columnSpan(2),
+                            DatePicker::make('from')
+                                ->label('Mulai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                            DatePicker::make('until')
+                                ->label('Sampai')
+                                ->native(false)
+                                ->placeholder('Pilih tanggal')
+                                ->prefixIcon('heroicon-m-calendar')
+                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                        ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $range = $data['range'] ?? null;
+
+                        if (! $range) {
+                            return $query;
+                        }
+
+                        if ($range === 'hari_ini') {
+                            return $query->whereDate('tanggal', now());
+                        }
+
+                        if ($range === 'custom') {
+                            $startDate = $data['from'] ?? null;
+                            $endDate = $data['until'] ?? null;
+
+                            return $query
+                                ->when(
+                                    $startDate,
+                                    fn (Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
+                                )
+                                ->when(
+                                    $endDate,
+                                    fn (Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
+                                );
+                        }
+
+                        $targetDate = match ($range) {
+                            'kemarin' => now()->subDay(),
+                            '2_hari_lalu' => now()->subDays(2),
+                            '3_hari_lalu' => now()->subDays(3),
+                            default => null,
+                        };
+
+                        return $query->when(
+                            $targetDate,
+                            fn (Builder $query, $date) => $query->whereDate('tanggal', $date)
+                        );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $range = $data['range'] ?? null;
+                        if (! $range) {
+                            return null;
+                        }
+
+                        if ($range === 'custom') {
+                            $from = $data['from'] ?? null;
+                            $until = $data['until'] ?? null;
+
+                            if (! $from && ! $until) {
+                                return null;
+                            }
+
+                            return 'Periode: '.($from ? \Carbon\Carbon::parse($from)->format('d/m/Y') : '...').' - '.($until ? \Carbon\Carbon::parse($until)->format('d/m/Y') : '...');
+                        }
+
+                        return 'Periode: '.match ($range) {
+                            'hari_ini' => 'Hari Ini',
+                            'kemarin' => 'Kemarin',
+                            '2_hari_lalu' => '2 Hari Lalu',
+                            '3_hari_lalu' => '3 Hari Lalu',
+                            default => ucfirst(str_replace('_', ' ', $range)),
+                        };
+                    }),
                 TrashedFilter::make()
                     ->native(false),
             ])

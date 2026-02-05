@@ -8,9 +8,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class TukarTambah extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'tb_tukar_tambah';
     protected $primaryKey = 'id_tukar_tambah';
@@ -40,38 +42,41 @@ class TukarTambah extends Model
         });
 
         static::deleting(function (TukarTambah $tukarTambah): void {
-            DB::transaction(function () use ($tukarTambah): void {
-                $penjualanId = $tukarTambah->penjualan_id;
-                $pembelian = $tukarTambah->pembelian;
+            // Only cascade delete relations if this is a FORCE delete
+            if ($tukarTambah->isForceDeleting()) {
+                DB::transaction(function () use ($tukarTambah): void {
+                    $penjualanId = $tukarTambah->penjualan_id;
+                    $pembelian = $tukarTambah->pembelian;
 
-                if ($pembelian) {
-                    $externalPenjualanNotas = $tukarTambah->getExternalPenjualanReferences()
-                        ->pluck('nota')
-                        ->filter()
-                        ->values();
+                    if ($pembelian) {
+                        $externalPenjualanNotas = $tukarTambah->getExternalPenjualanReferences()
+                            ->pluck('nota')
+                            ->filter()
+                            ->values();
 
-                    if ($externalPenjualanNotas->isNotEmpty()) {
-                        $notaList = $externalPenjualanNotas->implode(', ');
+                        if ($externalPenjualanNotas->isNotEmpty()) {
+                            $notaList = $externalPenjualanNotas->implode(', ');
 
-                        throw ValidationException::withMessages([
-                            'pembelian_id' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
-                        ]);
+                            throw ValidationException::withMessages([
+                                'pembelian_id' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
+                            ]);
+                        }
                     }
-                }
 
-                // Set flags to allow cascade deletion
-                \App\Models\Penjualan::$allowTukarTambahDeletion = true;
-                \App\Models\Pembelian::$allowTukarTambahDeletion = true;
-                
-                try {
-                    $tukarTambah->penjualan?->delete();
-                    $tukarTambah->pembelian?->delete();
-                } finally {
-                    // Reset flags
-                    \App\Models\Penjualan::$allowTukarTambahDeletion = false;
-                    \App\Models\Pembelian::$allowTukarTambahDeletion = false;
-                }
-            });
+                    // Set flags to allow cascade deletion
+                    \App\Models\Penjualan::$allowTukarTambahDeletion = true;
+                    \App\Models\Pembelian::$allowTukarTambahDeletion = true;
+                    
+                    try {
+                        $tukarTambah->penjualan?->delete(); // This will soft delete if Penjualan uses SoftDeletes
+                        $tukarTambah->pembelian?->delete(); // This will soft delete if Pembelian uses SoftDeletes
+                    } finally {
+                        // Reset flags
+                        \App\Models\Penjualan::$allowTukarTambahDeletion = false;
+                        \App\Models\Pembelian::$allowTukarTambahDeletion = false;
+                    }
+                });
+            }
         });
     }
 

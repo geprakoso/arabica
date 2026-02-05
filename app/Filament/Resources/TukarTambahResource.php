@@ -39,11 +39,13 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -1288,6 +1290,9 @@ class TukarTambahResource extends BaseResource
                             // }
                             $livewire->redirect(TukarTambahResource::getUrl('edit', ['record' => $record]));
                         }),
+                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\RestoreAction::make(),
+                    Tables\Actions\ForceDeleteAction::make(),
 
                 ])->label('Aksi')
                     ->icon('heroicon-m-ellipsis-horizontal')
@@ -1338,9 +1343,27 @@ class TukarTambahResource extends BaseResource
                                     ->send();
                             }
                         }),
+                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('id_karyawan')
+                    ->label('Karyawan')
+                    ->relationship('karyawan', 'nama_karyawan', fn (Builder $query) => 
+                        $query->whereHas('tukarTambah')
+                    )
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('id_member')
+                    ->label('Pelanggan')
+                    ->relationship('member', 'nama_member', fn (Builder $query) => 
+                        $query->whereHas('tukarTambah')
+                    )
+                    ->searchable()
+                    ->preload(),
+
                 \Filament\Tables\Filters\Filter::make('periode')
                     ->form([
                         Grid::make(2)->schema([
@@ -1449,6 +1472,8 @@ class TukarTambahResource extends BaseResource
 
                         return isset($labels[$range]) ? 'Periode: '.$labels[$range] : null;
                     }),
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
             ])
             ->searchable()
             ->persistSearchInSession()
