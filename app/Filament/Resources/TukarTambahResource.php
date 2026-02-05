@@ -1222,6 +1222,17 @@ class TukarTambahResource extends BaseResource
                     ->toggleable()
                     ->visible(false)
                     ->copyable(),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->state(fn (TukarTambah $record): string => self::calculatePaymentStatus($record))
+                    ->color(fn (string $state): string => match ($state) {
+                        'LUNAS' => 'success',
+                        'DP' => 'warning',
+                        'TEMPO' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
                 TextColumn::make('grand_total')
                     ->label('Grand Total')
                     ->weight('bold')
@@ -1229,17 +1240,13 @@ class TukarTambahResource extends BaseResource
                     ->toggleable()
                     ->sortable()
                     ->state(fn (TukarTambah $record): string => 'Rp '.number_format(self::calculateGrandTotal($record), 0, ',', '.')),
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->state(fn (TukarTambah $record): string => self::calculatePaymentStatus($record))
-                    ->color(fn (string $state): string => match ($state) {
-                        'Lunas' => 'success',
-                        'Dibayar Sebagian' => 'warning',
-                        'Belum Dibayar' => 'danger',
-                        default => 'gray',
-                    })
-                    ->toggleable(),
+                TextColumn::make('sisa_bayar')
+                    ->label('Sisa Bayar')
+                    ->weight('bold')
+                    ->color('danger')
+                    ->toggleable()
+                    ->sortable()
+                    ->state(fn (TukarTambah $record): string => 'Rp '.number_format(self::calculateGrandTotal($record) - self::calculatePaidAmount($record), 0, ',', '.')),
             ])
             ->defaultSort('tanggal', 'desc')
             ->actions([
@@ -1899,7 +1906,7 @@ class TukarTambahResource extends BaseResource
     }
 
     /**
-     * Hitung status pembayaran: Lunas, Dibayar Sebagian, Belum Dibayar
+     * Hitung status pembayaran: LUNAS, DP, TEMPO
      */
     protected static function calculatePaymentStatus(TukarTambah $record): string
     {
@@ -1915,17 +1922,28 @@ class TukarTambahResource extends BaseResource
         $totalDibayarPenjualan = $record->penjualan?->pembayaran?->sum('jumlah') ?? 0;
         $totalDibayarPembelian = $record->pembelian?->pembayaran?->sum('jumlah') ?? 0;
 
-        // Belum Dibayar: both payments are 0
+        // TEMPO: both payments are 0
         if ($totalDibayarPenjualan == 0 && $totalDibayarPembelian == 0) {
-            return 'Belum Dibayar';
+            return 'TEMPO';
         }
 
-        // Lunas: both fully paid
+        // LUNAS: both fully paid
         if ($totalPenjualan == $totalDibayarPenjualan && $totalPembelian == $totalDibayarPembelian) {
-            return 'Lunas';
+            return 'LUNAS';
         }
 
-        // Dibayar Sebagian: partial payment
-        return 'Dibayar Sebagian';
+        // DP: partial payment
+        return 'DP';
+    }
+
+    /**
+     * Hitung total yang sudah dibayar (penjualan + pembelian)
+     */
+    protected static function calculatePaidAmount(TukarTambah $record): int
+    {
+        $totalDibayarPenjualan = $record->penjualan?->pembayaran?->sum('jumlah') ?? 0;
+        $totalDibayarPembelian = $record->pembelian?->pembayaran?->sum('jumlah') ?? 0;
+
+        return (int) ($totalDibayarPenjualan - $totalDibayarPembelian);
     }
 }

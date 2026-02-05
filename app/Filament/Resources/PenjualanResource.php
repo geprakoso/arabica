@@ -790,12 +790,33 @@ class PenjualanResource extends BaseResource
                     ->state(function (Penjualan $record): string {
                         $grandTotal = (float) ($record->grand_total ?? 0);
                         $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
-                        $sisa = max(0, $grandTotal - $totalPaid);
 
-                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                        // TEMPO: No payment made
+                        if ($totalPaid == 0) {
+                            return 'TEMPO';
+                        }
+
+                        // LUNAS: Fully paid
+                        if ($totalPaid >= $grandTotal) {
+                            return 'LUNAS';
+                        }
+
+                        // DP: Partial payment
+                        return 'DP';
                     })
-                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                    ->color(fn (string $state): string => match ($state) {
+                        'LUNAS' => 'success',
+                        'DP' => 'warning',
+                        'TEMPO' => 'danger',
+                        default => 'gray',
+                    })
                     ->alignCenter(),
+                TextColumn::make('grand_total_display')
+                    ->label('Grand Total')
+                    ->weight('bold')
+                    ->color('success')
+                    ->alignRight()
+                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
                 TextColumn::make('sisa_bayar_display')
                     ->label('Sisa Bayar')
                     ->alignRight()
@@ -807,13 +828,9 @@ class PenjualanResource extends BaseResource
 
                         return self::formatCurrency((int) $sisa);
                     })
-                    ->copyable(),
-                TextColumn::make('grand_total_display')
-                    ->label('Grand Total')
-                    ->weight('bold')
-                    ->color('success')
-                    ->alignRight()
-                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateGrandTotal($record))),
+                    ->copyable()
+                    ->color('danger')
+                    ->weight('bold'),
                 TextColumn::make('items_serials')
                     ->label('SN')
                     ->toggleable(isToggledHiddenByDefault: true)

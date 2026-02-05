@@ -40,8 +40,9 @@ use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
@@ -883,7 +884,7 @@ class PembelianResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d/m/y')
                     ->icon('heroicon-m-calendar')
                     ->color('gray')
                     ->sortable(),
@@ -891,6 +892,8 @@ class PembelianResource extends BaseResource
                     ->label('Supplier')
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
+                    ->limit(15)
+                    ->tooltip(fn (Pembelian $record): ?string => $record->supplier?->nama_supplier)
                     ->toggleable()
                     ->searchable()
                     ->sortable(),
@@ -909,16 +912,19 @@ class PembelianResource extends BaseResource
                         ->map(fn ($ro) => '#'.$ro->no_ro)
                         ->toArray())
                     ->separator(',')
+                    ->hidden()
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
                     ->label('Karyawan')
                     ->icon('heroicon-m-user')
                     ->color('secondary')
                     ->toggleable()
+                    ->hidden()
                     ->sortable(),
                 TextColumn::make('tipe_pembelian')
                     ->label('Tipe')
                     ->badge()
+                    ->hidden()
                     ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'ppn',
@@ -945,10 +951,11 @@ class PembelianResource extends BaseResource
                             return '-';
                         }
 
-                        return $allSerials->implode(', ');
+                        $serialsString = $allSerials->implode(', ');
+
+                        return \Illuminate\Support\Str::limit($serialsString, 10);
                     })
                     ->wrap()
-                    ->limit(30)
                     ->tooltip(function (Pembelian $record): ?string {
                         $allSerials = $record->items
                             ->flatMap(fn ($item) => collect($item->serials ?? [])->pluck('sn'))
@@ -959,7 +966,7 @@ class PembelianResource extends BaseResource
                     })
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('items', function (Builder $q) use ($search): void {
-                            $q->whereRaw('LOWER(serials) LIKE ?', ['%' . strtolower($search) . '%']);
+                            $q->whereRaw('LOWER(serials) LIKE ?', ['%'.strtolower($search).'%']);
                         });
                     })
                     ->toggleable(),
@@ -968,6 +975,7 @@ class PembelianResource extends BaseResource
                     ->counts('items')
                     ->icon('heroicon-m-shopping-cart')
                     ->badge()
+                    ->hidden()
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
@@ -978,8 +986,19 @@ class PembelianResource extends BaseResource
                     ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.'))
                     ->color('success')
                     ->sortable(),
+                ImageColumn::make('karyawan.user.avatar_url')
+                    ->label('Karyawan')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/icons/icon-512x512.png'))
+                    ->tooltip(fn (Pembelian $record): ?string => $record->karyawan?->nama_karyawan)
+                    ->toggleable()
+                    ->sortable(),
             ])
-            ->filters([])
+            ->filters([
+                TrashedFilter::make()
+                    ->native(false),
+            ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make()
@@ -1002,12 +1021,13 @@ class PembelianResource extends BaseResource
                                 $record->delete();
                             } catch (ValidationException $exception) {
                                 $livewire = $action->getLivewire();
-                                
+
                                 // Godmode: Start Force Delete Flow (Step 1 -> Step 2)
                                 if (auth()->user()?->hasRole('godmode')) {
                                     $livewire->forceDeleteRecordId = $record->id_pembelian;
                                     $livewire->forceDeleteAffectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
                                     $livewire->replaceMountedAction('forceDeleteStep2');
+
                                     return;
                                 }
 
@@ -1020,6 +1040,25 @@ class PembelianResource extends BaseResource
                                 $livewire->deleteBlockedPenjualanReferences = $record->getBlockedPenjualanReferences()->all();
                                 $livewire->replaceMountedAction('deleteBlocked');
                             }
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->button()
+                        ->color('success'),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->icon('heroicon-o-trash')
+                        ->button()
+                        ->color('danger')
+                        ->before(function (Tables\Actions\ForceDeleteAction $action, Pembelian $record) {
+                            // Always redirect to password confirmation flow for ANY force delete
+                            $livewire = $action->getLivewire();
+                            $livewire->forceDeleteRecordId = $record->getKey();
+                            $livewire->forceDeleteAffectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
+                            $livewire->replaceMountedAction('forceDeleteStep2');
+                            $action->cancel();
+                        })
+                        ->after(function () {
+                            Pembelian::$allowTukarTambahDeletion = false;
                         }),
                 ])
                     ->label('Aksi')
@@ -1070,6 +1109,8 @@ class PembelianResource extends BaseResource
                                     ->send();
                             }
                         }),
+                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }
