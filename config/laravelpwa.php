@@ -4,11 +4,11 @@ return [
     'name' => 'Arabica',
     'manifest' => [
         'name' => env('APP_NAME', 'Arabica System'),
-        'short_name' => 'Arabica',
+        'short_name' => 'Haen App',
         'description' => 'Sistem manajemen toko Haen Komputer', // Added description for mobile
         'start_url' => '/',
         'background_color' => '#f3f4f6', // gray-100 filament default
-        'theme_color' => '#0284c7', // REQUIRED for mobile install prompt
+        'theme_color' => '#131313', // REQUIRED for mobile install prompt
         'display' => 'standalone',
         'orientation' => 'any',
         'status_bar' => 'default',
