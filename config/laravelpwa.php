@@ -5,9 +5,10 @@ return [
     'manifest' => [
         'name' => env('APP_NAME', 'Arabica System'),
         'short_name' => 'Arabica',
+        'description' => 'Sistem manajemen toko Haen Komputer', // Added description for mobile
         'start_url' => '/',
         'background_color' => '#f3f4f6', // gray-100 filament default
-        'theme_color' => '#0284c7', // Primary Blue
+        'theme_color' => '#0284c7', // REQUIRED for mobile install prompt
         'display' => 'standalone',
         'orientation' => 'any',
         'status_bar' => 'default',
@@ -44,6 +45,11 @@ return [
                 'path' => '/images/icons/icon-512x512.png',
                 'purpose' => 'any'
             ],
+            // Maskable icon for Android adaptive icons
+            '512x512-maskable' => [
+                'path' => '/images/icons/icon-512x512.png',
+                'purpose' => 'maskable'
+            ],
         ],
         'splash' => [
             '640x1136' => '/images/icons/splash-640x1136.png',
@@ -59,19 +65,23 @@ return [
         ],
         'shortcuts' => [
             [
-                'name' => 'Shortcut Link 1',
-                'description' => 'Shortcut Link 1 Description',
-                'url' => '/shortcutlink1',
+                'name' => 'Admin Panel',
+                'description' => 'Masuk ke panel Admin',
+                'url' => '/admin',
                 'icons' => [
-                    "src" => "/images/icons/icon-72x72.png",
+                    "src" => "/images/icons/icon-96x96.png",
                     "purpose" => "any"
                 ]
             ],
             [
-                'name' => 'Shortcut Link 2',
-                'description' => 'Shortcut Link 2 Description',
-                'url' => '/shortcutlink2'
-            ]
+                'name' => 'Point of Sale',
+                'description' => 'Buka kasir POS',
+                'url' => '/pos',
+                'icons' => [
+                    "src" => "/images/icons/icon-96x96.png",
+                    "purpose" => "any"
+                ]
+            ],
         ],
         'custom' => []
     ]

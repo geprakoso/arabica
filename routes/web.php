@@ -126,3 +126,8 @@ Route::get('/penjadwalan-service/print-crosscheck/{record}', function (\App\Mode
         'profile' => \App\Models\ProfilePerusahaan::first(),
     ]);
 })->name('penjadwalan-service.print-crosscheck');
+
+// PWA offline fallback route
+Route::get('/offline', function () {
+    return view('vendor.laravelpwa.offline');
+})->name('offline');

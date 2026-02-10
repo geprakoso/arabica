@@ -117,6 +117,11 @@ class PosPanelProvider extends PanelProvider
             ])
 
             //custom sidebar
+            // PWA Meta Tags for native-like install experience
+            ->renderHook(
+                'panels::head.end',
+                fn() => \Illuminate\Support\Facades\Blade::render('@laravelPWA')
+            )
             ->renderHook(
                 'panels::head.end',
                 fn(): string => <<<HTML

@@ -11,6 +11,8 @@ services:
       - ./:/var/www
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
     networks:
       - arabica-network
 
