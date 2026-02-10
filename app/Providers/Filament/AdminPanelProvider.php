@@ -122,6 +122,11 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Pengaturan')->collapsed(),
             ])
             ->widgets([\SolutionForest\TabLayoutPlugin\Widgets\TabsWidget::class])
+            // PWA Meta Tags for native-like install experience
+            ->renderHook(
+                'panels::head.end',
+                fn() => \Illuminate\Support\Facades\Blade::render('@laravelPWA')
+            )
             ->renderHook(
                 'panels::head.end',
                 fn(): string => <<<'HTML'
