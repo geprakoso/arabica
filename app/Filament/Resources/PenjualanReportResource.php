@@ -80,6 +80,7 @@ class PenjualanReportResource extends BaseResource
                     ->label('Member')
                     ->icon('heroicon-m-user-group')
                     ->weight('medium')
+                    ->limit(20)
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
