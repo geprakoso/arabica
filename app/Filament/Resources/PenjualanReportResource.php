@@ -80,6 +80,8 @@ class PenjualanReportResource extends BaseResource
                     ->label('Member')
                     ->icon('heroicon-m-user-group')
                     ->weight('medium')
+                    ->limit(20)
+                    ->tooltip(fn (Penjualan $record): ?string => $record->member?->nama_member)
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
@@ -88,14 +90,14 @@ class PenjualanReportResource extends BaseResource
                     ->color('secondary')
                     ->toggleable(),
                 TextColumn::make('status_pembayaran')
-                    ->label('Status Pembayaran')
+                    ->label('Status')
                     ->badge()
                     ->state(function (Penjualan $record): string {
                         $grandTotal = (float) ($record->grand_total ?? 0);
                         $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
                         $sisa = max(0, $grandTotal - $totalPaid);
 
-                        return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
+                        return $sisa > 0 ? 'Tempo' : 'Lunas';
                     })
                     ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                     ->toggleable(),
