@@ -2,6 +2,21 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.02.04
+### Perbaikan & Peningkatan Pembelian
+
+#### 1. Filter Pembelian
+- **Filter Periode**: Menambahkan filter rentang tanggal pada tabel Pembelian untuk memudahkan pencarian data berdasarkan periode waktu tertentu.
+- **Filter Trashed**: Menambahkan filter untuk melihat data pembelian yang telah dihapus (*soft deleted*).
+
+#### 2. Soft Delete Pembelian
+- **Implementasi Soft Deletes**: Mengaktifkan fitur *Soft Deletes* pada model Pembelian dan tabel database (`tb_pembelian`).
+- **Data Safety**: Data pembelian kini tidak langsung hilang permanen saat dihapus, melainkan masuk ke "Sampah" (Trashed) terlebih dahulu.
+- **Migration**: Menambahkan kolom `deleted_at` ke tabel `tb_pembelian`.
+
+#### 3. Keamanan Project (Under the Hood)
+- **Git Security**: Menghapus tracking folder memori agen (`.agent/`) dari repository Git untuk keamanan data development, namun tetap mempertahankan file secara lokal.
+
 ## 2026.02.03
 ### Soft Delete & Proteksi Hapus Data Penjualan
 
