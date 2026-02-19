@@ -113,10 +113,17 @@ class PenjualanResource extends BaseResource
                             ->native(false),
                         Select::make('id_member')
                             ->label('Member')
-                            ->searchable()
                             ->relationship('member', 'nama_member')
+                            ->getOptionLabelFromRecordUsing(fn (Member $record): HtmlString => new HtmlString(
+                                $record->no_hp
+                                    ? '<span style="font-weight:500">' . e($record->nama_member) . '</span> <span style="color:#9ca3af;font-size:0.85em">· ' . e($record->no_hp) . '</span>'
+                                    : e($record->nama_member)
+                            ))
+                            ->allowHtml()
+                            ->searchable(['nama_member', 'no_hp'])
                             ->preload()
                             ->nullable()
+                            ->required()
                             ->native(false)
                             ->createOptionModalHeading('Tambah Member')
                             ->createOptionAction(fn ($action) => $action->label('Tambah Member'))
@@ -130,7 +137,18 @@ class PenjualanResource extends BaseResource
                                         ->label('Nomor WhatsApp / HP')
                                         ->tel()
                                         ->required()
-                                        ->unique(table: (new Member)->getTable(), column: 'no_hp'),
+                                        ->unique(table: (new Member)->getTable(), column: 'no_hp')
+                                        ->dehydrateStateUsing(function (?string $state): ?string {
+                                            if (! $state) {
+                                                return $state;
+                                            }
+                                            // Strip spaces, dashes, dots, parentheses
+                                            $phone = preg_replace('/[\s\-\.\(\)]+/', '', $state);
+                                            // Convert +62 or 62 prefix to 0
+                                            $phone = preg_replace('/^(\+62|62)/', '0', $phone);
+
+                                            return $phone;
+                                        }),
 
                                     TextInput::make('email')
                                         ->label('Alamat Email')

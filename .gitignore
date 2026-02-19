@@ -1,3 +1,4 @@
+# === Laravel Default ===
 *.log
 .DS_Store
 .env
@@ -13,7 +14,8 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+node_modules
+# /public/build  ← SENGAJA TIDAK DI-IGNORE agar hasil build bisa di-pull ke VPS
 /public/hot
 /public/storage
 /storage/*.key
@@ -28,6 +30,35 @@ Thumbs.db
 /bootstrap/cache/config.php
 /bootstrap/cache/routes-v7.php
 /bootstrap/cache/events.php
+/coverage/
 
-# Agent memory
+# === Docker (hanya untuk development lokal) ===
+docker-compose.yml
+Dockerfile
+.dockerignore
+docker/
+
+# === Database dumps ===
+*.sql
+
+# === Debug & development scripts ===
+debug_*.php
+php-dev.ini
+server-router.php
+deploy.sh
+setup-test-db.sh
+
+# === Generated reports ===
+changelog_report.csv
+changelog_report.html
+
+# === Documentation (dev-only) ===
+PEST_GUIDE.md
+PEST_INSTALLATION.md
+PLUGIN.md
+README_PEST.md
+wrap-up.md
+
+# === Agent / tooling ===
 .agent/
+.npm-cache/

@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Produk;
+use App\Models\GajiKaryawan;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class ProdukPolicy
+class GajiKaryawanPolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class ProdukPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_inventory');
+        return $user->can('view_any_gaji::karyawan');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Produk $produk): bool
+    public function view(User $user, GajiKaryawan $gajiKaryawan): bool
     {
-        return $user->can('view_inventory');
+        return $user->can('view_gaji::karyawan');
     }
 
     /**
@@ -31,23 +31,23 @@ class ProdukPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_inventory');
+        return $user->can('create_gaji::karyawan');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Produk $produk): bool
+    public function update(User $user, GajiKaryawan $gajiKaryawan): bool
     {
-        return $user->can('update_inventory');
+        return $user->can('update_gaji::karyawan');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Produk $produk): bool
+    public function delete(User $user, GajiKaryawan $gajiKaryawan): bool
     {
-        return $user->can('delete_inventory');
+        return $user->can('delete_gaji::karyawan');
     }
 
     /**
@@ -55,15 +55,15 @@ class ProdukPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_inventory');
+        return $user->can('delete_any_gaji::karyawan');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Produk $produk): bool
+    public function forceDelete(User $user, GajiKaryawan $gajiKaryawan): bool
     {
-        return $user->can('force_delete_inventory');
+        return $user->can('force_delete_gaji::karyawan');
     }
 
     /**
@@ -71,15 +71,15 @@ class ProdukPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_inventory');
+        return $user->can('force_delete_any_gaji::karyawan');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Produk $produk): bool
+    public function restore(User $user, GajiKaryawan $gajiKaryawan): bool
     {
-        return $user->can('restore_inventory');
+        return $user->can('restore_gaji::karyawan');
     }
 
     /**
@@ -87,15 +87,15 @@ class ProdukPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_inventory');
+        return $user->can('restore_any_gaji::karyawan');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Produk $produk): bool
+    public function replicate(User $user, GajiKaryawan $gajiKaryawan): bool
     {
-        return $user->can('replicate_inventory');
+        return $user->can('replicate_gaji::karyawan');
     }
 
     /**
@@ -103,6 +103,6 @@ class ProdukPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_inventory');
+        return $user->can('reorder_gaji::karyawan');
     }
 }

@@ -11,6 +11,8 @@ services:
       - ./:/var/www
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
     networks:
       - arabica-network
 
@@ -36,7 +38,10 @@ services:
     restart: unless-stopped
     profiles: ["local"] # Only start this service when using --profile local
     # Reduce memory usage for low-RAM servers
-    command: --innodb-buffer-pool-size=128M --innodb-log-file-size=48M
+    # Original command (SSL Enabled):
+    # command: --innodb-buffer-pool-size=128M --innodb-log-file-size=48M
+    # Command with SSL Disabled (Fixes "Self-signed certificate" import error):
+    command: --innodb-buffer-pool-size=128M --innodb-log-file-size=48M --tls-version=''
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -73,6 +78,6 @@ networks:
   arabica-network:
     driver: bridge
 
-# volumes:
-#   dbdata:
-#     driver: local
+volumes:
+  dbdata:
+    driver: local

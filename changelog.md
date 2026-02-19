@@ -2,20 +2,35 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.02.05
+### Konsistensi Filter & Perbaikan Keamanan Data
+
+#### 1. Konsistensi Filter Resource (Penjualan, Pembelian, Tukar Tambah)
+- **Unified Filter Experience**: Menyelaraskan filter di seluruh resource transaksi utama agar memiliki pengalaman pengguna yang seragam.
+- **Filter Periode Canggih**: Mengimplementasikan filter periode fleksibel (Hari Ini, Kemarin, 2/3 Hari Lalu, Custom Range) pada Resource `Pembelian` dan `Penjualan`, menyamakan dengan `TukarTambah`.
+- **Relational Filters**: Menambahkan filter `Karyawan` dan `Pelanggan/Member` pada `PenjualanResource` dan `TukarTambahResource` menggunakan logika relasi `whereHas` yang efisien.
+
+#### 2. Soft Delete Tukar Tambah
+- **Data Safety**: Mengimplementasikan fitur **Soft Delete** pada modul `TukarTambah`. Data yang dihapus kini masuk ke "Trash" terlebih dahulu dan tidak langsung hilang permanen.
+- **Migration**: Menambahkan kolom `deleted_at` pada tabel `tb_tukar_tambah` dan `softDeletes` trait pada model.
+- **Restore & Force Delete**: Menambahkan aksi `Restore` (pulihkan) dan `Force Delete` (hapus permanen) pada tabel dan bulk actions.
+
+#### 3. Perbaikan Bug Database (Missing Column)
+- **Fix Error Filtering**: Memperbaiki error `Column not found: 1054 Unknown column 'tb_tukar_tambah.id_member` saat melakukan filter pelanggan.
+- **Migration Fix**: Menambahkan kolom `id_member` yang hilang pada tabel `tb_tukar_tambah` dan melakukan backfill data otomatis dari relasi penjualan terkait.
+
+#### 4. Perlindungan Integritas Data
+- **Cascade Logic Update**: Memperbarui logika `deleting` event pada model `TukarTambah`. Penghapusan berjenjang ke relasi (Penjualan/Pembelian) kini hanya dipicu saat **Force Delete** (hapus permanen), bukan saat Soft Delete biasa, mencegah kehilangan data yang tidak disengaja.
+
 ## 2026.02.04
-### Perbaikan & Peningkatan Pembelian
+### Perbaikan Filter & UI Pembelian
 
-#### 1. Filter Pembelian
-- **Filter Periode**: Menambahkan filter rentang tanggal pada tabel Pembelian untuk memudahkan pencarian data berdasarkan periode waktu tertentu.
-- **Filter Trashed**: Menambahkan filter untuk melihat data pembelian yang telah dihapus (*soft deleted*).
+#### 1. Peningkatan Filter Pembelian
+- **Filter Karyawan & Supplier**: Menambahkan filter dropdown searchable untuk Karyawan dan Supplier pada `PembelianResource`.
+- **Sisa Bayar Display**: Menambahkan kolom indikator visual sisa pembayaran (Lunas/Belum Lunas) dengan kode warna yang intuitif.
 
-#### 2. Soft Delete Pembelian
-- **Implementasi Soft Deletes**: Mengaktifkan fitur *Soft Deletes* pada model Pembelian dan tabel database (`tb_pembelian`).
-- **Data Safety**: Data pembelian kini tidak langsung hilang permanen saat dihapus, melainkan masuk ke "Sampah" (Trashed) terlebih dahulu.
-- **Migration**: Menambahkan kolom `deleted_at` ke tabel `tb_pembelian`.
-
-#### 3. Keamanan Project (Under the Hood)
-- **Git Security**: Menghapus tracking folder memori agen (`.agent/`) dari repository Git untuk keamanan data development, namun tetap mempertahankan file secara lokal.
+#### 2. Optimasi Model Relasi
+- **Inverse Relationships**: Menambahkan method relasi `pembelian()` pada model `Karyawan` dan `Supplier` untuk mendukung filtering 2 arah yang efisien.
 
 ## 2026.02.03
 ### Soft Delete & Proteksi Hapus Data Penjualan
