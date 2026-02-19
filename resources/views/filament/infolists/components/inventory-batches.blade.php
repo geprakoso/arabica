@@ -8,7 +8,16 @@
             <div class="flex items-center justify-between gap-4 border-b border-dashed border-gray-200 pb-3 text-sm font-medium text-gray-700 dark:border-white/10 dark:text-gray-200">
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">No. PO</p>
-                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $batch['no_po'] ?? '-' }}</p>
+                    @if(isset($batch['pembelian_id']) && $batch['pembelian_id'])
+                        <a href="{{ App\Filament\Resources\PembelianResource::getUrl('view', ['record' => $batch['pembelian_id']]) }}" 
+                           target="_blank" 
+                           x-tooltip="{ content: 'Lihat Detail Pembelian' }"
+                           class="text-base font-semibold text-primary-600 hover:text-primary-500 hover:underline dark:text-primary-400 dark:hover:text-primary-300 transition-colors">
+                            {{ $batch['no_po'] ?? '-' }}
+                        </a>
+                    @else
+                        <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $batch['no_po'] ?? '-' }}</p>
+                    @endif
                 </div>
                 <div class="text-right">
                     <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Tanggal</p>

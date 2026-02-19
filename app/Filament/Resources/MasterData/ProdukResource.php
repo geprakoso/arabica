@@ -347,7 +347,7 @@ class ProdukResource extends BaseResource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::upper($state))
                             ->size(TextColumnSize::Large)
                             ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->searchable()

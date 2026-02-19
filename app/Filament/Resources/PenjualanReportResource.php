@@ -2,29 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Actions\SummaryExportHeaderAction;
-use App\Filament\Resources\PenjualanReportResource\Pages;
-use App\Models\Penjualan;
+use Filament\Tables;
 use Filament\Forms\Get;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\Group as InfoGroup;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Infolist;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\Summarizers\Summarizer;
-use Filament\Tables\Filters\Indicator;
+use App\Models\Penjualan;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Facades\DB;
+use Filament\Infolists\Infolist;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\Indicator;
+use Filament\Infolists\Components\Grid;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Infolists\Components\Split;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\TextEntry;
+use App\Filament\Actions\SummaryExportHeaderAction;
+use Filament\Tables\Columns\Summarizers\Summarizer;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use App\Filament\Resources\PenjualanReportResource\Pages;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 
 class PenjualanReportResource extends BaseResource
 {
@@ -52,9 +53,10 @@ class PenjualanReportResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query
-                ->with(['items', 'jasaItems', 'member', 'karyawan'])
-                ->withSum('pembayaran', 'jumlah')
+            ->modifyQueryUsing(
+                fn(Builder $query) => $query
+                    ->with(['items', 'jasaItems', 'member', 'karyawan'])
+                    ->withSum('pembayaran', 'jumlah')
             ) // eager loading data relasi
             ->defaultSort('created_at', 'desc') // default sort
             ->recordAction('detail')
@@ -63,7 +65,7 @@ class PenjualanReportResource extends BaseResource
                 TextColumn::make('no_nota')
                     ->label('No. Nota')
                     ->icon('heroicon-m-receipt-percent')
-                    ->url(fn (Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
+                    ->url(fn(Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab()
                     ->tooltip('Klik untuk melihat detail')
                     ->weight('bold')
@@ -78,10 +80,11 @@ class PenjualanReportResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('member.nama_member')
                     ->label('Member')
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->icon('heroicon-m-user-group')
                     ->weight('medium')
                     ->limit(20)
-                    ->tooltip(fn (Penjualan $record): ?string => $record->member?->nama_member)
+                    ->tooltip(fn(Penjualan $record): ?string => $record->member?->nama_member)
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('karyawan.nama_karyawan')
@@ -99,7 +102,7 @@ class PenjualanReportResource extends BaseResource
 
                         return $sisa > 0 ? 'Tempo' : 'Lunas';
                     })
-                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                    ->color(fn(string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                     ->toggleable(),
                 TextColumn::make('total_qty')
                     ->label('Total Qty')
@@ -125,8 +128,8 @@ class PenjualanReportResource extends BaseResource
                     ->summarize([
                         Summarizer::make()
                             ->label('Total')
-                            ->using(fn ($query) => self::summarizeTotalPenjualan($query))
-                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                            ->using(fn($query) => self::summarizeTotalPenjualan($query))
+                            ->formatStateUsing(fn($state) => self::formatCurrency((int) $state)),
                     ])
                     ->sortable(),
                 TextColumn::make('total_hpp')
@@ -138,8 +141,8 @@ class PenjualanReportResource extends BaseResource
                     ->summarize([
                         Summarizer::make()
                             ->label('Total')
-                            ->using(fn ($query) => self::summarizeTotalHpp($query))
-                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                            ->using(fn($query) => self::summarizeTotalHpp($query))
+                            ->formatStateUsing(fn($state) => self::formatCurrency((int) $state)),
                     ])
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
@@ -153,8 +156,8 @@ class PenjualanReportResource extends BaseResource
                     ->summarize([
                         Summarizer::make()
                             ->label('Total')
-                            ->using(fn ($query) => self::summarizeTotalMargin($query))
-                            ->formatStateUsing(fn ($state) => self::formatCurrency((int) $state)),
+                            ->using(fn($query) => self::summarizeTotalMargin($query))
+                            ->formatStateUsing(fn($state) => self::formatCurrency((int) $state)),
                     ])
                     ->sortable(),
             ])
@@ -350,7 +353,7 @@ class PenjualanReportResource extends BaseResource
                     ->modalWidth('5xl')
                     ->modalSubmitAction(false)
                     ->slideOver()
-                    ->infolist(fn (Infolist $infolist) => static::infolist($infolist)),
+                    ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
             ])
             ->bulkActions([]);
     }
@@ -369,7 +372,7 @@ class PenjualanReportResource extends BaseResource
                                     ->color('primary')
                                     ->tooltip('Klik untuk melihat detail')
                                     ->icon('heroicon-m-document-text')
-                                    ->url(fn (Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
+                                    ->url(fn(Penjualan $record) => PenjualanResource::getUrl('view', ['record' => $record]))
                                     ->openUrlInNewTab(),
                                 TextEntry::make('tanggal_penjualan')
                                     ->label('Tanggal Penjualan')
@@ -389,21 +392,21 @@ class PenjualanReportResource extends BaseResource
                                 TextEntry::make('sumber_transaksi')
                                     ->label('Sumber Transaksi')
                                     ->badge()
-                                    ->state(fn (Penjualan $record): string => strtoupper((string) ($record->sumber_transaksi ?? '-'))),
+                                    ->state(fn(Penjualan $record): string => strtoupper((string) ($record->sumber_transaksi ?? '-'))),
                             ]),
                             InfoGroup::make([
                                 TextEntry::make('total_qty')
                                     ->label('Total Qty')
-                                    ->state(fn (Penjualan $record): int => (int) $record->items->sum('qty'))
+                                    ->state(fn(Penjualan $record): int => (int) $record->items->sum('qty'))
                                     ->icon('heroicon-m-clipboard-document-list'),
                                 TextEntry::make('total_jasa')
                                     ->label('Total Jasa')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateServiceTotal($record)))
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency(self::calculateServiceTotal($record)))
                                     ->icon('heroicon-m-wrench-screwdriver'),
 
                                 TextEntry::make('total_margin')
                                     ->label('Margin')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency(
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency(
                                         (self::calculateProductTotal($record) - self::calculateHppTotal($record)) + self::calculateServiceTotal($record)
                                     ))
                                     ->icon('heroicon-m-sparkles')
@@ -426,28 +429,28 @@ class PenjualanReportResource extends BaseResource
 
                                         return $sisa > 0 ? 'Belum Lunas' : 'Lunas';
                                     })
-                                    ->color(fn (string $state): string => $state === 'Lunas' ? 'success' : 'danger')
+                                    ->color(fn(string $state): string => $state === 'Lunas' ? 'success' : 'danger')
                                     ->icon('heroicon-m-check-badge'),
                                 TextEntry::make('subtotal_produk')
                                     ->label('Subtotal Produk')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateProductTotal($record)))
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency(self::calculateProductTotal($record)))
                                     ->icon('heroicon-m-cube'),
                                 TextEntry::make('subtotal_jasa')
                                     ->label('Subtotal Jasa')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency(self::calculateServiceTotal($record)))
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency(self::calculateServiceTotal($record)))
                                     ->icon('heroicon-m-wrench-screwdriver'),
                                 TextEntry::make('diskon_total')
                                     ->label('Diskon')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency((int) ($record->diskon_total ?? 0)))
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency((int) ($record->diskon_total ?? 0)))
                                     ->icon('heroicon-m-ticket'),
                                 TextEntry::make('grand_total')
                                     ->label('Grand Total')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency((int) ($record->grand_total ?? 0)))
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency((int) ($record->grand_total ?? 0)))
                                     ->icon('heroicon-m-banknotes')
                                     ->color('success'),
                                 TextEntry::make('total_bayar')
                                     ->label('Total Dibayar')
-                                    ->state(fn (Penjualan $record): string => self::formatCurrency((int) ($record->pembayaran_sum_jumlah ?? 0)))
+                                    ->state(fn(Penjualan $record): string => self::formatCurrency((int) ($record->pembayaran_sum_jumlah ?? 0)))
                                     ->icon('heroicon-m-wallet'),
                                 TextEntry::make('sisa_bayar')
                                     ->label('Sisa Bayar')

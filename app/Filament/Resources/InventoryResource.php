@@ -204,7 +204,7 @@ class InventoryResource extends BaseResource
                         'group_by' => 'kategori.nama_kategori',
                         'group_label' => 'Kategori',
                     ])
-                    ->summaryResolver(fn (Builder $query, Collection $records) => self::buildExportSummary($records)),
+                    ->summaryResolver(fn(Builder $query, Collection $records) => self::buildExportSummary($records)),
 
             ])
             ->actions([
@@ -414,6 +414,7 @@ class InventoryResource extends BaseResource
             $hargaJual = is_null($rawHargaJual) ? null : (int) $rawHargaJual;
 
             return [
+                'pembelian_id' => $purchase->id_pembelian ?? null,
                 'no_po' => $purchase->no_po ?? '-',
                 'tanggal' => $tanggal,
                 'qty' => (int) ($item->{$qtySisaColumn} ?? 0),
@@ -504,7 +505,7 @@ class InventoryResource extends BaseResource
     public static function buildExportSummary(Collection $records): array
     {
         $totalProduk = $records->count();
-        $totalStok = $records->sum(fn (Produk $record) => (int) ($record->total_qty ?? 0));
+        $totalStok = $records->sum(fn(Produk $record) => (int) ($record->total_qty ?? 0));
         $totalHpp = 0;
         $totalHargaJual = 0;
 

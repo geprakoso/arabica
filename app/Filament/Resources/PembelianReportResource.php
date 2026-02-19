@@ -2,31 +2,32 @@
 
 namespace App\Filament\Resources;
 
-use Akaunting\Money\Money;
-use App\Filament\Actions\SummaryExportHeaderAction;
-use App\Filament\Resources\PembelianReportResource\Pages;
-use App\Filament\Resources\PembelianResource;
-use App\Models\Pembelian;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Group as InfoGroup;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\Summarizers\Summarizer;
-use Filament\Tables\Filters\Indicator;
+use Filament\Forms\Form;
+use App\Models\Pembelian;
+use Akaunting\Money\Money;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
+use Filament\Infolists\Infolist;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Filters\Indicator;
+use Filament\Infolists\Components\Grid;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Infolists\Components\Split;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\TextEntry;
+use App\Filament\Resources\PembelianResource;
+use App\Filament\Actions\SummaryExportHeaderAction;
+use Filament\Tables\Columns\Summarizers\Summarizer;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use App\Filament\Resources\PembelianReportResource\Pages;
+use Filament\Infolists\Components\Section as InfoSection;
 
 class PembelianReportResource extends BaseResource
 {
@@ -77,6 +78,7 @@ class PembelianReportResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('supplier.nama_supplier')
                     ->label('Supplier')
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
                     ->placeholder('-')

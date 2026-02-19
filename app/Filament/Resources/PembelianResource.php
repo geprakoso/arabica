@@ -2,57 +2,58 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PembelianResource\Pages;
 use App\Models\Jasa;
-use App\Models\Pembelian;
-use App\Models\PembelianItem;
-use App\Models\RequestOrder;
-use App\Models\Supplier;
-use App\Support\WebpUpload;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Components\BaseFileUpload;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DatePicker as FormsDatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Grid as FormsGrid;
-use Filament\Forms\Components\Group as FormsGroup;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section as FormsSection;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Tables;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Infolists\Components\Group as InfoGroup;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Components\ViewEntry;
-use Filament\Infolists\Infolist;
-use Filament\Notifications\Notification;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
+use App\Models\Supplier;
+use Filament\Forms\Form;
+use App\Models\Pembelian;
 use Filament\Tables\Table;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use App\Support\WebpUpload;
+use Illuminate\Support\Str;
+use App\Models\RequestOrder;
+use App\Models\PembelianItem;
+use Filament\Infolists\Infolist;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\Split;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Forms\Components\BaseFileUpload;
 use Illuminate\Validation\ValidationException;
+use Filament\Forms\Components\Grid as FormsGrid;
+use Filament\Forms\Components\Group as FormsGroup;
+use Filament\Infolists\Components\RepeatableEntry;
+use App\Filament\Resources\PembelianResource\Pages;
+use Filament\Infolists\Components\Group as InfoGroup;
+use Filament\Forms\Components\Section as FormsSection;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\DatePicker as FormsDatePicker;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class PembelianResource extends BaseResource
 {
@@ -893,6 +894,7 @@ class PembelianResource extends BaseResource
                     ->label('Supplier')
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->limit(9)
                     ->tooltip(fn(Pembelian $record): ?string => $record->supplier?->nama_supplier)
                     ->toggleable()
