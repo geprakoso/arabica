@@ -225,6 +225,62 @@
         </div>
 
         <div class="fi-section-content p-6">
+            <script>
+                window.renderContentCalendarEvent = function(arg) {
+                    let ep = arg.event.extendedProps || {};
+                    let title = arg.event.title || '';
+                    let time = ep.time || '';
+                    let status = ep.statusLabel || '';
+                    let pillar = ep.pillarLabel || '';
+                    let tipe = ep.tipeKonten || '';
+                    let platforms = ep.platforms || [];
+
+                    // Status colors
+                    let statusColors = { published: '#16a34a', scheduled: '#2563eb', waiting: '#d97706', draft: '#6b7280' };
+                    let statusColor = statusColors[ep.status] || '#6b7280';
+
+                    // Pillar colors
+                    let pillarColors = { edukasi: '#3b82f6', promo: '#ef4444', branding: '#f59e0b', engagement: '#22c55e', testimoni: '#6366f1' };
+                    let pillarBg = pillarColors[ep.pillar] || '#6b7280';
+
+                    // Platform icons
+                    let platformIcons = {
+                        instagram: '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;font-size:10px;font-weight:700;">IG<\/span>',
+                        tiktok: '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#000;color:#fff;font-size:9px;font-weight:700;">TT<\/span>',
+                        facebook: '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#1877f2;color:#fff;font-size:10px;font-weight:700;">f<\/span>',
+                        twitter: '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#000;color:#fff;font-size:10px;font-weight:700;">𝕏<\/span>',
+                        youtube: '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#ff0000;color:#fff;font-size:10px;font-weight:700;">▶<\/span>',
+                        linkedin: '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#0a66c2;color:#fff;font-size:10px;font-weight:700;">in<\/span>',
+                    };
+
+                    let platformHtml = platforms.map(p => platformIcons[p] || '').join(' ');
+                    let pillarHtml = pillar ? `<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;color:#fff;background:${pillarBg};">${pillar}<\/span>` : '';
+                    let tipeHtml = tipe ? `<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:500;color:#374151;background:#e5e7eb;">${tipe}<\/span>` : '';
+                    
+                    let isDarkMode = document.documentElement.classList.contains('dark');
+                    let timeColor = isDarkMode ? '#9ca3af' : '#6b7280';
+                    let titleColor = isDarkMode ? '#f3f4f6' : '#111827';
+                    let html = `<div style="padding:4px 6px;line-height:1.3;cursor:pointer;color:${titleColor};">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px;">
+                            <span style="font-weight:600;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${title}<\/span>
+                            <span style="font-size:10px;color:${timeColor};white-space:nowrap;">${time}<\/span>
+                        <\/div>
+                        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+                            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusColor};flex-shrink:0;"><\/span>
+                            <span style="font-size:10px;color:${timeColor};">${status}<\/span>
+                        <\/div>`;
+                    
+                    if (pillarHtml || tipeHtml) {
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;">${pillarHtml}${tipeHtml}<\/div>`;
+                    }
+                    if (platformHtml) {
+                        html += `<div style="display:flex;gap:3px;margin-top:4px;">${platformHtml}<\/div>`;
+                    }
+                    html += `<\/div>`;
+
+                    return { html: html };
+                };
+            </script>
             <div wire:ignore x-ignore ax-load
                 ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('calendar-widget', 'guava/calendar') }}"
                 x-data="calendarWidget({
@@ -251,7 +307,10 @@
                     hasDateSelectContextMenu: @js($hasDateSelectContextMenu),
                     hasEventClickContextMenu: @js($hasEventClickContextMenu),
                     hasNoEventsClickContextMenu: @js($hasNoEventsClickContextMenu),
-                    options: @js($this->getOptions()),
+                    options: {
+                        ...(@js($this->getOptions())),
+                        eventContent: window.renderContentCalendarEvent
+                    },
                     dayHeaderFormat: {{ $dayHeaderFormatJs }},
                     slotLabelFormat: {{ $slotLabelFormatJs }},
                 })">
