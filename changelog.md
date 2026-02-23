@@ -2,6 +2,23 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.02.19
+### Perbaikan Bug & Peningkatan UI Stok
+
+#### 1. Inventory & Stok
+- **Navigasi Batch (New)**: Menambahkan link pada "No. PO" di kartu batch (Infolist) inventory. Klik link akan membuka detail Pembelian di tab baru.
+- **Tooltip**: Menambahkan tooltip "Lihat Detail Pembelian" yang muncul saat kursor diarahkan ke No. PO tersebut.
+
+#### 2. Format Tampilan (UI Polish)
+- **Produk**: Nama produk kini diformat menjadi huruf kapital (*Uppercase*) di tabel Produk.
+- **Standarisasi Nama**: Mengubah format nama Member dan Supplier menjadi *Title Case* di Resource Penjualan, Pembelian, Tukar Tambah, dan Laporan.
+- **Format Mata Uang**: Menambahkan spasi standar pada format "Rp " di Resource Penjualan dan Tukar Tambah agar lebih mudah dibaca.
+
+#### 3. Maintenance & Code Cleanup
+- **Migration Fix**: Menghapus file migrasi duplikat (`2026_02_05...`) yang konflik dengan migrasi Soft Delete Pembelian sebelumnya.
+- **Model Fix**: Memperbaiki *duplicate import statements* (Model & SoftDeletes) pada `Pembelian.php`.
+- **Closure Formatting**: Melakukan *standardize formatting* pada closure di berbagai Resource (Penjualan, Tukar Tambah, Report) untuk konsistensi kode.
+
 ## 2026.02.05
 ### Konsistensi Filter & Perbaikan Keamanan Data
 
