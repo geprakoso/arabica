@@ -35,6 +35,7 @@
         "mokhosh/filament-kanban": "^2.11",
         "nuxtifyts/dash-stack-theme": "^1.3",
         "oriondevelops/filament-greeter": "^0.2.2",
+        "saade/filament-fullcalendar": "^3.0",
         "shanerbaner82/panel-roles": "^0.0.3",
         "silviolleite/laravelpwa": "^2.0",
         "simplesoftwareio/simple-qrcode": "*",

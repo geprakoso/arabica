@@ -22,6 +22,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -59,6 +60,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\AbsensiWidget::class,
                 \App\Filament\Widgets\ActiveMembersTable::class,
                 \App\Filament\Widgets\JadwalKalenderWidget::class,
+                \App\Filament\Widgets\ContentCalendarCalendarWidget::class,
                 \App\Filament\Widgets\AdvancedStatsOverviewWidget::class,
                 \App\Filament\Widgets\LowStockProductsTable::class,
                 \App\Filament\Widgets\MonthlyRevenueTrendChart::class,
@@ -83,6 +85,11 @@ class AdminPanelProvider extends PanelProvider
                 \App\Http\Middleware\SimpleFilamentAuth::class,
             ])
             ->plugin(ShieldPlugin::make())
+            ->plugin(
+                FilamentFullCalendarPlugin::make()
+                    ->selectable()
+                    ->editable()
+            )
             // ->plugin(ChatifyPlugin::make()->customPage(ChatRoomPage::class)->disableFloatingChatWidget())
             ->plugin(
                 \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make()
@@ -118,6 +125,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Transaksi')->collapsed(),
                 NavigationGroup::make('Inventori')->collapsed(),
                 NavigationGroup::make('Personalia')->collapsed(),
+                NavigationGroup::make('Konten Sosmed')->collapsed(),
                 NavigationGroup::make('Laporan')->collapsed(),
                 NavigationGroup::make('Pengaturan')->collapsed(),
             ])
