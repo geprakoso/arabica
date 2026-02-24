@@ -138,7 +138,7 @@ class ContentCalendarCalendarWidget extends CalendarWidget
             'eventDisplay' => 'block',
             'height' => 'auto',
             'contentHeight' => 'auto',
-            'slotHeight' => 20,
+            // 'slotHeight' => 50,
             'slotDuration' => '00:30:00',
         ];
     }
