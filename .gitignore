@@ -32,11 +32,12 @@ Thumbs.db
 /bootstrap/cache/events.php
 /coverage/
 
-# === Docker (hanya untuk development lokal) ===
-docker-compose.yml
-Dockerfile
-.dockerignore
-docker/
+# === Docker ===
+# Track docker config files (dibutuhkan oleh VPS produksi)
+# docker-compose.yml  ← SENGAJA TIDAK DI-IGNORE, dibutuhkan untuk deployment
+# Dockerfile          ← SENGAJA TIDAK DI-IGNORE, dibutuhkan untuk build image
+# .dockerignore       ← SENGAJA TIDAK DI-IGNORE
+# docker/             ← SENGAJA TIDAK DI-IGNORE, berisi nginx config dll
 
 # === Database dumps ===
 *.sql
