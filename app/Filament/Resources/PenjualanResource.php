@@ -270,7 +270,7 @@ class PenjualanResource extends BaseResource
                                                 ->all();
                                             foreach ($extras as $id => $label) {
                                                 if (! array_key_exists($id, $options)) {
-                                                    $extras[$id] = $label . ' (stok habis)';
+                                                    $extras[$id] = '<span>' . e($label) . '</span> <span style="color: red;">(stok habis)</span>';
                                                 }
                                             }
                                             $options = $options + $extras;
@@ -280,6 +280,7 @@ class PenjualanResource extends BaseResource
                                     })
                                     ->searchable()
                                     ->preload()
+                                    ->allowHtml()
                                     ->required()
                                     ->native(false)
                                     ->live()
@@ -1548,11 +1549,35 @@ class PenjualanResource extends BaseResource
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
 
-        return Produk::query()
-            ->whereHas('pembelianItems', fn(Builder $query) => $query->where($qtyColumn, '>', 0))
+        $products = Produk::query()
+            ->whereHas('pembelianItems', fn (Builder $query) => $query->where($qtyColumn, '>', 0))
+            ->with(['pembelianItems' => function ($query) use ($qtyColumn) {
+                $query->where($qtyColumn, '>', 0)
+                      ->with(['pembelian', 'pembelian.supplier'])
+                      ->orderBy('id_pembelian_item', 'asc');
+            }])
             ->orderBy('nama_produk')
-            ->pluck('nama_produk', 'id')
-            ->all();
+            ->get();
+
+        $options = [];
+        foreach ($products as $produk) {
+            $oldestBatch = $produk->pembelianItems->first();
+            
+            $namaProduk = $produk->nama_produk;
+            $noPo = $oldestBatch?->pembelian?->no_po ?? '-';
+            $batchText = $oldestBatch ? 'Batch ' . $oldestBatch->getKey() : '-';
+            $namaSupplier = $oldestBatch?->pembelian?->supplier?->nama_supplier ?? '-';
+
+            $options[$produk->id] = sprintf(
+                '<span>%s</span> <span style="color: gray;">&bull; %s &bull; %s &bull; %s</span>',
+                e($namaProduk),
+                e($noPo),
+                e($batchText),
+                e($namaSupplier)
+            );
+        }
+
+        return $options;
     }
 
     /**
