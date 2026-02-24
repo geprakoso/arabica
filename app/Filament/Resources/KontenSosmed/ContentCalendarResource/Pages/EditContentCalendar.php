@@ -13,9 +13,15 @@ class EditContentCalendar extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make(),
+            $this->getSaveFormAction(),
+            $this->getCancelFormAction(),
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
     }
 
     protected function getRedirectUrl(): string

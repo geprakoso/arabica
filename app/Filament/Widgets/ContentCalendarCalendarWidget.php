@@ -104,9 +104,7 @@ class ContentCalendarCalendarWidget extends CalendarWidget
                 'extendedProps' => [
                     'model' => $content::class,
                     'key' => $content->getKey(),
-                    'action' => 'view',
-                    'url' => ContentCalendarResource::getUrl('view', ['record' => $content], panel: Filament::getCurrentPanel()?->getId()),
-                    'url_target' => '_self',
+                    'action' => 'viewEvent',
                     'status' => $content->status,
                     'statusLabel' => ucfirst($content->status),
                     'pillar' => $content->content_pillar,
@@ -198,6 +196,22 @@ class ContentCalendarCalendarWidget extends CalendarWidget
             });
     }
 
+    public function viewEventAction(): Action
+    {
+        return Action::make('viewEvent')
+            ->modalHeading('Detail Konten')
+            ->slideOver()
+            ->modalSubmitAction(false)
+            ->modalCancelAction(fn($action) => $action->label('Tutup'))
+            ->infolist(function (\Filament\Infolists\Infolist $infolist, array $arguments) {
+                $recordId = data_get($arguments, 'event.extendedProps.key');
+                if ($recordId) {
+                    $infolist->record(ContentCalendar::find($recordId));
+                }
+                return ContentCalendarResource::infolist($infolist);
+            });
+    }
+
     private function contentFormSchema(): array
     {
         return [
@@ -256,7 +270,7 @@ class ContentCalendarCalendarWidget extends CalendarWidget
                 ->required(),
             \Filament\Forms\Components\Select::make('pic')
                 ->label('PIC')
-                ->relationship('assignee', 'name')
+                ->options(\App\Models\User::pluck('name', 'id'))
                 ->searchable()
                 ->preload()
                 ->native(false),

@@ -13,4 +13,24 @@ class CreateContentCalendar extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->getCreateFormAction()
+                ->label('Simpan')
+                ->icon('heroicon-m-check')
+                ->color('primary'),
+            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
+            $this->getCancelFormAction()
+                ->label('Batal')
+                ->icon('heroicon-m-x-mark')
+                ->color('danger'),
+        ];
+    }
 }
