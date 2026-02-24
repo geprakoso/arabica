@@ -261,11 +261,12 @@
                     let timeColor = isDarkMode ? '#9ca3af' : '#6b7280';
                     let titleColor = isDarkMode ? '#f3f4f6' : '#111827';
                     let html = `<div style="padding:4px 6px;line-height:1.3;cursor:pointer;color:${titleColor};">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px;">
-                            <span style="font-weight:600;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${title}<\/span>
-                            <span style="font-size:10px;color:${timeColor};white-space:nowrap;">${time}<\/span>
+                        <div style="font-weight:600;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">${title}<\/div>
+                        <div style="font-size:10px;color:${timeColor};margin-bottom:3px;display:flex;align-items:center;gap:4px;">
+                            <svg style="width:12px;height:12px;opacity:0.8;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><\/svg>
+                            ${time}
                         <\/div>
-                        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+                        <div style="display:flex;align-items:center;gap:4px;">
                             <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusColor};flex-shrink:0;"><\/span>
                             <span style="font-size:10px;color:${timeColor};">${status}<\/span>
                         <\/div>`;

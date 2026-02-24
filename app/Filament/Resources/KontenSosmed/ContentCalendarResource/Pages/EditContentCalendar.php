@@ -13,8 +13,16 @@ class EditContentCalendar extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getSaveFormAction(),
-            $this->getCancelFormAction(),
+            $this->getSaveFormAction()
+                ->label('Simpan')
+                ->icon('heroicon-m-check')
+                ->color('primary')
+                ->submit(null)
+                ->action('save'),
+            $this->getCancelFormAction()
+                ->label('Batal')
+                ->icon('heroicon-m-x-mark')
+                ->color('danger'),
             Actions\DeleteAction::make(),
         ];
     }

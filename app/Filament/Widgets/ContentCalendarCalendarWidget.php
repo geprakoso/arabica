@@ -127,31 +127,20 @@ class ContentCalendarCalendarWidget extends CalendarWidget
             'headerToolbar' => [
                 'start' => 'title',
                 'center' => '',
-                'end' => 'today prev,next dayGridMonth,dayGridWeek,listWeek',
+                'end' => 'listWeek dayGridMonth prev today next',
             ],
             'buttonText' => [
                 'today' => 'Hari ini',
-                'month' => 'Bulanan',
-                'week' => 'Mingguan',
-                'list' => 'Daftar',
+                'dayGridMonth' => 'Bulanan',
+                'listWeek' => 'Daftar',
             ],
             'eventDisplay' => 'block',
+            'height' => 'auto',
+            'contentHeight' => 'auto',
         ];
     }
 
-    public function getHeaderActions(): array
-    {
-        return [
-            $this->buildCreateAction('createContentHeader', 'Buat Konten'),
-        ];
-    }
 
-    public function getDateSelectContextMenuActions(): array
-    {
-        return [
-            $this->buildCreateAction('createContentRange', 'Buat Konten'),
-        ];
-    }
 
     private function pillarClass(?string $pillar): string
     {
@@ -163,37 +152,6 @@ class ContentCalendarCalendarWidget extends CalendarWidget
             'testimoni' => 'event-info',
             default => 'event-gray',
         };
-    }
-
-    private function buildCreateAction(string $name, string $label): Action
-    {
-        return Action::make($name)
-            ->label($label)
-            ->icon('heroicon-m-plus')
-            ->modalHeading('Buat Konten Baru')
-            ->form($this->contentFormSchema())
-            ->mountUsing(function (Form $form, array $arguments): void {
-                $startStr = data_get($arguments, 'startStr') ?? data_get($arguments, 'dateStr');
-                $start = $startStr ? Carbon::parse($startStr) : Carbon::now();
-
-                $form->fill([
-                    'status' => 'draft',
-                    'tanggal_publish' => $start,
-                ]);
-            })
-            ->action(function (array $data): void {
-                ContentCalendar::create([
-                    ...$data,
-                    'created_by' => Filament::auth()->id(),
-                ]);
-
-                $this->refreshRecords();
-
-                Notification::make()
-                    ->title('Konten berhasil dibuat')
-                    ->success()
-                    ->send();
-            });
     }
 
     public function viewEventAction(): Action
@@ -210,70 +168,5 @@ class ContentCalendarCalendarWidget extends CalendarWidget
                 }
                 return ContentCalendarResource::infolist($infolist);
             });
-    }
-
-    private function contentFormSchema(): array
-    {
-        return [
-            \Filament\Forms\Components\TextInput::make('judul')
-                ->label('Judul Konten')
-                ->required()
-                ->maxLength(255),
-            \Filament\Forms\Components\Select::make('content_pillar')
-                ->label('Content Pillar')
-                ->options([
-                    'edukasi' => '📚 Edukasi',
-                    'promo' => '🔥 Promo',
-                    'branding' => '🏷️ Branding',
-                    'engagement' => '💬 Engagement',
-                    'testimoni' => '⭐ Testimoni',
-                ])
-                ->native(false)
-                ->required(),
-            \Filament\Forms\Components\Select::make('tipe_konten')
-                ->label('Tipe Konten')
-                ->options([
-                    'feed' => 'Feed',
-                    'story' => 'Story',
-                    'reels' => 'Reels',
-                    'carousel' => 'Carousel',
-                    'video' => 'Video',
-                    'talking_head' => 'Talking Head',
-                ])
-                ->native(false),
-            \Filament\Forms\Components\Select::make('status')
-                ->label('Status')
-                ->options([
-                    'draft' => '📝 Draft',
-                    'waiting' => '⏳ Waiting',
-                    'scheduled' => '📅 Scheduled',
-                    'published' => '✅ Published',
-                ])
-                ->default('draft')
-                ->native(false)
-                ->required(),
-            \Filament\Forms\Components\CheckboxList::make('platform')
-                ->label('Platform')
-                ->options([
-                    'instagram' => 'Instagram',
-                    'tiktok' => 'TikTok',
-                    'facebook' => 'Facebook',
-                    'twitter' => 'Twitter / X',
-                    'youtube' => 'YouTube',
-                    'linkedin' => 'LinkedIn',
-                ])
-                ->columns(3),
-            \Filament\Forms\Components\DateTimePicker::make('tanggal_publish')
-                ->label('Tanggal Publish')
-                ->native(false)
-                ->seconds(false)
-                ->required(),
-            \Filament\Forms\Components\Select::make('pic')
-                ->label('PIC')
-                ->options(\App\Models\User::pluck('name', 'id'))
-                ->searchable()
-                ->preload()
-                ->native(false),
-        ];
     }
 }

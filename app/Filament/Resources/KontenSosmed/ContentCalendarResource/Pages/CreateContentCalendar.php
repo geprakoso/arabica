@@ -25,7 +25,9 @@ class CreateContentCalendar extends CreateRecord
             $this->getCreateFormAction()
                 ->label('Simpan')
                 ->icon('heroicon-m-check')
-                ->color('primary'),
+                ->color('primary')
+                ->submit(null)
+                ->action('create'),
             ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
             $this->getCancelFormAction()
                 ->label('Batal')
