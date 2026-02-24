@@ -251,7 +251,10 @@ class TukarTambahResource extends BaseResource
                                                         if ($currentId && ! array_key_exists($currentId, $options)) {
                                                             $product = \App\Models\Produk::find($currentId);
                                                             if ($product) {
-                                                                $options[$currentId] = $product->nama_produk . ' (Stok Habis)';
+                                                                $options[$currentId] = sprintf(
+                                                                    '<span>%s</span> <span style="color: red;">&bull; (Stok Habis)</span>',
+                                                                    e($product->nama_produk)
+                                                                );
                                                             }
                                                         }
 
@@ -259,6 +262,7 @@ class TukarTambahResource extends BaseResource
                                                     })
                                                     ->searchable()
                                                     ->preload()
+                                                    ->allowHtml()
                                                     ->required()
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
