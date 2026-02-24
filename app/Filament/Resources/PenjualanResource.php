@@ -1501,11 +1501,11 @@ class PenjualanResource extends BaseResource
             ->where($productColumn, $productId)
             ->where($qtyColumn, '>', 0)
             ->with('pembelian')
-            ->orderBy($qtyColumn, 'desc')
+            ->orderBy('id_pembelian_item', 'asc') // Urutan masuk pertama (FIFO)
             ->get()
-            ->mapWithKeys(fn(PembelianItem $item) => [
-                $item->id_pembelian_item => self::formatBatchLabel($item, $qtyColumn),
-            ]);
+            ->mapWithKeys(function (PembelianItem $item, int $index) use ($qtyColumn) {
+                return [$item->id_pembelian_item => self::formatBatchLabel($item, $qtyColumn, $index)];
+            });
 
         return $items->all();
     }
@@ -1518,9 +1518,10 @@ class PenjualanResource extends BaseResource
      *
      * @param  \App\Models\PembelianItem|null  $item  Data item pembelian yang akan dibuat labelnya.
      * @param  string  $qtyColumn  Nama kolom di database yang menyimpan jumlah sisa stok.
+     * @param  int     $index      Urutan batch produk.
      * @return string|null Teks label batch yang sudah diformat, atau null jika item tidak ada.
      */
-    public static function formatBatchLabel(?PembelianItem $item, string $qtyColumn): ?string
+    public static function formatBatchLabel(?PembelianItem $item, string $qtyColumn, int $index = 0): ?string
     {
         if (! $item) {
             return null;
@@ -1528,7 +1529,7 @@ class PenjualanResource extends BaseResource
 
         // membuat label batch untuk item pembelian
         $labelParts = [
-            $item->pembelian?->no_po ? '#' . $item->pembelian->no_po : 'Batch ' . $item->getKey(),
+            $item->pembelian?->no_po ? '#' . $item->pembelian->no_po : 'Batch ' . ($index + 1),
             'Qty: ' . number_format((int) ($item->{$qtyColumn} ?? 0), 0, ',', '.'),
             'HPP: Rp ' . number_format((int) ($item->hpp ?? 0), 0, ',', '.'),
         ];
@@ -1565,7 +1566,7 @@ class PenjualanResource extends BaseResource
             
             $namaProduk = $produk->nama_produk;
             $noPo = $oldestBatch?->pembelian?->no_po ?? '-';
-            $batchText = $oldestBatch ? 'Batch ' . $oldestBatch->getKey() : '-';
+            $batchText = $oldestBatch ? 'Batch 1' : '-'; // Oldest batch is always Batch 1
             $namaSupplier = $oldestBatch?->pembelian?->supplier?->nama_supplier ?? '-';
 
             $options[$produk->id] = sprintf(
