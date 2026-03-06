@@ -318,7 +318,7 @@ class PembelianResource extends BaseResource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->live(onBlur: true)
+                                    ->live()
                                     ->placeholder(function (Get $get): ?string {
                                         $pricing = self::getLastRecordedPricingForProduct((int) $get('id_produk'));
                                         $value = $pricing['hpp'];
@@ -336,7 +336,9 @@ class PembelianResource extends BaseResource
 
                                         return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp'];
                                     })
-                                    ->required(fn(Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp']))
+                                    ->required(fn(Get $get): bool => filled($get('id_produk'))
+                                        && blank($get('hpp'))
+                                        && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp']))
                                     ->columnSpan([
                                         'md' => 2,
                                         'xl' => 2,
@@ -347,6 +349,7 @@ class PembelianResource extends BaseResource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                    ->live()
                                     ->placeholder(function (Get $get): ?string {
                                         $pricing = self::getLastRecordedPricingForProduct((int) $get('id_produk'));
                                         $value = $pricing['harga_jual'];
@@ -364,7 +367,9 @@ class PembelianResource extends BaseResource
 
                                         return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual'];
                                     })
-                                    ->required(fn(Get $get): bool => filled($get('id_produk')) && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
+                                    ->required(fn(Get $get): bool => filled($get('id_produk'))
+                                        && blank($get('harga_jual'))
+                                        && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
                                     ->columnSpan([
                                         'md' => 2,
                                         'xl' => 2,

@@ -2,6 +2,14 @@
 
 Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuatan versi sekarang mengikuti sistem CalVer (`YYYY.MM.DD`) selama aplikasi masih dalam tahap pra-1.0. Entri disusun secara kronologis dengan perubahan terbaru berada di paling atas.
 
+## 2026.03.06
+### Perbaikan Validasi Form Pembelian (HPP & Harga Jual)
+
+#### 1. Fix False-Positive `required` pada Input Item Pembelian
+- **Kondisi Required Lebih Akurat**: Memperbarui rule `required` pada field `hpp` dan `harga_jual` di `PembelianResource` agar hanya wajib ketika produk sudah dipilih, nilai field masih kosong, dan histori harga terakhir produk memang belum tersedia (`null`).
+- **Sinkronisasi State Form**: Mengubah mode reaktif field dari `live(onBlur: true)` menjadi `live()` untuk mencegah keterlambatan sinkronisasi state yang bisa memicu validasi `required` secara keliru.
+- **Dampak**: Input pembelian untuk barang baru maupun barang existing kini tidak lagi menampilkan error `hpp required` saat nilai sudah diisi/tersedia.
+
 ## 2026.02.19
 ### Perbaikan Bug & Peningkatan UI Stok
 
