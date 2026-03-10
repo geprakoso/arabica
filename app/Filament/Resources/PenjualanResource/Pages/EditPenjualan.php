@@ -22,20 +22,22 @@ class EditPenjualan extends EditRecord
         $data['items_temp'] = collect($this->record->items)
             ->map(fn($item) => [
                 'id_produk' => $item->id_produk,
+                'id_pembelian_item' => $item->id_pembelian_item,
                 'kondisi' => $item->kondisi,
                 'qty' => $item->qty,
                 'hpp' => $item->hpp,
                 'harga_jual' => $item->harga_jual,
                 'serials' => $item->serials ?? [],
             ])
-            // Group by product and condition, sum qty and merge serials
-            ->groupBy(fn($item) => $item['id_produk'] . '-' . ($item['kondisi'] ?? ''))
+            // Group by product, condition, and batch, sum qty and merge serials
+            ->groupBy(fn($item) => $item['id_produk'] . '-' . ($item['kondisi'] ?? '') . '-' . ((int) ($item['id_pembelian_item'] ?? 0)))
             ->map(function ($group) {
                 $first = $group->first();
                 // Merge all serials from items in this group
                 $allSerials = $group->flatMap(fn($item) => $item['serials'] ?? [])->values()->toArray();
                 return [
                     'id_produk' => $first['id_produk'],
+                    'id_pembelian_item' => $first['id_pembelian_item'],
                     'kondisi' => $first['kondisi'],
                     'qty' => $group->sum('qty'),
                     'hpp' => $first['hpp'],
@@ -87,9 +89,46 @@ class EditPenjualan extends EditRecord
             $qty = (int) ($item['qty'] ?? 0);
             $customPrice = $item['harga_jual'] ?? null;
             $condition = $item['kondisi'] ?? null;
+            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
             $serials = is_array($item['serials'] ?? null) ? array_values($item['serials']) : [];
 
             if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+
+            if ($batchId > 0) {
+                $batch = PembelianItem::query()
+                    ->where($productColumn, $productId)
+                    ->whereKey($batchId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $batch) {
+                    throw ValidationException::withMessages([
+                        'items_temp' => 'Batch pembelian tidak ditemukan.',
+                    ]);
+                }
+
+                $available = (int) ($batch->{$qtyColumn} ?? 0);
+
+                if ($available < $qty) {
+                    throw ValidationException::withMessages([
+                        'items_temp' => "Stok batch tidak cukup. Tersedia: {$available}, Dibutuhkan: {$qty}",
+                    ]);
+                }
+
+                $takeSerials = ! empty($serials) ? array_splice($serials, 0, $qty) : [];
+
+                PenjualanItem::create([
+                    'id_penjualan' => $this->record->getKey(),
+                    'id_produk' => $productId,
+                    'id_pembelian_item' => $batch->id_pembelian_item,
+                    'qty' => $qty,
+                    'harga_jual' => $customPrice,
+                    'kondisi' => $batch->kondisi,
+                    'serials' => empty($takeSerials) ? null : $takeSerials,
+                ]);
+
                 continue;
             }
 
@@ -175,4 +214,3 @@ class EditPenjualan extends EditRecord
         return [];
     }
 }
-
