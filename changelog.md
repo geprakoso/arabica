@@ -10,6 +10,17 @@ Semua perubahan penting pada proyek ini direkonstruksi dari riwayat git. Pembuat
 - **Sinkronisasi State Form**: Mengubah mode reaktif field dari `live(onBlur: true)` menjadi `live()` untuk mencegah keterlambatan sinkronisasi state yang bisa memicu validasi `required` secara keliru.
 - **Dampak**: Input pembelian untuk barang baru maupun barang existing kini tidak lagi menampilkan error `hpp required` saat nilai sudah diisi/tersedia.
 
+## 2026.03.10
+### Penjualan: Pemilihan Batch Manual
+
+#### 1. Dropdown Batch di Form Penjualan
+- **Pilih Batch Manual**: Menambahkan field `Batch` pada repeater item penjualan agar pengguna bisa memilih batch tertentu, bukan selalu FIFO batch pertama.
+- **Sinkronisasi Harga & Kondisi**: Saat batch dipilih, `hpp`, `harga`, dan `kondisi` otomatis mengikuti batch tersebut.
+- **Validasi Stok per Batch**: `Qty` sekarang divalidasi terhadap stok batch yang dipilih (atau total stok bila batch tidak dipilih).
+
+#### 2. Informasi Batch Lengkap di Selector Produk
+- **Tampilkan Semua Batch**: Dropdown produk menampilkan daftar batch aktif (PO/Batch, Qty, HPP) di bawah nama produk untuk mempermudah pemilihan batch.
+
 ## 2026.02.19
 ### Perbaikan Bug & Peningkatan UI Stok
 
