@@ -8,6 +8,7 @@ use App\Filament\Resources\InventoryResource\Pages;
 use App\Models\Kategori;
 use App\Models\PembelianItem;
 use App\Models\Produk;
+use App\Models\Rma;
 use Filament\Actions\StaticAction;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
@@ -50,6 +51,8 @@ class InventoryResource extends BaseResource
     protected static ?string $modelLabel = 'Inventory';
 
     protected static ?string $pluralModelLabel = 'Inventory';
+
+    protected static ?int $navigationSort = 1;
 
     public static function getGloballySearchableAttributes(): array
     {
@@ -335,17 +338,30 @@ class InventoryResource extends BaseResource
         $produkTable = (new Produk)->getTable();
         $kategoriTable = (new Kategori)->getTable();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
+        $activeRmaStatuses = Rma::activeStatuses();
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems', fn($q) => $q->where($qtySisaColumn, '>', 0))
+            ->whereHas('pembelianItems', fn($q) => $q
+                ->where($qtySisaColumn, '>', 0)
+                ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            )
             ->with([
                 'brand',
                 'kategori',
-                'pembelianItems' => fn($q) => $q->with('pembelian'),
+                'pembelianItems' => fn($q) => $q
+                    ->where($qtySisaColumn, '>', 0)
+                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+                    ->with(['pembelian', 'rmas']),
             ])
-            ->withSum(['pembelianItems as total_qty' => fn($q) => $q->where($qtySisaColumn, '>', 0)], $qtySisaColumn)
-            ->withCount(['pembelianItems as batch_count' => fn($q) => $q->where($qtySisaColumn, '>', 0)]);
+            ->withSum(['pembelianItems as total_qty' => fn($q) => $q
+                ->where($qtySisaColumn, '>', 0)
+                ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            ], $qtySisaColumn)
+            ->withCount(['pembelianItems as batch_count' => fn($q) => $q
+                ->where($qtySisaColumn, '>', 0)
+                ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            ]);
 
         $query->orderBy(
             Kategori::select('nama_kategori')
@@ -385,22 +401,24 @@ class InventoryResource extends BaseResource
         }
 
         $qtySisaColumn = PembelianItem::qtySisaColumn();
+        $activeRmaStatuses = Rma::activeStatuses();
 
         if ($record->relationLoaded('pembelianItems')) {
             $items = $record->pembelianItems;
-            $items->loadMissing('pembelian');
+            $items->loadMissing(['pembelian', 'rmas']);
         } else {
             $items = $record->pembelianItems()
-                ->with('pembelian')
+                ->with(['pembelian', 'rmas'])
                 ->get();
         }
 
-        $totalQty = $items->sum(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0));
-
         $activeBatches = $items
             ->filter(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
+            ->filter(fn($item) => $item->rmas->whereIn('status_garansi', $activeRmaStatuses)->isEmpty())
             ->sortBy(fn($item) => $item->pembelian?->tanggal ?? $item->created_at)
             ->values();
+
+        $totalQty = $activeBatches->sum(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0));
 
         $formattedBatches = $activeBatches->map(function ($item) use ($qtySisaColumn) {
             $purchase = $item->pembelian;
@@ -434,6 +452,8 @@ class InventoryResource extends BaseResource
             $latestHargaJual = $latestBatchRecord->harga_jual;
 
             $latestBatch = [
+                'pembelian_id' => $latestBatchRecord->pembelian?->id_pembelian,
+                'no_po' => $latestBatchRecord->pembelian?->no_po,
                 'hpp' => is_null($latestHpp) ? null : (int) $latestHpp,
                 'harga_jual' => is_null($latestHargaJual) ? null : (int) $latestHargaJual,
                 'tanggal' => optional($latestBatchRecord->pembelian?->tanggal)->format('d M Y'),

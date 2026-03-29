@@ -129,6 +129,11 @@ class PembelianItem extends Model
         return $this->hasMany(PenjualanItem::class, 'id_pembelian_item', 'id_pembelian_item');
     }
 
+    public function rmas()
+    {
+        return $this->hasMany(Rma::class, 'id_pembelian_item', 'id_pembelian_item');
+    }
+
     public static function productForeignKey(): string
     {
         $table = (new static())->getTable();

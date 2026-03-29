@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
+use App\Models\Rma;
 
 class PenjualanItem extends Model
 {
@@ -91,6 +92,12 @@ class PenjualanItem extends Model
 
         if (! $batchId || $qty < 1) {
             return;
+        }
+
+        if (Rma::hasActiveRmaForBatch((int) $batchId)) {
+            throw ValidationException::withMessages([
+                'id_pembelian_item' => 'Batch ini sedang dalam proses RMA aktif.',
+            ]);
         }
 
         $qtyColumn = PembelianItem::qtySisaColumn();

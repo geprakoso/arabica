@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use App\Support\WebpUpload;
 use Illuminate\Support\Str;
 use App\Models\PembelianItem;
+use App\Models\Rma;
 use Filament\Infolists\Infolist;
 use Illuminate\Support\HtmlString;
 use Filament\Forms\Components\Grid;
@@ -1541,11 +1542,13 @@ class PenjualanResource extends BaseResource
 
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
+        $activeStatuses = Rma::activeStatuses();
 
         $items = PembelianItem::query()
             ->where($productColumn, $productId)
             ->where($qtyColumn, '>', 0)
             ->when($condition, fn($query) => $query->where('kondisi', $condition))
+            ->whereDoesntHave('rmas', fn($rmaQuery) => $rmaQuery->whereIn('status_garansi', $activeStatuses))
             ->with('pembelian')
             ->orderBy('id_pembelian_item', 'asc') // Urutan masuk pertama (FIFO)
             ->get()
@@ -1595,11 +1598,16 @@ class PenjualanResource extends BaseResource
     {
         $qtyColumn = PembelianItem::qtySisaColumn();
         $productColumn = PembelianItem::productForeignKey();
+        $activeStatuses = Rma::activeStatuses();
 
         $products = Produk::query()
-            ->whereHas('pembelianItems', fn(Builder $query) => $query->where($qtyColumn, '>', 0))
-            ->with(['pembelianItems' => function ($query) use ($qtyColumn) {
+            ->whereHas('pembelianItems', fn(Builder $query) => $query
+                ->where($qtyColumn, '>', 0)
+                ->whereDoesntHave('rmas', fn($rmaQuery) => $rmaQuery->whereIn('status_garansi', $activeStatuses))
+            )
+            ->with(['pembelianItems' => function ($query) use ($qtyColumn, $activeStatuses) {
                 $query->where($qtyColumn, '>', 0)
+                    ->whereDoesntHave('rmas', fn($rmaQuery) => $rmaQuery->whereIn('status_garansi', $activeStatuses))
                     ->with(['pembelian', 'pembelian.supplier'])
                     ->orderBy('id_pembelian_item', 'asc');
             }])
