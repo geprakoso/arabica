@@ -29,10 +29,12 @@ use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class RmaResource extends BaseResource
@@ -135,13 +137,13 @@ class RmaResource extends BaseResource
 
                                     Placeholder::make('created_at')
                                         ->label('Dibuat Pada')
-                                        ->visible(fn ($record) => $record !== null)
-                                        ->content(fn ($record) => $record?->created_at?->translatedFormat('d F Y, H:i')),
+                                        ->visible(fn($record) => $record !== null)
+                                        ->content(fn($record) => $record?->created_at?->translatedFormat('d F Y, H:i')),
 
                                     Placeholder::make('updated_at')
                                         ->label('Terakhir Diubah')
-                                        ->visible(fn ($record) => $record !== null)
-                                        ->content(fn ($record) => $record?->updated_at?->translatedFormat('d F Y, H:i')),
+                                        ->visible(fn($record) => $record !== null)
+                                        ->content(fn($record) => $record?->updated_at?->translatedFormat('d F Y, H:i')),
                                 ])
                                 ->columnSpan(['lg' => 1]),
                             Section::make('Dokumentasi')
@@ -187,6 +189,7 @@ class RmaResource extends BaseResource
                     ->sortable(),
                 TextColumn::make('pembelianItem.produk.nama_produk')
                     ->label('Barang')
+                    ->formatStateUsing(fn($state) => Str::upper($state))
                     ->icon('heroicon-o-cube')
                     ->searchable()
                     ->sortable()
@@ -224,7 +227,7 @@ class RmaResource extends BaseResource
                     ->label('Catatan')
                     ->icon('heroicon-o-chat-bubble-left')
                     ->limit(40)
-                    ->tooltip(fn ($record) => $record->catatan)
+                    ->tooltip(fn($record) => $record->catatan)
                     ->placeholder('-')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -234,12 +237,15 @@ class RmaResource extends BaseResource
                     ->options(self::getStatusOptions()),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->color('gray'),
-                Tables\Actions\EditAction::make()
-                    ->color('primary'),
-                Tables\Actions\DeleteAction::make()
-                    ->color('danger'),
+                ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->color('gray'),
+                    Tables\Actions\EditAction::make()
+                        ->color('primary'),
+                    Tables\Actions\DeleteAction::make()
+                        ->color('danger'),
+                ])
+                    ->icon('heroicon-o-ellipsis-horizontal'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -307,10 +313,10 @@ class RmaResource extends BaseResource
                                         ViewEntry::make('rma_photos_gallery')
                                             ->label('Foto Dokumentasi')
                                             ->view('filament.infolists.components.rma-photos-gallery')
-                                            ->state(fn (Rma $record) => [
+                                            ->state(fn(Rma $record) => [
                                                 'foto_dokumen' => $record->foto_dokumen ?? [],
                                             ])
-                                            ->visible(fn (Rma $record) => ! empty($record->foto_dokumen))
+                                            ->visible(fn(Rma $record) => ! empty($record->foto_dokumen))
                                             ->columnSpanFull(),
                                     ]),
                             ])
@@ -326,14 +332,14 @@ class RmaResource extends BaseResource
                                         TextEntry::make('status_garansi')
                                             ->label('Status Garansi')
                                             ->badge()
-                                            ->formatStateUsing(fn (string $state) => self::getStatusOptions()[$state] ?? $state)
-                                            ->color(fn (string $state) => match ($state) {
+                                            ->formatStateUsing(fn(string $state) => self::getStatusOptions()[$state] ?? $state)
+                                            ->color(fn(string $state) => match ($state) {
                                                 Rma::STATUS_DI_PACKING => 'warning',
                                                 Rma::STATUS_PROSES_KLAIM => 'info',
                                                 Rma::STATUS_SELESAI => 'success',
                                                 default => 'gray',
                                             })
-                                            ->icon(fn (string $state) => match ($state) {
+                                            ->icon(fn(string $state) => match ($state) {
                                                 Rma::STATUS_DI_PACKING => 'heroicon-m-archive-box-arrow-down',
                                                 Rma::STATUS_PROSES_KLAIM => 'heroicon-m-arrow-path',
                                                 Rma::STATUS_SELESAI => 'heroicon-m-check-circle',
