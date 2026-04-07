@@ -241,6 +241,8 @@ class PenjualanResource extends BaseResource
                             ->label('')
                             ->minItems(0)
                             ->reorderable(false)
+                            ->addable(fn(?Penjualan $record): bool => ! ($record?->isDraft() ?? false))
+                            ->deletable(fn(?Penjualan $record): bool => ! ($record?->isDraft() ?? false))
                             ->addActionLabel('Tambah Produk')
                             ->colStyles([
                                 'id_produk' => 'width: 27%;',
@@ -285,6 +287,7 @@ class PenjualanResource extends BaseResource
                                     ->allowHtml()
                                     ->required()
                                     ->native(false)
+                                    ->disabled(fn(?Penjualan $record): bool => $record?->isDraft() ?? false)
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, ?int $state, Get $get): void {
                                         $set('harga_jual', null);
@@ -312,6 +315,7 @@ class PenjualanResource extends BaseResource
                                     ->native(false)
                                     ->placeholder('Otomatis')
                                     ->nullable()
+                                    ->disabled(fn(?Penjualan $record): bool => $record?->isDraft() ?? false)
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, ?string $state, Get $get): void {
                                         $batchId = (int) ($get('id_pembelian_item') ?? 0);
@@ -348,7 +352,7 @@ class PenjualanResource extends BaseResource
                                     ->searchable()
                                     ->preload()
                                     ->reactive()
-                                    ->disabled(fn(Get $get): bool => ! $get('id_produk'))
+                                    ->disabled(fn(Get $get, ?Penjualan $record): bool => ! $get('id_produk') || ($record?->isDraft() ?? false))
                                     ->placeholder('Pilih Batch')
                                     ->afterStateUpdated(function (Set $set, ?int $state): void {
                                         if (! $state) {
@@ -380,6 +384,7 @@ class PenjualanResource extends BaseResource
                                         return self::getAvailableQty($productId, $condition, $batchId) ?: null;
                                     })
                                     ->required()
+                                    ->disabled(fn(?Penjualan $record): bool => $record?->isDraft() ?? false)
                                     ->live(onBlur: true)
                                     ->placeholder(function (Get $get): string {
                                         $productId = (int) ($get('id_produk') ?? 0);
@@ -870,6 +875,12 @@ class PenjualanResource extends BaseResource
                         default => 'gray',
                     })
                     ->alignCenter(),
+                TextColumn::make('status_dokumen')
+                    ->label('Dokumen')
+                    ->badge()
+                    ->state(fn(Penjualan $record): string => ($record->status_dokumen ?? 'final') === 'draft' ? 'DRAFT' : 'FINAL')
+                    ->color(fn(string $state): string => $state === 'DRAFT' ? 'warning' : 'success')
+                    ->alignCenter(),
                 TextColumn::make('grand_total_display')
                     ->label('Grand Total')
                     ->weight('bold')
@@ -1261,6 +1272,12 @@ class PenjualanResource extends BaseResource
                                     ->state(fn(Penjualan $record): ?string => $record->is_nerfed ? '⚠️ Nerf' : null)
                                     ->color('danger')
                                     ->visible(fn(Penjualan $record): bool => $record->is_nerfed ?? false),
+
+                                TextEntry::make('status_dokumen')
+                                    ->label('Status Dokumen')
+                                    ->badge()
+                                    ->state(fn(Penjualan $record): string => ($record->status_dokumen ?? 'final') === 'draft' ? 'DRAFT' : 'FINAL')
+                                    ->color(fn(string $state): string => $state === 'DRAFT' ? 'warning' : 'success'),
                             ]),
 
                             // Tengah: Member & Karyawan

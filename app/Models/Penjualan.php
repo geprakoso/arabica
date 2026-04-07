@@ -34,6 +34,7 @@ class Penjualan extends Model
         'tunai_diterima',
         'kembalian',
         'status_pembayaran',
+        'status_dokumen',
         'gudang_id',
         'sumber_transaksi',
         'foto_dokumen',
@@ -177,5 +178,10 @@ class Penjualan extends Model
                 ->where('sumber_transaksi', 'pos')
                 ->orWhereNull('sumber_transaksi');
         });
+    }
+
+    public function isDraft(): bool
+    {
+        return ($this->status_dokumen ?? 'final') === 'draft';
     }
 }
