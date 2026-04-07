@@ -63,3 +63,4 @@ wrap-up.md
 # === Agent / tooling ===
 .agent/
 .npm-cache/
+opencode.json
