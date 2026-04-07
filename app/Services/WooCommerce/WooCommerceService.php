@@ -41,7 +41,7 @@ class WooCommerceService
     {
         $response = Http::timeout($this->timeout)
             ->withQueryParameters(array_merge($this->getAuthParams(), $params))
-            ->verify($this->verifySsl)
+            ->withOptions(['verify' => $this->verifySsl])
             ->get($this->baseUrl.'/'.ltrim($endpoint, '/'));
 
         return $this->handleResponse($response);
@@ -51,7 +51,7 @@ class WooCommerceService
     {
         $response = Http::timeout($this->timeout)
             ->withQueryParameters($this->getAuthParams())
-            ->verify($this->verifySsl)
+            ->withOptions(['verify' => $this->verifySsl])
             ->post($this->baseUrl.'/'.ltrim($endpoint, '/'), $data);
 
         return $this->handleResponse($response);
@@ -61,7 +61,7 @@ class WooCommerceService
     {
         $response = Http::timeout($this->timeout)
             ->withQueryParameters($this->getAuthParams())
-            ->verify($this->verifySsl)
+            ->withOptions(['verify' => $this->verifySsl])
             ->put($this->baseUrl.'/'.ltrim($endpoint, '/'), $data);
 
         return $this->handleResponse($response);
