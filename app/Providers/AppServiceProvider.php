@@ -107,7 +107,7 @@ class AppServiceProvider extends ServiceProvider
             });
         }
 
-        if (app()->environment('production') || request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
+        if (request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
             URL::forceScheme('https');
         }
 
