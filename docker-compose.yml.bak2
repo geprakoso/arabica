@@ -1,0 +1,83 @@
+services:
+  # Service Aplikasi (PHP)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arabica-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    networks:
+      - arabica-network
+
+  # Service Web Server (Nginx)
+  web:
+    image: nginx:alpine
+    container_name: arabica-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80" # Kita expose port 8080 agar tidak bentrok dengan aaPanel
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - arabica-network
+    depends_on:
+      - app
+
+  # Service Database
+  db:
+    image: mysql:8.0
+    container_name: arabica-db
+    restart: unless-stopped
+    profiles: ["local"] # Only start this service when using --profile local
+    # Reduce memory usage for low-RAM servers
+    # Original command (SSL Enabled):
+    # command: --innodb-buffer-pool-size=128M --innodb-log-file-size=48M
+    # Command with SSL Disabled (Fixes "Self-signed certificate" import error):
+    command: --innodb-buffer-pool-size=128M --innodb-log-file-size=48M --tls-version=''
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - arabica-network
+
+  # Service Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arabica-queue
+    restart: unless-stopped
+    working_dir: /var/www
+    # Perintah ini yang menjalankan worker secara terus menerus
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    volumes:
+      - ./:/var/www
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - arabica-network
+    depends_on:
+      - app
+
+networks:
+  arabica-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
