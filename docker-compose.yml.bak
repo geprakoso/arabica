@@ -1,0 +1,273 @@
+version: '3.8'
+
+services:
+  # Service Database MySQL
+  db:
+    image: mysql:8.0
+    container_name: arabica-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --innodb-buffer-pool-size=256M
+      - --innodb-log-file-size=64M
+      - --max-connections=200
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --tls-version=''
+    # Hanya accessible dari internal container, bukan dari host
+    expose:
+      - "3306"
+    # Jika butuh akses dari host (development), uncomment ini dan ganti port
+    # ports:
+    #   - "127.0.0.1:3306:3306"
+    volumes:
+      - arabica-mysql-data:/var/lib/mysql
+    networks:
+      - arabica-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Service Redis (Cache & Session)
+  redis:
+    image: redis:7-alpine
+    container_name: arabica-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    expose:
+      - "6379"
+    # Uncomment ini jika butuh akses dari host
+    # ports:
+    #   - "127.0.0.1:6379:6379"
+    volumes:
+      - arabica-redis-data:/data
+    networks:
+      - arabica-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Service PHP-FPM (Application)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    container_name: arabica-app
+    restart: unless-stopped
+    working_dir: /var/www
+    environment:
+      APP_NAME: ${APP_NAME}
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: ${APP_DEBUG}
+      APP_URL: ${APP_URL}
+      APP_TIMEZONE: ${APP_TIMEZONE}
+      
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      CACHE_STORE: redis
+      CACHE_REDIS_HOST: redis
+      CACHE_REDIS_PORT: 6379
+      CACHE_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      SESSION_DRIVER: redis
+      SESSION_CONNECTION: default
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      QUEUE_CONNECTION: redis
+      REDIS_QUEUE_HOST: redis
+      REDIS_QUEUE_PORT: 6379
+      REDIS_QUEUE_PASSWORD: ${REDIS_PASSWORD}
+      
+      MAIL_MAILER: ${MAIL_MAILER}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      
+      LOG_CHANNEL: ${LOG_CHANNEL}
+      LOG_LEVEL: ${LOG_LEVEL}
+    volumes:
+      - ./:/var/www
+      - arabica-app-storage:/var/www/storage
+      - arabica-app-bootstrap:/var/www/bootstrap/cache
+    expose:
+      - "9000"
+    networks:
+      - arabica-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit((int)!file_exists('/var/www/bootstrap/app.php'));"]
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Service Nginx Web Server
+  web:
+    image: nginx:alpine
+    container_name: arabica-nginx
+    restart: unless-stopped
+    ports:
+      # Ganti port 8080 jika sudah terpakai (cek dengan ss -tulpn | grep LISTEN)
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+      - arabica-nginx-logs:/var/log/nginx
+    networks:
+      - arabica-network
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Service Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    container_name: arabica-queue
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=90 --memory=256
+    environment:
+      APP_NAME: ${APP_NAME}
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: ${APP_DEBUG}
+      
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      CACHE_STORE: redis
+      CACHE_REDIS_HOST: redis
+      CACHE_REDIS_PORT: 6379
+      CACHE_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      SESSION_DRIVER: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      QUEUE_CONNECTION: redis
+      REDIS_QUEUE_HOST: redis
+      REDIS_QUEUE_PORT: 6379
+      REDIS_QUEUE_PASSWORD: ${REDIS_PASSWORD}
+      
+      LOG_CHANNEL: ${LOG_CHANNEL}
+      LOG_LEVEL: ${LOG_LEVEL}
+    volumes:
+      - ./:/var/www
+      - arabica-app-storage:/var/www/storage
+      - arabica-app-bootstrap:/var/www/bootstrap/cache
+    networks:
+      - arabica-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Service Scheduler (optional, untuk cron jobs Laravel)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    container_name: arabica-scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: /bin/sh -c "while true; do php artisan schedule:run >> /dev/null 2>&1; sleep 60; done"
+    environment:
+      APP_NAME: ${APP_NAME}
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: ${APP_DEBUG}
+      
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      CACHE_STORE: redis
+      CACHE_REDIS_HOST: redis
+      CACHE_REDIS_PORT: 6379
+      CACHE_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      LOG_CHANNEL: ${LOG_CHANNEL}
+      LOG_LEVEL: ${LOG_LEVEL}
+    volumes:
+      - ./:/var/www
+      - arabica-app-storage:/var/www/storage
+      - arabica-app-bootstrap:/var/www/bootstrap/cache
+    networks:
+      - arabica-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  arabica-network:
+    driver: bridge
+
+volumes:
+  arabica-mysql-data:
+    driver: local
+  arabica-redis-data:
+    driver: local
+  arabica-app-storage:
+    driver: local
+  arabica-app-bootstrap:
+    driver: local
+  arabica-nginx-logs:
+    driver: local
