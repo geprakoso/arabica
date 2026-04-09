@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Jalankan setiap hari jam 14:00 (Jam 2 Siang)
 Schedule::command('absensi:auto-alpha')->daily('18:20');
+
+// WooCommerce inventory sync every 5 minutes
+Schedule::command('sync:woocommerce')->everyFiveMinutes();

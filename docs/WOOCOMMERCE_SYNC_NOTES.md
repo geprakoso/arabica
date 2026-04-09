@@ -13,14 +13,14 @@
 | 6 | Test Command | ✅ Working | Connection verified! |
 | 9 | Observer Registration | ✅ Working | Registered in AppServiceProvider |
 
-### ⏳ Pending Phases
+### ✅ Completed Phases (All Done!)
 
 | Phase | Component | Status |
 |-------|-----------|--------|
-| 5 | Reconciliation Command | `SyncWooCommerceInventory.php` not created |
-| 7 | Sync Logs | Migration + Model not created |
-| 8 | Service Provider | `WooCommerceServiceProvider.php` not created |
-| 10 | Console Kernel | Schedule not configured |
+| 5 | Reconciliation Command | ✅ `SyncWooCommerceInventory.php` created |
+| 7 | Sync Logs | ✅ Migration + Model created |
+| 8 | Service Provider | ✅ `WooCommerceServiceProvider.php` created |
+| 10 | Console Kernel | ✅ Scheduled every 5 minutes |
 
 ---
 
@@ -58,12 +58,12 @@
 - [x] Dispatch `SyncStockToWooCommerce` job
 - [x] Skip if no valid SKU
 
-### ⏳ Phase 5: Reconciliation Command
-- [ ] Create `app/Console/Commands/SyncWooCommerceInventory.php`
-  - [ ] Fetch all products with `qty_sisa > 0`
-  - [ ] Compare with WooCommerce
-  - [ ] Fix discrepancies, log mismatches
-  - [ ] Schedule every 5 minutes
+### ✅ Phase 5: Reconciliation Command
+- [x] Create `app/Console/Commands/SyncWooCommerceInventory.php`
+  - [x] Fetch all products with `qty_sisa > 0`
+  - [x] Compare with WooCommerce
+  - [x] Fix discrepancies, log mismatches
+  - [x] Schedule every 5 minutes
 
 ### ✅ Phase 6: Test Command
 - [x] Create `app/Console/Commands/SyncWooCommerceTest.php`
@@ -72,23 +72,24 @@
   - API authentication: OK
   - Product search by SKU: OK
 
-### ⏳ Phase 7: Sync Logs
-- [ ] Create migration for `woocommerce_sync_logs` table
+### ✅ Phase 7: Sync Logs
+- [x] Create migration for `woocommerce_sync_logs` table
   - Fields: id, produk_id, woo_product_id, action, request_payload, response_payload, error_message, synced_at
-- [ ] Create `app/Models/WooCommerceSyncLog.php`
-- [ ] Integrate logging into job and command
+- [x] Create `app/Models/WooCommerceSyncLog.php`
+- [x] Integrate logging into job and command
 
-### ⏳ Phase 8: Service Provider
-- [ ] Create `app/Providers/WooCommerceServiceProvider.php`
+### ✅ Phase 8: Service Provider
+- [x] Create `app/Providers/WooCommerceServiceProvider.php`
+- [x] Registered in `bootstrap/providers.php`
 
 ### ✅ Phase 9: AppServiceProvider (Observer)
 - [x] Register `PembelianItemObserver` in `boot()` method
 - [x] Added `use App\Models\PembelianItem` and `use App\Observers\PembelianItemObserver`
 - [x] Call `PembelianItem::observe(PembelianItemObserver::class)`
 
-### ⏳ Phase 10: Console Kernel
-- [ ] Schedule `sync:woocommerce` every 5 minutes in `routes/console.php`
-  - [ ] Add `$schedule->command('sync:woocommerce')->everyFiveMinutes();`
+### ✅ Phase 10: Console Kernel
+- [x] Schedule `sync:woocommerce` every 5 minutes in `routes/console.php`
+  - [x] Add `$schedule->command('sync:woocommerce')->everyFiveMinutes();`
 
 ---
 
@@ -117,10 +118,18 @@ WOOCOMMERCE_CONSUMER_SECRET=cs_9d922fc...
 - `app/Jobs/SyncStockToWooCommerce.php` - Queue job
 - `app/Observers/PembelianItemObserver.php` - Event observer
 - `app/Console/Commands/SyncWooCommerceTest.php` - Test command
+- `app/Console/Commands/SyncWooCommerceInventory.php` - Reconciliation command
+- `app/Models/WooCommerceSyncLog.php` - Sync logging model
+- `app/Providers/WooCommerceServiceProvider.php` - Service provider
+
+### Database
+- `database/migrations/2026_04_09_000000_create_woocommerce_sync_logs_table.php` - Sync logs table
 
 ### Modified Files
 - `.env` - Added WOOCOMMERCE_* variables
 - `app/Providers/AppServiceProvider.php` - Registered observer
+- `bootstrap/providers.php` - Registered WooCommerceServiceProvider
+- `routes/console.php` - Added schedule for sync:woocommerce
 
 ---
 
@@ -176,9 +185,36 @@ $schedule->command('sync:woocommerce')->everyFiveMinutes();
 
 ---
 
+## Current Sync Behavior
+
+### How It Works
+- **Sync only works for products that ALREADY exist in WooCommerce**
+- `SyncStockToWooCommerce` job updates stock only for existing WooCommerce products
+- `sync:woocommerce` reconciliation command only reconciles existing products
+- **New products are NOT automatically uploaded to WooCommerce**
+
+### Manual Sync Button
+- Added "Sync ke WooCommerce" button in `InventoryResource` ActionGroup
+- Located in: `app/Filament/Resources/InventoryResource.php` and `hook/app/Filament/Resources/InventoryResource.php`
+- User must click button per product to trigger sync
+
+---
+
+## Pending Implementation Details
+
+### Auto-Create New Products (Future Enhancement)
+If auto-creation is needed:
+- Option 1: Add auto-create logic in `SyncStockToWooCommerce` job when product not found
+- Option 2: Add `--create-missing` flag to `sync:woocommerce` command
+- Minimal data needed: SKU, name, stock_quantity
+- Optional: price, images, categories
+
+---
+
 ## Summary
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| ✅ Completed | 6 phases | 60% |
-| ⏳ Pending | 4 phases | 40% |
+| ✅ Completed | 10 phases | 100% |
+| ⏳ Pending | 0 phases | 0% |
+| 📝 Note | Auto-create | Not implemented |

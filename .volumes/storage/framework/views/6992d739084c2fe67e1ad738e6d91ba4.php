@@ -1,0 +1,1 @@
+<?php $config = (new \LaravelPWA\Services\ManifestService)->generate(); echo $__env->make( 'laravelpwa::meta' , ['config' => $config])->render(); ?><?php /**PATH /var/www/storage/framework/views/4cf7be020efcaee0cb03776abd7ffd2e.blade.php ENDPATH**/ ?>

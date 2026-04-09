@@ -8,4 +8,5 @@ return [
     App\Providers\Filament\AdminPanelProvider::class,
     App\Providers\Filament\PosPanelProvider::class,
     App\Providers\Filament\AkuntingPanelProvider::class,
+    App\Providers\WooCommerceServiceProvider::class,
 ];

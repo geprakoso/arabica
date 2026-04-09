@@ -222,6 +222,30 @@ class InventoryResource extends BaseResource
                         ->modalSubmitAction(false)
                         ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
                         ->infolist(fn(Infolist $infolist) => static::infolist($infolist)),
+                    Action::make('syncToWooCommerce')
+                        ->label('Sync ke WooCommerce')
+                        ->icon('heroicon-o-cloud-arrow-up')
+                        ->color('warning')
+                        ->visible(true)
+                        ->action(function (Produk $record) {
+                            if (blank($record->sku)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->danger()
+                                    ->title('Sync Gagal')
+                                    ->body('Produk tidak memiliki SKU')
+                                    ->send();
+
+                                return;
+                            }
+
+                            \App\Jobs\SyncStockToWooCommerce::dispatch($record->id);
+
+                            \Filament\Notifications\Notification::make()
+                                ->success()
+                                ->title('Sync Ditambahkan ke Queue')
+                                ->body("Stock untuk {$record->nama_produk} sedang di-sync ke WooCommerce")
+                                ->send();
+                        }),
                 ])
                     ->tooltip('Aksi'),
             ])
