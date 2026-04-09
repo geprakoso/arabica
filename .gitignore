@@ -64,3 +64,5 @@ wrap-up.md
 .agent/
 .npm-cache/
 opencode.json
+# === Docker volumes (runtime data) ===
+.volumes/
