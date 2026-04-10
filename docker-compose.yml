@@ -17,13 +17,14 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --skip-ssl
+      - --default-authentication-plugin=mysql_native_password
     expose:
       - "3306"
     # Uncomment jika butuh akses dari host (development/testing)
-    # ports:
-    #   - "127.0.0.1:3306:3306"
+    ports:
+      - "127.0.0.1:3306:3306"
     volumes:
-      - /mnt/app_data/arabica/.volumes/mysql:/var/lib/mysql
+      - ./.volumes/mysql:/var/lib/mysql
     networks:
       - arabica-network
     healthcheck:
@@ -44,7 +45,7 @@ services:
     # ports:
     #   - "127.0.0.1:6379:6379"
     volumes:
-      - /mnt/app_data/arabica/.volumes/redis:/data
+      - ./.volumes/redis:/data
     networks:
       - arabica-network
     healthcheck:
@@ -56,7 +57,7 @@ services:
   # Service PHP-FPM (Application)
   app:
     build:
-      context: /mnt/app_data/arabica
+      context: .
       dockerfile: Dockerfile
       args:
         - BUILDKIT_INLINE_CACHE=1
@@ -105,9 +106,9 @@ services:
       LOG_CHANNEL: "${LOG_CHANNEL}"
       LOG_LEVEL: "${LOG_LEVEL}"
     volumes:
-      - /mnt/app_data/arabica:/var/www
-      - /mnt/app_data/arabica/.volumes/storage:/var/www/storage
-      - /mnt/app_data/arabica/.volumes/bootstrap-cache:/var/www/bootstrap/cache
+      - .:/var/www
+      - ./.volumes/storage:/var/www/storage
+      - ./.volumes/bootstrap-cache:/var/www/bootstrap/cache
     expose:
       - "9000"
     networks:
@@ -133,10 +134,10 @@ services:
     ports:
       - "${NGINX_PORT}:80"
     volumes:
-      - /mnt/app_data/arabica:/var/www
-      - /mnt/app_data/arabica/.volumes/storage:/var/www/storage
-      - /mnt/app_data/arabica/docker/nginx/conf.d/:/etc/nginx/conf.d/
-      - /mnt/app_data/arabica/.volumes/nginx-logs:/var/log/nginx
+      - .:/var/www
+      - ./.volumes/storage:/var/www/storage
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./.volumes/nginx-logs:/var/log/nginx
     networks:
       - arabica-network
     depends_on:
@@ -151,7 +152,7 @@ services:
   # Service Queue Worker
   queue:
     build:
-      context: /mnt/app_data/arabica
+      context: .
       dockerfile: Dockerfile
       args:
         - BUILDKIT_INLINE_CACHE=1
@@ -190,9 +191,9 @@ services:
       LOG_CHANNEL: "${LOG_CHANNEL}"
       LOG_LEVEL: "${LOG_LEVEL}"
     volumes:
-      - /mnt/app_data/arabica:/var/www
-      - /mnt/app_data/arabica/.volumes/storage:/var/www/storage
-      - /mnt/app_data/arabica/.volumes/bootstrap-cache:/var/www/bootstrap/cache
+      - .:/var/www
+      - ./.volumes/storage:/var/www/storage
+      - ./.volumes/bootstrap-cache:/var/www/bootstrap/cache
     networks:
       - arabica-network
     depends_on:
@@ -206,7 +207,7 @@ services:
   # Service Scheduler (cron jobs Laravel)
   scheduler:
     build:
-      context: /mnt/app_data/arabica
+      context: .
       dockerfile: Dockerfile
       args:
         - BUILDKIT_INLINE_CACHE=1
@@ -239,9 +240,9 @@ services:
       LOG_CHANNEL: "${LOG_CHANNEL}"
       LOG_LEVEL: "${LOG_LEVEL}"
     volumes:
-      - /mnt/app_data/arabica:/var/www
-      - /mnt/app_data/arabica/.volumes/storage:/var/www/storage
-      - /mnt/app_data/arabica/.volumes/bootstrap-cache:/var/www/bootstrap/cache
+      - .:/var/www
+      - ./.volumes/storage:/var/www/storage
+      - ./.volumes/bootstrap-cache:/var/www/bootstrap/cache
     networks:
       - arabica-network
     depends_on:
