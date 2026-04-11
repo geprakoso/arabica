@@ -53,6 +53,9 @@ class WebpUpload
                 ->quality($quality)
                 ->save($diskPath);
 
+            // Apply visibility directly using the disk adapter to fix permissions
+            $disk->setVisibility($path, $component->getVisibility());
+
             return $path;
         } catch (Throwable $exception) {
             Log::warning('WebpUpload::store conversion failed; falling back to original upload.', [
