@@ -36,7 +36,7 @@ class Pembelian extends Model
     {
         static::creating(function (Pembelian $pembelian): void {
             if (blank($pembelian->no_po)) {
-                $pembelian->no_po = self::generatePO();
+                $pembelian->no_po = self::generateUniquePO();
             }
         });
 
@@ -92,6 +92,37 @@ class Pembelian extends Model
         $next = 1;
         if ($latest && preg_match('/' . preg_quote($prefix, '/') . '(\d+)$/', $latest->no_po, $m)) {
             $next = (int) $m[1] + 1;
+        }
+
+        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+    }
+
+    public static function generateUniquePO(int $maxAttempts = 10): string
+    {
+        $date = now()->format('Ym');
+        $prefix = 'PO-' . $date . '-';
+
+        // Include soft-deleted records because the database unique constraint applies to ALL records
+        $latest = self::withTrashed()
+            ->where('no_po', 'like', $prefix . '%')
+            ->orderByRaw('CAST(SUBSTRING(no_po, ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
+            ->first();
+
+        $next = 1;
+        if ($latest && preg_match('/' . preg_quote($prefix, '/') . '(\d+)$/', $latest->no_po, $m)) {
+            $next = (int) $m[1] + 1;
+        }
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            $poNumber = $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+
+            // Check against ALL records (including soft-deleted) due to unique constraint
+            $exists = self::withTrashed()->where('no_po', $poNumber)->exists();
+            if (! $exists) {
+                return $poNumber;
+            }
+
+            $next++;
         }
 
         return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);

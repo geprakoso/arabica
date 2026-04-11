@@ -4,7 +4,7 @@ namespace App\Filament\Resources\PembelianResource\Pages;
 
 use App\Models\Pembelian;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Database\QueryException;
 use Filament\Notifications\Notification;
 use Filament\Notifications\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
@@ -44,6 +44,14 @@ class CreatePembelian extends CreateRecord
         return 'Pembelian berhasil dibuat. Silakan tambah produk melalui tabel di bawah.';
     }
 
+    protected function handleRecordCreation(array $data): Pembelian
+    {
+        // Remove no_po from data to let the model's booted() event generate a unique one
+        // This ensures the model's generateUniquePO() with soft-delete check is used
+        unset($data['no_po']);
+
+        return parent::handleRecordCreation($data);
+    }
 
     protected function afterCreate(): void
     {
@@ -62,10 +70,5 @@ class CreatePembelian extends CreateRecord
                     ->url(PembelianResource::getUrl('edit', ['record' => $this->record])),
             ])
             ->sendToDatabase($user);
-    }
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $data['no_po'] = Pembelian::generatePO();
-        return $data;
     }
 }

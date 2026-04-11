@@ -97,13 +97,10 @@ class PembelianResource extends BaseResource
                             FormsGroup::make()->schema([
                                 TextInput::make('no_po')
                                     ->label('No. PO')
-                                    ->prefixIcon('heroicon-s-tag')
-                                    ->required()
-                                    ->default(fn() => Pembelian::generatePO()) // generate no_po otomatis
+                                    ->prefixIcon('heroicon-m-document-text')
                                     ->disabled()
                                     ->dehydrated()
-                                    ->required()
-                                    ->prefixIcon('heroicon-m-document-text'),
+                                    ->visibleOn('edit'),
 
                                 FormsDatePicker::make('tanggal')
                                     ->label('Tanggal Transaksi')
