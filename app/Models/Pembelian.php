@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class Pembelian extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'tb_pembelian';
+
     protected $primaryKey = 'id_pembelian';
 
     // Flag to allow TukarTambah cascade deletion
@@ -42,7 +42,7 @@ class Pembelian extends Model
 
         static::deleting(function (Pembelian $pembelian): void {
             // Allow deletion if triggered by TukarTambah cascade
-            if (!self::$allowTukarTambahDeletion) {
+            if (! self::$allowTukarTambahDeletion) {
                 // Check if this pembelian belongs to a Tukar Tambah
                 if ($pembelian->tukarTambah()->exists()) {
                     $ttKode = $pembelian->tukarTambah?->kode ?? 'TT-XXXXX';
@@ -57,8 +57,8 @@ class Pembelian extends Model
                 ->whereHas('penjualanItems')
                 ->with(['penjualanItems.penjualan'])
                 ->get()
-                ->flatMap(fn($item) => $item->penjualanItems)
-                ->map(fn($item) => $item->penjualan?->no_nota)
+                ->flatMap(fn ($item) => $item->penjualanItems)
+                ->map(fn ($item) => $item->penjualan?->no_nota)
                 ->filter()
                 ->unique()
                 ->values();
@@ -67,34 +67,32 @@ class Pembelian extends Model
                 $notaList = $externalPenjualanNotas->implode(', ');
 
                 throw ValidationException::withMessages([
-                    'id_pembelian' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
+                    'id_pembelian' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: '.$notaList.'.',
                 ]);
             }
 
-            // Only delete related items if this is a FORCE delete, not soft delete
-            if ($pembelian->isForceDeleting()) {
-                $pembelian->items()->get()->each->delete();
-                $pembelian->jasaItems()->get()->each->delete();
-                $pembelian->pembayaran()->get()->each->delete();
-            }
+            // Delete related items
+            $pembelian->items()->get()->each->delete();
+            $pembelian->jasaItems()->get()->each->delete();
+            $pembelian->pembayaran()->get()->each->delete();
         });
     }
 
     public static function generatePO(): string
     {
         $date = now()->format('Ym');
-        $prefix = 'PO-' . $date . '-';
+        $prefix = 'PO-'.$date.'-';
 
-        $latest = self::where('no_po', 'like', $prefix . '%')
+        $latest = self::where('no_po', 'like', $prefix.'%')
             ->orderBy('no_po', 'desc')
             ->first();
 
         $next = 1;
-        if ($latest && preg_match('/' . preg_quote($prefix, '/') . '(\d+)$/', $latest->no_po, $m)) {
+        if ($latest && preg_match('/'.preg_quote($prefix, '/').'(\d+)$/', $latest->no_po, $m)) {
             $next = (int) $m[1] + 1;
         }
 
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     protected $casts = [
@@ -102,7 +100,6 @@ class Pembelian extends Model
         'tgl_tempo' => 'date',
         'harga_jual' => 'decimal:2',
         'foto_dokumen' => 'array',
-        'deleted_at' => 'datetime',
     ];
 
     public function karyawan()
@@ -138,13 +135,13 @@ class Pembelian extends Model
 
     public function isEditLocked(): bool
     {
-        $itemTable = (new PembelianItem())->getTable();
+        $itemTable = (new PembelianItem)->getTable();
         $qtyMasukColumn = PembelianItem::qtyMasukColumn();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
 
         return $this->items()
             ->where(function ($query) use ($itemTable, $qtyMasukColumn, $qtySisaColumn) {
-                $query->whereColumn($itemTable . '.' . $qtySisaColumn, '<', $itemTable . '.' . $qtyMasukColumn)
+                $query->whereColumn($itemTable.'.'.$qtySisaColumn, '<', $itemTable.'.'.$qtyMasukColumn)
                     ->orWhereHas('penjualanItems');
             })
             ->exists();
@@ -158,10 +155,10 @@ class Pembelian extends Model
             ->values();
 
         $suffix = $notaList->isNotEmpty()
-            ? ' Nota: ' . $notaList->implode(', ') . '.'
+            ? ' Nota: '.$notaList->implode(', ').'.'
             : '';
 
-        return 'Pembelian tidak bisa diedit karena item sudah dipakai transaksi lain.' . $suffix;
+        return 'Pembelian tidak bisa diedit karena item sudah dipakai transaksi lain.'.$suffix;
     }
 
     public function getBlockedPenjualanReferences(): Collection
@@ -170,7 +167,7 @@ class Pembelian extends Model
             ->whereHas('penjualanItems')
             ->with(['penjualanItems.penjualan:id_penjualan,no_nota'])
             ->get()
-            ->flatMap(fn($item) => $item->penjualanItems)
+            ->flatMap(fn ($item) => $item->penjualanItems)
             ->map(function ($item) {
                 if (! $item->penjualan) {
                     return null;
@@ -202,8 +199,8 @@ class Pembelian extends Model
 
         // Use loaded relations if available (avoids N+1)
         if ($this->relationLoaded('items') && $this->relationLoaded('jasaItems')) {
-            $itemsTotal = (float) $this->items->sum(fn($item) => ($item->qty ?? 0) * ($item->hpp ?? 0));
-            $jasaTotal = (float) $this->jasaItems->sum(fn($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
+            $itemsTotal = (float) $this->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->hpp ?? 0));
+            $jasaTotal = (float) $this->jasaItems->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
         } else {
             // Fallback to database queries
             $itemsTotal = (float) ($this->items()
@@ -231,6 +228,7 @@ class Pembelian extends Model
             'jenis_pembayaran' => $status,
         ])->saveQuietly();
     }
+
     /**
      * Force delete this Pembelian and mark affected Penjualan as "nerfed".
      * This bypasses the regular validation that blocks deletion when items are used in Penjualan.
@@ -246,8 +244,8 @@ class Pembelian extends Model
             ->whereHas('penjualanItems')
             ->with(['penjualanItems.penjualan'])
             ->get()
-            ->flatMap(fn($item) => $item->penjualanItems)
-            ->map(fn($item) => $item->penjualan?->getKey())
+            ->flatMap(fn ($item) => $item->penjualanItems)
+            ->map(fn ($item) => $item->penjualan?->getKey())
             ->filter()
             ->unique()
             ->values();

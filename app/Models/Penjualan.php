@@ -6,12 +6,11 @@ use App\Enums\MetodeBayar;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class Penjualan extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'tb_penjualan';
 
@@ -34,19 +33,15 @@ class Penjualan extends Model
         'tunai_diterima',
         'kembalian',
         'status_pembayaran',
-        'status_dokumen',
         'gudang_id',
         'sumber_transaksi',
-        'foto_dokumen',
         'is_nerfed',
     ];
 
     protected $casts = [
         'tanggal_penjualan' => 'date',
         'metode_bayar' => MetodeBayar::class,
-        'foto_dokumen' => 'array',
         'is_nerfed' => 'boolean',
-        'deleted_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -64,11 +59,9 @@ class Penjualan extends Model
                 }
             }
 
-            // Only delete items if this is a FORCE delete, not soft delete
-            if ($penjualan->isForceDeleting()) {
-                $penjualan->items()->get()->each->delete();
-                $penjualan->jasaItems()->get()->each->delete();
-            }
+            // Delete related items
+            $penjualan->items()->get()->each->delete();
+            $penjualan->jasaItems()->get()->each->delete();
         });
 
         static::creating(function ($model) {
@@ -178,10 +171,5 @@ class Penjualan extends Model
                 ->where('sumber_transaksi', 'pos')
                 ->orWhereNull('sumber_transaksi');
         });
-    }
-
-    public function isDraft(): bool
-    {
-        return ($this->status_dokumen ?? 'final') === 'draft';
     }
 }
