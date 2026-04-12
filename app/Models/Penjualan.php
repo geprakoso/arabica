@@ -44,36 +44,6 @@ class Penjualan extends Model
         'is_nerfed' => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
-        static::deleting(function (Penjualan $penjualan): void {
-            // Allow deletion if triggered by TukarTambah cascade
-            if (! self::$allowTukarTambahDeletion) {
-                // Check if this penjualan belongs to a Tukar Tambah
-                if ($penjualan->sumber_transaksi === 'tukar_tambah' || $penjualan->tukarTambah()->exists()) {
-                    $ttKode = $penjualan->tukarTambah?->kode ?? 'TT-XXXXX';
-
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'id_penjualan' => "Tidak bisa hapus: Penjualan ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
-                    ]);
-                }
-            }
-
-            // Delete related items
-            $penjualan->items()->get()->each->delete();
-            $penjualan->jasaItems()->get()->each->delete();
-        });
-
-        static::creating(function ($model) {
-            $model->sumber_transaksi = $model->sumber_transaksi ?? 'manual';
-
-            if (empty($model->no_nota)) {
-                $prefix = $model->sumber_transaksi === 'pos' ? 'POS' : 'PJ';
-                $model->no_nota = static::generateNoNota($prefix);
-            }
-        });
-    }
-
     public static function generateNoNota(string $prefixCode = 'PJ'): string
     {
         return DB::transaction(function () use ($prefixCode) {
@@ -152,6 +122,85 @@ class Penjualan extends Model
         $this->forceFill([
             'status_pembayaran' => $status,
         ])->saveQuietly();
+
+        // Clear cache saat status berubah
+        $this->clearCalculationCache();
+    }
+
+    /**
+     * Calculate grand total with caching
+     */
+    public function calculateGrandTotalCached(): float
+    {
+        return CacheHelper::calculation(
+            CacheHelper::TAG_PENJUALAN,
+            $this->id_penjualan,
+            function () {
+                $barangTotal = $this->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga_jual ?? 0));
+                $jasaTotal = $this->jasaItems->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
+                $discount = (float) ($this->diskon_total ?? 0);
+
+                return max(0, ($barangTotal + $jasaTotal) - $discount);
+            }
+        );
+    }
+
+    /**
+     * Calculate total paid with caching
+     */
+    public function calculateTotalPaidCached(): float
+    {
+        return CacheHelper::calculation(
+            CacheHelper::TAG_PENJUALAN.':paid',
+            $this->id_penjualan,
+            function () {
+                return (float) $this->pembayaran->sum('jumlah');
+            }
+        );
+    }
+
+    /**
+     * Clear calculation cache for this record
+     */
+    public function clearCalculationCache(): void
+    {
+        CacheHelper::flush([CacheHelper::TAG_PENJUALAN]);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Penjualan $penjualan): void {
+            $penjualan->clearCalculationCache();
+
+            // Allow deletion if triggered by TukarTambah cascade
+            if (! self::$allowTukarTambahDeletion) {
+                // Check if this penjualan belongs to a Tukar Tambah
+                if ($penjualan->sumber_transaksi === 'tukar_tambah' || $penjualan->tukarTambah()->exists()) {
+                    $ttKode = $penjualan->tukarTambah?->kode ?? 'TT-XXXXX';
+
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'id_penjualan' => "Tidak bisa hapus: Penjualan ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
+                    ]);
+                }
+            }
+
+            // Delete related items
+            $penjualan->items()->get()->each->delete();
+            $penjualan->jasaItems()->get()->each->delete();
+        });
+
+        static::creating(function ($model) {
+            $model->sumber_transaksi = $model->sumber_transaksi ?? 'manual';
+
+            if (empty($model->no_nota)) {
+                $prefix = $model->sumber_transaksi === 'pos' ? 'POS' : 'PJ';
+                $model->no_nota = static::generateNoNota($prefix);
+            }
+        });
+
+        static::updated(function (Penjualan $penjualan) {
+            $penjualan->clearCalculationCache();
+        });
     }
 
     public function jasaItems()

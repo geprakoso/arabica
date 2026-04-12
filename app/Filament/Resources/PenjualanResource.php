@@ -788,7 +788,7 @@ class PenjualanResource extends BaseResource
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query
-                ->with(['items', 'jasaItems'])
+                ->with(['items', 'jasaItems', 'tukarTambah', 'pembayaran'])
                 ->withCount(['items', 'jasaItems'])
                 ->withSum('pembayaran', 'jumlah'))
             ->defaultSort('created_at', 'desc')
@@ -1092,10 +1092,10 @@ class PenjualanResource extends BaseResource
                     Tables\Actions\DeleteAction::make()
                         ->icon('heroicon-m-trash')
                         ->hidden(
-                            fn (Penjualan $record): bool => ! auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists())
+                            fn (Penjualan $record): bool => ! auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah !== null)
                         )
                         ->tooltip(
-                            fn (Penjualan $record): ?string => (! auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()))
+                            fn (Penjualan $record): ?string => (! auth()->user()?->hasRole('godmode') && ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah !== null))
                                 ? 'Hapus dari Tukar Tambah'
                                 : null
                         ),
@@ -1107,11 +1107,11 @@ class PenjualanResource extends BaseResource
                     }
 
                     // Always show actions for Tukar Tambah records (at least View)
-                    if ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah()->exists()) {
+                    if ($record->sumber_transaksi === 'tukar_tambah' || $record->tukarTambah !== null) {
                         return false;
                     }
 
-                    $hasLines = $record->items()->exists() || $record->jasaItems()->exists();
+                    $hasLines = ($record->items_count > 0) || ($record->jasaItems_count > 0);
                     $grandTotal = (float) ($record->grand_total ?? 0);
                     $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
                     $isUnpaid = $totalPaid < $grandTotal;

@@ -30,10 +30,12 @@ class PembelianJasa extends Model
     {
         static::saved(function (PembelianJasa $item): void {
             $item->pembelian?->recalculatePaymentStatus();
+            $item->pembelian?->clearCalculationCache();  // ✅ Clear cache saat jasa berubah
         });
 
         static::deleted(function (PembelianJasa $item): void {
             $item->pembelian?->recalculatePaymentStatus();
+            $item->pembelian?->clearCalculationCache();  // ✅ Clear cache saat jasa dihapus
         });
     }
 

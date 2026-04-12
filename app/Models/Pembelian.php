@@ -41,6 +41,9 @@ class Pembelian extends Model
         });
 
         static::deleting(function (Pembelian $pembelian): void {
+            // Clear cache saat dihapus
+            $pembelian->clearCalculationCache();
+
             // Allow deletion if triggered by TukarTambah cascade
             if (! self::$allowTukarTambahDeletion) {
                 // Check if this pembelian belongs to a Tukar Tambah
@@ -76,6 +79,49 @@ class Pembelian extends Model
             $pembelian->jasaItems()->get()->each->delete();
             $pembelian->pembayaran()->get()->each->delete();
         });
+
+        static::updated(function (Pembelian $pembelian) {
+            $pembelian->clearCalculationCache();
+        });
+    }
+
+    /**
+     * Calculate total pembelian with caching
+     */
+    public function calculateTotalPembelianCached(): float
+    {
+        return CacheHelper::calculation(
+            CacheHelper::TAG_PEMBELIAN,
+            $this->id_pembelian,
+            function () {
+                $itemsTotal = $this->items->sum(fn ($item) => ($item->qty ?? 0) * ($item->hpp ?? 0));
+                $jasaTotal = $this->jasaItems->sum(fn ($item) => ($item->qty ?? 0) * ($item->harga ?? 0));
+
+                return $itemsTotal + $jasaTotal;
+            }
+        );
+    }
+
+    /**
+     * Calculate total paid with caching
+     */
+    public function calculateTotalPaidCached(): float
+    {
+        return CacheHelper::calculation(
+            CacheHelper::TAG_PEMBELIAN.':paid',
+            $this->id_pembelian,
+            function () {
+                return (float) $this->pembayaran->sum('jumlah');
+            }
+        );
+    }
+
+    /**
+     * Clear calculation cache for this record
+     */
+    public function clearCalculationCache(): void
+    {
+        CacheHelper::flush([CacheHelper::TAG_PEMBELIAN]);
     }
 
     public static function generatePO(): string

@@ -145,11 +145,11 @@ class ProdukResource extends BaseResource
                                     ->image()
                                     ->imageEditor() // Fitur crop bawaan filament
                                     ->disk('public')
-                                    ->directory('produks/' . now()->format('Y/m/d'))
+                                    ->directory('produks/'.now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
+                                        fn (TemporaryUploadedFile $file, Get $get) => (now()->format('ymd').'-'.Str::slug($get('nama_produk') ?? 'produk').'.'.$file->getClientOriginalExtension())
                                     )
-                                    ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->openable()
                                     ->downloadable(),
                             ]),
@@ -172,7 +172,9 @@ class ProdukResource extends BaseResource
                                     ->live()
                                     ->afterStateUpdated(function (Get $get, Set $set) {
                                         $sku = Produk::calculateSmartSku($get('kategori_id'), $get('brand_id'));
-                                        if ($sku) $set('sku', $sku);
+                                        if ($sku) {
+                                            $set('sku', $sku);
+                                        }
                                     })
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nama_kategori')->required(),
@@ -186,7 +188,9 @@ class ProdukResource extends BaseResource
                                     ->live()
                                     ->afterStateUpdated(function (Get $get, Set $set) {
                                         $sku = Produk::calculateSmartSku($get('kategori_id'), $get('brand_id'));
-                                        if ($sku) $set('sku', $sku);
+                                        if ($sku) {
+                                            $set('sku', $sku);
+                                        }
                                     })
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nama_brand')->required(),
@@ -264,7 +268,7 @@ class ProdukResource extends BaseResource
 
                                                 $volumetric = ($p * $l * $t) / 4000;
 
-                                                return number_format($volumetric, 2) . ' Kg';
+                                                return number_format($volumetric, 2).' Kg';
                                             })
                                             ->icon('heroicon-m-calculator')
                                             ->color('warning') // Pembeda visual bahwa ini hitungan sistem
@@ -347,9 +351,9 @@ class ProdukResource extends BaseResource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
-                            ->formatStateUsing(fn($state) => Str::upper($state))
+                            ->formatStateUsing(fn ($state) => Str::upper($state))
                             ->size(TextColumnSize::Large)
-                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
+                            ->description(fn (Produk $record) => new HtmlString('<span class="font-mono">SKU: '.e($record->sku ?? '-').'</span>'))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('kategori.nama_kategori')
@@ -357,7 +361,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-m-tag')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('brand.nama_brand')
@@ -365,7 +369,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-m-building-office-2')
-                            ->formatStateUsing(fn($state) => Str::title($state))
+                            ->formatStateUsing(fn ($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                     ])->space(2),
@@ -419,7 +423,8 @@ class ProdukResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            //
+            \App\Filament\Resources\MasterData\ProdukResource\RelationManagers\PembelianRelationManager::class,
+            \App\Filament\Resources\MasterData\ProdukResource\RelationManagers\PenjualanRelationManager::class,
         ];
     }
 

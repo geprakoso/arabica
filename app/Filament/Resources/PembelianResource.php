@@ -872,10 +872,11 @@ class PembelianResource extends BaseResource
             ->modifyQueryUsing(fn (Builder $query) => $query->with([
                 'requestOrders',
                 'supplier',
-                'karyawan',
+                'karyawan.user',
                 'items',
                 'jasaItems',
-            ]))
+                'pembayaran.akunTransaksi',
+            ])->withSum('pembayaran', 'jumlah'))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('no_po')
@@ -939,7 +940,7 @@ class PembelianResource extends BaseResource
                     ->badge()
                     ->state(function (Pembelian $record): string {
                         $grandTotal = (float) $record->calculateTotalPembelian();
-                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
 
                         // TEMPO: No payment made
                         if ($totalPaid == 0) {
@@ -1013,7 +1014,7 @@ class PembelianResource extends BaseResource
                     ->alignRight()
                     ->state(function (Pembelian $record): string {
                         $grandTotal = (float) $record->calculateTotalPembelian();
-                        $totalPaid = (float) ($record->pembayaran()->sum('jumlah') ?? 0);
+                        $totalPaid = (float) ($record->pembayaran_sum_jumlah ?? 0);
 
                         $sisa = max(0, $grandTotal - $totalPaid);
 

@@ -1439,7 +1439,16 @@ class TukarTambahResource extends BaseResource
             ->searchPlaceholder('Cari No. Nota, Pelanggan, atau No. HP...')
             ->modifyQueryUsing(function (\Illuminate\Database\Eloquent\Builder $query) {
                 // Add eager loading for search performance
-                return $query->with(['member']);
+                return $query->with([
+                    'member',
+                    'penjualan.member',
+                    'penjualan.items',
+                    'penjualan.jasaItems',
+                    'penjualan.pembayaran',
+                    'pembelian.items',
+                    'pembelian.pembayaran',
+                    'karyawan.user',
+                ]);
             });
     }
 
@@ -1878,13 +1887,21 @@ class TukarTambahResource extends BaseResource
      */
     protected static function calculateGrandTotal(TukarTambah $record): int
     {
-        // Calculate Penjualan total (products + services)
-        $productTotal = $record->penjualan?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->harga_jual ?? 0)) ?? 0;
-        $serviceTotal = $record->penjualan?->jasaItems?->sum(fn ($jasa) => (int) ($jasa->qty ?? 0) * (int) ($jasa->harga ?? 0)) ?? 0;
-        $penjualanTotal = $productTotal + $serviceTotal;
+        // Calculate Penjualan total (products + services) - using eager loaded data
+        $penjualan = $record->penjualan;
+        $penjualanTotal = 0;
+        if ($penjualan) {
+            $productTotal = $penjualan->items->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->harga_jual ?? 0));
+            $serviceTotal = $penjualan->jasaItems->sum(fn ($jasa) => (int) ($jasa->qty ?? 0) * (int) ($jasa->harga ?? 0));
+            $penjualanTotal = $productTotal + $serviceTotal;
+        }
 
-        // Calculate Pembelian total (qty * hpp)
-        $pembelianTotal = $record->pembelian?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->hpp ?? 0)) ?? 0;
+        // Calculate Pembelian total (qty * hpp) - using eager loaded data
+        $pembelian = $record->pembelian;
+        $pembelianTotal = 0;
+        if ($pembelian) {
+            $pembelianTotal = $pembelian->items->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->hpp ?? 0));
+        }
 
         // Grand Total = Penjualan - Pembelian
         return $penjualanTotal - $pembelianTotal;
@@ -1895,17 +1912,25 @@ class TukarTambahResource extends BaseResource
      */
     protected static function calculatePaymentStatus(TukarTambah $record): string
     {
-        // Calculate Penjualan total (products + services)
-        $productTotal = $record->penjualan?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->harga_jual ?? 0)) ?? 0;
-        $serviceTotal = $record->penjualan?->jasaItems?->sum(fn ($jasa) => (int) ($jasa->qty ?? 0) * (int) ($jasa->harga ?? 0)) ?? 0;
-        $totalPenjualan = $productTotal + $serviceTotal;
+        // Calculate Penjualan total (products + services) - using eager loaded data
+        $penjualan = $record->penjualan;
+        $totalPenjualan = 0;
+        $totalDibayarPenjualan = 0;
+        if ($penjualan) {
+            $productTotal = $penjualan->items->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->harga_jual ?? 0));
+            $serviceTotal = $penjualan->jasaItems->sum(fn ($jasa) => (int) ($jasa->qty ?? 0) * (int) ($jasa->harga ?? 0));
+            $totalPenjualan = $productTotal + $serviceTotal;
+            $totalDibayarPenjualan = $penjualan->pembayaran->sum('jumlah');
+        }
 
-        // Calculate Pembelian total (qty * hpp)
-        $totalPembelian = $record->pembelian?->items?->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->hpp ?? 0)) ?? 0;
-
-        // Calculate total paid for penjualan and pembelian
-        $totalDibayarPenjualan = $record->penjualan?->pembayaran?->sum('jumlah') ?? 0;
-        $totalDibayarPembelian = $record->pembelian?->pembayaran?->sum('jumlah') ?? 0;
+        // Calculate Pembelian total (qty * hpp) - using eager loaded data
+        $pembelian = $record->pembelian;
+        $totalPembelian = 0;
+        $totalDibayarPembelian = 0;
+        if ($pembelian) {
+            $totalPembelian = $pembelian->items->sum(fn ($item) => (int) ($item->qty ?? 0) * (int) ($item->hpp ?? 0));
+            $totalDibayarPembelian = $pembelian->pembayaran->sum('jumlah');
+        }
 
         // TEMPO: both payments are 0
         if ($totalDibayarPenjualan == 0 && $totalDibayarPembelian == 0) {
@@ -1926,8 +1951,11 @@ class TukarTambahResource extends BaseResource
      */
     protected static function calculatePaidAmount(TukarTambah $record): int
     {
-        $totalDibayarPenjualan = $record->penjualan?->pembayaran?->sum('jumlah') ?? 0;
-        $totalDibayarPembelian = $record->pembelian?->pembayaran?->sum('jumlah') ?? 0;
+        $penjualan = $record->penjualan;
+        $totalDibayarPenjualan = $penjualan ? $penjualan->pembayaran->sum('jumlah') : 0;
+
+        $pembelian = $record->pembelian;
+        $totalDibayarPembelian = $pembelian ? $pembelian->pembayaran->sum('jumlah') : 0;
 
         return (int) ($totalDibayarPenjualan - $totalDibayarPembelian);
     }

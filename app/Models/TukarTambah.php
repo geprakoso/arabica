@@ -41,6 +41,9 @@ class TukarTambah extends Model
         });
 
         static::deleting(function (TukarTambah $tukarTambah): void {
+            // Clear cache saat dihapus
+            $tukarTambah->clearCalculationCache();
+
             DB::transaction(function () use ($tukarTambah): void {
                 $penjualanId = $tukarTambah->penjualan_id;
                 $pembelian = $tukarTambah->pembelian;
@@ -74,6 +77,18 @@ class TukarTambah extends Model
                 }
             });
         });
+
+        static::updated(function (TukarTambah $tukarTambah) {
+            $tukarTambah->clearCalculationCache();
+        });
+    }
+
+    /**
+     * Clear calculation cache for this record
+     */
+    public function clearCalculationCache(): void
+    {
+        CacheHelper::flush([CacheHelper::TAG_TUKAR_TAMBAH]);
     }
 
     public function karyawan()

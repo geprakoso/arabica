@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
-use App\Models\Rma;
 
 class PenjualanItem extends Model
 {
@@ -185,5 +184,6 @@ class PenjualanItem extends Model
         }
 
         $penjualan->recalculateTotals();
+        $penjualan->clearCalculationCache();  // ✅ Clear cache saat item berubah
     }
 }

@@ -2,18 +2,17 @@
 
 namespace App\Models;
 
-use App\Models\Produk;
-use App\Models\PenjualanItem;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PembelianItem extends Model
 {
     use HasFactory;
 
     protected $table = 'tb_pembelian_item';
+
     protected $primaryKey = 'id_pembelian_item';
 
     protected $fillable = [
@@ -77,10 +76,10 @@ class PembelianItem extends Model
                     ->unique()
                     ->implode(', ');
 
-                $suffix = $notaList ? ' No nota: ' . $notaList . '.' : '';
+                $suffix = $notaList ? ' No nota: '.$notaList.'.' : '';
 
                 throw ValidationException::withMessages([
-                    'qty' => 'Qty pembelian tidak bisa diubah karena sudah ada penjualan.' . $suffix,
+                    'qty' => 'Qty pembelian tidak bisa diubah karena sudah ada penjualan.'.$suffix,
                 ]);
             }
         });
@@ -98,19 +97,21 @@ class PembelianItem extends Model
                 ->unique()
                 ->implode(', ');
 
-            $suffix = $notaList ? ' No nota: ' . $notaList . '.' : '';
+            $suffix = $notaList ? ' No nota: '.$notaList.'.' : '';
 
             throw ValidationException::withMessages([
-                'id_pembelian_item' => 'Item pembelian tidak bisa dihapus karena sudah ada penjualan.' . $suffix,
+                'id_pembelian_item' => 'Item pembelian tidak bisa dihapus karena sudah ada penjualan.'.$suffix,
             ]);
         });
 
         static::saved(function (PembelianItem $item): void {
             $item->pembelian?->recalculatePaymentStatus();
+            $item->pembelian?->clearCalculationCache();  // ✅ Clear cache saat item berubah
         });
 
         static::deleted(function (PembelianItem $item): void {
             $item->pembelian?->recalculatePaymentStatus();
+            $item->pembelian?->clearCalculationCache();  // ✅ Clear cache saat item dihapus
         });
     }
 
@@ -136,21 +137,21 @@ class PembelianItem extends Model
 
     public static function productForeignKey(): string
     {
-        $table = (new static())->getTable();
+        $table = (new static)->getTable();
 
         return static::resolveColumn($table, ['id_barang', 'id_produk', 'produk_id'], 'id_barang');
     }
 
     public static function qtyMasukColumn(): string
     {
-        $table = (new static())->getTable();
+        $table = (new static)->getTable();
 
         return static::resolveColumn($table, ['qty_masuk', 'qty'], 'qty_masuk');
     }
 
     public static function qtySisaColumn(): string
     {
-        $table = (new static())->getTable();
+        $table = (new static)->getTable();
 
         return static::resolveColumn($table, ['qty_sisa', 'qty'], 'qty_sisa');
     }
@@ -168,7 +169,7 @@ class PembelianItem extends Model
 
     public static function primaryKeyColumn(): string
     {
-        $instance = new static();
+        $instance = new static;
         $keyName = $instance->getKeyName();
 
         return $keyName ?? 'id';
