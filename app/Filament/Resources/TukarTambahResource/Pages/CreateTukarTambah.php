@@ -11,14 +11,14 @@ use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use App\Models\PenjualanPembayaran;
 use App\Models\TukarTambah;
-use Filament\Notifications\Notification;
 use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class CreateTukarTambah extends CreateRecord
@@ -27,6 +27,25 @@ class CreateTukarTambah extends CreateRecord
 
     protected static bool $canCreateAnother = false;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        Log::info('TukarTambah: mutateFormDataBeforeCreate', [
+            'data_keys' => array_keys($data),
+            'no_nota' => $data['no_nota'] ?? 'NOT SET',
+            'tanggal' => $data['tanggal'] ?? 'NOT SET',
+            'id_karyawan' => $data['id_karyawan'] ?? 'NOT SET',
+            'id_member' => $data['id_member'] ?? 'NOT SET',
+        ]);
+
+        // Ensure no_nota is set
+        if (empty($data['no_nota'])) {
+            $data['no_nota'] = TukarTambah::generateNoNota();
+            Log::info('TukarTambah: Generated no_nota', ['no_nota' => $data['no_nota']]);
+        }
+
+        return $data;
+    }
+
     protected function getRedirectUrl(): string
     {
         return TukarTambahResource::getUrl('index');
@@ -34,88 +53,111 @@ class CreateTukarTambah extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        return DB::transaction(function () use ($data) {
-            $tanggal = $data['tanggal'] ?? now();
-            $catatan = $data['catatan'] ?? null;
-            $karyawanId = $data['id_karyawan'] ?? null;
-            $penjualanPayload = is_array($data['penjualan'] ?? null) ? $data['penjualan'] : [];
-            $pembelianPayload = is_array($data['pembelian'] ?? null) ? $data['pembelian'] : [];
+        Log::info('TukarTambah: Starting record creation', [
+            'data_keys' => array_keys($data),
+            'has_penjualan' => isset($data['penjualan']),
+            'has_pembelian' => isset($data['pembelian']),
+            'has_unified_pembayaran' => isset($data['unified_pembayaran']),
+        ]);
 
-            // Process unified payments and split them
-            $unifiedPayments = $data['unified_pembayaran'] ?? [];
-            $penjualanPayments = [];
-            $pembelianPayments = [];
-            
-            \Log::info('TukarTambah: Unified Payments Received', ['unified_pembayaran' => $unifiedPayments]);
-            
-            foreach ($unifiedPayments as $payment) {
-                if (!is_array($payment)) {
-                    continue;
+        try {
+            return DB::transaction(function () use ($data) {
+                $tanggal = $data['tanggal'] ?? now();
+                $catatan = $data['catatan'] ?? null;
+                $karyawanId = $data['id_karyawan'] ?? null;
+                $penjualanPayload = is_array($data['penjualan'] ?? null) ? $data['penjualan'] : [];
+                $pembelianPayload = is_array($data['pembelian'] ?? null) ? $data['pembelian'] : [];
+
+                Log::info('TukarTambah: Payload prepared', [
+                    'penjualan_items_count' => count($penjualanPayload['items'] ?? []),
+                    'pembelian_items_count' => count($pembelianPayload['items'] ?? []),
+                ]);
+
+                // Process unified payments and split them
+                $unifiedPayments = $data['unified_pembayaran'] ?? [];
+                $penjualanPayments = [];
+                $pembelianPayments = [];
+
+                foreach ($unifiedPayments as $payment) {
+                    if (! is_array($payment)) {
+                        continue;
+                    }
+
+                    $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
+
+                    // Remove tipe_transaksi from payment data before saving
+                    $paymentData = $payment;
+                    unset($paymentData['tipe_transaksi']);
+
+                    if ($tipeTransaksi === 'penjualan') {
+                        $penjualanPayments[] = $paymentData;
+                    } elseif ($tipeTransaksi === 'pembelian') {
+                        $pembelianPayments[] = $paymentData;
+                    }
                 }
-                
-                $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
-                
-                // Remove tipe_transaksi from payment data before saving
-                $paymentData = $payment;
-                unset($paymentData['tipe_transaksi']);
-                
-                if ($tipeTransaksi === 'penjualan') {
-                    $penjualanPayments[] = $paymentData;
-                    \Log::info('TukarTambah: Added to Penjualan Payments', ['payment' => $paymentData]);
-                } elseif ($tipeTransaksi === 'pembelian') {
-                    $pembelianPayments[] = $paymentData;
-                    \Log::info('TukarTambah: Added to Pembelian Payments', ['payment' => $paymentData]);
-                }
-            }
-            
-            \Log::info('TukarTambah: Split Payments', [
-                'penjualan_count' => count($penjualanPayments),
-                'pembelian_count' => count($pembelianPayments),
+
+                // Override pembayaran arrays with unified payments
+                $penjualanPayload['pembayaran'] = $penjualanPayments;
+                $pembelianPayload['pembayaran'] = $pembelianPayments;
+
+                // Generate TukarTambah nota number first
+                $ttNotaNumber = $data['no_nota'] ?? TukarTambah::generateNoNota();
+
+                Log::info('TukarTambah: Creating Penjualan', ['no_nota' => $ttNotaNumber]);
+
+                // Use TukarTambah nota for both Penjualan and Pembelian
+                $penjualan = Penjualan::query()->create([
+                    'tanggal_penjualan' => $tanggal,
+                    'catatan' => $penjualanPayload['catatan'] ?? $catatan,
+                    'id_karyawan' => $penjualanPayload['id_karyawan'] ?? $karyawanId,
+                    'id_member' => $data['id_member'] ?? null,
+                    'diskon_total' => $penjualanPayload['diskon_total'] ?? 0,
+                    'no_nota' => $ttNotaNumber,
+                    'sumber_transaksi' => 'tukar_tambah',
+                ]);
+
+                Log::info('TukarTambah: Penjualan created', ['id' => $penjualan->getKey()]);
+
+                $pembelian = Pembelian::query()->create([
+                    'tanggal' => $tanggal,
+                    'catatan' => $pembelianPayload['catatan'] ?? $catatan,
+                    'id_karyawan' => $pembelianPayload['id_karyawan'] ?? $karyawanId,
+                    'id_supplier' => $pembelianPayload['id_supplier'] ?? null,
+                    'no_po' => $ttNotaNumber,
+                    'tipe_pembelian' => $pembelianPayload['tipe_pembelian'] ?? 'non_ppn',
+                ]);
+
+                Log::info('TukarTambah: Pembelian created', ['id' => $pembelian->getKey()]);
+
+                $this->createPenjualanItems($penjualan, $penjualanPayload['items'] ?? []);
+                $this->createPenjualanJasaItems($penjualan, $penjualanPayload['jasa_items'] ?? []);
+                $this->createPembelianItems($pembelian, $pembelianPayload['items'] ?? []);
+                $this->createPenjualanPembayaran($penjualan, $penjualanPayload['pembayaran'] ?? []);
+                $this->createPembelianPembayaran($pembelian, $pembelianPayload['pembayaran'] ?? []);
+
+                Log::info('TukarTambah: Creating TukarTambah record');
+
+                // Create TukarTambah with the same nota
+                $tukarTambah = TukarTambah::query()->create([
+                    'no_nota' => $ttNotaNumber,
+                    'tanggal' => $tanggal,
+                    'catatan' => $catatan,
+                    'id_karyawan' => $karyawanId,
+                    'penjualan_id' => $penjualan->getKey(),
+                    'pembelian_id' => $pembelian->getKey(),
+                ]);
+
+                Log::info('TukarTambah: Record created successfully', ['id' => $tukarTambah->getKey()]);
+
+                return $tukarTambah;
+            });
+        } catch (\Exception $e) {
+            Log::error('TukarTambah: Error during record creation', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            
-            // Override pembayaran arrays with unified payments
-            $penjualanPayload['pembayaran'] = $penjualanPayments;
-            $pembelianPayload['pembayaran'] = $pembelianPayments;
-
-            // Generate TukarTambah nota number first
-            $ttNotaNumber = $data['no_nota'] ?? TukarTambah::generateNoNota();
-
-            // Use TukarTambah nota for both Penjualan and Pembelian
-            $penjualan = Penjualan::query()->create([
-                'tanggal_penjualan' => $tanggal,
-                'catatan' => $penjualanPayload['catatan'] ?? $catatan,
-                'id_karyawan' => $penjualanPayload['id_karyawan'] ?? $karyawanId,
-                'id_member' => $data['id_member'] ?? null,  // Get from main form
-                'diskon_total' => $penjualanPayload['diskon_total'] ?? 0,
-                'no_nota' => $ttNotaNumber,  // Use TukarTambah nota
-                'sumber_transaksi' => 'tukar_tambah',
-            ]);
-
-            $pembelian = Pembelian::query()->create([
-                'tanggal' => $tanggal,
-                'catatan' => $pembelianPayload['catatan'] ?? $catatan,
-                'id_karyawan' => $pembelianPayload['id_karyawan'] ?? $karyawanId,
-                'id_supplier' => $pembelianPayload['id_supplier'] ?? null,
-                'no_po' => $ttNotaNumber,  // Use TukarTambah nota
-                'tipe_pembelian' => $pembelianPayload['tipe_pembelian'] ?? 'non_ppn',
-            ]);
-
-            $this->createPenjualanItems($penjualan, $penjualanPayload['items'] ?? []);
-            $this->createPenjualanJasaItems($penjualan, $penjualanPayload['jasa_items'] ?? []);
-            $this->createPembelianItems($pembelian, $pembelianPayload['items'] ?? []);
-            $this->createPenjualanPembayaran($penjualan, $penjualanPayload['pembayaran'] ?? []);
-            $this->createPembelianPembayaran($pembelian, $pembelianPayload['pembayaran'] ?? []);
-
-            // Create TukarTambah with the same nota
-            return TukarTambah::query()->create([
-                'no_nota' => $ttNotaNumber,  // Explicitly set
-                'tanggal' => $tanggal,
-                'catatan' => $catatan,
-                'id_karyawan' => $karyawanId,
-                'penjualan_id' => $penjualan->getKey(),
-                'pembelian_id' => $pembelian->getKey(),
-            ]);
-        });
+            throw $e;
+        }
     }
 
     protected function afterCreate(): void
@@ -207,11 +249,11 @@ class CreateTukarTambah extends CreateRecord
         }
 
         $batches = $batchesQuery->get();
-        $available = (int) $batches->sum(fn(PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
+        $available = (int) $batches->sum(fn (PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
 
         if ($available < $qty) {
             throw ValidationException::withMessages([
-                'penjualan.items' => 'Qty melebihi stok tersedia (' . $available . ').',
+                'penjualan.items' => 'Qty melebihi stok tersedia ('.$available.').',
             ]);
         }
 
@@ -295,18 +337,19 @@ class CreateTukarTambah extends CreateRecord
 
     protected function createPenjualanPembayaran(Penjualan $penjualan, array $items): void
     {
-        \Log::info('createPenjualanPembayaran called', ['items_count' => count($items), 'items' => $items]);
-        
+        Log::info('createPenjualanPembayaran called', ['items_count' => count($items), 'items' => $items]);
+
         foreach ($items as $item) {
             if (! is_array($item)) {
-                \Log::warning('Penjualan Payment: Skipped non-array item', ['item' => $item]);
+                Log::warning('Penjualan Payment: Skipped non-array item', ['item' => $item]);
+
                 continue;
             }
 
             $metode = $item['metode_bayar'] ?? null;
             $jumlah = $item['jumlah'] ?? null;
 
-            \Log::info('Penjualan Payment: Processing', [
+            Log::info('Penjualan Payment: Processing', [
                 'metode' => $metode,
                 'jumlah' => $jumlah,
                 'jumlah_int' => (int) $jumlah,
@@ -314,10 +357,11 @@ class CreateTukarTambah extends CreateRecord
 
             // Skip if no payment method or amount
             if (! $metode || $jumlah === null || $jumlah === '' || (int) $jumlah <= 0) {
-                \Log::warning('Penjualan Payment: Skipped due to validation', [
+                Log::warning('Penjualan Payment: Skipped due to validation', [
                     'metode' => $metode,
                     'jumlah' => $jumlah,
                 ]);
+
                 continue;
             }
 
@@ -330,8 +374,8 @@ class CreateTukarTambah extends CreateRecord
                 'bukti_transfer' => $item['bukti_transfer'] ?? null,
                 'catatan' => $item['catatan'] ?? null,
             ]);
-            
-            \Log::info('Penjualan Payment: Created', ['id' => $payment->id_penjualan_pembayaran, 'jumlah' => $payment->jumlah]);
+
+            Log::info('Penjualan Payment: Created', ['id' => $payment->id_penjualan_pembayaran, 'jumlah' => $payment->jumlah]);
         }
     }
 

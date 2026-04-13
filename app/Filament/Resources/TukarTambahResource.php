@@ -432,10 +432,19 @@ class TukarTambahResource extends BaseResource
                                                     ->label('Harga Satuan')
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->default(0)
                                                     ->required()
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
                                                     ])
+                                                    ->dehydrateStateUsing(function ($state) {
+                                                        if (is_numeric($state)) {
+                                                            return (int) $state;
+                                                        }
+                                                        $cleaned = preg_replace('/[^0-9]/', '', $state);
+
+                                                        return (int) $cleaned;
+                                                    })
                                                     ->reactive(),
 
                                                 Hidden::make('serials')
@@ -587,10 +596,19 @@ class TukarTambahResource extends BaseResource
                                                     ->label('Tarif')
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->default(0)
                                                     ->required()
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
                                                     ])
+                                                    ->dehydrateStateUsing(function ($state) {
+                                                        if (is_numeric($state)) {
+                                                            return (int) $state;
+                                                        }
+                                                        $cleaned = preg_replace('/[^0-9]/', '', $state);
+
+                                                        return (int) $cleaned;
+                                                    })
                                                     ->reactive(),
                                             ])
                                             ->colStyles([
@@ -775,10 +793,20 @@ class TukarTambahResource extends BaseResource
                                                     ->label('HPP (Beli)')
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->default(0)
                                                     ->required()
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
                                                     ])
+                                                    ->dehydrateStateUsing(function ($state) {
+                                                        if (is_numeric($state)) {
+                                                            return (int) $state;
+                                                        }
+                                                        // Remove formatting and convert to int
+                                                        $cleaned = preg_replace('/[^0-9]/', '', $state);
+
+                                                        return (int) $cleaned;
+                                                    })
                                                     ->lazy()
                                                     ->afterStateUpdated(function (Set $set, Get $get): void {
                                                         // Trigger parent repeater update
@@ -818,10 +846,21 @@ class TukarTambahResource extends BaseResource
                                                     ->label('Rencana Jual')
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                                    ->default(0)
                                                     ->required()
                                                     ->validationMessages([
                                                         'required' => 'Perlu diisi',
-                                                    ]),
+                                                    ])
+                                                    ->dehydrateStateUsing(function ($state) {
+                                                        if (is_numeric($state)) {
+                                                            return (int) $state;
+                                                        }
+                                                        // Remove formatting and convert to int
+                                                        $cleaned = preg_replace('/[^0-9]/', '', $state);
+
+                                                        return (int) $cleaned;
+                                                    })
+                                                    ->lazy(),
                                             ])
                                             ->columns(6)
                                             ->colStyles([

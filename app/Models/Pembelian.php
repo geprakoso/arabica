@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CacheHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -144,20 +145,20 @@ class Pembelian extends Model
     public static function generateUniquePO(int $maxAttempts = 10): string
     {
         $date = now()->format('Ym');
-        $prefix = 'PO-' . $date . '-';
+        $prefix = 'PO-'.$date.'-';
 
         // Query all records for unique constraint check
-        $latest = self::where('no_po', 'like', $prefix . '%')
-            ->orderByRaw('CAST(SUBSTRING(no_po, ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
+        $latest = self::where('no_po', 'like', $prefix.'%')
+            ->orderByRaw('CAST(SUBSTRING(no_po, '.(strlen($prefix) + 1).') AS UNSIGNED) DESC')
             ->first();
 
         $next = 1;
-        if ($latest && preg_match('/' . preg_quote($prefix, '/') . '(\d+)$/', $latest->no_po, $m)) {
+        if ($latest && preg_match('/'.preg_quote($prefix, '/').'(\d+)$/', $latest->no_po, $m)) {
             $next = (int) $m[1] + 1;
         }
 
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
-            $poNumber = $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+            $poNumber = $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
 
             // Check against ALL records due to unique constraint
             $exists = self::where('no_po', $poNumber)->exists();
@@ -168,7 +169,7 @@ class Pembelian extends Model
             $next++;
         }
 
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     protected $casts = [

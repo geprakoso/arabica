@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MetodeBayar;
+use App\Support\CacheHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

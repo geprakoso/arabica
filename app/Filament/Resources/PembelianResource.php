@@ -103,11 +103,9 @@ class PembelianResource extends BaseResource
                                     ->label('No. PO')
                                     ->prefixIcon('heroicon-s-tag')
                                     ->required()
-                                    ->default(fn () => Pembelian::generatePO()) // generate no_po otomatis
+                                    ->default(fn() => Pembelian::generatePO()) // generate no_po otomatis
                                     ->disabled()
-                                    ->dehydrated()
-                                    ->visibleOn('edit'),
-
+                                    ->dehydrated(),
                                 FormsDatePicker::make('tanggal')
                                     ->label('Tanggal Transaksi')
                                     ->default(now())
@@ -126,7 +124,7 @@ class PembelianResource extends BaseResource
                                     ->preload()
                                     ->prefixIcon('heroicon-m-building-storefront')
                                     ->createOptionModalHeading('Tambah Supplier')
-                                    ->createOptionAction(fn ($action) => $action->label('Tambah Supplier'))
+                                    ->createOptionAction(fn($action) => $action->label('Tambah Supplier'))
                                     ->createOptionForm([
                                         Grid::make(2)->schema([
                                             TextInput::make('nama_supplier')
@@ -144,7 +142,7 @@ class PembelianResource extends BaseResource
                                             ->label('Alamat')
                                             ->nullable(),
                                     ])
-                                    ->createOptionUsing(fn (array $data): int => (int) Supplier::query()->create($data)->getKey())
+                                    ->createOptionUsing(fn(array $data): int => (int) Supplier::query()->create($data)->getKey())
                                     ->required()
                                     ->native(false),
 
@@ -153,7 +151,7 @@ class PembelianResource extends BaseResource
                                     ->relationship('karyawan', 'nama_karyawan')
                                     ->searchable()
                                     ->preload()
-                                    ->default(fn () => Auth::user()->karyawan?->id)
+                                    ->default(fn() => Auth::user()->karyawan?->id)
                                     ->prefixIcon('heroicon-m-user')
                                     ->required()
                                     ->native(false),
@@ -330,7 +328,7 @@ class PembelianResource extends BaseResource
                                             return null;
                                         }
 
-                                        return 'Rp '.number_format((int) $value, 0, ',', '.');
+                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         if (filled($state)) {
@@ -339,7 +337,7 @@ class PembelianResource extends BaseResource
 
                                         return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp'];
                                     })
-                                    ->required(fn (Get $get): bool => filled($get('id_produk'))
+                                    ->required(fn(Get $get): bool => filled($get('id_produk'))
                                         && blank($get('hpp'))
                                         && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['hpp']))
                                     ->columnSpan([
@@ -361,7 +359,7 @@ class PembelianResource extends BaseResource
                                             return null;
                                         }
 
-                                        return 'Rp '.number_format((int) $value, 0, ',', '.');
+                                        return 'Rp ' . number_format((int) $value, 0, ',', '.');
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         if (filled($state)) {
@@ -370,7 +368,7 @@ class PembelianResource extends BaseResource
 
                                         return self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual'];
                                     })
-                                    ->required(fn (Get $get): bool => filled($get('id_produk'))
+                                    ->required(fn(Get $get): bool => filled($get('id_produk'))
                                         && blank($get('harga_jual'))
                                         && is_null(self::getLastRecordedPricingForProduct((int) $get('id_produk'))['harga_jual']))
                                     ->columnSpan([
@@ -386,7 +384,7 @@ class PembelianResource extends BaseResource
                                 // Serial count display with modal action
                                 TextInput::make('serials_count')
                                     ->label('SN & Garansi')
-                                    ->formatStateUsing(fn (Get $get): string => count(array_filter($get('serials') ?? [], fn ($s) => ! empty($s['sn']))).' SN')
+                                    ->formatStateUsing(fn(Get $get): string => count(array_filter($get('serials') ?? [], fn($s) => ! empty($s['sn']))) . ' SN')
                                     ->live()
                                     ->disabled()
                                     ->dehydrated(false)
@@ -440,14 +438,14 @@ class PembelianResource extends BaseResource
                                             ->after(function (Set $set, Get $get): void {
                                                 // Force refresh of serials_count
                                                 $serials = $get('serials') ?? [];
-                                                $filledCount = count(array_filter($serials, fn ($s) => ! empty($s['sn'])));
-                                                $set('serials_count', $filledCount.' SN');
+                                                $filledCount = count(array_filter($serials, fn($s) => ! empty($s['sn'])));
+                                                $set('serials_count', $filledCount . ' SN');
                                             })
                                     ),
 
                             ])
                             ->cloneable()
-                            ->itemLabel(fn (array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null)
+                            ->itemLabel(fn(array $state): ?string => $state['id_produk'] ?? null ? 'Produk Terpilih' : null)
                             ->colStyles([
                                 'id_produk' => 'width: 30%;',
                                 'kondisi' => 'width: 12%;',
@@ -522,10 +520,10 @@ class PembelianResource extends BaseResource
                                 $items = $get('items') ?? [];
                                 $jasaItems = $get('jasaItems') ?? [];
 
-                                $totalBarang = collect($items)->sum(fn ($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
-                                $totalJasa = collect($jasaItems)->sum(fn ($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
+                                $totalBarang = collect($items)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
+                                $totalJasa = collect($jasaItems)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
 
-                                return 'Rp '.number_format($totalBarang + $totalJasa, 0, ',', '.');
+                                return 'Rp ' . number_format($totalBarang + $totalJasa, 0, ',', '.');
                             })
                             ->extraAttributes(['class' => 'text-xl font-bold text-primary-600']),
                     ]),
@@ -545,11 +543,11 @@ class PembelianResource extends BaseResource
                                 $jasaItems = $get('jasaItems') ?? [];
                                 $pembayaran = $get('pembayaran') ?? [];
 
-                                $totalBarang = collect($items)->sum(fn ($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
-                                $totalJasa = collect($jasaItems)->sum(fn ($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
+                                $totalBarang = collect($items)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
+                                $totalJasa = collect($jasaItems)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
                                 $grandTotal = $totalBarang + $totalJasa;
 
-                                $totalPaid = collect($pembayaran)->sum(fn ($p) => (int) ($p['jumlah'] ?? 0));
+                                $totalPaid = collect($pembayaran)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
 
                                 return $totalPaid < $grandTotal;
                             })
@@ -572,12 +570,12 @@ class PembelianResource extends BaseResource
                                     ->reactive(),
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi')
-                                    ->relationship('akunTransaksi', 'nama_akun', fn (Builder $query) => $query->where('is_active', true))
+                                    ->relationship('akunTransaksi', 'nama_akun', fn(Builder $query) => $query->where('is_active', true))
                                     ->searchable()
                                     ->placeholder('pilih')
                                     ->preload()
                                     ->native(false)
-                                    ->required(fn (Get $get) => $get('metode_bayar') === 'transfer'),
+                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer'),
                                 TextInput::make('jumlah')
                                     ->label('Jumlah')
                                     ->numeric()
@@ -588,11 +586,11 @@ class PembelianResource extends BaseResource
                                         $jasaItems = $get('../../jasaItems') ?? [];
                                         $pembayaran = $get('../../pembayaran') ?? [];
 
-                                        $totalBarang = collect($items)->sum(fn ($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
-                                        $totalJasa = collect($jasaItems)->sum(fn ($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
+                                        $totalBarang = collect($items)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
+                                        $totalJasa = collect($jasaItems)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
                                         $grandTotal = $totalBarang + $totalJasa;
 
-                                        $totalPaid = collect($pembayaran)->sum(fn ($p) => (int) ($p['jumlah'] ?? 0));
+                                        $totalPaid = collect($pembayaran)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
 
                                         // Total Paid includes the current value if it's in the array.
                                         // The placeholder is shown when the field is empty (value is null/empty).
@@ -600,7 +598,7 @@ class PembelianResource extends BaseResource
 
                                         $remaining = max(0, $grandTotal - $totalPaid);
 
-                                        return 'Sisa: Rp. '.number_format($remaining, 0, ',', '.');
+                                        return 'Sisa: Rp. ' . number_format($remaining, 0, ',', '.');
                                     })
                                     ->required(),
                                 FileUpload::make('bukti_transfer')
@@ -707,9 +705,9 @@ class PembelianResource extends BaseResource
 
                                 TextEntry::make('tukar_tambah_link')
                                     ->label('Tukar Tambah')
-                                    ->state(fn (Pembelian $record): ?string => $record->tukarTambah?->kode)
+                                    ->state(fn(Pembelian $record): ?string => $record->tukarTambah?->kode)
                                     ->icon('heroicon-m-arrows-right-left')
-                                    ->url(fn (Pembelian $record) => $record->tukarTambah
+                                    ->url(fn(Pembelian $record) => $record->tukarTambah
                                         ? TukarTambahResource::getUrl('view', ['record' => $record->tukarTambah])
                                         : null)
                                     ->openUrlInNewTab()
@@ -721,14 +719,14 @@ class PembelianResource extends BaseResource
                                 TextEntry::make('jenis_pembayaran')
                                     ->label('Pembayaran')
                                     ->badge()
-                                    ->color(fn (string $state): string => $state === 'lunas' ? 'success' : 'warning')
-                                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                                    ->color(fn(string $state): string => $state === 'lunas' ? 'success' : 'warning')
+                                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
 
                                 TextEntry::make('tipe_pembelian')
                                     ->label('Tipe Pajak')
                                     ->badge()
                                     ->color('gray')
-                                    ->formatStateUsing(fn (string $state): string => $state === 'ppn' ? 'PPN' : 'Non-PPN'),
+                                    ->formatStateUsing(fn(string $state): string => $state === 'ppn' ? 'PPN' : 'Non-PPN'),
 
                                 TextEntry::make('tempo_label')
                                     ->state('Jatuh Tempo Pembayaran')
@@ -743,7 +741,7 @@ class PembelianResource extends BaseResource
                                     ->color('danger')
                                     ->size(TextEntrySize::Large)
                                     ->weight(FontWeight::Bold)
-                                    ->visible(fn ($record) => $record->jenis_pembayaran === 'tempo')
+                                    ->visible(fn($record) => $record->jenis_pembayaran === 'tempo')
                                     ->alignRight(),
                             ])->grow(false), // Agar kolom kanan tidak terlalu lebar
 
@@ -757,16 +755,16 @@ class PembelianResource extends BaseResource
                         ViewEntry::make('items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.pembelian-items-table')
-                            ->state(fn (Pembelian $record) => $record->items),
+                            ->state(fn(Pembelian $record) => $record->items),
                     ]),
 
                 InfoSection::make('Daftar Jasa')
-                    ->visible(fn (Pembelian $record) => $record->jasaItems->isNotEmpty())
+                    ->visible(fn(Pembelian $record) => $record->jasaItems->isNotEmpty())
                     ->schema([
                         ViewEntry::make('jasa_items_table')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.pembelian-jasa-table')
-                            ->state(fn (Pembelian $record) => $record->jasaItems),
+                            ->state(fn(Pembelian $record) => $record->jasaItems),
                     ]),
 
                 InfoSection::make('Pembayaran')
@@ -776,16 +774,16 @@ class PembelianResource extends BaseResource
                                 TextEntry::make('total_pembayaran')
                                     ->label('Total Pembayaran')
                                     ->color('success')
-                                    ->state(fn (Pembelian $record): float => $record->calculateTotalPembelian())
-                                    ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.'))
+                                    ->state(fn(Pembelian $record): float => $record->calculateTotalPembelian())
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large),
                             ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('total_dibayar')
                                     ->label('Total Dibayar')
-                                    ->state(fn (Pembelian $record): float => (float) $record->pembayaran->sum('jumlah'))
-                                    ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.')),
+                                    ->state(fn(Pembelian $record): float => (float) $record->pembayaran->sum('jumlah'))
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('sisa_bayar')
@@ -796,7 +794,7 @@ class PembelianResource extends BaseResource
 
                                         return max(0, $total - $dibayar);
                                     })
-                                    ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.')),
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])->grow(),
                             InfoGroup::make([
                                 TextEntry::make('kelebihan_bayar')
@@ -807,13 +805,13 @@ class PembelianResource extends BaseResource
 
                                         return max(0, $dibayar - $total);
                                     })
-                                    ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.')),
+                                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])->grow(false),
                         ])->from('lg'),
                     ]),
 
                 InfoSection::make('Rincian Pembayaran')
-                    ->visible(fn (Pembelian $record) => $record->pembayaran->isNotEmpty())
+                    ->visible(fn(Pembelian $record) => $record->pembayaran->isNotEmpty())
                     ->schema([
                         RepeatableEntry::make('pembayaran')
                             ->hiddenLabel()
@@ -825,21 +823,21 @@ class PembelianResource extends BaseResource
                                 TextEntry::make('metode_bayar')
                                     ->label('Metode')
                                     ->badge()
-                                    ->formatStateUsing(fn ($state) => $state === 'cash' ? 'Tunai' : 'Transfer')
-                                    ->color(fn ($state) => $state === 'cash' ? 'success' : 'info'),
+                                    ->formatStateUsing(fn($state) => $state === 'cash' ? 'Tunai' : 'Transfer')
+                                    ->color(fn($state) => $state === 'cash' ? 'success' : 'info'),
                                 TextEntry::make('akunTransaksi.nama_akun')
                                     ->label('Akun Transaksi')
                                     ->placeholder('-'),
                                 TextEntry::make('jumlah')
                                     ->label('Jumlah')
-                                    ->formatStateUsing(fn ($state) => 'Rp '.number_format((int) $state, 0, ',', '.')),
+                                    ->formatStateUsing(fn($state) => 'Rp ' . number_format((int) $state, 0, ',', '.')),
                             ])
                             ->columns(4),
                     ]),
 
                 // === BAGIAN BAWAH: REFERENSI RO ===
                 InfoSection::make()
-                    ->visible(fn (Pembelian $record) => $record->requestOrders->isNotEmpty())
+                    ->visible(fn(Pembelian $record) => $record->requestOrders->isNotEmpty())
                     ->schema([
                         TextEntry::make('requestOrders.no_ro')
                             ->label('Referensi RO')
@@ -851,7 +849,7 @@ class PembelianResource extends BaseResource
                 // === CATATAN ===
                 InfoSection::make('Catatan')
                     ->icon('heroicon-o-pencil-square')
-                    ->visible(fn (Pembelian $record) => filled($record->catatan))
+                    ->visible(fn(Pembelian $record) => filled($record->catatan))
                     ->schema([
                         TextEntry::make('catatan')
                             ->hiddenLabel()
@@ -860,12 +858,12 @@ class PembelianResource extends BaseResource
 
                 InfoSection::make('Bukti & Dokumentasi')
                     ->icon('heroicon-o-camera')
-                    ->visible(fn (Pembelian $record) => $record->pembayaran->whereNotNull('bukti_transfer')->isNotEmpty() || ! empty($record->foto_dokumen))
+                    ->visible(fn(Pembelian $record) => $record->pembayaran->whereNotNull('bukti_transfer')->isNotEmpty() || ! empty($record->foto_dokumen))
                     ->schema([
                         ViewEntry::make('all_photos_gallery')
                             ->hiddenLabel()
                             ->view('filament.infolists.components.pembelian-photos-gallery')
-                            ->state(fn (Pembelian $record) => [
+                            ->state(fn(Pembelian $record) => [
                                 'bukti_pembayaran' => $record->pembayaran->whereNotNull('bukti_transfer')->pluck('bukti_transfer')->toArray(),
                                 'foto_dokumen' => $record->foto_dokumen ?? [],
                             ]),
@@ -876,7 +874,7 @@ class PembelianResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with([
+            ->modifyQueryUsing(fn(Builder $query) => $query->with([
                 'requestOrders',
                 'supplier',
                 'karyawan.user',
@@ -903,9 +901,9 @@ class PembelianResource extends BaseResource
                     ->label('Supplier')
                     ->icon('heroicon-m-building-storefront')
                     ->weight('medium')
-                    ->formatStateUsing(fn ($state) => Str::title($state))
+                    ->formatStateUsing(fn($state) => Str::title($state))
                     ->limit(9)
-                    ->tooltip(fn (Pembelian $record): ?string => $record->supplier?->nama_supplier)
+                    ->tooltip(fn(Pembelian $record): ?string => $record->supplier?->nama_supplier)
                     ->toggleable()
                     ->searchable()
                     ->sortable(),
@@ -920,8 +918,8 @@ class PembelianResource extends BaseResource
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-m-hashtag')
-                    ->state(fn (Pembelian $record) => $record->requestOrders
-                        ->map(fn ($ro) => '#'.$ro->no_ro)
+                    ->state(fn(Pembelian $record) => $record->requestOrders
+                        ->map(fn($ro) => '#' . $ro->no_ro)
                         ->toArray())
                     ->separator(',')
                     ->hidden()
@@ -937,7 +935,7 @@ class PembelianResource extends BaseResource
                     ->label('Tipe')
                     ->badge()
                     ->hidden()
-                    ->formatStateUsing(fn (?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
+                    ->formatStateUsing(fn(?string $state) => $state ? strtoupper(str_replace('_', ' ', $state)) : null)
                     ->colors([
                         'success' => 'ppn',
                         'gray' => 'non_ppn',
@@ -962,7 +960,7 @@ class PembelianResource extends BaseResource
                         // DP: Partial payment
                         return 'DP';
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'LUNAS' => 'success',
                         'DP' => 'warning',
                         'TEMPO' => 'danger',
@@ -973,7 +971,7 @@ class PembelianResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->state(function (Pembelian $record): string {
                         $allSerials = $record->items
-                            ->flatMap(fn ($item) => collect($item->serials ?? [])->pluck('sn'))
+                            ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
                             ->filter()
                             ->values();
 
@@ -988,7 +986,7 @@ class PembelianResource extends BaseResource
                     ->wrap()
                     ->tooltip(function (Pembelian $record): ?string {
                         $allSerials = $record->items
-                            ->flatMap(fn ($item) => collect($item->serials ?? [])->pluck('sn'))
+                            ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
                             ->filter()
                             ->values();
 
@@ -996,7 +994,7 @@ class PembelianResource extends BaseResource
                     })
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('items', function (Builder $q) use ($search): void {
-                            $q->whereRaw('LOWER(serials) LIKE ?', ['%'.strtolower($search).'%']);
+                            $q->whereRaw('LOWER(serials) LIKE ?', ['%' . strtolower($search) . '%']);
                         });
                     })
                     ->toggleable(),
@@ -1012,8 +1010,8 @@ class PembelianResource extends BaseResource
                 TextColumn::make('total_pembayaran')
                     ->label('Grand Total')
                     ->icon('heroicon-m-banknotes')
-                    ->state(fn (Pembelian $record) => $record->calculateTotalPembelian())
-                    ->formatStateUsing(fn (float $state): string => 'Rp '.number_format((int) $state, 0, ',', '.'))
+                    ->state(fn(Pembelian $record) => $record->calculateTotalPembelian())
+                    ->formatStateUsing(fn(float $state): string => 'Rp ' . number_format((int) $state, 0, ',', '.'))
                     ->color('success')
                     ->sortable(),
                 TextColumn::make('sisa_bayar_display')
@@ -1025,7 +1023,7 @@ class PembelianResource extends BaseResource
 
                         $sisa = max(0, $grandTotal - $totalPaid);
 
-                        return 'Rp '.number_format((int) $sisa, 0, ',', '.');
+                        return 'Rp ' . number_format((int) $sisa, 0, ',', '.');
                     })
                     ->copyable()
                     ->color('danger')
@@ -1036,10 +1034,10 @@ class PembelianResource extends BaseResource
                     ->disk('public')
                     ->circular()
                     ->defaultImageUrl(
-                        fn (Pembelian $record): string => 'https://ui-avatars.com/api/?name='.urlencode($record->karyawan?->nama_karyawan ?? 'User').
+                        fn(Pembelian $record): string => 'https://ui-avatars.com/api/?name=' . urlencode($record->karyawan?->nama_karyawan ?? 'User') .
                             '&color=FFFFFF&background=0D9488&size=128&bold=true'
                     )
-                    ->tooltip(fn (Pembelian $record): ?string => $record->karyawan?->nama_karyawan)
+                    ->tooltip(fn(Pembelian $record): ?string => $record->karyawan?->nama_karyawan)
                     ->toggleable(),
             ])
             ->filters([
@@ -1048,7 +1046,7 @@ class PembelianResource extends BaseResource
                     ->relationship(
                         'karyawan',
                         'nama_karyawan',
-                        fn (Builder $query) => $query->whereHas('pembelian')
+                        fn(Builder $query) => $query->whereHas('pembelian')
                     )
                     ->searchable()
                     ->preload(),
@@ -1057,7 +1055,7 @@ class PembelianResource extends BaseResource
                     ->relationship(
                         'supplier',
                         'nama_supplier',
-                        fn (Builder $query) => $query->whereHas('pembelian')
+                        fn(Builder $query) => $query->whereHas('pembelian')
                     )
                     ->searchable()
                     ->preload(),
@@ -1081,13 +1079,13 @@ class PembelianResource extends BaseResource
                                 ->native(false)
                                 ->placeholder('Pilih tanggal')
                                 ->prefixIcon('heroicon-m-calendar')
-                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                                ->hidden(fn(Get $get) => $get('range') !== 'custom'),
                             DatePicker::make('until')
                                 ->label('Sampai')
                                 ->native(false)
                                 ->placeholder('Pilih tanggal')
                                 ->prefixIcon('heroicon-m-calendar')
-                                ->hidden(fn (Get $get) => $get('range') !== 'custom'),
+                                ->hidden(fn(Get $get) => $get('range') !== 'custom'),
                         ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -1108,11 +1106,11 @@ class PembelianResource extends BaseResource
                             return $query
                                 ->when(
                                     $startDate,
-                                    fn (Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
+                                    fn(Builder $query, $date) => $query->whereDate('tanggal', '>=', $date),
                                 )
                                 ->when(
                                     $endDate,
-                                    fn (Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
+                                    fn(Builder $query, $date) => $query->whereDate('tanggal', '<=', $date),
                                 );
                         }
 
@@ -1125,7 +1123,7 @@ class PembelianResource extends BaseResource
 
                         return $query->when(
                             $targetDate,
-                            fn (Builder $query, $date) => $query->whereDate('tanggal', $date)
+                            fn(Builder $query, $date) => $query->whereDate('tanggal', $date)
                         );
                     })
                     ->indicateUsing(function (array $data): ?string {
@@ -1142,10 +1140,10 @@ class PembelianResource extends BaseResource
                                 return null;
                             }
 
-                            return 'Periode: '.($from ? \Carbon\Carbon::parse($from)->format('d/m/Y') : '...').' - '.($until ? \Carbon\Carbon::parse($until)->format('d/m/Y') : '...');
+                            return 'Periode: ' . ($from ? \Carbon\Carbon::parse($from)->format('d/m/Y') : '...') . ' - ' . ($until ? \Carbon\Carbon::parse($until)->format('d/m/Y') : '...');
                         }
 
-                        return 'Periode: '.match ($range) {
+                        return 'Periode: ' . match ($range) {
                             'hari_ini' => 'Hari Ini',
                             'kemarin' => 'Kemarin',
                             '2_hari_lalu' => '2 Hari Lalu',
@@ -1204,7 +1202,7 @@ class PembelianResource extends BaseResource
     {
         $ids = collect($requestOrderIds)
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique();
 
         if ($ids->isEmpty()) {
@@ -1215,7 +1213,7 @@ class PembelianResource extends BaseResource
             ->whereIn('id', $ids)
             ->pluck('no_ro')
             ->filter()
-            ->map(fn ($noRo) => "#{$noRo}")
+            ->map(fn($noRo) => "#{$noRo}")
             ->toArray();
 
         return empty($tags) ? null : implode(', ', $tags);
@@ -1233,14 +1231,14 @@ class PembelianResource extends BaseResource
         $primaryKey = PembelianItem::primaryKeyColumn();
 
         $lastItem = PembelianItem::query()
-            ->leftJoin($purchaseTable, $purchaseTable.'.id_pembelian', '=', $itemTable.'.id_pembelian')
-            ->where($itemTable.'.'.$productColumn, $productId)
-            ->orderByDesc($purchaseTable.'.tanggal')
-            ->orderByDesc($itemTable.'.'.$primaryKey)
+            ->leftJoin($purchaseTable, $purchaseTable . '.id_pembelian', '=', $itemTable . '.id_pembelian')
+            ->where($itemTable . '.' . $productColumn, $productId)
+            ->orderByDesc($purchaseTable . '.tanggal')
+            ->orderByDesc($itemTable . '.' . $primaryKey)
             ->select([
-                $itemTable.'.'.$primaryKey,
-                $itemTable.'.hpp',
-                $itemTable.'.harga_jual',
+                $itemTable . '.' . $primaryKey,
+                $itemTable . '.hpp',
+                $itemTable . '.harga_jual',
             ])
             ->first();
 

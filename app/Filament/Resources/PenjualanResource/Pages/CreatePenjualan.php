@@ -2,15 +2,14 @@
 
 namespace App\Filament\Resources\PenjualanResource\Pages;
 
+use App\Filament\Resources\PenjualanResource;
 use App\Models\PembelianItem;
 use App\Models\PenjualanItem;
-use App\Filament\Resources\PenjualanResource;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Filament\Actions\Action as HeaderAction;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action as NotificationAction;
 use Illuminate\Validation\ValidationException;
 
 class CreatePenjualan extends CreateRecord
@@ -20,8 +19,6 @@ class CreatePenjualan extends CreateRecord
     protected static bool $canCreateAnother = false;
 
     protected array $itemsToCreate = [];
-
-    protected string $saveMode = 'final';
 
     protected function getRedirectUrl(): string
     {
@@ -41,7 +38,9 @@ class CreatePenjualan extends CreateRecord
             unset($data['items_temp']);
         }
 
-        $data['status_dokumen'] = $this->saveMode === 'draft' ? 'draft' : 'final';
+        // Note: Fitur draft telah dihapus, semua penyimpanan langsung final
+        // Hapus status_dokumen jika ada (kolom ini akan dihapus dari database)
+        unset($data['status_dokumen']);
 
         return $data;
     }
@@ -49,7 +48,7 @@ class CreatePenjualan extends CreateRecord
     protected function afterCreate(): void
     {
         // Process items with FIFO allocation
-        if (!empty($this->itemsToCreate)) {
+        if (! empty($this->itemsToCreate)) {
             $this->createItemsWithFifo($this->itemsToCreate);
         }
 
@@ -139,7 +138,7 @@ class CreatePenjualan extends CreateRecord
             }
 
             $batches = $batchesQuery->get();
-            $available = (int) $batches->sum(fn($batch) => (int) ($batch->{$qtyColumn} ?? 0));
+            $available = (int) $batches->sum(fn ($batch) => (int) ($batch->{$qtyColumn} ?? 0));
 
             if ($available < $qty) {
                 throw ValidationException::withMessages([
@@ -164,7 +163,7 @@ class CreatePenjualan extends CreateRecord
 
                 // Split serials for this batch
                 $takeSerials = [];
-                if (!empty($serials)) {
+                if (! empty($serials)) {
                     $takeSerials = array_splice($serials, 0, $takeQty);
                 }
 
@@ -195,17 +194,8 @@ class CreatePenjualan extends CreateRecord
     {
         return [
             $this->getCreateFormAction()
-                ->label('Simpan Final')
+                ->label('Simpan')
                 ->icon('heroicon-m-check')
-                ->submit(null)
-                ->action('createFinal')
-                ->formId('form'),
-            HeaderAction::make('saveDraft')
-                ->label('Simpan Draft')
-                ->icon('heroicon-m-document')
-                ->color('gray')
-                ->submit(null)
-                ->action('createDraft')
                 ->formId('form'),
             ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
             $this->getCancelFormAction(),
@@ -215,17 +205,5 @@ class CreatePenjualan extends CreateRecord
     protected function getFormActions(): array
     {
         return [];
-    }
-
-    public function createFinal(): void
-    {
-        $this->saveMode = 'final';
-        $this->create(false);
-    }
-
-    public function createDraft(): void
-    {
-        $this->saveMode = 'draft';
-        $this->create(false);
     }
 }

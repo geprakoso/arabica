@@ -2,14 +2,14 @@
 
 namespace App\Filament\Resources\PenjualanResource\Pages;
 
+use App\Filament\Resources\PenjualanResource;
 use App\Models\PembelianItem;
 use App\Models\Penjualan;
 use App\Models\PenjualanItem;
-use App\Filament\Resources\PenjualanResource;
 use Filament\Actions\Action as HeaderAction;
-use Illuminate\Support\Facades\DB;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class EditPenjualan extends EditRecord
@@ -24,7 +24,7 @@ class EditPenjualan extends EditRecord
     {
         // Transform existing items to items_temp format for the form
         $data['items_temp'] = collect($this->record->items)
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'id_produk' => $item->id_produk,
                 'id_pembelian_item' => $item->id_pembelian_item,
                 'kondisi' => $item->kondisi,
@@ -34,11 +34,12 @@ class EditPenjualan extends EditRecord
                 'serials' => $item->serials ?? [],
             ])
             // Group by product, condition, and batch, sum qty and merge serials
-            ->groupBy(fn($item) => $item['id_produk'] . '-' . ($item['kondisi'] ?? '') . '-' . ((int) ($item['id_pembelian_item'] ?? 0)))
+            ->groupBy(fn ($item) => $item['id_produk'].'-'.($item['kondisi'] ?? '').'-'.((int) ($item['id_pembelian_item'] ?? 0)))
             ->map(function ($group) {
                 $first = $group->first();
                 // Merge all serials from items in this group
-                $allSerials = $group->flatMap(fn($item) => $item['serials'] ?? [])->values()->toArray();
+                $allSerials = $group->flatMap(fn ($item) => $item['serials'] ?? [])->values()->toArray();
+
                 return [
                     'id_produk' => $first['id_produk'],
                     'id_pembelian_item' => $first['id_pembelian_item'],
@@ -51,23 +52,21 @@ class EditPenjualan extends EditRecord
             })
             ->values()
             ->toArray();
-        
+
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if ($this->record->isDraft()) {
-            $this->guardDraftQtyLock($data['items_temp'] ?? []);
-        }
-
+        // Note: Fitur draft telah dihapus, semua penyimpanan langsung final
         // Extract items_temp for manual processing
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
             unset($data['items_temp']);
         }
 
-        $data['status_dokumen'] = $this->saveMode === 'draft' ? 'draft' : 'final';
+        // Hapus status_dokumen jika ada (kolom ini akan dihapus dari database)
+        unset($data['status_dokumen']);
 
         return $data;
     }
@@ -75,10 +74,10 @@ class EditPenjualan extends EditRecord
     protected function afterSave(): void
     {
         // Delete existing items first (model hooks will restore stock)
-        $this->record->items()->each(fn($item) => $item->delete());
+        $this->record->items()->each(fn ($item) => $item->delete());
 
         // Create new items with FIFO allocation
-        if (!empty($this->itemsToCreate)) {
+        if (! empty($this->itemsToCreate)) {
             $this->createItemsWithFifo($this->itemsToCreate);
         }
 
@@ -154,7 +153,7 @@ class EditPenjualan extends EditRecord
             }
 
             $batches = $batchesQuery->get();
-            $available = (int) $batches->sum(fn($batch) => (int) ($batch->{$qtyColumn} ?? 0));
+            $available = (int) $batches->sum(fn ($batch) => (int) ($batch->{$qtyColumn} ?? 0));
 
             if ($available < $qty) {
                 throw ValidationException::withMessages([
@@ -179,7 +178,7 @@ class EditPenjualan extends EditRecord
 
                 // Split serials for this batch
                 $takeSerials = [];
-                if (!empty($serials)) {
+                if (! empty($serials)) {
                     $takeSerials = array_splice($serials, 0, $takeQty);
                 }
 
@@ -280,7 +279,7 @@ class EditPenjualan extends EditRecord
                     (int) ($item->id_pembelian_item ?? 0),
                 ]);
             })
-            ->map(fn($group): int => (int) $group->sum('qty'))
+            ->map(fn ($group): int => (int) $group->sum('qty'))
             ->all();
     }
 
