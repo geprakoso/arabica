@@ -7,9 +7,10 @@ use App\Models\PenjualanItem;
 use App\Filament\Resources\PenjualanResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Filament\Actions\Action as HeaderAction;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Actions\Action as NotificationAction;
 use Illuminate\Validation\ValidationException;
 
 class CreatePenjualan extends CreateRecord
@@ -19,6 +20,8 @@ class CreatePenjualan extends CreateRecord
     protected static bool $canCreateAnother = false;
 
     protected array $itemsToCreate = [];
+
+    protected string $saveMode = 'final';
 
     protected function getRedirectUrl(): string
     {
@@ -37,7 +40,9 @@ class CreatePenjualan extends CreateRecord
             $this->itemsToCreate = $data['items_temp'];
             unset($data['items_temp']);
         }
-        
+
+        $data['status_dokumen'] = $this->saveMode === 'draft' ? 'draft' : 'final';
+
         return $data;
     }
 
@@ -59,7 +64,7 @@ class CreatePenjualan extends CreateRecord
                 ->body("No. Nota {$this->record->no_nota} berhasil disimpan.")
                 ->icon('heroicon-o-check-circle')
                 ->actions([
-                    Action::make('Lihat')
+                    NotificationAction::make('Lihat')
                         ->url(PenjualanResource::getUrl('view', ['record' => $this->record])),
                 ])
                 ->sendToDatabase($user);
@@ -189,7 +194,19 @@ class CreatePenjualan extends CreateRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getCreateFormAction()->formId('form'),
+            $this->getCreateFormAction()
+                ->label('Simpan Final')
+                ->icon('heroicon-m-check')
+                ->submit(null)
+                ->action('createFinal')
+                ->formId('form'),
+            HeaderAction::make('saveDraft')
+                ->label('Simpan Draft')
+                ->icon('heroicon-m-document')
+                ->color('gray')
+                ->submit(null)
+                ->action('createDraft')
+                ->formId('form'),
             ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
             $this->getCancelFormAction(),
         ];
@@ -199,5 +216,16 @@ class CreatePenjualan extends CreateRecord
     {
         return [];
     }
-}
 
+    public function createFinal(): void
+    {
+        $this->saveMode = 'final';
+        $this->create(false);
+    }
+
+    public function createDraft(): void
+    {
+        $this->saveMode = 'draft';
+        $this->create(false);
+    }
+}

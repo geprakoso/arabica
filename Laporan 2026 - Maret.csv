@@ -1,0 +1,43 @@
+Tanggal,Modul,Keterangan,Column 1
+3/03/2026,Figma Flow,Perancangan Flow Member screen,https://www.figma.com/board/qHbMfVFjGSuehp7w4tU9i3/Haen-System?node-id=0-1&t=fJefr6p17ERZWMTG-1
+3/03/2026,Figma Flow,Perancangan Promo Screen,
+3/03/2026,Figma Flow,Perancangan Karyawan Screen,
+4/03/2026,Figma Flow,Perancangan Piutang Screen,
+5/03/2026,Figma Design,Design Penjualan Screen,https://www.figma.com/design/txSDJQF8J1WuncRq1tYMu2/Naya-Pos-sample?node-id=0-1&t=lT7qknl9B3vpFK3x-1
+5/03/2026,Figma Design,Design Penjualan Screen,
+6/03/2026,Figma Design,Design Penjualan Screen,
+7/03/2026,Figma Design,Design Penjualan Screen,
+8/03/2026,Figma Design,"Design Sheet Penjualan, Pembayaran, Screen, Warning Notice, Bank Transfer.",
+9/03/2026,Figma Design,"Design Nota Invoice, Member List, Diskon Notice, Tambah Produk Custom",
+10/03/2026,Figma Design,"Design Member List, Pajak notice, Diskon Notice, Sheet Pembayaran Paymen,",
+11/03/2026,Figma Design,"Design Sheet Penjualan Overview, Tambah Member, QRIS Screen, Bank Input Payment",
+12/03/2026,Figma Design,"Design Navigasi Panel Menu, Pembayaran Transfer",
+13/03/2026,Figma Design,Design Perubahan Design Penjualan,
+16/03/2026,Figma Design,"Design Produk List, Edit Produk Screen, Bottom Sheet Kategori, tambah kategori,",
+17/03/2026,Figma Design,"Design Manajemen Stock list screen, View produk in management stock.",
+18/03/2026,Service user,"Service user Ryan Pegazus, Install red giant, install plural eyes.",
+16/03/2026,Service user,"Service user Mas Adnan, TT Processor, VGA, Install Ulang",
+15/03/2026,Service User,"Service laptop user Mas Feby, Laptop ideapad slim 3",
+25/03/2026,Implementasi Alur Pembayaran ,"Layar Pembayaran Baru: Menambahkan pembayaran_screen.dart sebagai modul utama untuk memproses transaksi.
+Integrasi Keranjang & Sales: Memperbarui sales_screen.dart dan cart_panel.dart agar terhubung ke layar pembayaran.
+Visualisasi Tagihan: Menambahkan tampilan sheet (lembar bawah) untuk merinci total tagihan pelanggan.",
+26/03/2026,Integrasi Database & Manajemen Member,"Database SQLite (Drift): Mengimplementasikan basis data lokal menggunakan Drift (app_database.dart). Menambahkan tabel dan DAO untuk:
+- Member (Anggota)
+- Kategori Produk
+- Penjualan
+Manajemen Anggota:
+Membuat layar pendaftaran member baru (create_member_screen.dart).
+Membuat layar pemilih member (member_picker_screen.dart) dengan fitur highlighting untuk member yang sudah dipilih.
+Logika Pembayaran Lanjutan:
+Implementasi perhitungan otomatis untuk Kembalian dan Kekurangan (jika pembayaran belum lunas).
+Menambahkan fitur Pembayaran Tempo (Kredit) lengkap dengan tempo_dialog.dart untuk memilih tanggal jatuh tempo.
+Menambahkan fitur Diskon melalui diskon_dialog.dart yang memungkinkan pemberian diskon nominal atau persentase.",
+26/03/2026,Fitur Transfer Bank & Media,"Transfer Bank: Menambahkan dukungan metode pembayaran transfer bank.
+Membuat bank_transfer_picker_screen.dart untuk memilih bank tujuan.
+Menambahkan ratusan aset ikon bank (BCA, Mandiri, BNI, BRI, dll) dalam folder assets/images/banks/.
+Bukti Pembayaran: Menambahkan fungsionalitas untuk menyertakan bukti pembayaran dalam transaksi transfer.",
+27/03/2026,Peningkatan UX & Fitur Kamera,"Dukungan Kamera: Menambahkan dukungan kamera pada pemilih member (digunakan untuk memotret identitas atau foto pelanggan).
+Optimasi UI: Perbaikan visual pada elemen-elemen interaktif di layar pembayaran dan pemilihan member.",
+28/03/2026,Manajemen Kategori & Pembersihan,"Layar Kategori: Implementasi layar untuk manajemen kategori produk.
+Code Cleaning: Melakukan pembersihan kode dan persiapan sebelum masuk ke fase pengembangan berikutnya.",
+29/03/2026,Prepare Migrasi Laravel ke TrueNas,Persiapan migrasi arabica ke TrueNas,

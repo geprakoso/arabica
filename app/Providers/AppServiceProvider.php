@@ -2,17 +2,19 @@
 
 namespace App\Providers;
 
-use App\Support\ChatifyMessenger;
 use App\Http\Responses\PanelLoginResponse;
+use App\Models\PembelianItem;
+use App\Observers\PembelianItemObserver;
+use App\Support\ChatifyMessenger;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Chatify\ChatifyMessenger as VendorChatifyMessenger;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
@@ -33,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         });
         // Override Chatify messenger binding to gracefully handle push failures (e.g. offline Pusher).
         $this->app->bind(VendorChatifyMessenger::class, ChatifyMessenger::class);
-        $this->app->bind('ChatifyMessenger', fn() => app(ChatifyMessenger::class));
+        $this->app->bind('ChatifyMessenger', fn () => app(ChatifyMessenger::class));
 
         // Redirect Filament logins to panel-specific dashboards.
         $this->app->bind(LoginResponseContract::class, PanelLoginResponse::class);
@@ -95,15 +97,15 @@ class AppServiceProvider extends ServiceProvider
                     ->labels([
                         'admin' => 'Admin',
                         'pos' => 'POS',
-                        'akunting' => 'Keuangan'
+                        'akunting' => 'Keuangan',
                     ])
                     ->icons([
                         'admin' => 'heroicon-o-cog-6-tooth',
                         'pos' => 'heroicon-o-shopping-cart',
-                        'akunting' => 'heroicon-o-bank'
+                        'akunting' => 'heroicon-o-bank',
                     ])
                     ->simple()
-                    ->visible(fn() => Auth::check());
+                    ->visible(fn () => Auth::check());
             });
         }
 
@@ -116,5 +118,7 @@ class AppServiceProvider extends ServiceProvider
                 ->defaultPaginationPageOption(25)
                 ->striped();
         });
+
+        PembelianItem::observe(PembelianItemObserver::class);
     }
 }

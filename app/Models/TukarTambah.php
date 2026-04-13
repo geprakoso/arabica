@@ -8,13 +8,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 class TukarTambah extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'tb_tukar_tambah';
+
     protected $primaryKey = 'id_tukar_tambah';
 
     protected $fillable = [
@@ -42,42 +41,54 @@ class TukarTambah extends Model
         });
 
         static::deleting(function (TukarTambah $tukarTambah): void {
-            // Only cascade delete relations if this is a FORCE delete
-            if ($tukarTambah->isForceDeleting()) {
-                DB::transaction(function () use ($tukarTambah): void {
-                    $penjualanId = $tukarTambah->penjualan_id;
-                    $pembelian = $tukarTambah->pembelian;
+            // Clear cache saat dihapus
+            $tukarTambah->clearCalculationCache();
 
-                    if ($pembelian) {
-                        $externalPenjualanNotas = $tukarTambah->getExternalPenjualanReferences()
-                            ->pluck('nota')
-                            ->filter()
-                            ->values();
+            DB::transaction(function () use ($tukarTambah): void {
+                $penjualanId = $tukarTambah->penjualan_id;
+                $pembelian = $tukarTambah->pembelian;
 
-                        if ($externalPenjualanNotas->isNotEmpty()) {
-                            $notaList = $externalPenjualanNotas->implode(', ');
+                if ($pembelian) {
+                    $externalPenjualanNotas = $tukarTambah->getExternalPenjualanReferences()
+                        ->pluck('nota')
+                        ->filter()
+                        ->values();
 
-                            throw ValidationException::withMessages([
-                                'pembelian_id' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: ' . $notaList . '.',
-                            ]);
-                        }
+                    if ($externalPenjualanNotas->isNotEmpty()) {
+                        $notaList = $externalPenjualanNotas->implode(', ');
+
+                        throw ValidationException::withMessages([
+                            'pembelian_id' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: '.$notaList.'.',
+                        ]);
                     }
+                }
 
-                    // Set flags to allow cascade deletion
-                    \App\Models\Penjualan::$allowTukarTambahDeletion = true;
-                    \App\Models\Pembelian::$allowTukarTambahDeletion = true;
-                    
-                    try {
-                        $tukarTambah->penjualan?->delete(); // This will soft delete if Penjualan uses SoftDeletes
-                        $tukarTambah->pembelian?->delete(); // This will soft delete if Pembelian uses SoftDeletes
-                    } finally {
-                        // Reset flags
-                        \App\Models\Penjualan::$allowTukarTambahDeletion = false;
-                        \App\Models\Pembelian::$allowTukarTambahDeletion = false;
-                    }
-                });
-            }
+                // Set flags to allow cascade deletion
+                \App\Models\Penjualan::$allowTukarTambahDeletion = true;
+                \App\Models\Pembelian::$allowTukarTambahDeletion = true;
+
+                try {
+                    $tukarTambah->penjualan?->delete();
+                    $tukarTambah->pembelian?->delete();
+                } finally {
+                    // Reset flags
+                    \App\Models\Penjualan::$allowTukarTambahDeletion = false;
+                    \App\Models\Pembelian::$allowTukarTambahDeletion = false;
+                }
+            });
         });
+
+        static::updated(function (TukarTambah $tukarTambah) {
+            $tukarTambah->clearCalculationCache();
+        });
+    }
+
+    /**
+     * Clear calculation cache for this record
+     */
+    public function clearCalculationCache(): void
+    {
+        CacheHelper::flush([CacheHelper::TAG_TUKAR_TAMBAH]);
     }
 
     public function karyawan()
@@ -124,32 +135,32 @@ class TukarTambah extends Model
             ->filter()
             ->values();
         $suffix = $notaList->isNotEmpty()
-            ? ' Nota: ' . $notaList->implode(', ') . '.'
+            ? ' Nota: '.$notaList->implode(', ').'.'
             : '';
 
-        return 'Tukar tambah tidak bisa diedit karena item pembelian dipakai transaksi lain.' . $suffix;
+        return 'Tukar tambah tidak bisa diedit karena item pembelian dipakai transaksi lain.'.$suffix;
     }
 
     public function getKodeAttribute(): string
     {
-        return 'TT-' . str_pad((string) $this->getKey(), 5, '0', STR_PAD_LEFT);
+        return 'TT-'.str_pad((string) $this->getKey(), 5, '0', STR_PAD_LEFT);
     }
 
     public static function generateNoNota(): string
     {
         $date = now()->format('Ym');
-        $prefix = 'TT-' . $date . '-';
+        $prefix = 'TT-'.$date.'-';
 
-        $latest = static::where('no_nota', 'like', $prefix . '%')
+        $latest = static::where('no_nota', 'like', $prefix.'%')
             ->orderBy('no_nota', 'desc')
             ->first();
 
         $next = 1;
-        if ($latest && preg_match('/' . preg_quote($prefix, '/') . '(\d+)$/', $latest->no_nota, $m)) {
+        if ($latest && preg_match('/'.preg_quote($prefix, '/').'(\d+)$/', $latest->no_nota, $m)) {
             $next = (int) $m[1] + 1;
         }
 
-        return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     public function getExternalPenjualanReferences(): Collection
@@ -169,8 +180,8 @@ class TukarTambah extends Model
             })
             ->with(['penjualanItems.penjualan'])
             ->get()
-            ->flatMap(fn($item) => $item->penjualanItems)
-            ->filter(fn($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
+            ->flatMap(fn ($item) => $item->penjualanItems)
+            ->filter(fn ($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
             ->map(function ($item) {
                 if (! $item->penjualan) {
                     return null;

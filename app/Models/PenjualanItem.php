@@ -93,6 +93,12 @@ class PenjualanItem extends Model
             return;
         }
 
+        if (Rma::hasActiveRmaForBatch((int) $batchId)) {
+            throw ValidationException::withMessages([
+                'id_pembelian_item' => 'Batch ini sedang dalam proses RMA aktif.',
+            ]);
+        }
+
         $qtyColumn = PembelianItem::qtySisaColumn();
 
         $batch = PembelianItem::query()->find($batchId);
@@ -178,5 +184,6 @@ class PenjualanItem extends Model
         }
 
         $penjualan->recalculateTotals();
+        $penjualan->clearCalculationCache();  // ✅ Clear cache saat item berubah
     }
 }

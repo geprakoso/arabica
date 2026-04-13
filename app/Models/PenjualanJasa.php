@@ -74,5 +74,6 @@ class PenjualanJasa extends Model
         }
 
         $penjualan->recalculateTotals();
+        $penjualan->clearCalculationCache();  // ✅ Clear cache saat jasa berubah
     }
 }

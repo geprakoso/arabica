@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\PenjualanResource\Pages;
 
 use App\Models\PembelianItem;
+use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Filament\Resources\PenjualanResource;
+use Filament\Actions\Action as HeaderAction;
 use Illuminate\Support\Facades\DB;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +17,8 @@ class EditPenjualan extends EditRecord
     protected static string $resource = PenjualanResource::class;
 
     protected array $itemsToCreate = [];
+
+    protected string $saveMode = 'final';
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -53,12 +57,18 @@ class EditPenjualan extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        if ($this->record->isDraft()) {
+            $this->guardDraftQtyLock($data['items_temp'] ?? []);
+        }
+
         // Extract items_temp for manual processing
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
             unset($data['items_temp']);
         }
-        
+
+        $data['status_dokumen'] = $this->saveMode === 'draft' ? 'draft' : 'final';
+
         return $data;
     }
 
@@ -199,7 +209,19 @@ class EditPenjualan extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getSaveFormAction()->formId('form'),
+            $this->getSaveFormAction()
+                ->label('Simpan Final')
+                ->icon('heroicon-m-check')
+                ->submit(null)
+                ->action('saveFinal')
+                ->formId('form'),
+            HeaderAction::make('saveDraft')
+                ->label('Simpan Draft')
+                ->icon('heroicon-m-document')
+                ->color('gray')
+                ->submit(null)
+                ->action('saveDraft')
+                ->formId('form'),
             $this->getCancelFormAction(),
         ];
     }
@@ -212,5 +234,81 @@ class EditPenjualan extends EditRecord
     public function getRelationManagers(): array
     {
         return [];
+    }
+
+    public function saveFinal(): void
+    {
+        $this->saveMode = 'final';
+        $this->save();
+    }
+
+    public function saveDraft(): void
+    {
+        $this->saveMode = 'draft';
+        $this->save();
+    }
+
+    protected function guardDraftQtyLock(array $incomingItems): void
+    {
+        $existingQtyMap = $this->buildQtyMapFromExistingRecord($this->record);
+        $incomingQtyMap = $this->buildQtyMapFromForm($incomingItems);
+
+        foreach ($incomingQtyMap as $key => $incomingQty) {
+            $existingQty = $existingQtyMap[$key] ?? 0;
+
+            if (! isset($existingQtyMap[$key]) && $incomingQty > 0) {
+                throw ValidationException::withMessages([
+                    'items_temp' => 'Draft terkunci: tidak bisa menambah item produk baru.',
+                ]);
+            }
+
+            if ($incomingQty > $existingQty) {
+                throw ValidationException::withMessages([
+                    'items_temp' => 'Draft terkunci: qty item produk tidak bisa ditambahkan.',
+                ]);
+            }
+        }
+    }
+
+    protected function buildQtyMapFromExistingRecord(Penjualan $record): array
+    {
+        return $record->items
+            ->groupBy(function (PenjualanItem $item): string {
+                return implode('|', [
+                    (int) $item->id_produk,
+                    (string) ($item->kondisi ?? ''),
+                    (int) ($item->id_pembelian_item ?? 0),
+                ]);
+            })
+            ->map(fn($group): int => (int) $group->sum('qty'))
+            ->all();
+    }
+
+    protected function buildQtyMapFromForm(array $items): array
+    {
+        $result = [];
+
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $qty = (int) ($item['qty'] ?? 0);
+
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+
+            $key = implode('|', [
+                $productId,
+                (string) ($item['kondisi'] ?? ''),
+                (int) ($item['id_pembelian_item'] ?? 0),
+            ]);
+
+            $result[$key] = (int) ($result[$key] ?? 0) + $qty;
+        }
+
+        return $result;
     }
 }

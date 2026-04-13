@@ -29,10 +29,12 @@ class PembelianPembayaran extends Model
     {
         static::saved(function (PembelianPembayaran $payment): void {
             $payment->pembelian?->recalculatePaymentStatus();
+            $payment->pembelian?->clearCalculationCache();  // ✅ Clear cache saat pembayaran berubah
         });
 
         static::deleted(function (PembelianPembayaran $payment): void {
             $payment->pembelian?->recalculatePaymentStatus();
+            $payment->pembelian?->clearCalculationCache();  // ✅ Clear cache saat pembayaran dihapus
         });
     }
 

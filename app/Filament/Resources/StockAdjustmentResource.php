@@ -32,7 +32,7 @@ class StockAdjustmentResource extends BaseResource
 
     protected static ?string $navigationGroup = 'Inventori';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $pluralLabel = 'Penyesuaian Stok';
 

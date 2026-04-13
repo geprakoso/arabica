@@ -31,7 +31,7 @@ class StockOpnameResource extends BaseResource
 
     protected static ?string $pluralLabel = 'Stock Opname';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function getGloballySearchableAttributes(): array
     {
