@@ -67,6 +67,14 @@ class PembelianResource extends BaseResource
 
     protected static ?string $recordTitleAttribute = 'no_po';
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                \Illuminate\Database\Eloquent\SoftDeletingScope::class,
+            ]);
+    }
+
     public static function getGloballySearchableAttributes(): array
     {
         return ['no_po', 'supplier.nama_supplier', 'nota_supplier'];

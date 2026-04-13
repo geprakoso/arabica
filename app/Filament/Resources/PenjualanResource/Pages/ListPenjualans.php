@@ -225,7 +225,7 @@ class ListPenjualans extends ListRecords
         return Actions\Action::make('forceDeleteStep2')
             ->modalHeading('⚠️ Dampak Penghapusan Permanen')
             ->modalDescription(function () {
-                $record = \App\Models\Penjualan::withTrashed()->find($this->forceDeleteRecordId);
+                $record = \App\Models\Penjualan::find($this->forceDeleteRecordId);
                 if (! $record) {
                     return 'Data tidak ditemukan.';
                 }
@@ -288,9 +288,9 @@ class ListPenjualans extends ListRecords
                 try {
                     \App\Models\Penjualan::$allowTukarTambahDeletion = true;
                     
-                    $record = \App\Models\Penjualan::withTrashed()->find($this->forceDeleteRecordId);
+                    $record = \App\Models\Penjualan::find($this->forceDeleteRecordId);
                     if ($record) {
-                        $record->forceDelete();
+                        $record->delete();
                     }
                     
                     \Filament\Notifications\Notification::make()
@@ -317,7 +317,7 @@ class ListPenjualans extends ListRecords
         return Actions\Action::make('bulkForceDeleteStep2')
             ->modalHeading('⚠️ Dampak Penghapusan Permanen Massal')
             ->modalDescription(function () {
-                $records = \App\Models\Penjualan::withTrashed()->whereIn('id_penjualan', $this->bulkForceDeleteRecordIds)->get();
+                $records = \App\Models\Penjualan::whereIn('id_penjualan', $this->bulkForceDeleteRecordIds)->get();
                 $ttCount = $records->filter(fn ($r) => $r->sumber_transaksi === 'tukar_tambah' || $r->tukarTambah()->exists())->count();
                 
                 $desc = "**Anda akan MENGHAPUS PERMANEN {$records->count()} penjualan.**\n\n";
@@ -376,8 +376,8 @@ class ListPenjualans extends ListRecords
                 try {
                     \App\Models\Penjualan::$allowTukarTambahDeletion = true;
                     
-                    $records = \App\Models\Penjualan::withTrashed()->whereIn('id_penjualan', $this->bulkForceDeleteRecordIds)->get();
-                    $records->each->forceDelete();
+                    $records = \App\Models\Penjualan::whereIn('id_penjualan', $this->bulkForceDeleteRecordIds)->get();
+                    $records->each->delete();
                     
                     \Filament\Notifications\Notification::make()
                         ->title("{$records->count()} penjualan dihapus permanen")

@@ -146,9 +146,8 @@ class Pembelian extends Model
         $date = now()->format('Ym');
         $prefix = 'PO-' . $date . '-';
 
-        // Include soft-deleted records because the database unique constraint applies to ALL records
-        $latest = self::withTrashed()
-            ->where('no_po', 'like', $prefix . '%')
+        // Query all records for unique constraint check
+        $latest = self::where('no_po', 'like', $prefix . '%')
             ->orderByRaw('CAST(SUBSTRING(no_po, ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
             ->first();
 
@@ -160,8 +159,8 @@ class Pembelian extends Model
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
             $poNumber = $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
 
-            // Check against ALL records (including soft-deleted) due to unique constraint
-            $exists = self::withTrashed()->where('no_po', $poNumber)->exists();
+            // Check against ALL records due to unique constraint
+            $exists = self::where('no_po', $poNumber)->exists();
             if (! $exists) {
                 return $poNumber;
             }
