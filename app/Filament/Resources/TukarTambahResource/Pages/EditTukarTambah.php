@@ -250,6 +250,132 @@ class EditTukarTambah extends EditRecord
         return $data;
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // VALIDASI: cek duplikat dan stok penjualan items
+        $penjualanItems = $data['penjualan']['items'] ?? [];
+        if (! empty($penjualanItems)) {
+            $this->validatePenjualanItems($penjualanItems);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validasi duplikat dan stok untuk penjualan items
+     */
+    protected function validatePenjualanItems(array $items): void
+    {
+        if (empty($items)) {
+            throw ValidationException::withMessages([
+                'penjualan.items' => 'Minimal harus ada 1 item produk.',
+            ]);
+        }
+
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis
+        $productKeys = [];
+        foreach ($items as $index => $item) {
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $condition = $item['kondisi'] ?? null;
+            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
+
+            if ($productId > 0) {
+                $key = $productId.'|'.($condition ?? '').'|'.$batchId;
+
+                if (isset($productKeys[$key])) {
+                    $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
+                    $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
+                    $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
+                    $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'.';
+
+                    Notification::make()
+                        ->title('Validasi Gagal - Duplikat Produk')
+                        ->body($errorMessage)
+                        ->icon('heroicon-o-exclamation-triangle')
+                        ->danger()
+                        ->persistent()
+                        ->send();
+
+                    throw ValidationException::withMessages([
+                        'penjualan.items' => $errorMessage,
+                    ]);
+                }
+                $productKeys[$key] = $index + 1;
+            }
+        }
+
+        // Aggregate total qty per produk (dengan batch dan kondisi)
+        $totalQtyMap = [];
+        foreach ($items as $index => $item) {
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $qty = (int) ($item['qty'] ?? 0);
+            $condition = $item['kondisi'] ?? null;
+            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
+
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+
+            $key = $productId.'|'.($condition ?? '').'|'.$batchId;
+
+            if (! isset($totalQtyMap[$key])) {
+                $totalQtyMap[$key] = [
+                    'product_id' => $productId,
+                    'condition' => $condition,
+                    'batch_id' => $batchId,
+                    'qty' => 0,
+                    'rows' => [],
+                ];
+            }
+            $totalQtyMap[$key]['qty'] += $qty;
+            $totalQtyMap[$key]['rows'][] = $index + 1;
+        }
+
+        // Validasi stok tersedia
+        foreach ($totalQtyMap as $group) {
+            $productId = $group['product_id'];
+            $condition = $group['condition'];
+            $batchId = $group['batch_id'];
+            $requestedQty = $group['qty'];
+            $rows = $group['rows'];
+
+            $query = PembelianItem::query()
+                ->where($productColumn, $productId)
+                ->where($qtyColumn, '>', 0);
+
+            if ($batchId > 0) {
+                $query->whereKey($batchId);
+            }
+
+            if ($condition) {
+                $query->where('kondisi', $condition);
+            }
+
+            $availableQty = (int) $query->sum($qtyColumn);
+
+            if ($availableQty < $requestedQty) {
+                $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
+                $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
+                $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
+
+                Notification::make()
+                    ->title('Validasi Gagal - Stok Tidak Cukup')
+                    ->body($errorMessage)
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->danger()
+                    ->persistent()
+                    ->send();
+
+                throw ValidationException::withMessages([
+                    'penjualan.items' => $errorMessage,
+                ]);
+            }
+        }
+    }
+
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         return DB::transaction(function () use ($record, $data) {
@@ -387,6 +513,7 @@ class EditTukarTambah extends EditRecord
 
             $productId = (int) ($item['id_produk'] ?? 0);
             $qty = (int) ($item['qty'] ?? 0);
+            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
 
             if ($productId < 1 || $qty < 1) {
                 continue;
@@ -403,10 +530,52 @@ class EditTukarTambah extends EditRecord
                 ]);
             }
 
-            DB::transaction(function () use ($penjualan, $productId, $qty, $customPrice, $condition, $serials): void {
-                $this->fulfillPenjualanUsingFifo($penjualan, $productId, $qty, $customPrice, $condition, $serials);
+            DB::transaction(function () use ($penjualan, $productId, $qty, $batchId, $customPrice, $condition, $serials): void {
+                if ($batchId > 0) {
+                    $this->fulfillPenjualanWithBatch($penjualan, $productId, $qty, $batchId, $customPrice, $condition, $serials);
+                } else {
+                    $this->fulfillPenjualanUsingFifo($penjualan, $productId, $qty, $customPrice, $condition, $serials);
+                }
             });
         }
+    }
+
+    protected function fulfillPenjualanWithBatch(Penjualan $penjualan, int $productId, int $qty, int $batchId, ?int $customPrice, ?string $condition, array $serials): void
+    {
+        $qtyColumn = PembelianItem::qtySisaColumn();
+        $productColumn = PembelianItem::productForeignKey();
+
+        $batch = PembelianItem::query()
+            ->where($productColumn, $productId)
+            ->whereKey($batchId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $batch) {
+            throw ValidationException::withMessages([
+                'penjualan.items' => 'Batch pembelian tidak ditemukan.',
+            ]);
+        }
+
+        $available = (int) ($batch->{$qtyColumn} ?? 0);
+
+        if ($available < $qty) {
+            throw ValidationException::withMessages([
+                'penjualan.items' => "Stok batch tidak cukup. Tersedia: {$available}, Dibutuhkan: {$qty}",
+            ]);
+        }
+
+        $takeSerials = ! empty($serials) ? array_splice($serials, 0, $qty) : [];
+
+        PenjualanItem::query()->create([
+            'id_penjualan' => $penjualan->getKey(),
+            'id_produk' => $productId,
+            'id_pembelian_item' => $batch->getKey(),
+            'qty' => $qty,
+            'harga_jual' => $customPrice,
+            'kondisi' => $batch->kondisi,
+            'serials' => empty($takeSerials) ? null : $takeSerials,
+        ]);
     }
 
     protected function fulfillPenjualanUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?int $customPrice, ?string $condition, array $serials): Collection

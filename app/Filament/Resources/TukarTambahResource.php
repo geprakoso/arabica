@@ -238,7 +238,6 @@ class TukarTambahResource extends BaseResource
                                                 $set('../../grand_total_tukar_tambah', number_format($grandTotal, 0, ',', '.'));
                                             })
                                             ->schema([
-                                                \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
                                                 Select::make('id_produk')
                                                     ->label('Produk')
                                                     ->options(function (Get $get): array {
@@ -273,6 +272,7 @@ class TukarTambahResource extends BaseResource
                                                                 $set('harga_jual', $batch->harga_jual);
                                                                 $set('hpp', $batch->hpp);
                                                                 $set('kondisi', $batch->kondisi);
+                                                                $set('id_pembelian_item', $batch->getKey());
                                                             }
                                                         }
                                                     }),
@@ -295,8 +295,38 @@ class TukarTambahResource extends BaseResource
                                                             if ($batch) {
                                                                 $set('harga_jual', $batch->harga_jual);
                                                                 $set('hpp', $batch->hpp);
+                                                                $set('id_pembelian_item', $batch->getKey());
                                                             }
                                                         }
+                                                    }),
+                                                Select::make('id_pembelian_item')
+                                                    ->label('Batch')
+                                                    ->options(function (Get $get): array {
+                                                        $productId = (int) ($get('id_produk') ?? 0);
+                                                        $condition = $get('kondisi');
+
+                                                        return \App\Filament\Resources\PenjualanResource::getBatchOptions($productId, $condition);
+                                                    })
+                                                    ->native(false)
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->reactive()
+                                                    ->disabled(fn (Get $get): bool => ! $get('id_produk'))
+                                                    ->placeholder('Pilih Batch')
+                                                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                                                        if (! $state) {
+                                                            return;
+                                                        }
+
+                                                        $batch = PembelianItem::query()->find($state);
+
+                                                        if (! $batch) {
+                                                            return;
+                                                        }
+
+                                                        $set('harga_jual', $batch->harga_jual);
+                                                        $set('hpp', $batch->hpp);
+                                                        $set('kondisi', $batch->kondisi);
                                                     }),
                                                 Hidden::make('_original_qty')
                                                     ->dehydrated(false)
@@ -517,11 +547,13 @@ class TukarTambahResource extends BaseResource
                                                     ),
                                             ])
                                             ->colStyles([
-                                                'id_produk' => 'width: 30%;',
-                                                'kondisi' => 'width: 10%;',
-                                                'qty' => 'width: 10%;',
-                                                'hpp' => 'width: 15%;',
-                                                'harga_jual' => 'width: 15%;',
+                                                'id_produk' => 'width: 27%;',
+                                                'kondisi' => 'width: 12%;',
+                                                'id_pembelian_item' => 'width: 16%;',
+                                                'qty' => 'width: 8%;',
+                                                'hpp' => 'width: 13%;',
+                                                'harga_jual' => 'width: 13%;',
+                                                'serials_count' => 'width: 13%;',
                                             ])
                                             ->defaultItems(1)
                                             ->reorderable(false)

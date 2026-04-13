@@ -233,13 +233,16 @@ class PenjualanResource extends BaseResource
                 // === BAGIAN 2: DAFTAR PRODUK ===
                 Section::make('Daftar Produk')
                     ->icon('heroicon-o-shopping-cart')
-                    ->description('Pilih produk yang dijual')
+                    ->description('Pilih produk yang dijual. Tidak boleh ada produk yang sama dalam 1 penjualan.')
                     ->schema([
                         TableRepeater::make('items_temp')
                             ->label('')
-                            ->minItems(0)
+                            ->minItems(1)
                             ->reorderable(false)
                             ->addActionLabel('Tambah Produk')
+                            ->validationMessages([
+                                'items_temp' => 'Terjadi kesalahan pada item produk. Periksa stok dan duplikat produk.',
+                            ])
                             ->colStyles([
                                 'id_produk' => 'width: 27%;',
                                 'kondisi' => 'width: 12%;',
@@ -1130,8 +1133,6 @@ class PenjualanResource extends BaseResource
                 ]),
             ]);
     }
-
-
 
     public static function infolist(Infolist $infolist): Infolist
     {
