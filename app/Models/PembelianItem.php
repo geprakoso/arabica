@@ -77,9 +77,31 @@ class PembelianItem extends Model
                     ->implode(', ');
 
                 $suffix = $notaList ? ' No nota: '.$notaList.'.' : '';
+                $errorMessage = 'Qty pembelian tidak bisa diubah karena sudah ada penjualan.'.$suffix;
+
+                // Log ke validation_logs
+                \App\Models\ValidationLog::log([
+                    'source_type' => 'Pembelian',
+                    'source_action' => 'update',
+                    'validation_type' => 'business_rule',
+                    'field_name' => 'qty',
+                    'error_message' => $errorMessage,
+                    'error_code' => 'BUSINESS_RULE_QTY_LOCKED',
+                    'input_data' => [
+                        'pembelian_item_id' => $item->getKey(),
+                        'pembelian_id' => $item->id_pembelian,
+                        'produk_id' => $item->id_produk,
+                        'qty_old' => $item->getOriginal('qty'),
+                        'qty_new' => $item->qty,
+                        'qty_masuk' => $qtyMasuk,
+                        'qty_sisa' => $qtySisa,
+                        'external_notas' => $notaList ? explode(', ', $notaList) : [],
+                    ],
+                    'severity' => 'warning',
+                ]);
 
                 throw ValidationException::withMessages([
-                    'qty' => 'Qty pembelian tidak bisa diubah karena sudah ada penjualan.'.$suffix,
+                    'qty' => $errorMessage,
                 ]);
             }
         });
@@ -98,9 +120,27 @@ class PembelianItem extends Model
                 ->implode(', ');
 
             $suffix = $notaList ? ' No nota: '.$notaList.'.' : '';
+            $errorMessage = 'Item pembelian tidak bisa dihapus karena sudah ada penjualan.'.$suffix;
+
+            // Log ke validation_logs
+            \App\Models\ValidationLog::log([
+                'source_type' => 'Pembelian',
+                'source_action' => 'delete',
+                'validation_type' => 'business_rule',
+                'field_name' => 'id_pembelian_item',
+                'error_message' => $errorMessage,
+                'error_code' => 'BUSINESS_RULE_DELETE_BLOCKED',
+                'input_data' => [
+                    'pembelian_item_id' => $item->getKey(),
+                    'pembelian_id' => $item->id_pembelian,
+                    'produk_id' => $item->id_produk,
+                    'external_notas' => $notaList ? explode(', ', $notaList) : [],
+                ],
+                'severity' => 'warning',
+            ]);
 
             throw ValidationException::withMessages([
-                'id_pembelian_item' => 'Item pembelian tidak bisa dihapus karena sudah ada penjualan.'.$suffix,
+                'id_pembelian_item' => $errorMessage,
             ]);
         });
 

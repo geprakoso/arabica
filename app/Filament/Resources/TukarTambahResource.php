@@ -1364,7 +1364,40 @@ class TukarTambahResource extends BaseResource
                             // }
                             $livewire->redirect(TukarTambahResource::getUrl('edit', ['record' => $record]));
                         }),
-                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->action(function ($record, $livewire) {
+                            try {
+                                $record->delete();
+
+                                // Tutup modal
+                                $livewire->dispatch('close-modal', id: 'delete');
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Tukar tambah berhasil dihapus')
+                                    ->success()
+                                    ->send();
+                            } catch (\Illuminate\Validation\ValidationException $e) {
+                                $messages = collect($e->errors())
+                                    ->flatten()
+                                    ->implode(' ');
+
+                                // Tutup modal terlebih dahulu
+                                $livewire->dispatch('close-modal', id: 'delete');
+
+                                // Notifikasi toast
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Tidak Bisa Dihapus')
+                                    ->body($messages)
+                                    ->icon('heroicon-o-exclamation-triangle')
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+
+                                $livewire->deleteBlockedMessage = $messages;
+                                $livewire->deleteBlockedPenjualanReferences = $record->getExternalPenjualanReferences()->all();
+                                $livewire->replaceMountedAction('deleteBlocked');
+                            }
+                        }),
 
                 ])->label('Aksi')
                     ->icon('heroicon-m-ellipsis-horizontal')
@@ -1372,7 +1405,56 @@ class TukarTambahResource extends BaseResource
             ])
             ->bulkActions([
                 \Filament\Tables\Actions\BulkActionGroup::make([
-                    \Filament\Tables\Actions\DeleteBulkAction::make(),
+                    \Filament\Tables\Actions\DeleteBulkAction::make()
+                        ->action(function ($records, $livewire) {
+                            $deletedCount = 0;
+                            $failedCount = 0;
+                            $failedMessages = [];
+                            $failedReferences = [];
+
+                            foreach ($records as $record) {
+                                try {
+                                    $record->delete();
+                                    $deletedCount++;
+                                } catch (\Illuminate\Validation\ValidationException $e) {
+                                    $failedCount++;
+                                    $messages = collect($e->errors())
+                                        ->flatten()
+                                        ->implode(' ');
+                                    $failedMessages[] = "{$record->no_nota}: {$messages}";
+
+                                    $references = $record->getExternalPenjualanReferences();
+                                    foreach ($references as $ref) {
+                                        $failedReferences[] = $ref;
+                                    }
+                                }
+                            }
+
+                            // Tutup modal terlebih dahulu
+                            $livewire->dispatch('close-modal', id: 'delete');
+
+                            if ($deletedCount > 0) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title("{$deletedCount} tukar tambah berhasil dihapus")
+                                    ->success()
+                                    ->send();
+                            }
+
+                            if ($failedCount > 0) {
+                                // Notifikasi toast untuk yang gagal
+                                \Filament\Notifications\Notification::make()
+                                    ->title("{$failedCount} tukar tambah tidak bisa dihapus")
+                                    ->body('Item pembelian masih digunakan transaksi lain')
+                                    ->icon('heroicon-o-exclamation-triangle')
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+
+                                $livewire->deleteBlockedMessage = implode("\n", $failedMessages);
+                                $livewire->deleteBlockedPenjualanReferences = collect($failedReferences)->unique('id')->values()->all();
+                                $livewire->replaceMountedAction('bulkDeleteBlocked');
+                            }
+                        }),
                 ]),
             ])
             ->filters([

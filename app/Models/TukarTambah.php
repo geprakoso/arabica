@@ -50,13 +50,31 @@ class TukarTambah extends Model
                 $pembelian = $tukarTambah->pembelian;
 
                 if ($pembelian) {
-                    $externalPenjualanNotas = $tukarTambah->getExternalPenjualanReferences()
+                    $externalReferences = $tukarTambah->getExternalPenjualanReferences();
+                    $externalPenjualanNotas = $externalReferences
                         ->pluck('nota')
                         ->filter()
                         ->values();
 
                     if ($externalPenjualanNotas->isNotEmpty()) {
                         $notaList = $externalPenjualanNotas->implode(', ');
+
+                        // Log ke validation_logs
+                        \App\Models\ValidationLog::log([
+                            'source_type' => 'TukarTambah',
+                            'source_action' => 'delete',
+                            'validation_type' => 'business_rule',
+                            'field_name' => 'pembelian_id',
+                            'error_message' => "Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: {$notaList}.",
+                            'error_code' => 'BUSINESS_RULE_DELETE_BLOCKED',
+                            'input_data' => [
+                                'tukar_tambah_id' => $tukarTambah->getKey(),
+                                'no_nota' => $tukarTambah->no_nota,
+                                'external_notas' => $externalPenjualanNotas->toArray(),
+                                'external_references' => $externalReferences->toArray(),
+                            ],
+                            'severity' => 'warning',
+                        ]);
 
                         throw ValidationException::withMessages([
                             'pembelian_id' => 'Tidak bisa hapus: item pembelian dipakai transaksi lain. Nota: '.$notaList.'.',

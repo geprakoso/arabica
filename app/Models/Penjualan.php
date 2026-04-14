@@ -178,9 +178,28 @@ class Penjualan extends Model
                 // Check if this penjualan belongs to a Tukar Tambah
                 if ($penjualan->sumber_transaksi === 'tukar_tambah' || $penjualan->tukarTambah()->exists()) {
                     $ttKode = $penjualan->tukarTambah?->kode ?? 'TT-XXXXX';
+                    $errorMessage = "Tidak bisa hapus: Penjualan ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.";
+
+                    // Log ke validation_logs
+                    \App\Models\ValidationLog::log([
+                        'source_type' => 'Penjualan',
+                        'source_action' => 'delete',
+                        'validation_type' => 'business_rule',
+                        'field_name' => 'id_penjualan',
+                        'error_message' => $errorMessage,
+                        'error_code' => 'BUSINESS_RULE_TUKAR_TAMBAH_DELETE_BLOCKED',
+                        'input_data' => [
+                            'penjualan_id' => $penjualan->getKey(),
+                            'no_nota' => $penjualan->no_nota,
+                            'sumber_transaksi' => $penjualan->sumber_transaksi,
+                            'tukar_tambah_kode' => $ttKode,
+                            'tukar_tambah_id' => $penjualan->tukarTambah?->getKey(),
+                        ],
+                        'severity' => 'warning',
+                    ]);
 
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'id_penjualan' => "Tidak bisa hapus: Penjualan ini bagian dari Tukar Tambah ({$ttKode}). Hapus dari Tukar Tambah.",
+                        'id_penjualan' => $errorMessage,
                     ]);
                 }
             }

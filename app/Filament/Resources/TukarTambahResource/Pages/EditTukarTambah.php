@@ -11,6 +11,7 @@ use App\Models\Penjualan;
 use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use App\Models\PenjualanPembayaran;
+use App\Services\ValidationLogger;
 use Filament\Actions\Action;
 use Filament\Actions\StaticAction;
 use Filament\Notifications\Notification;
@@ -57,6 +58,9 @@ class EditTukarTambah extends EditRecord
                     try {
                         $this->record->delete();
 
+                        // Tutup modal
+                        $this->dispatch('close-modal', id: 'delete');
+
                         Notification::make()
                             ->title('Tukar tambah dihapus')
                             ->success()
@@ -70,6 +74,19 @@ class EditTukarTambah extends EditRecord
 
                         $this->deleteBlockedMessage = $messages ?: 'Gagal menghapus tukar tambah.';
                         $this->deleteBlockedPenjualanReferences = $this->record->getExternalPenjualanReferences()->all();
+
+                        // Tutup modal terlebih dahulu
+                        $this->dispatch('close-modal', id: 'delete');
+
+                        // Notifikasi toast untuk delete blocked
+                        Notification::make()
+                            ->title('Tidak Bisa Dihapus')
+                            ->body($this->deleteBlockedMessage)
+                            ->icon('heroicon-o-exclamation-triangle')
+                            ->danger()
+                            ->persistent()
+                            ->send();
+
                         $this->replaceMountedAction('deleteBlocked');
                     }
                 }),
@@ -266,7 +283,18 @@ class EditTukarTambah extends EditRecord
      */
     protected function validatePenjualanItems(array $items): void
     {
+        // Start batch logging
+        ValidationLogger::startBatch();
+
         if (empty($items)) {
+            // Log validation error
+            ValidationLogger::logMinimumItems(
+                sourceType: 'TukarTambah',
+                sourceAction: 'update',
+                minRequired: 1,
+                currentCount: 0
+            );
+
             throw ValidationException::withMessages([
                 'penjualan.items' => 'Minimal harus ada 1 item produk.',
             ]);
@@ -290,6 +318,21 @@ class EditTukarTambah extends EditRecord
                     $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
                     $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'.';
+
+                    // Log validation error
+                    ValidationLogger::logDuplicate(
+                        sourceType: 'TukarTambah',
+                        sourceAction: 'update',
+                        productName: $productName,
+                        row: $index + 1,
+                        inputData: [
+                            'product_id' => $productId,
+                            'batch_id' => $batchId,
+                            'condition' => $condition,
+                            'duplicate_row' => $productKeys[$key],
+                            'current_row' => $index + 1,
+                        ]
+                    );
 
                     Notification::make()
                         ->title('Validasi Gagal - Duplikat Produk')
@@ -360,6 +403,21 @@ class EditTukarTambah extends EditRecord
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                 $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
                 $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
+
+                // Log validation error
+                ValidationLogger::logStock(
+                    sourceType: 'TukarTambah',
+                    sourceAction: 'update',
+                    productName: $productName,
+                    available: $availableQty,
+                    requested: $requestedQty,
+                    inputData: [
+                        'product_id' => $productId,
+                        'batch_id' => $batchId,
+                        'condition' => $condition,
+                        'rows' => $rows,
+                    ]
+                );
 
                 Notification::make()
                     ->title('Validasi Gagal - Stok Tidak Cukup')

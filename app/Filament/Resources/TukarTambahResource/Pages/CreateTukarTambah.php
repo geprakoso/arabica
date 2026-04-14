@@ -11,6 +11,7 @@ use App\Models\PenjualanItem;
 use App\Models\PenjualanJasa;
 use App\Models\PenjualanPembayaran;
 use App\Models\TukarTambah;
+use App\Services\ValidationLogger;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -57,7 +58,18 @@ class CreateTukarTambah extends CreateRecord
      */
     protected function validatePenjualanItems(array $items): void
     {
+        // Start batch logging
+        ValidationLogger::startBatch();
+
         if (empty($items)) {
+            // Log validation error
+            ValidationLogger::logMinimumItems(
+                sourceType: 'TukarTambah',
+                sourceAction: 'create',
+                minRequired: 1,
+                currentCount: 0
+            );
+
             throw ValidationException::withMessages([
                 'penjualan.items' => 'Minimal harus ada 1 item produk.',
             ]);
@@ -81,6 +93,21 @@ class CreateTukarTambah extends CreateRecord
                     $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
                     $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'.';
+
+                    // Log validation error
+                    ValidationLogger::logDuplicate(
+                        sourceType: 'TukarTambah',
+                        sourceAction: 'create',
+                        productName: $productName,
+                        row: $index + 1,
+                        inputData: [
+                            'product_id' => $productId,
+                            'batch_id' => $batchId,
+                            'condition' => $condition,
+                            'duplicate_row' => $productKeys[$key],
+                            'current_row' => $index + 1,
+                        ]
+                    );
 
                     Notification::make()
                         ->title('Validasi Gagal - Duplikat Produk')
@@ -151,6 +178,21 @@ class CreateTukarTambah extends CreateRecord
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                 $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
                 $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
+
+                // Log validation error
+                ValidationLogger::logStock(
+                    sourceType: 'TukarTambah',
+                    sourceAction: 'create',
+                    productName: $productName,
+                    available: $availableQty,
+                    requested: $requestedQty,
+                    inputData: [
+                        'product_id' => $productId,
+                        'batch_id' => $batchId,
+                        'condition' => $condition,
+                        'rows' => $rows,
+                    ]
+                );
 
                 Notification::make()
                     ->title('Validasi Gagal - Stok Tidak Cukup')

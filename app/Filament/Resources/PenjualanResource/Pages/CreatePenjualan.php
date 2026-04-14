@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PenjualanResource\Pages;
 use App\Filament\Resources\PenjualanResource;
 use App\Models\PembelianItem;
 use App\Models\PenjualanItem;
+use App\Services\ValidationLogger;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -55,7 +56,18 @@ class CreatePenjualan extends CreateRecord
      */
     protected function validateBeforeCreate(array $items): void
     {
+        // Start batch logging
+        ValidationLogger::startBatch();
+
         if (empty($items)) {
+            // Log validation error
+            ValidationLogger::logMinimumItems(
+                sourceType: 'Penjualan',
+                sourceAction: 'create',
+                minRequired: 1,
+                currentCount: 0
+            );
+
             throw ValidationException::withMessages([
                 'items_temp' => 'Minimal harus ada 1 item produk.',
             ]);
@@ -80,6 +92,21 @@ class CreatePenjualan extends CreateRecord
                     $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
                     $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'. Jika stok tidak cukup, cukup tambahkan qty di baris yang sudah ada.';
+
+                    // Log validation error
+                    ValidationLogger::logDuplicate(
+                        sourceType: 'Penjualan',
+                        sourceAction: 'create',
+                        productName: $productName,
+                        row: $index + 1,
+                        inputData: [
+                            'product_id' => $productId,
+                            'batch_id' => $batchId,
+                            'condition' => $condition,
+                            'duplicate_row' => $productKeys[$key],
+                            'current_row' => $index + 1,
+                        ]
+                    );
 
                     // Kirim notifikasi toast dan database
                     Notification::make()
@@ -117,6 +144,15 @@ class CreatePenjualan extends CreateRecord
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
 
             if ($productId < 1) {
+                // Log validation error
+                ValidationLogger::logRequired(
+                    sourceType: 'Penjualan',
+                    sourceAction: 'create',
+                    fieldName: 'id_produk',
+                    fieldLabel: 'Produk',
+                    inputData: ['row' => $index + 1]
+                );
+
                 throw ValidationException::withMessages([
                     'items_temp' => 'Produk pada baris '.($index + 1).' harus dipilih.',
                 ]);
@@ -124,6 +160,21 @@ class CreatePenjualan extends CreateRecord
 
             if ($qty < 1) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
+
+                // Log validation error
+                ValidationLogger::logFormat(
+                    sourceType: 'Penjualan',
+                    sourceAction: 'create',
+                    fieldName: 'qty',
+                    message: "Qty untuk {$productName} minimal 1",
+                    inputData: [
+                        'product_id' => $productId,
+                        'product_name' => $productName,
+                        'qty' => $qty,
+                        'row' => $index + 1,
+                    ]
+                );
+
                 throw ValidationException::withMessages([
                     'items_temp' => "Qty untuk {$productName} minimal 1.",
                 ]);
@@ -171,6 +222,21 @@ class CreatePenjualan extends CreateRecord
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                 $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
                 $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
+
+                // Log validation error
+                ValidationLogger::logStock(
+                    sourceType: 'Penjualan',
+                    sourceAction: 'create',
+                    productName: $productName,
+                    available: $availableQty,
+                    requested: $requestedQty,
+                    inputData: [
+                        'product_id' => $productId,
+                        'batch_id' => $batchId,
+                        'condition' => $condition,
+                        'rows' => $rows,
+                    ]
+                );
 
                 // Kirim notifikasi toast dan database
                 Notification::make()
