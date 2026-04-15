@@ -64,5 +64,8 @@ wrap-up.md
 .agent/
 .npm-cache/
 opencode.json
+
+# === Fork repo (tidak dibutuhkan) ===
+hook/
 # === Docker volumes (runtime data) ===
 .volumes/
