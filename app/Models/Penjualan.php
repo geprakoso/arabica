@@ -37,12 +37,14 @@ class Penjualan extends Model
         'gudang_id',
         'sumber_transaksi',
         'is_nerfed',
+        'foto_dokumen',
     ];
 
     protected $casts = [
         'tanggal_penjualan' => 'date',
         'metode_bayar' => MetodeBayar::class,
         'is_nerfed' => 'boolean',
+        'foto_dokumen' => 'array',
     ];
 
     public static function generateNoNota(string $prefixCode = 'PJ'): string
