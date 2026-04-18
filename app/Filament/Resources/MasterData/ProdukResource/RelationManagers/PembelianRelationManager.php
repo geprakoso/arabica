@@ -42,7 +42,7 @@ class PembelianRelationManager extends RelationManager
 
                 TextColumn::make('pembelian.nota_supplier')
                     ->label('Nota Supplier')
-                    ->icon('heroicon-m-receipt')
+                    ->icon('heroicon-o-receipt-percent')
                     ->placeholder('-')
                     ->searchable(),
 
