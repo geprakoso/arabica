@@ -35,38 +35,69 @@ class PenjualanItem extends Model
     {
         static::creating(function (PenjualanItem $item): void {
             self::applyBatchDefaults($item);
-            self::assertStockAvailable($item);
+            // Hanya cek stok jika penjualan final (atau jika belum ada relasi penjualan)
+            if (! self::isDraftPenjualan($item)) {
+                self::assertStockAvailable($item);
+            }
         });
 
         static::updating(function (PenjualanItem $item): void {
             self::applyBatchDefaults($item);
-            self::assertStockAvailable($item, true);
+            // Hanya cek stok jika penjualan final
+            if (! self::isDraftPenjualan($item)) {
+                self::assertStockAvailable($item, true);
+            }
         });
 
         static::created(function (PenjualanItem $item): void {
-            self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
+            // Hanya kurangi stok jika penjualan final
+            if (! self::isDraftPenjualan($item)) {
+                self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
+            }
             self::recalculatePenjualanTotals($item);
         });
 
         static::updated(function (PenjualanItem $item): void {
-            $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
-            $originalQty = (int) $item->getOriginal('qty');
+            // Hanya proses stok jika penjualan final
+            if (! self::isDraftPenjualan($item)) {
+                $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
+                $originalQty = (int) $item->getOriginal('qty');
 
-            if ($originalBatchId) {
-                self::applyStockMutation($originalBatchId, $originalQty);
+                if ($originalBatchId) {
+                    self::applyStockMutation($originalBatchId, $originalQty);
+                }
+
+                self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
             }
-
-            self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
             self::recalculatePenjualanTotals($item);
         });
 
         static::deleted(function (PenjualanItem $item): void {
-            $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
-            $originalQty = (int) $item->getOriginal('qty');
+            // Hanya kembalikan stok jika penjualan final
+            if (! self::isDraftPenjualan($item)) {
+                $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
+                $originalQty = (int) $item->getOriginal('qty');
 
-            self::applyStockMutation($originalBatchId, $originalQty);
+                self::applyStockMutation($originalBatchId, $originalQty);
+            }
             self::recalculatePenjualanTotals($item);
         });
+    }
+
+    /**
+     * Check if related penjualan is draft
+     */
+    protected static function isDraftPenjualan(PenjualanItem $item): bool
+    {
+        // Jika belum ada id_penjualan, anggap bukan draft (default behavior)
+        if (! $item->id_penjualan) {
+            return false;
+        }
+
+        // Cek status_dokumen dari penjualan
+        $penjualan = Penjualan::query()->find($item->id_penjualan);
+
+        return $penjualan && $penjualan->isDraft();
     }
 
     public function penjualan()

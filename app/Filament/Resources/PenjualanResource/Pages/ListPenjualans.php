@@ -21,6 +21,35 @@ class ListPenjualans extends ListRecords
         ];
     }
 
+    /**
+     * Tab filters for status_dokumen
+     */
+    public function getTabs(): array
+    {
+        return [
+            'all' => \Filament\Resources\Components\Tab::make('Semua')
+                ->icon('heroicon-m-list-bullet')
+                ->modifyQueryUsing(fn ($query) => $query),
+
+            'final' => \Filament\Resources\Components\Tab::make('Final')
+                ->icon('heroicon-m-lock-closed')
+                ->badge(\App\Models\Penjualan::final()->count())
+                ->badgeColor('success')
+                ->modifyQueryUsing(fn ($query) => $query->final()),
+
+            'draft' => \Filament\Resources\Components\Tab::make('Draft')
+                ->icon('heroicon-m-pencil')
+                ->badge(\App\Models\Penjualan::draft()->count())
+                ->badgeColor('warning')
+                ->modifyQueryUsing(fn ($query) => $query->draft()),
+        ];
+    }
+
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return 'all';
+    }
+
     public function deleteStep2Action(): Actions\Action
     {
         return Actions\Action::make('deleteStep2')
@@ -141,9 +170,9 @@ class ListPenjualans extends ListRecords
             ->modalDescription(function () {
                 $records = \App\Models\Penjualan::whereIn('id_penjualan', $this->bulkDeleteRecordIds)->get();
                 $ttCount = $records->filter(fn ($r) => $r->sumber_transaksi === 'tukar_tambah' || $r->tukarTambah()->exists())->count();
-                
+
                 $desc = "**Anda akan menghapus {$records->count()} penjualan.**\n\n";
-                
+
                 if ($ttCount > 0) {
                     $desc .= "**⚠️ PERINGATAN:** {$ttCount} data adalah bagian dari Tukar Tambah.\n";
                     $desc .= "Menghapus akan memutus relasi dengan data Tukar Tambah.\n\n";
@@ -151,7 +180,7 @@ class ListPenjualans extends ListRecords
 
                 $totalItems = $records->sum(fn ($r) => $r->items()->count());
                 $totalJasa = $records->sum(fn ($r) => $r->jasaItems()->count());
-                
+
                 if ($totalItems > 0) {
                     $desc .= "- Total item barang: {$totalItems}\n";
                 }
@@ -192,15 +221,16 @@ class ListPenjualans extends ListRecords
                         ->body('Password yang Anda masukkan tidak sesuai.')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 try {
                     \App\Models\Penjualan::$allowTukarTambahDeletion = true;
-                    
+
                     $records = \App\Models\Penjualan::whereIn('id_penjualan', $this->bulkDeleteRecordIds)->get();
                     $records->each->delete();
-                    
+
                     \Filament\Notifications\Notification::make()
                         ->title("{$records->count()} penjualan dihapus")
                         ->success()
@@ -241,7 +271,7 @@ class ListPenjualans extends ListRecords
 
                 $itemsCount = $record->items()->count();
                 $jasaCount = $record->jasaItems()->count();
-                
+
                 if ($itemsCount > 0) {
                     $desc .= "- Item barang: {$itemsCount}\n";
                 }
@@ -282,17 +312,18 @@ class ListPenjualans extends ListRecords
                         ->body('Password yang Anda masukkan tidak sesuai.')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 try {
                     \App\Models\Penjualan::$allowTukarTambahDeletion = true;
-                    
+
                     $record = \App\Models\Penjualan::find($this->forceDeleteRecordId);
                     if ($record) {
                         $record->delete();
                     }
-                    
+
                     \Filament\Notifications\Notification::make()
                         ->title('Penjualan dihapus permanen')
                         ->success()
@@ -319,9 +350,9 @@ class ListPenjualans extends ListRecords
             ->modalDescription(function () {
                 $records = \App\Models\Penjualan::whereIn('id_penjualan', $this->bulkForceDeleteRecordIds)->get();
                 $ttCount = $records->filter(fn ($r) => $r->sumber_transaksi === 'tukar_tambah' || $r->tukarTambah()->exists())->count();
-                
+
                 $desc = "**Anda akan MENGHAPUS PERMANEN {$records->count()} penjualan.**\n\n";
-                
+
                 if ($ttCount > 0) {
                     $desc .= "**⚠️ PERINGATAN:** {$ttCount} data adalah bagian dari Tukar Tambah.\n";
                     $desc .= "Menghapus akan memutus relasi permanen.\n\n";
@@ -329,7 +360,7 @@ class ListPenjualans extends ListRecords
 
                 $totalItems = $records->sum(fn ($r) => $r->items()->count());
                 $totalJasa = $records->sum(fn ($r) => $r->jasaItems()->count());
-                
+
                 if ($totalItems > 0) {
                     $desc .= "- Total item barang: {$totalItems}\n";
                 }
@@ -370,15 +401,16 @@ class ListPenjualans extends ListRecords
                         ->body('Password yang Anda masukkan tidak sesuai.')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 try {
                     \App\Models\Penjualan::$allowTukarTambahDeletion = true;
-                    
+
                     $records = \App\Models\Penjualan::whereIn('id_penjualan', $this->bulkForceDeleteRecordIds)->get();
                     $records->each->delete();
-                    
+
                     \Filament\Notifications\Notification::make()
                         ->title("{$records->count()} penjualan dihapus permanen")
                         ->success()

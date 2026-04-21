@@ -844,6 +844,21 @@ class PenjualanResource extends BaseResource
                     ->color('primary')
                     ->alignCenter()
                     ->sortable(),
+                TextColumn::make('status_dokumen')
+                    ->label('Dokumen')
+                    ->badge()
+                    ->alignCenter()
+                    ->color(fn (string $state): string => match ($state) {
+                        'final' => 'success',
+                        'draft' => 'warning',
+                        default => 'gray',
+                    })
+                    ->icon(fn (string $state): string => match ($state) {
+                        'final' => 'heroicon-m-lock-closed',
+                        'draft' => 'heroicon-m-pencil',
+                        default => 'heroicon-m-question-mark-circle',
+                    })
+                    ->formatStateUsing(fn (string $state): string => strtoupper($state)),
                 TextColumn::make('status_pembayaran')
                     ->label('Status')
                     ->badge()
@@ -1061,6 +1076,15 @@ class PenjualanResource extends BaseResource
                     ->options([
                         'pos' => 'POS',
                         'manual' => 'Manual',
+                    ])
+                    ->native(false)
+                    ->placeholder('Semua'),
+
+                Tables\Filters\SelectFilter::make('status_dokumen')
+                    ->label('Status Dokumen')
+                    ->options([
+                        'draft' => 'Draft',
+                        'final' => 'Final',
                     ])
                     ->native(false)
                     ->placeholder('Semua'),

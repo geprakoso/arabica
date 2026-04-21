@@ -21,6 +21,8 @@ class CreatePenjualan extends CreateRecord
 
     protected array $itemsToCreate = [];
 
+    protected string $saveMode = 'final'; // 'draft' or 'final'
+
     protected function getRedirectUrl(): string
     {
         return PenjualanResource::getUrl('view', ['record' => $this->record]);
@@ -33,20 +35,28 @@ class CreatePenjualan extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        \Illuminate\Support\Facades\Log::info('mutateFormDataBeforeCreate', [
+            'saveMode' => $this->saveMode,
+            'has_items_temp' => isset($data['items_temp']),
+            'items_temp_count' => isset($data['items_temp']) ? count($data['items_temp']) : 0,
+        ]);
+
         // Extract items_temp for manual processing after record creation
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
 
             // VALIDASI SEBELUM RECORD DIBUAT
             // Validasi stok tersedia dan duplikat produk
-            $this->validateBeforeCreate($this->itemsToCreate);
+            // Hanya validasi stok untuk mode final, draft skip validasi stok
+            if ($this->saveMode === 'final') {
+                $this->validateBeforeCreate($this->itemsToCreate);
+            }
 
             unset($data['items_temp']);
         }
 
-        // Note: Fitur draft telah dihapus, semua penyimpanan langsung final
-        // Hapus status_dokumen jika ada (kolom ini akan dihapus dari database)
-        unset($data['status_dokumen']);
+        // Set status dokumen berdasarkan mode save
+        $data['status_dokumen'] = $this->saveMode;
 
         return $data;
     }
@@ -266,20 +276,37 @@ class CreatePenjualan extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // Process items with FIFO allocation
-        if (! empty($this->itemsToCreate)) {
-            $this->createItemsWithFifo($this->itemsToCreate);
-        }
+        \Illuminate\Support\Facades\Log::info('afterCreate', [
+            'saveMode' => $this->saveMode,
+            'itemsToCreate_count' => count($this->itemsToCreate),
+            'penjualan_id' => $this->record->getKey(),
+        ]);
 
-        // Recalculate totals
-        $this->record->recalculateTotals();
+        // Process items - untuk final dan draft
+        if (! empty($this->itemsToCreate)) {
+            if ($this->saveMode === 'final') {
+                // Final: Create items dengan FIFO (stok berkurang)
+                $this->createItemsWithFifo($this->itemsToCreate);
+            } else {
+                // Draft: Create items tanpa FIFO (stok TIDAK berkurang)
+                $this->createItemsWithoutStockDeduction($this->itemsToCreate);
+            }
+
+            // Recalculate totals
+            $this->record->recalculateTotals();
+        }
 
         // Send notification
         $user = Auth::user();
         if ($user) {
+            $title = $this->saveMode === 'draft' ? 'Draft penjualan disimpan' : 'Penjualan baru dibuat';
+            $body = $this->saveMode === 'draft'
+                ? "Draft {$this->record->no_nota} berhasil disimpan. Belum mengurangi stok."
+                : "No. Nota {$this->record->no_nota} berhasil disimpan.";
+
             Notification::make()
-                ->title('Penjualan baru dibuat')
-                ->body("No. Nota {$this->record->no_nota} berhasil disimpan.")
+                ->title($title)
+                ->body($body)
                 ->icon('heroicon-o-check-circle')
                 ->actions([
                     NotificationAction::make('Lihat')
@@ -287,6 +314,69 @@ class CreatePenjualan extends CreateRecord
                 ])
                 ->sendToDatabase($user);
         }
+    }
+
+    /**
+     * Create items without stock deduction (for draft mode)
+     */
+    protected function createItemsWithoutStockDeduction(array $items): void
+    {
+        \Illuminate\Support\Facades\Log::info('createItemsWithoutStockDeduction started', [
+            'items_count' => count($items),
+            'penjualan_id' => $this->record->getKey(),
+            'status_dokumen' => $this->record->status_dokumen,
+        ]);
+
+        foreach ($items as $index => $item) {
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $qty = (int) ($item['qty'] ?? 0);
+            $customPrice = $item['harga_jual'] ?? null;
+            $condition = $item['kondisi'] ?? null;
+            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
+            $serials = is_array($item['serials'] ?? null) ? array_values($item['serials']) : [];
+
+            \Illuminate\Support\Facades\Log::info('Processing item', [
+                'index' => $index,
+                'productId' => $productId,
+                'qty' => $qty,
+            ]);
+
+            if ($productId < 1 || $qty < 1) {
+                \Illuminate\Support\Facades\Log::warning('Skipping item - invalid product or qty', [
+                    'productId' => $productId,
+                    'qty' => $qty,
+                ]);
+
+                continue;
+            }
+
+            try {
+                // Untuk draft, simpan dengan batch_id = null (akan dialokasikan saat finalisasi)
+                // atau simpan batch_id yang dipilih user (untuk referensi)
+                $createdItem = PenjualanItem::create([
+                    'id_penjualan' => $this->record->getKey(),
+                    'id_produk' => $productId,
+                    'id_pembelian_item' => $batchId > 0 ? $batchId : null,
+                    'qty' => $qty,
+                    'harga_jual' => $customPrice,
+                    'kondisi' => $condition,
+                    'serials' => ! empty($serials) ? $serials : null,
+                ]);
+
+                \Illuminate\Support\Facades\Log::info('Item created', [
+                    'item_id' => $createdItem->id_penjualan_item,
+                    'productId' => $productId,
+                ]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to create item', [
+                    'error' => $e->getMessage(),
+                    'productId' => $productId,
+                ]);
+                throw $e;
+            }
+        }
+
+        \Illuminate\Support\Facades\Log::info('createItemsWithoutStockDeduction completed');
     }
 
     /**
@@ -480,11 +570,29 @@ class CreatePenjualan extends CreateRecord
     protected function getHeaderActions(): array
     {
         return [
-            $this->getCreateFormAction()
-                ->label('Simpan')
-                ->icon('heroicon-m-check')
+            // Tombol Simpan Final
+            \Filament\Actions\Action::make('saveFinal')
+                ->label('Simpan Final')
+                ->icon('heroicon-m-check-circle')
+                ->color('success')
+                ->action(function () {
+                    $this->saveMode = 'final';
+                    $this->create();
+                })
                 ->formId('form'),
-            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
+
+            // Tombol Simpan Draft
+            \Filament\Actions\Action::make('saveDraft')
+                ->label('Simpan Draft')
+                ->icon('heroicon-m-document')
+                ->color('warning')
+                ->outlined()
+                ->action(function () {
+                    $this->saveMode = 'draft';
+                    $this->create();
+                })
+                ->formId('form'),
+
             $this->getCancelFormAction(),
         ];
     }

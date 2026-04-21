@@ -20,7 +20,9 @@ class EditPenjualan extends EditRecord
 
     protected array $itemsToCreate = [];
 
-    protected string $saveMode = 'final';
+    protected string $saveMode = 'draft'; // 'draft' or 'final'
+
+    protected bool $isFinalizing = false;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -41,6 +43,13 @@ class EditPenjualan extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Jika status final, tidak bisa edit
+        if ($this->record->isFinal()) {
+            throw ValidationException::withMessages([
+                'global' => 'Transaksi final tidak dapat diubah. Gunakan "Ubah ke Draft" terlebih dahulu.',
+            ]);
+        }
+
         // Extract items_temp for processing
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
@@ -51,9 +60,6 @@ class EditPenjualan extends EditRecord
 
             unset($data['items_temp']);
         }
-
-        // Hapus status_dokumen jika ada
-        unset($data['status_dokumen']);
 
         return $data;
     }
@@ -286,9 +292,15 @@ class EditPenjualan extends EditRecord
             // Delete existing items and recreate
             $record->items()->delete();
 
-            // Create items with FIFO batch allocation
+            // Create items - bedakan antara update draft dan finalisasi
             if (! empty($this->itemsToCreate)) {
-                $this->createItemsWithFifo($this->itemsToCreate);
+                if ($this->isFinalizing) {
+                    // Finalisasi: Create items dengan FIFO (stok berkurang)
+                    $this->createItemsWithFifo($this->itemsToCreate);
+                } else {
+                    // Update draft: Create items tanpa FIFO (stok TIDAK berkurang)
+                    $this->createItemsWithoutStockDeduction($this->itemsToCreate);
+                }
             }
 
             // Recalculate totals
@@ -297,6 +309,37 @@ class EditPenjualan extends EditRecord
 
             return $record;
         });
+    }
+
+    /**
+     * Create items without stock deduction (for draft mode)
+     */
+    protected function createItemsWithoutStockDeduction(array $items): void
+    {
+        foreach ($items as $item) {
+            $productId = (int) ($item['id_produk'] ?? 0);
+            $qty = (int) ($item['qty'] ?? 0);
+            $customPrice = isset($item['harga_jual']) ? (int) $item['harga_jual'] : null;
+            $condition = $item['kondisi'] ?? null;
+            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
+            $serials = $item['serials'] ?? [];
+
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+
+            // Untuk draft, simpan dengan batch_id = null (akan dialokasikan saat finalisasi)
+            // atau simpan batch_id yang dipilih user (untuk referensi)
+            PenjualanItem::create([
+                'id_penjualan' => $this->record->id_penjualan,
+                'id_produk' => $productId,
+                'id_pembelian_item' => $batchId > 0 ? $batchId : null,
+                'qty' => $qty,
+                'harga_jual' => $customPrice,
+                'kondisi' => $condition,
+                'serials' => ! empty($serials) ? $serials : null,
+            ]);
+        }
     }
 
     /**
@@ -488,17 +531,106 @@ class EditPenjualan extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            $this->getSaveFormAction()
-                ->label('Simpan')
+        $actions = [];
+
+        // Jika draft, tampilkan tombol update dan finalisasi
+        if ($this->record->isDraft()) {
+            $actions[] = $this->getSaveFormAction()
+                ->label('Update Draft')
+                ->icon('heroicon-m-arrow-path')
+                ->color('primary')
+                ->formId('form');
+
+            $actions[] = \Filament\Actions\Action::make('finalize')
+                ->label('Finalisasi')
                 ->icon('heroicon-m-check-circle')
-                ->formId('form'),
-            $this->getCancelFormAction()
-                ->label('Batal')
-                ->icon('heroicon-m-x-mark')
-                ->color('danger')
-                ->formId('form'),
-        ];
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Finalisasi Draft')
+                ->modalDescription('Setelah difinalisasi, stok akan berkurang dan transaksi tidak bisa diubah. Lanjutkan?')
+                ->modalSubmitActionLabel('Ya, Finalisasi')
+                ->action(function () {
+                    $this->finalizeDraft();
+                });
+        }
+
+        $actions[] = $this->getCancelFormAction()
+            ->label('Batal')
+            ->icon('heroicon-m-x-mark')
+            ->color('gray')
+            ->formId('form');
+
+        return $actions;
+    }
+
+    /**
+     * Finalize draft document
+     */
+    protected function finalizeDraft(): void
+    {
+        try {
+            // Ambil data dari form (karena action tidak melalui mutateFormDataBeforeSave)
+            $formData = $this->form->getState();
+            $items = $formData['items_temp'] ?? [];
+
+            // Validasi minimal ada 1 item
+            if (empty($items)) {
+                throw ValidationException::withMessages([
+                    'items_temp' => 'Minimal harus ada 1 item produk.',
+                ]);
+            }
+
+            // Validasi stok tersedia sebelum finalisasi
+            $this->validateBeforeSave($items);
+
+            // Set flag finalisasi
+            $this->isFinalizing = true;
+
+            DB::transaction(function () use ($items) {
+                // Update data header penjualan
+                $formData = $this->form->getState();
+                $this->record->update([
+                    'id_karyawan' => $formData['id_karyawan'] ?? $this->record->id_karyawan,
+                    'id_member' => $formData['id_member'] ?? $this->record->id_member,
+                    'tanggal_penjualan' => $formData['tanggal_penjualan'] ?? $this->record->tanggal_penjualan,
+                    'catatan' => $formData['catatan'] ?? $this->record->catatan,
+                    'diskon_total' => $formData['diskon_total'] ?? $this->record->diskon_total ?? 0,
+                ]);
+
+                // Finalize dulu (update status ke final dan generate nomor)
+                // Ini penting agar hooks PenjualanItem mengenali status final
+                $this->record->finalize();
+
+                // Delete existing items (draft items)
+                $this->record->items()->delete();
+
+                // Create items with FIFO (stock deduction akan terjadi karena status sudah final)
+                $this->createItemsWithFifo($items);
+
+                // Recalculate totals
+                $this->record->recalculateTotals();
+            });
+
+            Notification::make()
+                ->title('Draft berhasil difinalisasi')
+                ->body("Transaksi {$this->record->no_nota} telah final.")
+                ->icon('heroicon-o-check-circle')
+                ->success()
+                ->send();
+
+            // Redirect ke view
+            $this->redirect(PenjualanResource::getUrl('view', ['record' => $this->record]));
+
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Gagal finalisasi')
+                ->body($e->getMessage())
+                ->icon('heroicon-o-exclamation-triangle')
+                ->danger()
+                ->send();
+        }
     }
 
     protected function getFormActions(): array
