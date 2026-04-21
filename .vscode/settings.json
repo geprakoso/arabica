@@ -1,0 +1,7 @@
+{
+  "php.validate.executablePath": "/Applications/MAMP/bin/php/php8.3.14/bin/php",
+  "intelephense.environment.phpVersion": "8.3.0",
+  "intelephense.environment.includePaths": [
+    "/Applications/MAMP/htdocs/arabica/vendor"
+  ]
+}

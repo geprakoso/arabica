@@ -10,7 +10,11 @@
 /.idea
 /.nova
 /.phpunit.cache
-/.vscode
+# === VS Code ===
+.vscode/*
+!.vscode/mcp.json.example
+!.vscode/launch.json
+!.vscode/settings.json
 /.zed
 /auth.json
 /node_modules
@@ -64,6 +68,17 @@ wrap-up.md
 .agent/
 .npm-cache/
 opencode.json
+
+# === MCP Configuration (sensitive - local only) ===
+.cursor/mcp.json
+.vscode/mcp.json
+claude_desktop_config.json
+**/mcp-local.json
+.cursor/settings.json
+
+# === MCP Config Examples (allowed - templates for team) ===
+!.cursor/mcp.json.example
+!.vscode/mcp.json.example
 
 # === Fork repo (tidak dibutuhkan) ===
 hook/
