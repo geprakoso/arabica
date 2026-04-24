@@ -26,6 +26,7 @@ use Filament\Infolists\Components\TextEntry\TextEntrySize;
 // use Laravel\Pail\File;
 use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontFamily;
+use Filament\Notifications\Notification;
 use Filament\Tables; // Import Str
 use Filament\Tables\Columns\ImageColumn; // Import Closure for callable type hint
 use Filament\Tables\Columns\Layout\Split as TableSplit;
@@ -356,6 +357,13 @@ class ProdukResource extends BaseResource
                             ->description(fn (Produk $record) => new HtmlString('<span class="font-mono">SKU: '.e($record->sku ?? '-').'</span>'))
                             ->searchable()
                             ->sortable(),
+                        TextColumn::make('total_stock')
+                            ->label('Stok')
+                            ->state(fn (Produk $record) => $record->getTotalStockAttribute())
+                            ->badge()
+                            ->color(fn ($state) => $state > 0 ? 'success' : 'gray')
+                            ->icon('heroicon-m-archive-box')
+                            ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} unit" : 'Stok habis'),
                         TextColumn::make('kategori.nama_kategori')
                             ->label('Kategori')
                             ->badge()
@@ -385,7 +393,22 @@ class ProdukResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Produk $record) {
+                        if ($record->hasActiveStock()) {
+                            $stockCount = $record->getTotalStockAttribute();
+                            
+                            Notification::make()
+                                ->title('Tidak Dapat Menghapus Produk')
+                                ->body("Produk '{$record->nama_produk}' masih memiliki stok aktif sebanyak {$stockCount} unit. Silakan habiskan stok terlebih dahulu.")
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                            
+                            // Cancel the delete action
+                            return false;
+                        }
+                    }),
                 Tables\Actions\RestoreAction::make()
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->button()
@@ -397,7 +420,39 @@ class ProdukResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function ($records) {
+                            // Separate records with and without stock
+                            $productsWithStock = $records->filter(fn ($record) => $record->hasActiveStock());
+                            $productsWithoutStock = $records->reject(fn ($record) => $record->hasActiveStock());
+                            
+                            // Delete only products without stock
+                            $deletedCount = 0;
+                            foreach ($productsWithoutStock as $record) {
+                                $record->delete();
+                                $deletedCount++;
+                            }
+                            
+                            // Show notifications
+                            if ($productsWithStock->isNotEmpty()) {
+                                $stockCounts = $productsWithStock->map(fn ($p) => "{$p->nama_produk} ({$p->getTotalStockAttribute()} unit)")->implode(', ');
+                                
+                                Notification::make()
+                                    ->title('Beberapa Produk Tidak Dapat Dihapus')
+                                    ->body("Produk berikut masih memiliki stok aktif: {$stockCounts}")
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                            }
+                            
+                            if ($deletedCount > 0) {
+                                Notification::make()
+                                    ->title('Berhasil Menghapus Produk')
+                                    ->body("{$deletedCount} produk berhasil dihapus.")
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
                     Tables\Actions\RestoreBulkAction::make()
                         ->icon('heroicon-o-arrow-uturn-left')
                         ->color('success')

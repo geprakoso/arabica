@@ -9,6 +9,7 @@ use App\Models\PembelianItem;
 use App\Models\PenjualanItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 
 class Produk extends Model
@@ -47,6 +48,48 @@ class Produk extends Model
         static::creating(function (Produk $produk) {
             $produk->sku ??= $produk->generateSmartSku();
         });
+
+        // Prevent soft delete if product has active stock
+        static::deleting(function (Produk $produk) {
+            // Only check on soft delete (not force delete)
+            if (! $produk->isForceDeleting() && $produk->hasActiveStock()) {
+                // Log the attempt for audit purposes
+                \Log::warning('Attempted to delete product with active stock', [
+                    'produk_id' => $produk->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'stock' => $produk->getTotalStockAttribute(),
+                    'user_id' => auth()->id(),
+                ]);
+                
+                // Return false to cancel the delete operation
+                // The UI should show a notification before reaching this point
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Check if product has active stock (qty_sisa > 0)
+     */
+    public function hasActiveStock(): bool
+    {
+        $qtySisaColumn = PembelianItem::qtySisaColumn();
+        
+        return $this->pembelianItems()
+            ->where($qtySisaColumn, '>', 0)
+            ->exists();
+    }
+
+    /**
+     * Get total active stock quantity
+     */
+    public function getTotalStockAttribute(): int
+    {
+        $qtySisaColumn = PembelianItem::qtySisaColumn();
+        
+        return (int) $this->pembelianItems()
+            ->where($qtySisaColumn, '>', 0)
+            ->sum($qtySisaColumn);
     }
 
     public function generateSmartSku(): string

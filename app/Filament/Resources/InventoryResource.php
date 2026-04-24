@@ -344,9 +344,11 @@ class InventoryResource extends BaseResource
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas('pembelianItems', fn($q) => $q
-                ->where($qtySisaColumn, '>', 0)
-                ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            ->whereHas(
+                'pembelianItems',
+                fn($q) => $q
+                    ->where($qtySisaColumn, '>', 0)
+                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
             )
             ->with([
                 'brand',
@@ -356,13 +358,15 @@ class InventoryResource extends BaseResource
                     ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
                     ->with(['pembelian', 'rmas']),
             ])
-            ->withSum(['pembelianItems as total_qty' => fn($q) => $q
-                ->where($qtySisaColumn, '>', 0)
-                ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            ->withSum([
+                'pembelianItems as total_qty' => fn($q) => $q
+                    ->where($qtySisaColumn, '>', 0)
+                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
             ], $qtySisaColumn)
-            ->withCount(['pembelianItems as batch_count' => fn($q) => $q
-                ->where($qtySisaColumn, '>', 0)
-                ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            ->withCount([
+                'pembelianItems as batch_count' => fn($q) => $q
+                    ->where($qtySisaColumn, '>', 0)
+                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
             ]);
 
         $query->orderBy(
