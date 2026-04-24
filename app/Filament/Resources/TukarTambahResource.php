@@ -763,7 +763,7 @@ class TukarTambahResource extends BaseResource
                                                 \Filament\Forms\Components\Hidden::make('id_pembelian_item'),
                                                 Select::make('id_produk')
                                                     ->label('Produk')
-                                                    ->options(fn () => \App\Models\Produk::query()->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
+                                                    ->options(fn () => \App\Models\Produk::query()->whereNull('deleted_at')->orderBy('nama_produk')->pluck('nama_produk', 'id')->all())
                                                     ->searchable()
                                                     ->required()
                                                     ->validationMessages([

@@ -1570,10 +1570,10 @@ class PenjualanResource extends BaseResource
     public static function getAvailableProductOptions(): array
     {
         $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
         $activeStatuses = Rma::activeStatuses();
 
         $products = Produk::query()
+            ->whereNull('deleted_at') // Exclude soft deleted products
             ->whereHas(
                 'pembelianItems',
                 fn (Builder $query) => $query

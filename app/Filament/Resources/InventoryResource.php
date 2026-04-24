@@ -82,14 +82,15 @@ class InventoryResource extends BaseResource
                         ]),
                     Stack::make([
                         TextColumn::make('nama_produk')
-                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
+                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>' . ($record->deleted_at ? ' <span class="text-danger-500 text-xs">[DELETED]</span>' : '')))
                             ->label('Produk')
-                            ->formatStateUsing(fn($state) => Str::upper($state))
+                            ->formatStateUsing(fn($state, Produk $record) => Str::upper($state) . ($record->deleted_at ? ' ⚠️' : ''))
                             ->searchable()
                             ->weight('bold')
                             ->size(TextColumnSize::Large)
                             ->sortable()
-                            ->wrap(),
+                            ->wrap()
+                            ->color(fn(Produk $record) => $record->deleted_at ? 'danger' : null),
                         TextColumn::make('brand.nama_brand')
                             ->label('Brand')
                             ->formatStateUsing(fn($state) => Str::title($state))
@@ -243,7 +244,8 @@ class InventoryResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        return self::applyInventoryScopes(parent::getEloquentQuery());
+        // Include soft deleted products that still have active stock
+        return self::applyInventoryScopes(parent::getEloquentQuery()->withTrashed());
     }
 
     public static function infolist(Infolist $infolist): Infolist

@@ -272,12 +272,15 @@ class PembelianResource extends BaseResource
                                 // R02: Produk duplikat dengan kondisi berbeda diperbolehkan
                                 Select::make('id_produk')
                                     ->label('Produk')
-                                    ->relationship('produk', 'nama_produk')
+                                    ->relationship(
+                                        name: 'produk',
+                                        titleAttribute: 'nama_produk',
+                                        modifyQueryUsing: fn($query) => $query->whereNull('deleted_at')
+                                    )
                                     ->searchable()
                                     ->preload()
                                     ->required()
                                     ->disabled(fn($livewire) => $livewire instanceof \App\Filament\Resources\PembelianResource\Pages\EditPembelian)
-
                                     ->columnSpan([
                                         'md' => 4,
                                         'xl' => 4,

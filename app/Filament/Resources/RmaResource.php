@@ -388,6 +388,7 @@ class RmaResource extends BaseResource
         $activeStatuses = Rma::activeStatuses();
 
         $products = Produk::query()
+            ->whereNull('deleted_at') // Exclude soft deleted products
             ->whereHas('pembelianItems', function ($query) use ($qtyColumn, $activeStatuses) {
                 $query->where($qtyColumn, '>', 0)
                     ->whereDoesntHave('rmas', fn($rmaQuery) => $rmaQuery->whereIn('status_garansi', $activeStatuses));
