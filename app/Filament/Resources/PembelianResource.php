@@ -326,7 +326,7 @@ class PembelianResource extends BaseResource
                                     ->placeholder('Masukkan HPP')
                                     ->required()
                                     ->disabled(fn($livewire) => $livewire instanceof \App\Filament\Resources\PembelianResource\Pages\EditPembelian)
-                                    ->live(debounce: '1000ms')
+                                    ->live(debounce: '300ms')
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $qty = (int) ($get('qty') ?? 0);
                                         $hpp = (int) ($get('hpp') ?? 0);
@@ -884,36 +884,14 @@ class PembelianResource extends BaseResource
                         'TEMPO' => 'danger',
                         default => 'gray',
                     }),
-                TextColumn::make('items_serials')
-                    ->label('SN')
-                    ->toggleable(isToggledHiddenByDefault: true)
+                TextColumn::make('is_locked')
+                    ->label('Status')
+                    ->badge()
                     ->state(function (Pembelian $record): string {
-                        $allSerials = $record->items
-                            ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
-                            ->filter()
-                            ->values();
-
-                        if ($allSerials->isEmpty()) {
-                            return '-';
-                        }
-
-                        $serialsString = $allSerials->implode(', ');
-
-                        return \Illuminate\Support\Str::limit($serialsString, 9);
+                        return $record->is_locked ? 'Final' : 'Draft';
                     })
-                    ->wrap()
-                    ->tooltip(function (Pembelian $record): ?string {
-                        $allSerials = $record->items
-                            ->flatMap(fn($item) => collect($item->serials ?? [])->pluck('sn'))
-                            ->filter()
-                            ->values();
-
-                        return $allSerials->count() > 0 ? $allSerials->implode(', ') : null;
-                    })
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('items', function (Builder $q) use ($search): void {
-                            $q->whereRaw('LOWER(serials) LIKE ?', ['%' . strtolower($search) . '%']);
-                        });
+                    ->color(function (Pembelian $record): string {
+                        return $record->is_locked ? 'success' : 'warning';
                     })
                     ->toggleable(),
                 TextColumn::make('items_count')
