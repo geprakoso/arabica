@@ -44,13 +44,57 @@ class CreatePembelian extends CreateRecord
         return 'Pembelian berhasil dibuat. Silakan tambah produk melalui tabel di bawah.';
     }
 
+    protected function beforeCreate(): void
+    {
+        // R02: Validasi duplikat produk+kondisi sebelum simpan
+        $items = $this->data['items'] ?? [];
+        $combinations = [];
+
+        foreach ($items as $item) {
+            $produkId = $item['id_produk'] ?? null;
+            $kondisi = $item['kondisi'] ?? null;
+
+            if (empty($produkId)) {
+                continue;
+            }
+
+            $key = "{$produkId}|{$kondisi}";
+
+            if (in_array($key, $combinations)) {
+                $produkName = \App\Models\Produk::find($produkId)?->nama_produk ?? 'Produk';
+
+                Notification::make()
+                    ->title('Duplikasi Item Terdeteksi')
+                    ->body("Produk **{$produkName}** dengan kondisi **" . ucfirst($kondisi ?? '-') . "** sudah ada di daftar. Gabungkan qty-nya atau ubah kondisi.")
+                    ->danger()
+                    ->persistent()
+                    ->send();
+
+                $this->halt();
+            }
+
+            $combinations[] = $key;
+        }
+    }
+
     protected function handleRecordCreation(array $data): Pembelian
     {
-        // Remove no_po from data to let the model's booted() event generate a unique one
-        // This ensures the model's generateUniquePO() with soft-delete check is used
-        unset($data['no_po']);
+        try {
+            // Remove no_po from data to let the model's booted() event generate a unique one
+            unset($data['no_po']);
 
-        return parent::handleRecordCreation($data);
+            return parent::handleRecordCreation($data);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Fallback: tangkap error database unique constraint
+            Notification::make()
+                ->title('Gagal Menyimpan')
+                ->body('Terjadi duplikasi data. Silakan periksa kembali item barang.')
+                ->danger()
+                ->persistent()
+                ->send();
+
+            $this->halt();
+        }
     }
 
     protected function afterCreate(): void

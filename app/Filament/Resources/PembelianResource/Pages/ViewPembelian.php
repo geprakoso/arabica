@@ -45,6 +45,44 @@ class ViewPembelian extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // R16: Lock Final Action (hanya muncul jika belum locked)
+            Action::make('lock_final')
+                ->label('Lock Final')
+                ->icon('heroicon-m-lock-closed')
+                ->color('warning')
+                ->visible(fn() => ! $this->record->is_locked)
+                ->requiresConfirmation()
+                ->modalHeading('Kunci Data Pembelian')
+                ->modalDescription('PERHATIAN: Setelah dikunci, data tidak dapat diedit lagi. Namun data MASIH BISA DIHAPUS jika belum ada transaksi penjualan dan belum memiliki NO TT.')
+                ->modalSubmitActionLabel('Ya, Kunci Permanen')
+                ->action(function (): void {
+                    try {
+                        $this->record->lockFinal();
+
+                        Notification::make()
+                            ->title('Data berhasil dikunci')
+                            ->body('Pembelian ini sekarang tidak dapat diedit.')
+                            ->success()
+                            ->send();
+
+                        $this->refreshFormData(['is_locked']);
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('Gagal mengunci data')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            // Badge Lock Status
+            Action::make('lock_status')
+                ->label(fn() => $this->record->is_locked ? 'LOCKED' : '🟢 OPEN')
+                ->icon('')
+                ->color(fn() => $this->record->is_locked ? 'danger' : 'success')
+                ->disabled()
+                ->visible(fn() => true),
+
             Action::make('upload_dokumen')
                 ->label('Upload Foto')
                 ->icon('heroicon-m-camera')
@@ -89,36 +127,37 @@ class ViewPembelian extends ViewRecord
 
                     $this->refreshFormData(['foto_dokumen']);
                 }),
+
+            // R16: Edit button - hidden if locked
             Action::make('edit')
                 ->label('Ubah')
                 ->icon('heroicon-m-pencil-square')
+                ->visible(fn() => ! $this->record->is_locked)
                 ->action(function (): void {
-                    // if ($this->record->isEditLocked()) {
-                    //     $this->editBlockedMessage = $this->record->getEditBlockedMessage();
-                    //     $this->editBlockedPenjualanReferences = $this->record->getBlockedPenjualanReferences()->all();
-                    //     $this->replaceMountedAction('editBlocked');
-                    //     return;
-                    // }
                     $this->redirect(PembelianResource::getUrl('edit', ['record' => $this->record]));
                 }),
+
+            // R12, R13, R16: Delete button - always visible but check canDelete()
             Action::make('delete')
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')
                 ->color('danger')
                 ->requiresConfirmation()
                 ->modalHeading('Hapus Pembelian')
-                ->modalDescription('Pembelian yang masih dipakai transaksi lain akan diblokir.')
+                ->modalDescription(function (): string {
+                    if (! $this->record->canDelete()) {
+                        return 'Pembelian ini tidak dapat dihapus karena: sudah ada transaksi penjualan atau memiliki NO TT.';
+                    }
+                    return 'Apakah Anda yakin ingin menghapus pembelian ini?';
+                })
+                ->disabled(fn() => ! $this->record->canDelete())
                 ->action(function (): void {
                     try {
                         $this->record->delete();
                     } catch (ValidationException $exception) {
                         // Godmode: Start Force Delete Flow (Step 1 -> Step 2)
                         if (auth()->user()?->hasRole('godmode')) {
-                            // Pre-fetch references just like ListPembelians, though ViewPembelian uses $this->record directly
-                            // $this->replaceMountedAction('forceDeleteStep2');
-                            // Actually, let's keep it consistent by calling step 2
                             $this->replaceMountedAction('forceDeleteStep2');
-
                             return;
                         }
 

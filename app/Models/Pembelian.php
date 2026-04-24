@@ -31,6 +31,11 @@ class Pembelian extends Model
         'id_karyawan',
         'id_supplier',
         'foto_dokumen',
+        // R11, R16: Fields dari Purchase Module Policy
+        'grand_total',
+        'total_paid',
+        'is_locked',
+        'no_tt',
     ];
 
     protected static function booted(): void
@@ -177,7 +182,87 @@ class Pembelian extends Model
         'tgl_tempo' => 'date',
         'harga_jual' => 'decimal:2',
         'foto_dokumen' => 'array',
+        // R11, R16: Casts dari Purchase Module Policy
+        'grand_total' => 'decimal:2',
+        'total_paid' => 'decimal:2',
+        'is_locked' => 'boolean',
     ];
+
+    /**
+     * R06-R07: Status pembayaran (calculated, tidak disimpan di DB)
+     * TEMPO = pembayaran < grand_total
+     * LUNAS = pembayaran >= grand_total
+     */
+    public function getStatusAttribute(): string
+    {
+        // Gunakan total_paid jika sudah di-set, jika tidak hitung dari pembayaran
+        $paid = $this->total_paid ?? $this->calculateTotalPaidCached();
+        $total = $this->grand_total ?? $this->calculateTotalPembelianCached();
+
+        return $paid >= $total ? 'LUNAS' : 'TEMPO';
+    }
+
+    /**
+     * R08: Kelebihan pembayaran (calculated)
+     */
+    public function getKelebihanAttribute(): float
+    {
+        $paid = $this->total_paid ?? $this->calculateTotalPaidCached();
+        $total = $this->grand_total ?? $this->calculateTotalPembelianCached();
+
+        return max(0, $paid - $total);
+    }
+
+    /**
+     * R16: Lock Final - mengunci data dari edit
+     * Irreversible: tidak bisa dibuka kembali
+     *
+     * @throws \Exception
+     */
+    public function lockFinal(): void
+    {
+        if ($this->is_locked) {
+            throw new \Exception('Data pembelian sudah terkunci');
+        }
+
+        // R11: Pastikan grand_total sudah di-set sebelum lock
+        if (is_null($this->grand_total) || $this->grand_total <= 0) {
+            $this->grand_total = $this->calculateTotalPembelianCached();
+        }
+
+        $this->update(['is_locked' => true]);
+    }
+
+    /**
+     * R16: Cek apakah data bisa diedit
+     */
+    public function canEdit(): bool
+    {
+        return ! $this->is_locked;
+    }
+
+    /**
+     * R16: Cek apakah bisa dihapus (lock tidak mempengaruhi)
+     * Hanya R12 & R13 yang menentukan
+     */
+    public function canDelete(): bool
+    {
+        // R12: Cek apakah sudah ada penjualan
+        $hasSales = $this->items()
+            ->whereHas('penjualanItems')
+            ->exists();
+
+        if ($hasSales) {
+            return false;
+        }
+
+        // R13: Cek apakah ada NO TT
+        if (! empty($this->no_tt)) {
+            return false;
+        }
+
+        return true;
+    }
 
     public function karyawan()
     {

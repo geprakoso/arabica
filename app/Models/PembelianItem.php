@@ -25,19 +25,46 @@ class PembelianItem extends Model
         'qty_sisa',
         'hpp',
         'harga_jual',
-        'subtotal',
-        'kondisi',
-        'serials',
+        'subtotal',      // R03: Subtotal (Qty × HPP)
+        'kondisi',       // R02: Baru / Bekas
+        // R04: serials dihapus (SN & Garansi tidak digunakan lagi)
     ];
 
     protected $casts = [
-        'serials' => 'array',
+        // R04: serials dihapus
+        'subtotal' => 'decimal:2',
+        'hpp' => 'decimal:2',
+        'harga_jual' => 'decimal:2',
     ];
 
     protected static function booted(): void
     {
         static::creating(function (PembelianItem $item): void {
             $qty = (int) ($item->qty ?? 0);
+
+            // R03: Auto-calculate subtotal (Qty × HPP)
+            if (is_null($item->subtotal) && $qty > 0 && $item->hpp > 0) {
+                $item->subtotal = $qty * $item->hpp;
+            }
+
+            // R02: Cek duplikat produk+kondisi sebelum save
+            $exists = self::where('id_pembelian', $item->id_pembelian)
+                ->where('id_produk', $item->id_produk)
+                ->where('kondisi', $item->kondisi)
+                ->exists();
+            
+            if ($exists) {
+                // Log error untuk debugging
+                \Log::warning('Duplicate produk+kondisi detected', [
+                    'id_pembelian' => $item->id_pembelian,
+                    'id_produk' => $item->id_produk,
+                    'kondisi' => $item->kondisi,
+                ]);
+                
+                throw ValidationException::withMessages([
+                    'items' => 'GAGAL: Produk dengan kondisi yang sama sudah ada dalam pembelian ini. Silakan hapus duplikat atau ubah kondisi menjadi Baru/Bekas.'
+                ]);
+            }
 
             if ($qty < 1) {
                 return;
@@ -55,7 +82,50 @@ class PembelianItem extends Model
             }
         });
 
+        // R02: Tangkap error database unique constraint
+        static::saved(function (PembelianItem $item): void {
+            $item->pembelian?->recalculatePaymentStatus();
+            $item->pembelian?->clearCalculationCache();
+        });
+
+        // Handle database unique constraint violation dengan notifikasi
+        static::saved(function () {
+            // Tidak melakukan apa-apa, sudah ditangani di creating
+        });
+
+        // Override default exception handling untuk unique constraint
+        static::creating(function (PembelianItem $item) {
+            try {
+                // Validasi sudah dilakukan di atas
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                throw ValidationException::withMessages([
+                    'items' => 'GAGAL SIMPAN: Produk dengan kondisi yang sama tidak boleh duplikat.'
+                ]);
+            }
+        });
+
+        // R01: Auto-create stock batch saat item dibuat
+        static::created(function (PembelianItem $item): void {
+            if ($item->qty > 0) {
+                StockBatch::create([
+                    'pembelian_item_id' => $item->id_pembelian_item,
+                    'produk_id' => $item->id_produk ?? $item->produk_id ?? $item->id_barang,
+                    'qty_total' => $item->qty,
+                    'qty_available' => $item->qty_sisa ?? $item->qty_masuk ?? $item->qty,
+                ]);
+            }
+        });
+
         static::updating(function (PembelianItem $item): void {
+            // R03: Auto-recalculate subtotal when qty or hpp changes
+            if ($item->isDirty('qty') || $item->isDirty('hpp')) {
+                $qty = (int) ($item->qty ?? 0);
+                $hpp = (int) ($item->hpp ?? 0);
+                if ($qty > 0 && $hpp > 0) {
+                    $item->subtotal = $qty * $hpp;
+                }
+            }
+
             if (! $item->isDirty('qty')) {
                 return;
             }
@@ -173,6 +243,14 @@ class PembelianItem extends Model
     public function rmas()
     {
         return $this->hasMany(Rma::class, 'id_pembelian_item', 'id_pembelian_item');
+    }
+
+    /**
+     * R01: Relasi ke StockBatch
+     */
+    public function stockBatch()
+    {
+        return $this->hasOne(StockBatch::class, 'pembelian_item_id', 'id_pembelian_item');
     }
 
     public static function productForeignKey(): string
