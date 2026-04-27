@@ -4,13 +4,34 @@ use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\StockBatch;
 use App\Models\Supplier;
+use App\Models\Kategori;
+use App\Models\Brand;
+use App\Models\Produk;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->supplier = Supplier::factory()->create();
+    Bus::fake([\App\Jobs\SyncStockToWooCommerce::class]);
+    $this->supplier = Supplier::create([
+        'nama_supplier' => 'Test Supplier',
+        'no_hp' => '08123456789',
+        'alamat' => 'Test Address',
+    ]);
+    
+    $this->kategori = Kategori::create(['nama_kategori' => 'Test Kategori', 'slug' => 'test-kategori']);
+    $this->brand = Brand::create(['nama_brand' => 'Test Brand', 'slug' => 'test-brand']);
+    
+    $this->produk1 = Produk::create([
+        'nama_produk' => 'Produk 1', 'kategori_id' => $this->kategori->id,
+        'brand_id' => $this->brand->id, 'sku' => 'TEST001',
+    ]);
+    $this->produk2 = Produk::create([
+        'nama_produk' => 'Produk 2', 'kategori_id' => $this->kategori->id,
+        'brand_id' => $this->brand->id, 'sku' => 'TEST002',
+    ]);
 });
 
 // =====================================================
@@ -19,13 +40,13 @@ beforeEach(function () {
 
 describe('R01: Stock Batch Management', function () {
     test('batch dibuat otomatis saat pembelian item created', function () {
-        $pembelian = Pembelian::factory()->create([
-            'id_supplier' => $this->supplier->id,
+        $pembelian = Pembelian::create([
+            'no_po' => 'PO-' . uniqid(), 'tanggal' => now(), 'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk1->id,
             'kondisi' => 'Baru',
             'qty' => 10,
             'hpp' => 100000,
@@ -40,13 +61,13 @@ describe('R01: Stock Batch Management', function () {
     });
     
     test('batch tidak dibuat jika qty = 0', function () {
-        $pembelian = Pembelian::factory()->create([
-            'id_supplier' => $this->supplier->id,
+        $pembelian = Pembelian::create([
+            'no_po' => 'PO-' . uniqid(), 'tanggal' => now(), 'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk1->id,
             'kondisi' => 'Baru',
             'qty' => 0, // Qty 0
             'hpp' => 100000,
@@ -64,13 +85,13 @@ describe('R01: Stock Batch Management', function () {
 
 describe('R14: Konsistensi View Qty Pembelian', function () {
     test('qty_total tetap meski ada penjualan', function () {
-        $pembelian = Pembelian::factory()->create([
-            'id_supplier' => $this->supplier->id,
+        $pembelian = Pembelian::create([
+            'no_po' => 'PO-' . uniqid(), 'tanggal' => now(), 'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk1->id,
             'kondisi' => 'Baru',
             'qty' => 10,
             'hpp' => 100000,
@@ -91,13 +112,13 @@ describe('R14: Konsistensi View Qty Pembelian', function () {
     });
     
     test('view pembelian menampilkan qty asli (qty_total)', function () {
-        $pembelian = Pembelian::factory()->create([
-            'id_supplier' => $this->supplier->id,
+        $pembelian = Pembelian::create([
+            'no_po' => 'PO-' . uniqid(), 'tanggal' => now(), 'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk1->id,
             'kondisi' => 'Baru',
             'qty' => 10,
             'hpp' => 100000,
@@ -118,14 +139,27 @@ describe('R14: Konsistensi View Qty Pembelian', function () {
 // R17: Pessimistic Locking
 // =====================================================
 
+// Helper untuk membuat batch dari pembelian item
+function createBatch($test, $produkId, $qty = 10) {
+    $pembelian = Pembelian::create([
+        'no_po' => 'PO-' . uniqid(),
+        'tanggal' => now(),
+        'id_supplier' => $test->supplier->id,
+    ]);
+    $item = PembelianItem::create([
+        'id_pembelian' => $pembelian->id_pembelian,
+        'id_produk' => $produkId,
+        'qty' => $qty,
+        'hpp' => 100000,
+        'harga_jual' => 150000,
+        'subtotal' => $qty * 100000,
+    ]);
+    return $item->stockBatch;
+}
+
 describe('R17: Pessimistic Locking pada Stok Batch', function () {
     test('decrement with lock mengurangi qty_available', function () {
-        $batch = StockBatch::create([
-            'pembelian_item_id' => 1,
-            'produk_id' => 1,
-            'qty_total' => 10,
-            'qty_available' => 10,
-        ]);
+        $batch = createBatch($this, $this->produk1->id, 10);
         
         $result = StockBatch::decrementWithLock($batch->id, 5);
         
@@ -135,12 +169,7 @@ describe('R17: Pessimistic Locking pada Stok Batch', function () {
     });
     
     test('decrement with lock update locked_at timestamp', function () {
-        $batch = StockBatch::create([
-            'pembelian_item_id' => 1,
-            'produk_id' => 1,
-            'qty_total' => 10,
-            'qty_available' => 10,
-        ]);
+        $batch = createBatch($this, $this->produk1->id, 10);
         
         StockBatch::decrementWithLock($batch->id, 3);
         $batch->refresh();
@@ -149,12 +178,8 @@ describe('R17: Pessimistic Locking pada Stok Batch', function () {
     });
     
     test('decrement with lock throws exception jika stok tidak cukup', function () {
-        $batch = StockBatch::create([
-            'pembelian_item_id' => 1,
-            'produk_id' => 1,
-            'qty_total' => 5,
-            'qty_available' => 3,
-        ]);
+        $batch = createBatch($this, $this->produk1->id, 5);
+        $batch->update(['qty_available' => 3]); // Override untuk test
         
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Stok tidak cukup');
@@ -170,19 +195,8 @@ describe('R17: Pessimistic Locking pada Stok Batch', function () {
     });
     
     test('decrement multiple dengan lock', function () {
-        $batch1 = StockBatch::create([
-            'pembelian_item_id' => 1,
-            'produk_id' => 1,
-            'qty_total' => 10,
-            'qty_available' => 10,
-        ]);
-        
-        $batch2 = StockBatch::create([
-            'pembelian_item_id' => 2,
-            'produk_id' => 2,
-            'qty_total' => 20,
-            'qty_available' => 20,
-        ]);
+        $batch1 = createBatch($this, $this->produk1->id, 10);
+        $batch2 = createBatch($this, $this->produk2->id, 20);
         
         $result = StockBatch::decrementMultiple([
             $batch1->id => 5,
@@ -197,19 +211,28 @@ describe('R17: Pessimistic Locking pada Stok Batch', function () {
     });
     
     test('decrement multiple rollback jika salah satu gagal', function () {
-        $batch1 = StockBatch::create([
-            'pembelian_item_id' => 1,
-            'produk_id' => 1,
-            'qty_total' => 10,
-            'qty_available' => 10,
+        $pembelian1 = Pembelian::create(['no_po' => 'PO-1', 'tanggal' => now(), 'id_supplier' => $this->supplier->id]);
+        $item1 = PembelianItem::create([
+            'id_pembelian' => $pembelian1->id_pembelian,
+            'id_produk' => $this->produk1->id,
+            'qty' => 10,
+            'hpp' => 100000,
+            'harga_jual' => 150000,
+            'subtotal' => 1000000,
         ]);
+        $batch1 = $item1->stockBatch;
         
-        $batch2 = StockBatch::create([
-            'pembelian_item_id' => 2,
-            'produk_id' => 2,
-            'qty_total' => 5,
-            'qty_available' => 3, // Stok terbatas
+        $pembelian2 = Pembelian::create(['no_po' => 'PO-2', 'tanggal' => now(), 'id_supplier' => $this->supplier->id]);
+        $item2 = PembelianItem::create([
+            'id_pembelian' => $pembelian2->id_pembelian,
+            'id_produk' => $this->produk2->id,
+            'qty' => 5,
+            'hpp' => 100000,
+            'harga_jual' => 150000,
+            'subtotal' => 500000,
         ]);
+        $batch2 = $item2->stockBatch;
+        $batch2->update(['qty_available' => 3]); // Stok terbatas
         
         try {
             StockBatch::decrementMultiple([
@@ -234,12 +257,16 @@ describe('R17: Pessimistic Locking pada Stok Batch', function () {
 
 describe('R17: Race Condition Prevention', function () {
     test('concurrent decrement tidak menyebabkan oversell', function () {
-        $batch = StockBatch::create([
-            'pembelian_item_id' => 1,
-            'produk_id' => 1,
-            'qty_total' => 10,
-            'qty_available' => 10,
+        $pembelian = Pembelian::create(['no_po' => 'PO-RACE', 'tanggal' => now(), 'id_supplier' => $this->supplier->id]);
+        $item = PembelianItem::create([
+            'id_pembelian' => $pembelian->id_pembelian,
+            'id_produk' => $this->produk1->id,
+            'qty' => 10,
+            'hpp' => 100000,
+            'harga_jual' => 150000,
+            'subtotal' => 1000000,
         ]);
+        $batch = $item->stockBatch;
         
         $successCount = 0;
         $failCount = 0;

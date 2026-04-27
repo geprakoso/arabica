@@ -63,6 +63,13 @@ class Rma extends Model
                 ]);
             }
         });
+
+        // 🆕 Saat RMA selesai, kembalikan stok ke batch
+        static::updated(function (Rma $rma): void {
+            if ($rma->isDirty('status_garansi') && $rma->status_garansi === self::STATUS_SELESAI) {
+                $rma->returnStockToInventory();
+            }
+        });
     }
 
     public static function activeStatuses(): array
@@ -81,6 +88,76 @@ class Rma extends Model
         }
 
         return $query->exists();
+    }
+
+    /**
+     * Kembalikan stok ke inventory saat RMA selesai
+     * Gunakan StockBatch::incrementWithLock untuk atomic operation
+     *
+     * @return bool
+     */
+    public function returnStockToInventory(): bool
+    {
+        $item = $this->pembelianItem;
+
+        if (! $item) {
+            \Log::warning('RMA: Cannot return stock, pembelianItem not found', [
+                'rma_id' => $this->id_rma,
+            ]);
+            return false;
+        }
+
+        $stockBatch = $item->stockBatch;
+
+        if (! $stockBatch) {
+            // Create StockBatch if not exists (fallback)
+            $stockBatch = StockBatch::create([
+                'pembelian_item_id' => $item->id_pembelian_item,
+                'produk_id' => $item->id_produk ?? $item->produk_id,
+                'qty_total' => $item->qty ?? 0,
+                'qty_available' => (int) ($item->qty_sisa ?? $item->qty_masuk ?? $item->qty ?? 0),
+            ]);
+        }
+
+        // Return 1 unit (asumsi RMA per 1 unit)
+        // Jika RMA bisa multiple unit, sesuaikan qty di sini
+        $returnQty = 1;
+
+        $result = StockBatch::incrementWithLock(
+            $stockBatch->id,
+            $returnQty,
+            [
+                'type' => 'rma_return',
+                'reference_type' => 'Rma',
+                'reference_id' => $this->id_rma,
+                'notes' => "RMA Selesai: {$this->catatan}",
+            ]
+        );
+
+        \Log::info('RMA: Stock returned to inventory', [
+            'rma_id' => $this->id_rma,
+            'pembelian_item_id' => $item->id_pembelian_item,
+            'qty_returned' => $returnQty,
+            'new_stock' => $stockBatch->fresh()->qty_available,
+        ]);
+
+        return $result;
+    }
+
+    /**
+     * Check if this RMA is completed
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status_garansi === self::STATUS_SELESAI;
+    }
+
+    /**
+     * Check if this RMA is active (in progress)
+     */
+    public function isActive(): bool
+    {
+        return in_array($this->status_garansi, self::activeStatuses(), true);
     }
 
     public function pembelianItem()

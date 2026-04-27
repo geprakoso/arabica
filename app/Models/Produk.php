@@ -196,4 +196,12 @@ class Produk extends Model
     {
         return $this->hasMany(PenjualanItem::class, 'id_produk');
     }
+
+    /**
+     * Stock batches for this product
+     */
+    public function stockBatches()
+    {
+        return $this->hasMany(StockBatch::class, 'produk_id');
+    }
 }

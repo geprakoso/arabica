@@ -16,6 +16,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
@@ -217,11 +218,45 @@ class StockAdjustmentResource extends BaseResource
                     ->color('success')
                     ->visible(fn (StockAdjustment $record) => ! $record->isPosted())
                     ->requiresConfirmation()
-                    ->modalHeading('Posting Penyesuaian Stok')
-                    ->modalDescription('Apakah Anda yakin ingin memposting penyesuaian ini? Stok akan diperbarui secara permanen.')
+                    ->modalHeading('Konfirmasi Posting Penyesuaian Stok')
+                    ->modalDescription(function (StockAdjustment $record): string {
+                        $summary = $record->getSummary();
+                        return "Total Item: {$summary['total_items']}\n" .
+                               "Penambahan (+): {$summary['total_penambahan']}\n" .
+                               "Pengurangan (-): {$summary['total_pengurangan']}\n" .
+                               "Tanpa Perubahan: {$summary['total_tanpa_perubahan']}\n\n" .
+                               "Posting akan mengubah stok secara permanen. Lanjutkan?";
+                    })
                     ->modalSubmitActionLabel('Ya, Posting')
-                    ->action(fn (StockAdjustment $record) => $record->post(Auth::user()))
-                    ->successNotificationTitle('Penyesuaian stok berhasil diposting.'),
+                    ->action(function (StockAdjustment $record) {
+                        try {
+                            $record->post(Auth::user());
+
+                            Notification::make()
+                                ->title('Penyesuaian Stok Berhasil Diposting')
+                                ->body("Kode {$record->kode} berhasil diposting. Stok telah diperbarui.")
+                                ->success()
+                                ->send();
+
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            $errors = $e->validator->errors()->all();
+
+                            Notification::make()
+                                ->title('Validasi Gagal')
+                                ->body(implode('\n', $errors))
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal Memposting Penyesuaian Stok')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->label('Hapus')
                     ->button()

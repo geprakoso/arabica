@@ -9,11 +9,13 @@ use App\Models\StockBatch;
 use App\Models\StockMutation;
 use App\Models\Supplier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Bus::fake([\App\Jobs\SyncStockToWooCommerce::class]);
     $this->supplier = Supplier::create([
         'nama_supplier' => 'Test Supplier',
         'no_hp' => '08123456789',

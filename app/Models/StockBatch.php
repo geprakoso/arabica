@@ -183,7 +183,7 @@ class StockBatch extends Model
     /**
      * Cek apakah batch masih ada stok
      */
-    public function hasStock(int $qty = 1): bool
+    public function hasEnoughStock(int $qty = 1): bool
     {
         return $this->qty_available >= $qty;
     }

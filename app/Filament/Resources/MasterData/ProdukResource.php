@@ -146,11 +146,11 @@ class ProdukResource extends BaseResource
                                     ->image()
                                     ->imageEditor() // Fitur crop bawaan filament
                                     ->disk('public')
-                                    ->directory('produks/'.now()->format('Y/m/d'))
+                                    ->directory('produks/' . now()->format('Y/m/d'))
                                     ->getUploadedFileNameForStorageUsing(
-                                        fn (TemporaryUploadedFile $file, Get $get) => (now()->format('ymd').'-'.Str::slug($get('nama_produk') ?? 'produk').'.'.$file->getClientOriginalExtension())
+                                        fn(TemporaryUploadedFile $file, Get $get) => (now()->format('ymd') . '-' . Str::slug($get('nama_produk') ?? 'produk') . '.' . $file->getClientOriginalExtension())
                                     )
-                                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
+                                    ->saveUploadedFileUsing(fn(BaseFileUpload $component, TemporaryUploadedFile $file): ?string => WebpUpload::store($component, $file))
                                     ->openable()
                                     ->downloadable(),
                             ]),
@@ -269,7 +269,7 @@ class ProdukResource extends BaseResource
 
                                                 $volumetric = ($p * $l * $t) / 4000;
 
-                                                return number_format($volumetric, 2).' Kg';
+                                                return number_format($volumetric, 2) . ' Kg';
                                             })
                                             ->icon('heroicon-m-calculator')
                                             ->color('warning') // Pembeda visual bahwa ini hitungan sistem
@@ -352,24 +352,24 @@ class ProdukResource extends BaseResource
                         TextColumn::make('nama_produk')
                             ->label('Produk')
                             ->weight('bold')
-                            ->formatStateUsing(fn ($state) => Str::upper($state))
+                            ->formatStateUsing(fn($state) => Str::upper($state))
                             ->size(TextColumnSize::Large)
-                            ->description(fn (Produk $record) => new HtmlString('<span class="font-mono">SKU: '.e($record->sku ?? '-').'</span>'))
+                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>'))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('total_stock')
                             ->label('Stok')
-                            ->state(fn (Produk $record) => $record->getTotalStockAttribute())
+                            ->state(fn(Produk $record) => $record->getTotalStockAttribute())
                             ->badge()
-                            ->color(fn ($state) => $state > 0 ? 'success' : 'gray')
+                            ->color(fn($state) => $state > 0 ? 'success' : 'gray')
                             ->icon('heroicon-m-archive-box')
-                            ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} unit" : 'Stok habis'),
+                            ->formatStateUsing(fn($state) => $state > 0 ? "{$state} unit" : 'Stok habis'),
                         TextColumn::make('kategori.nama_kategori')
                             ->label('Kategori')
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-m-tag')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('brand.nama_brand')
@@ -377,7 +377,7 @@ class ProdukResource extends BaseResource
                             ->badge()
                             ->color('gray')
                             ->icon('heroicon-m-building-office-2')
-                            ->formatStateUsing(fn ($state) => Str::title($state))
+                            ->formatStateUsing(fn($state) => Str::title($state))
                             ->searchable()
                             ->sortable(),
                     ])->space(2),
@@ -397,14 +397,14 @@ class ProdukResource extends BaseResource
                     ->before(function (Produk $record) {
                         if ($record->hasActiveStock()) {
                             $stockCount = $record->getTotalStockAttribute();
-                            
+
                             Notification::make()
                                 ->title('Tidak Dapat Menghapus Produk')
                                 ->body("Produk '{$record->nama_produk}' masih memiliki stok aktif sebanyak {$stockCount} unit. Silakan habiskan stok terlebih dahulu.")
                                 ->danger()
                                 ->persistent()
                                 ->send();
-                            
+
                             // Cancel the delete action
                             return false;
                         }
@@ -423,28 +423,28 @@ class ProdukResource extends BaseResource
                     Tables\Actions\DeleteBulkAction::make()
                         ->action(function ($records) {
                             // Separate records with and without stock
-                            $productsWithStock = $records->filter(fn ($record) => $record->hasActiveStock());
-                            $productsWithoutStock = $records->reject(fn ($record) => $record->hasActiveStock());
-                            
+                            $productsWithStock = $records->filter(fn($record) => $record->hasActiveStock());
+                            $productsWithoutStock = $records->reject(fn($record) => $record->hasActiveStock());
+
                             // Delete only products without stock
                             $deletedCount = 0;
                             foreach ($productsWithoutStock as $record) {
                                 $record->delete();
                                 $deletedCount++;
                             }
-                            
+
                             // Show notifications
                             if ($productsWithStock->isNotEmpty()) {
-                                $stockCounts = $productsWithStock->map(fn ($p) => "{$p->nama_produk} ({$p->getTotalStockAttribute()} unit)")->implode(', ');
-                                
+                                $stockCounts = $productsWithStock->map(fn($p) => "{$p->nama_produk} ({$p->getTotalStockAttribute()} unit)")->implode(', ');
+
                                 Notification::make()
                                     ->title('Beberapa Produk Tidak Dapat Dihapus')
                                     ->body("Produk berikut masih memiliki stok aktif: {$stockCounts}")
-                                    ->warning()
+                                    ->danger()
                                     ->persistent()
                                     ->send();
                             }
-                            
+
                             if ($deletedCount > 0) {
                                 Notification::make()
                                     ->title('Berhasil Menghapus Produk')

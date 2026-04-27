@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\Http;
 
 class WooCommerceService
 {
-    protected string $storeUrl;
+    protected ?string $storeUrl;
 
-    protected string $consumerKey;
+    protected ?string $consumerKey;
 
-    protected string $consumerSecret;
+    protected ?string $consumerSecret;
 
-    protected string $baseUrl;
+    protected ?string $baseUrl;
 
     protected int $timeout;
 
@@ -21,10 +21,10 @@ class WooCommerceService
 
     public function __construct()
     {
-        $this->storeUrl = config('woocommerce.store_url');
-        $this->consumerKey = config('woocommerce.consumer_key');
-        $this->consumerSecret = config('woocommerce.consumer_secret');
-        $this->baseUrl = rtrim($this->storeUrl, '/').'/wp-json/wc/v3';
+        $this->storeUrl = config('woocommerce.store_url') ?? '';
+        $this->consumerKey = config('woocommerce.consumer_key') ?? '';
+        $this->consumerSecret = config('woocommerce.consumer_secret') ?? '';
+        $this->baseUrl = rtrim($this->storeUrl ?? '', '/').'/wp-json/wc/v3';
         $this->timeout = config('woocommerce.timeout', 30);
         $this->verifySsl = config('woocommerce.verify_ssl', true);
     }

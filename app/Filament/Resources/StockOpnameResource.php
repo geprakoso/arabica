@@ -11,6 +11,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
@@ -128,9 +129,44 @@ class StockOpnameResource extends BaseResource
                     ->icon('heroicon-m-paper-airplane')
                     ->label('Posting')
                     ->requiresConfirmation()
-                    ->action(fn(StockOpname $record) => $record->post(Auth::user()))
-                    ->successNotificationTitle('Stock opname berhasil diposting.')
-                    ->color('success'),
+                    ->modalHeading('Konfirmasi Posting Stock Opname')
+                    ->modalDescription(function (StockOpname $record): string {
+                        $summary = $record->getSummary();
+                        return "Total Item: {$summary['total_items']}\n" .
+                               "Selisih Positif (+): {$summary['total_selisih_positif']}\n" .
+                               "Selisih Negatif (-): {$summary['total_selisih_negatif']}\n" .
+                               "Tanpa Selisih: {$summary['total_tanpa_selisih']}\n\n" .
+                               "Posting akan mengubah stok secara permanen. Lanjutkan?";
+                    })
+                    ->action(function (StockOpname $record) {
+                        try {
+                            $record->post(Auth::user());
+
+                            Notification::make()
+                                ->title('Stock Opname Berhasil Diposting')
+                                ->body("Kode {$record->kode} berhasil diposting. Stok telah diperbarui.")
+                                ->success()
+                                ->send();
+
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            $errors = $e->validator->errors()->all();
+                            
+                            Notification::make()
+                                ->title('Validasi Gagal')
+                                ->body(implode('\n', $errors))
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal Memposting Stock Opname')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->button()
                     ->icon('heroicon-m-trash')

@@ -9,7 +9,9 @@ use App\Models\Kategori;
 use App\Models\PembelianItem;
 use App\Models\Produk;
 use App\Models\Rma;
+use App\Models\StockBatch;
 use Filament\Actions\StaticAction;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Group;
@@ -27,11 +29,13 @@ use Filament\Tables\Columns\Layout\Split as TableSplit;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -43,7 +47,6 @@ class InventoryResource extends BaseResource
 
     protected static ?string $navigationGroup = 'Inventori';
 
-    // protected static ?string $navigationParentItem = 'Inventory & Stock' ;
     protected static ?string $navigationLabel = 'Stock Ready';
 
     protected static ?string $pluralLabel = 'Stock Ready';
@@ -82,7 +85,10 @@ class InventoryResource extends BaseResource
                         ]),
                     Stack::make([
                         TextColumn::make('nama_produk')
-                            ->description(fn(Produk $record) => new HtmlString('<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>' . ($record->deleted_at ? ' <span class="text-danger-500 text-xs">[DELETED]</span>' : '')))
+                            ->description(fn(Produk $record) => new HtmlString(
+                                '<span class="font-mono">SKU: ' . e($record->sku ?? '-') . '</span>' .
+                                ($record->deleted_at ? ' <span class="text-danger-500 text-xs">[DELETED]</span>' : '')
+                            ))
                             ->label('Produk')
                             ->formatStateUsing(fn($state, Produk $record) => Str::upper($state) . ($record->deleted_at ? ' ⚠️' : ''))
                             ->searchable()
@@ -114,8 +120,17 @@ class InventoryResource extends BaseResource
                                 ->label('Stok')
                                 ->state(fn(Produk $record) => (int) ($record->total_qty ?? 0))
                                 ->badge()
-                                ->color(fn($state) => $state > 10 ? 'success' : ($state > 3 ? 'warning' : 'danger'))
-                                ->icon('heroicon-o-archive-box')
+                                ->color(fn($state) => match (true) {
+                                    $state <= 0 => 'danger',
+                                    $state <= 3 => 'warning',
+                                    $state <= 10 => 'primary',
+                                    default => 'success',
+                                })
+                                ->icon(fn($state) => match (true) {
+                                    $state <= 0 => 'heroicon-o-x-circle',
+                                    $state <= 3 => 'heroicon-o-exclamation-triangle',
+                                    default => 'heroicon-o-archive-box',
+                                })
                                 ->formatStateUsing(fn($state) => number_format($state ?? 0, 0, ',', '.'))
                                 ->columnSpan(2)
                                 ->sortable(),
@@ -127,7 +142,6 @@ class InventoryResource extends BaseResource
                                 ->color('primary')
                                 ->columnSpan(2)
                                 ->toggleable(isToggledHiddenByDefault: true),
-
                         ]),
                     ])->space(2),
                     Stack::make([
@@ -150,7 +164,6 @@ class InventoryResource extends BaseResource
                             ->icon('heroicon-o-banknotes')
                             ->color('success'),
                     ])->space(2),
-
                 ])->from('md'),
             ])
             ->filters([
@@ -164,6 +177,39 @@ class InventoryResource extends BaseResource
                     ->relationship('kategori', 'nama_kategori')
                     ->searchable()
                     ->preload(),
+                SelectFilter::make('stock_status')
+                    ->label('Status Stok')
+                    ->options([
+                        'ready' => 'Ready (> 10)',
+                        'low' => 'Low Stock (1-10)',
+                        'out' => 'Out of Stock (0)',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+
+                        return match ($data['value']) {
+                            'ready' => $query->having('total_qty', '>', 10),
+                            'low' => $query->havingRaw('total_qty > 0 AND total_qty <= 10'),
+                            'out' => $query->having('total_qty', '<=', 0),
+                            default => $query,
+                        };
+                    }),
+                Filter::make('show_deleted')
+                    ->label('Tampilkan Produk Terhapus')
+                    ->form([
+                        Toggle::make('value')
+                            ->label('Tampilkan produk yang sudah dihapus')
+                            ->default(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! ($data['value'] ?? false)) {
+                            return $query->whereNull('deleted_at');
+                        }
+
+                        return $query;
+                    }),
             ])
             ->headerActions([
                 SummaryExportHeaderAction::make('export_inventory_pdf')
@@ -209,7 +255,6 @@ class InventoryResource extends BaseResource
                         'group_label' => 'Kategori',
                     ])
                     ->summaryResolver(fn(Builder $query, Collection $records) => self::buildExportSummary($records)),
-
             ])
             ->actions([
                 ActionGroup::make([
@@ -244,17 +289,14 @@ class InventoryResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        // Include soft deleted products that still have active stock
         return self::applyInventoryScopes(parent::getEloquentQuery()->withTrashed());
     }
 
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
-            ->columns(3) // Layout utama 3 kolom
+            ->columns(3)
             ->schema([
-
-                // === KOLOM KIRI: DAFTAR BATCH (Main Content) ===
                 Group::make()
                     ->columnSpan(['lg' => 2])
                     ->schema([
@@ -262,21 +304,17 @@ class InventoryResource extends BaseResource
                             ->description('Daftar batch stok yang masih tersedia.')
                             ->icon('heroicon-m-clipboard-document-list')
                             ->schema([
-                                // Menggunakan view custom Anda, pastikan view-nya sudah handle loop batch dengan cantik
                                 TextEntry::make('batch_cards')
                                     ->hiddenLabel()
                                     ->view('filament.infolists.components.inventory-batches')
-                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batches']),
+                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batches'] ?? []),
                             ])
-                            ->compact(), // Compact agar tidak terlalu banyak whitespace
+                            ->compact(),
                     ]),
 
-                // === KOLOM KANAN: RINGKASAN PRODUK (Sidebar) ===
                 Group::make()
                     ->columnSpan(['lg' => 1])
                     ->schema([
-
-                        // Section 1: Identitas & Total Stok
                         Section::make('Inventory Summary')
                             ->icon('heroicon-m-cube')
                             ->schema([
@@ -287,7 +325,6 @@ class InventoryResource extends BaseResource
                                     ->formatStateUsing(fn($state) => Str::upper($state))
                                     ->icon('heroicon-m-tag'),
 
-                                // Grid untuk Brand & Kategori
                                 Grid::make(2)
                                     ->schema([
                                         TextEntry::make('brand.nama_brand')
@@ -302,29 +339,26 @@ class InventoryResource extends BaseResource
                                             ->placeholder('-'),
                                     ]),
 
-                                // Highlight Total Qty
                                 TextEntry::make('qty_display')
                                     ->label('Total Stok Tersedia')
-                                    ->state(fn(Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty']))
+                                    ->state(fn(Produk $record) => self::formatNumber(self::getInventorySnapshot($record)['qty'] ?? 0))
                                     ->weight(FontWeight::Bold)
                                     ->size(TextEntrySize::Large)
                                     ->color('primary')
-                                    ->icon('heroicon-m-circle-stack'), // Tumpukan koin/barang
+                                    ->icon('heroicon-m-circle-stack'),
 
-                                // Highlight Batch Count
                                 TextEntry::make('batch_count_display')
                                     ->label('Jumlah Batch Aktif')
-                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batch_count'])
+                                    ->state(fn(Produk $record) => self::getInventorySnapshot($record)['batch_count'] ?? 0)
                                     ->badge()
                                     ->color('success')
                                     ->formatStateUsing(fn($state) => $state . ' Batch'),
                             ]),
 
-                        // Opsional: Section Info Tambahan (jika ada)
                         Section::make('Metadata')
                             ->compact()
                             ->schema([
-                                TextEntry::make('sku') // Asumsi ada SKU
+                                TextEntry::make('sku')
                                     ->label('Kode SKU')
                                     ->fontFamily(FontFamily::Mono)
                                     ->copyable(),
@@ -333,41 +367,90 @@ class InventoryResource extends BaseResource
             ]);
     }
 
-    // Menerapkan scope khusus untuk menampilkan hanya produk dengan inventory aktif
-
+    /**
+     * Apply inventory scopes with StockBatch as primary source.
+     * Pre-computes snapshot data and attaches it to each record.
+     */
     protected static function applyInventoryScopes(Builder $query): Builder
     {
         $produkTable = (new Produk)->getTable();
         $kategoriTable = (new Kategori)->getTable();
+        $stockBatchTable = (new StockBatch)->getTable();
         $qtySisaColumn = PembelianItem::qtySisaColumn();
         $activeRmaStatuses = Rma::activeStatuses();
+        $placeholders = implode(',', array_fill(0, count($activeRmaStatuses), '?'));
+
+        // Subquery for StockBatch totals (primary source)
+        $stockBatchSubquery = DB::table($stockBatchTable)
+            ->select('produk_id')
+            ->selectRaw('SUM(qty_available) as sb_total_qty')
+            ->selectRaw('COUNT(id) as sb_batch_count')
+            ->where('qty_available', '>', 0)
+            ->groupBy('produk_id');
 
         $query
             ->select("{$produkTable}.*")
-            ->whereHas(
-                'pembelianItems',
-                fn($q) => $q
-                    ->where($qtySisaColumn, '>', 0)
-                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+            // Join StockBatch subquery
+            ->leftJoinSub(
+                $stockBatchSubquery,
+                'sb_totals',
+                "{$produkTable}.id",
+                '=',
+                'sb_totals.produk_id'
             )
+            // Fallback: Check PembelianItem for legacy data
+            ->where(function ($q) use ($produkTable, $qtySisaColumn, $activeRmaStatuses) {
+                $q->whereNotNull('sb_totals.produk_id')
+                    ->orWhereHas(
+                        'pembelianItems',
+                        fn($pi) => $pi
+                            ->where($qtySisaColumn, '>', 0)
+                            ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
+                    );
+            })
             ->with([
                 'brand',
                 'kategori',
+                'stockBatches' => fn($q) => $q
+                    ->where('qty_available', '>', 0)
+                    ->with(['pembelianItem.pembelian', 'pembelianItem.rmas'])
+                    ->orderBy('created_at'),
                 'pembelianItems' => fn($q) => $q
                     ->where($qtySisaColumn, '>', 0)
                     ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
                     ->with(['pembelian', 'rmas']),
             ])
-            ->withSum([
-                'pembelianItems as total_qty' => fn($q) => $q
-                    ->where($qtySisaColumn, '>', 0)
-                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
-            ], $qtySisaColumn)
-            ->withCount([
-                'pembelianItems as batch_count' => fn($q) => $q
-                    ->where($qtySisaColumn, '>', 0)
-                    ->whereDoesntHave('rmas', fn($rma) => $rma->whereIn('status_garansi', $activeRmaStatuses))
-            ]);
+            // Use StockBatch totals if available, fallback to PembelianItem
+            // Parameter binding untuk mencegah SQL injection
+            ->selectRaw(
+                "COALESCE(sb_totals.sb_total_qty, (
+                    SELECT SUM({$qtySisaColumn})
+                    FROM tb_pembelian_item
+                    WHERE tb_pembelian_item.id_produk = {$produkTable}.id
+                    AND {$qtySisaColumn} > 0
+                    AND NOT EXISTS (
+                        SELECT 1 FROM tb_rma
+                        WHERE tb_rma.id_pembelian_item = tb_pembelian_item.id_pembelian_item
+                        AND tb_rma.status_garansi IN ({$placeholders})
+                    )
+                ), 0) as total_qty",
+                $activeRmaStatuses
+            )
+            ->selectRaw(
+                "COALESCE(sb_totals.sb_batch_count, (
+                    SELECT COUNT(*)
+                    FROM tb_pembelian_item
+                    WHERE tb_pembelian_item.id_produk = {$produkTable}.id
+                    AND {$qtySisaColumn} > 0
+                    AND NOT EXISTS (
+                        SELECT 1 FROM tb_rma
+                        WHERE tb_rma.id_pembelian_item = tb_pembelian_item.id_pembelian_item
+                        AND tb_rma.status_garansi IN ({$placeholders})
+                    )
+                ), 0) as batch_count",
+                $activeRmaStatuses
+            )
+            ->groupBy("{$produkTable}.id");
 
         $query->orderBy(
             Kategori::select('nama_kategori')
@@ -380,16 +463,9 @@ class InventoryResource extends BaseResource
     protected static array $inventorySnapshotCache = [];
 
     /**
-     * Mendapatkan snapshot inventory untuk produk tertentu.
-     *
-     * Snapshot meliputi:
-     * - total qty saat ini
-     * - jumlah batch aktif
-     * - detail setiap batch (no_po, tanggal, qty, hpp, harga_jual, kondisi)
-     * - informasi batch terbaru (hpp, harga_jual, tanggal)
-     *
-     * Hasil disimpan dalam cache statis agar tidak perlu menghitung ulang
-     * dalam satu siklus request yang sama.
+     * Get inventory snapshot for a product.
+     * Uses StockBatch as primary source, PembelianItem as fallback.
+     * Result is cached per-request.
      *
      * @return array{
      *     qty: int,
@@ -409,122 +485,132 @@ class InventoryResource extends BaseResource
         $qtySisaColumn = PembelianItem::qtySisaColumn();
         $activeRmaStatuses = Rma::activeStatuses();
 
-        if ($record->relationLoaded('pembelianItems')) {
-            $items = $record->pembelianItems;
-            $items->loadMissing(['pembelian', 'rmas']);
+        // Try StockBatch first (primary source)
+        if ($record->relationLoaded('stockBatches')) {
+            $stockBatches = $record->stockBatches;
         } else {
-            $items = $record->pembelianItems()
-                ->with(['pembelian', 'rmas'])
+            $stockBatches = $record->stockBatches()
+                ->where('qty_available', '>', 0)
+                ->with(['pembelianItem.pembelian', 'pembelianItem.rmas'])
+                ->orderBy('created_at')
                 ->get();
         }
 
-        $activeBatches = $items
-            ->filter(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
-            ->filter(fn($item) => $item->rmas->whereIn('status_garansi', $activeRmaStatuses)->isEmpty())
-            ->sortBy(fn($item) => $item->pembelian?->tanggal ?? $item->created_at)
-            ->values();
+        $activeBatches = collect();
 
-        $totalQty = $activeBatches->sum(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0));
+        if ($stockBatches->isNotEmpty()) {
+            // Use StockBatch data - also filter out RMA active batches
+            $activeBatches = $stockBatches
+                ->filter(fn($batch) => $batch->qty_available > 0)
+                ->filter(function ($batch) {
+                    $item = $batch->pembelianItem;
+                    if (! $item) {
+                        return true; // No pembelianItem means no RMA
+                    }
+                    return $item->rmas->whereIn('status_garansi', Rma::activeStatuses())->isEmpty();
+                })
+                ->sortBy(fn($batch) => $batch->created_at);
+        }
 
-        $formattedBatches = $activeBatches->map(function ($item) use ($qtySisaColumn) {
-            $purchase = $item->pembelian;
+        // Fallback to PembelianItem if no StockBatch data
+        if ($activeBatches->isEmpty()) {
+            if ($record->relationLoaded('pembelianItems')) {
+                $items = $record->pembelianItems;
+            } else {
+                $items = $record->pembelianItems()
+                    ->with(['pembelian', 'rmas'])
+                    ->get();
+            }
+
+            $activeBatches = $items
+                ->filter(fn($item) => (int) ($item->{$qtySisaColumn} ?? 0) > 0)
+                ->filter(fn($item) => $item->rmas->whereIn('status_garansi', $activeRmaStatuses)->isEmpty())
+                ->sortBy(fn($item) => $item->pembelian?->tanggal ?? $item->created_at)
+                ->values();
+        }
+
+        $totalQty = $activeBatches->sum(function ($batch) use ($stockBatches) {
+            if ($batch instanceof StockBatch) {
+                return $batch->qty_available;
+            }
+            // PembelianItem fallback
+            $qtySisaColumn = PembelianItem::qtySisaColumn();
+            return (int) ($batch->{$qtySisaColumn} ?? 0);
+        });
+
+        $formattedBatches = $activeBatches->map(function ($batch) {
+            if ($batch instanceof StockBatch) {
+                $item = $batch->pembelianItem;
+                $purchase = $item?->pembelian;
+                $qty = $batch->qty_available;
+            } else {
+                $item = $batch;
+                $purchase = $batch->pembelian;
+                $qtySisaColumn = PembelianItem::qtySisaColumn();
+                $qty = (int) ($batch->{$qtySisaColumn} ?? 0);
+            }
+
             $tanggal = $purchase && $purchase->tanggal
                 ? $purchase->tanggal->format('d M Y')
                 : '-';
-            $rawHpp = $item->hpp;
 
-            $rawHargaJual = $item->harga_jual;
-            $hpp = is_null($rawHpp) ? null : (int) $rawHpp;
-            $hargaJual = is_null($rawHargaJual) ? null : (int) $rawHargaJual;
+            $hpp = is_null($item?->hpp) ? null : (int) $item->hpp;
+            $hargaJual = is_null($item?->harga_jual) ? null : (int) $item->harga_jual;
 
             return [
-                'pembelian_id' => $purchase->id_pembelian ?? null,
-                'no_po' => $purchase->no_po ?? '-',
+                'pembelian_id' => $purchase?->id_pembelian ?? null,
+                'no_po' => $purchase?->no_po ?? '-',
                 'tanggal' => $tanggal,
-                'qty' => (int) ($item->{$qtySisaColumn} ?? 0),
+                'qty' => $qty,
                 'hpp' => $hpp,
                 'harga_jual' => $hargaJual,
                 'hpp_display' => is_null($hpp) ? null : self::formatCurrency($hpp),
                 'harga_jual_display' => is_null($hargaJual) ? null : self::formatCurrency($hargaJual),
-                'kondisi' => ucfirst($item->kondisi ?? '-'),
+                'kondisi' => ucfirst($item?->kondisi ?? '-'),
             ];
-        })->toArray();
+        })->values()->toArray();
 
         $latestBatchRecord = $activeBatches->last();
         $latestBatch = null;
 
         if ($latestBatchRecord) {
-            $latestHpp = $latestBatchRecord->hpp;
-            $latestHargaJual = $latestBatchRecord->harga_jual;
+            if ($latestBatchRecord instanceof StockBatch) {
+                $item = $latestBatchRecord->pembelianItem;
+            } else {
+                $item = $latestBatchRecord;
+            }
+
+            $latestHpp = $item?->hpp;
+            $latestHargaJual = $item?->harga_jual;
+            $purchase = $item?->pembelian;
 
             $latestBatch = [
-                'pembelian_id' => $latestBatchRecord->pembelian?->id_pembelian,
-                'no_po' => $latestBatchRecord->pembelian?->no_po,
+                'pembelian_id' => $purchase?->id_pembelian,
+                'no_po' => $purchase?->no_po,
                 'hpp' => is_null($latestHpp) ? null : (int) $latestHpp,
                 'harga_jual' => is_null($latestHargaJual) ? null : (int) $latestHargaJual,
-                'tanggal' => optional($latestBatchRecord->pembelian?->tanggal)->format('d M Y'),
+                'tanggal' => optional($purchase?->tanggal)->format('d M Y'),
             ];
         }
 
-        return self::$inventorySnapshotCache[$cacheKey] = [
+        $snapshot = [
             'qty' => $totalQty,
             'batch_count' => $activeBatches->count(),
             'batches' => $formattedBatches,
             'latest_batch' => $latestBatch,
         ];
+
+        return self::$inventorySnapshotCache[$cacheKey] = $snapshot;
     }
 
-    // Helper untuk format ringkasan batch dalam bentuk string.
-    protected static function formatBatchSummaries(array $batches): array
-    {
-        if (! count($batches)) {
-            return [];
-        }
-
-        $summaries = [];
-
-        foreach ($batches as $index => $batch) {
-            $label = trim((string) ($batch['no_po'] ?? ''));
-            $label = $label !== '' && $label !== '-' ? $label : 'Batch ' . ($index + 1);
-
-            if (! empty($batch['tanggal']) && $batch['tanggal'] !== '-') {
-                $label .= " ({$batch['tanggal']})";
-            }
-
-            $segments = [
-                $label,
-                'Qty: ' . self::formatNumber($batch['qty'] ?? 0),
-            ];
-
-            if (! empty($batch['hpp'])) {
-                $segments[] = 'HPP: ' . self::formatCurrency($batch['hpp']);
-            }
-
-            if (! empty($batch['harga_jual'])) {
-                $segments[] = 'Harga: ' . self::formatCurrency($batch['harga_jual']);
-            }
-
-            if (! empty($batch['kondisi']) && $batch['kondisi'] !== '-') {
-                $segments[] = 'Kondisi: ' . $batch['kondisi'];
-            }
-
-            $summaries[] = implode(' · ', $segments);
-        }
-
-        return $summaries;
-    }
-
-    // Helper untuk format angka dengan pemisah ribuan.
     protected static function formatNumber($value): string
     {
         return number_format((int) ($value ?? 0), 0, ',', '.');
     }
 
-    // Helper untuk format mata uang IDR.
     protected static function formatCurrency($value): string
     {
         $amount = (int) ($value ?? 0);
-
         return Money::IDR($amount, true)->formatWithoutZeroes();
     }
 
@@ -536,7 +622,7 @@ class InventoryResource extends BaseResource
         $totalHargaJual = 0;
 
         foreach ($records as $record) {
-            $snapshot = self::getInventorySnapshot($record);
+            $snapshot = $record->inventory_snapshot ?? self::getInventorySnapshot($record);
             $qty = (int) ($record->total_qty ?? 0);
             $hpp = (int) ($snapshot['latest_batch']['hpp'] ?? 0);
             $hargaJual = (int) ($snapshot['latest_batch']['harga_jual'] ?? 0);
@@ -546,22 +632,10 @@ class InventoryResource extends BaseResource
         }
 
         return [
-            [
-                'label' => 'Total Produk',
-                'value' => self::formatNumber($totalProduk),
-            ],
-            [
-                'label' => 'Total Stok Sistem',
-                'value' => self::formatNumber($totalStok),
-            ],
-            [
-                'label' => 'Estimasi Nilai HPP',
-                'value' => self::formatCurrency($totalHpp),
-            ],
-            [
-                'label' => 'Estimasi Nilai Jual',
-                'value' => self::formatCurrency($totalHargaJual),
-            ],
+            ['label' => 'Total Produk', 'value' => self::formatNumber($totalProduk)],
+            ['label' => 'Total Stok Sistem', 'value' => self::formatNumber($totalStok)],
+            ['label' => 'Estimasi Nilai HPP', 'value' => self::formatCurrency($totalHpp)],
+            ['label' => 'Estimasi Nilai Jual', 'value' => self::formatCurrency($totalHargaJual)],
         ];
     }
 }

@@ -7,11 +7,16 @@ use App\Models\PenjualanItem;
 use App\Models\Produk;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Models\Brand;
+use App\Models\Kategori;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Bus::fake([\App\Jobs\SyncStockToWooCommerce::class]);
+    
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
     
@@ -20,6 +25,31 @@ beforeEach(function () {
         'nama_supplier' => 'Test Supplier',
         'no_hp' => '08123456789',
         'alamat' => 'Test Address',
+    ]);
+    
+    // Create kategori & brand untuk produk
+    $this->kategori = Kategori::create([
+        'nama_kategori' => 'Test Kategori',
+        'slug' => 'test-kategori',
+    ]);
+    
+    $this->brand = Brand::create([
+        'nama_brand' => 'Test Brand',
+        'slug' => 'test-brand',
+    ]);
+    
+    // Create produk untuk digunakan di test
+    $this->produk = Produk::create([
+        'nama_produk' => 'Test Produk',
+        'kategori_id' => $this->kategori->id,
+        'brand_id' => $this->brand->id,
+        'sku' => 'TEST001',
+    ]);
+    
+    // Create jasa untuk test R05
+    $this->jasa = \App\Models\Jasa::create([
+        'nama_jasa' => 'Test Jasa',
+        'harga' => 500000,
     ]);
 });
 
@@ -31,13 +61,13 @@ describe('R01: Metode Sistem Batch', function () {
     test('stock batch dibuat otomatis saat item pembelian dibuat', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 10,
             'hpp' => 100000,
@@ -55,14 +85,14 @@ describe('R02: Produk Duplikat dengan Kondisi Berbeda', function () {
     test('bisa menambah produk sama dengan kondisi berbeda', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         // Item 1: Baru
         PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 5,
             'hpp' => 100000,
@@ -73,7 +103,7 @@ describe('R02: Produk Duplikat dengan Kondisi Berbeda', function () {
         // Item 2: Bekas (produk sama, kondisi berbeda) - HARUS BERHASIL
         $item2 = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Bekas',
             'qty' => 3,
             'hpp' => 80000,
@@ -88,13 +118,13 @@ describe('R02: Produk Duplikat dengan Kondisi Berbeda', function () {
     test('tidak bisa duplikat produk dengan kondisi sama', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 5,
             'hpp' => 100000,
@@ -103,11 +133,11 @@ describe('R02: Produk Duplikat dengan Kondisi Berbeda', function () {
         ]);
         
         // Duplikat - HARUS GAGAL
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
         
         PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru', // Sama!
             'qty' => 3,
             'hpp' => 100000,
@@ -121,20 +151,20 @@ describe('R03: Kolom Item Barang', function () {
     test('subtotal dihitung otomatis (qty × hpp)', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 5,
             'hpp' => 100000,
             'harga_jual' => 150000,
         ]);
         
-        expect($item->subtotal)->toBe(500000); // 5 × 100000
+        expect((float) $item->subtotal)->toBe(500000.0); // 5 × 100000
     });
 });
 
@@ -154,14 +184,14 @@ describe('R05: Pembelian Item Jasa Tanpa Item Produk', function () {
     test('bisa buat pembelian hanya dengan item jasa', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         // Hanya jasa, tanpa item produk
         PembelianJasa::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'jasa_id' => 1,
+            'jasa_id' => $this->jasa->id,
             'qty' => 2,
             'harga' => 500000,
         ]);
@@ -173,13 +203,13 @@ describe('R05: Pembelian Item Jasa Tanpa Item Produk', function () {
     test('bisa buat pembelian hanya dengan item produk', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 5,
             'hpp' => 100000,
@@ -200,7 +230,7 @@ describe('R06-R07: Status Pembayaran', function () {
     test('status TEMPO ketika pembayaran < grand_total', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'grand_total' => 1000000,
             'total_paid' => 500000,
@@ -212,7 +242,7 @@ describe('R06-R07: Status Pembayaran', function () {
     test('status LUNAS ketika pembayaran >= grand_total', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'grand_total' => 1000000,
             'total_paid' => 1000000,
@@ -224,7 +254,7 @@ describe('R06-R07: Status Pembayaran', function () {
     test('status LUNAS ketika kelebihan pembayaran', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'grand_total' => 1000000,
             'total_paid' => 1200000,
@@ -238,25 +268,25 @@ describe('R08: Kelebihan Pembayaran', function () {
     test('kelebihan dihitung dengan benar', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'grand_total' => 1000000,
             'total_paid' => 1200000,
         ]);
         
-        expect($pembelian->kelebihan)->toBe(200000);
+        expect((float) $pembelian->kelebihan)->toBe(200000.0);
     });
     
     test('kelebihan 0 ketika tidak ada kelebihan', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'grand_total' => 1000000,
             'total_paid' => 800000,
         ]);
         
-        expect($pembelian->kelebihan)->toBe(0);
+        expect((float) $pembelian->kelebihan)->toBe(0.0);
     });
 });
 
@@ -268,7 +298,7 @@ describe('R11: Simpan Grand Total di Database', function () {
     test('grand_total tersimpan di database', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'grand_total' => 2500000,
         ]);
@@ -288,13 +318,13 @@ describe('R12: Cegah Hapus jika Ada Transaksi Penjualan', function () {
     test('tidak bisa hapus jika produk sudah terjual', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         $item = PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 5,
             'hpp' => 100000,
@@ -303,9 +333,15 @@ describe('R12: Cegah Hapus jika Ada Transaksi Penjualan', function () {
         ]);
         
         // Simulasi produk sudah terjual
+        $penjualan = \App\Models\Penjualan::create([
+            'no_nota' => 'INV-TEST-' . rand(1000,9999),
+            'tanggal_penjualan' => now(),
+        ]);
+        
         PenjualanItem::create([
+            'id_penjualan' => $penjualan->id_penjualan,
             'id_pembelian_item' => $item->id_pembelian_item,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'qty' => 2,
             'harga_jual' => 150000,
         ]);
@@ -316,13 +352,13 @@ describe('R12: Cegah Hapus jika Ada Transaksi Penjualan', function () {
     test('bisa hapus jika belum ada penjualan', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
         ]);
         
         PembelianItem::create([
             'id_pembelian' => $pembelian->id_pembelian,
-            'id_produk' => 1,
+            'id_produk' => $this->produk->id,
             'kondisi' => 'Baru',
             'qty' => 5,
             'hpp' => 100000,
@@ -338,7 +374,7 @@ describe('R13: Larangan Hapus NO PO dengan NO TT', function () {
     test('tidak bisa hapus jika memiliki NO TT', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'no_tt' => 'TT-001',
         ]);
@@ -349,7 +385,7 @@ describe('R13: Larangan Hapus NO PO dengan NO TT', function () {
     test('bisa hapus jika tidak memiliki NO TT', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'no_tt' => null,
         ]);
@@ -366,7 +402,7 @@ describe('R16: Tombol Lock Final', function () {
     test('lock final set is_locked jadi true', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'is_locked' => false,
         ]);
@@ -379,7 +415,7 @@ describe('R16: Tombol Lock Final', function () {
     test('tidak bisa edit jika sudah locked', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'is_locked' => true,
         ]);
@@ -390,7 +426,7 @@ describe('R16: Tombol Lock Final', function () {
     test('bisa edit jika belum locked', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'is_locked' => false,
         ]);
@@ -401,7 +437,7 @@ describe('R16: Tombol Lock Final', function () {
     test('bisa hapus meski sudah locked (asal R12 & R13 lolos)', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'is_locked' => true,
             'no_tt' => null,
@@ -414,7 +450,7 @@ describe('R16: Tombol Lock Final', function () {
     test('lock final tidak bisa di-undo', function () {
         $pembelian = Pembelian::create([
             'no_po' => 'PO-TEST-' . rand(1000,9999),
-            'tanggal' => now(),[
+            'tanggal' => now(),
             'id_supplier' => $this->supplier->id,
             'is_locked' => true,
         ]);

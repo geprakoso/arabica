@@ -41,16 +41,44 @@ class StockOpnameItem extends Model
         return $this->belongsTo(PembelianItem::class, 'pembelian_item_id', 'id_pembelian_item');
     }
 
-    public function applyToBatch(): void
+    /**
+     * Apply selisih ke batch stok menggunakan StockBatch
+     * Ini sekarang menggunakan incrementWithLock untuk atomic operation
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    public function applyToBatch(): bool
     {
         $batch = $this->pembelianItem;
 
         if (! $batch) {
-            return;
+            throw new \Exception('Batch pembelian tidak ditemukan untuk item ini.');
         }
 
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $batch->{$qtyColumn} = max(0, (int) ($batch->{$qtyColumn} ?? 0) + $this->selisih);
-        $batch->save();
+        $stockBatch = $batch->stockBatch;
+
+        if (! $stockBatch) {
+            // Jika tidak ada StockBatch, buat baru (fallback untuk data lama)
+            $stockBatch = StockBatch::create([
+                'pembelian_item_id' => $batch->id_pembelian_item,
+                'produk_id' => $batch->id_produk ?? $batch->produk_id,
+                'qty_total' => $batch->qty ?? 0,
+                'qty_available' => (int) ($batch->qty_sisa ?? $batch->qty_masuk ?? $batch->qty ?? 0),
+            ]);
+        }
+
+        // Gunakan incrementWithLock untuk apply selisih
+        // Selisih bisa positif (tambah stok) atau negatif (kurang stok)
+        return StockBatch::incrementWithLock(
+            $stockBatch->id,
+            $this->selisih,
+            [
+                'type' => 'opname',
+                'reference_type' => 'StockOpname',
+                'reference_id' => $this->stock_opname_id,
+                'notes' => "Opname: Sistem={$this->stok_sistem}, Fisik={$this->stok_fisik}, Selisih={$this->selisih}",
+            ]
+        );
     }
 }
