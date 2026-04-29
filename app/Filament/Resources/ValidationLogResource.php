@@ -133,7 +133,10 @@ class ValidationLogResource extends Resource
                         ->schema([
                             Infolists\Components\KeyValueEntry::make('input_data')
                                 ->label('')
-                                ->columnSpanFull(),
+                                ->columnSpanFull()
+                                ->getStateUsing(fn ($record) => collect($record->input_data ?? [])
+                                    ->map(fn ($value) => is_array($value) ? json_encode($value) : $value)
+                                    ->all()),
                         ]),
                 ])->columnSpan(2),
 
