@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Severity;
+use App\Enums\SourceType;
+use App\Enums\ValidationType;
 use App\Filament\Resources\ValidationLogResource\Pages;
 use App\Models\ValidationLog;
 use Filament\Forms;
@@ -31,18 +34,24 @@ class ValidationLogResource extends Resource
 
     protected static ?int $navigationSort = 99;
 
+    protected static ?int $unresolvedCountCache = null;
+
     public static function getNavigationBadge(): ?string
     {
-        $count = static::getModel()::where('is_resolved', false)->count();
+        if (static::$unresolvedCountCache === null) {
+            static::$unresolvedCountCache = static::getModel()::where('is_resolved', false)->count();
+        }
 
-        return $count > 0 ? (string) $count : null;
+        return static::$unresolvedCountCache > 0 ? (string) static::$unresolvedCountCache : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        $count = static::getModel()::where('is_resolved', false)->count();
+        if (static::$unresolvedCountCache === null) {
+            static::$unresolvedCountCache = static::getModel()::where('is_resolved', false)->count();
+        }
 
-        return $count > 0 ? 'danger' : 'success';
+        return static::$unresolvedCountCache > 0 ? 'danger' : 'success';
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -72,19 +81,8 @@ class ValidationLogResource extends Resource
                                     Infolists\Components\TextEntry::make('severity')
                                         ->label('Tingkat')
                                         ->badge()
-                                        ->color(fn ($state) => match ($state) {
-                                            'info' => 'info',
-                                            'warning' => 'warning',
-                                            'error', 'critical' => 'danger',
-                                            default => 'gray',
-                                        })
-                                        ->icon(fn ($state) => match ($state) {
-                                            'info' => 'heroicon-o-information-circle',
-                                            'warning' => 'heroicon-o-exclamation-triangle',
-                                            'error' => 'heroicon-o-x-circle',
-                                            'critical' => 'heroicon-o-fire',
-                                            default => 'heroicon-o-question-mark-circle',
-                                        }),
+                                        ->color(fn (Severity $state) => $state->getColor())
+                                        ->icon(fn (Severity $state) => $state->getIcon()),
                                 ]),
 
                             Infolists\Components\Grid::make(3)
@@ -93,16 +91,7 @@ class ValidationLogResource extends Resource
                                         ->label('Tipe Validasi')
                                         ->badge()
                                         ->color('warning')
-                                        ->formatStateUsing(fn ($state) => match ($state) {
-                                            'duplicate' => 'Duplikat',
-                                            'stock' => 'Stok',
-                                            'required' => 'Wajib Diisi',
-                                            'format' => 'Format',
-                                            'business_rule' => 'Aturan Bisnis',
-                                            'minimum_items' => 'Minimum Item',
-                                            'batch_not_found' => 'Batch Tidak Ditemukan',
-                                            default => $state,
-                                        }),
+                                        ->formatStateUsing(fn (ValidationType $state) => $state->getLabel()),
 
                                     Infolists\Components\TextEntry::make('field_name')
                                         ->label('Nama Field')
@@ -207,7 +196,7 @@ class ValidationLogResource extends Resource
                                 ->label('User Agent')
                                 ->icon('heroicon-o-device-phone-mobile')
                                 ->limit(50)
-                                ->tooltip(fn ($record) => $record->user_agent),
+                                ->tooltip(fn ($record) => $record->user_agent ?? '-'),
 
                             Infolists\Components\TextEntry::make('created_at')
                                 ->label('Waktu Tercatat')
@@ -232,26 +221,9 @@ class ValidationLogResource extends Resource
                 Tables\Columns\TextColumn::make('severity')
                     ->label('Tingkat')
                     ->badge()
-                    ->color(fn ($state) => match ($state) {
-                        'info' => 'info',
-                        'warning' => 'warning',
-                        'error', 'critical' => 'danger',
-                        default => 'gray',
-                    })
-                    ->icon(fn ($state) => match ($state) {
-                        'info' => 'heroicon-o-information-circle',
-                        'warning' => 'heroicon-o-exclamation-triangle',
-                        'error' => 'heroicon-o-x-circle',
-                        'critical' => 'heroicon-o-fire',
-                        default => 'heroicon-o-question-mark-circle',
-                    })
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'info' => 'Info',
-                        'warning' => 'Peringatan',
-                        'error' => 'Error',
-                        'critical' => 'Kritis',
-                        default => $state,
-                    })
+                    ->color(fn (Severity $state) => $state->getColor())
+                    ->icon(fn (Severity $state) => $state->getIcon())
+                    ->formatStateUsing(fn (Severity $state) => $state->getLabel())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('source_type')
@@ -265,21 +237,12 @@ class ValidationLogResource extends Resource
                     ->label('Tipe')
                     ->badge()
                     ->color('warning')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'duplicate' => 'Duplikat',
-                        'stock' => 'Stok',
-                        'required' => 'Wajib Diisi',
-                        'format' => 'Format',
-                        'business_rule' => 'Aturan Bisnis',
-                        'minimum_items' => 'Min. Item',
-                        'batch_not_found' => 'Batch ?',
-                        default => $state,
-                    })
+                    ->formatStateUsing(fn (ValidationType $state) => $state->getLabel())
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('error_message')
                     ->limit(50)
-                    ->tooltip(fn ($record) => $record->error_message)
+                    ->tooltip(fn ($record) => $record->error_message ?? '-')
                     ->searchable()
                     ->label('Pesan Error')
                     ->icon('heroicon-o-chat-bubble-left-ellipsis')
@@ -302,34 +265,17 @@ class ValidationLogResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('source_type')
                     ->label('Sumber')
-                    ->options([
-                        'Penjualan' => 'Penjualan',
-                        'Pembelian' => 'Pembelian',
-                        'TukarTambah' => 'Tukar Tambah',
-                    ])
+                    ->options(SourceType::class)
                     ->placeholder('Semua Sumber'),
 
                 Tables\Filters\SelectFilter::make('validation_type')
                     ->label('Tipe Validasi')
-                    ->options([
-                        'duplicate' => 'Duplikat',
-                        'stock' => 'Stok',
-                        'required' => 'Wajib Diisi',
-                        'format' => 'Format',
-                        'business_rule' => 'Aturan Bisnis',
-                        'minimum_items' => 'Minimum Item',
-                        'batch_not_found' => 'Batch Tidak Ditemukan',
-                    ])
+                    ->options(ValidationType::class)
                     ->placeholder('Semua Tipe'),
 
                 Tables\Filters\SelectFilter::make('severity')
                     ->label('Tingkat')
-                    ->options([
-                        'info' => 'Info',
-                        'warning' => 'Peringatan',
-                        'error' => 'Error',
-                        'critical' => 'Kritis',
-                    ])
+                    ->options(Severity::class)
                     ->placeholder('Semua Tingkat'),
 
                 Tables\Filters\TernaryFilter::make('is_resolved')
@@ -347,8 +293,8 @@ class ValidationLogResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['from'], fn ($q) => $q->whereDate('created_at', '>=', $data['from']))
-                            ->when($data['to'], fn ($q) => $q->whereDate('created_at', '<=', $data['to']));
+                            ->when($data['from'], fn ($q) => $q->where('created_at', '>=', \Carbon\Carbon::parse($data['from'])->startOfDay()))
+                            ->when($data['to'], fn ($q) => $q->where('created_at', '<=', \Carbon\Carbon::parse($data['to'])->endOfDay()));
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
@@ -408,12 +354,16 @@ class ValidationLogResource extends Resource
                         ->modalSubmitActionLabel('Ya, Selesaikan Semua')
                         ->modalCancelActionLabel('Batal')
                         ->action(function ($records) {
-                            $count = 0;
-                            foreach ($records as $record) {
-                                if (! $record->is_resolved) {
-                                    $record->markAsResolved('Diselesaikan secara massal');
-                                    $count++;
-                                }
+                            $unresolvedIds = $records->where('is_resolved', false)->pluck('id');
+                            $count = $unresolvedIds->count();
+
+                            if ($count > 0) {
+                                ValidationLog::whereIn('id', $unresolvedIds)->update([
+                                    'is_resolved' => true,
+                                    'resolved_at' => now(),
+                                    'resolved_by' => auth()->id(),
+                                    'resolution_notes' => 'Diselesaikan secara massal',
+                                ]);
                             }
 
                             \Filament\Notifications\Notification::make()
@@ -429,7 +379,7 @@ class ValidationLogResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()
-            ->poll('30s')
+            ->poll('60s')
             ->emptyStateHeading('Tidak Ada Log Validasi')
             ->emptyStateDescription('Belum ada log validasi yang tercatat. Log akan otomatis tercatat saat terjadi kesalahan validasi pada transaksi.')
             ->emptyStateIcon('heroicon-o-shield-check');

@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\Severity;
+use App\Enums\SourceType;
+use App\Enums\ValidationType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -31,13 +34,26 @@ class ValidationLog extends Model
         'resolved_at',
         'resolved_by',
         'resolution_notes',
+        'created_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (ValidationLog $log) {
+            if (empty($log->created_at)) {
+                $log->created_at = now();
+            }
+        });
+    }
 
     protected $casts = [
         'input_data' => 'array',
         'is_resolved' => 'boolean',
         'resolved_at' => 'datetime',
         'created_at' => 'datetime',
+        'severity' => Severity::class,
+        'validation_type' => ValidationType::class,
+        'source_type' => SourceType::class,
     ];
 
     /**
@@ -107,9 +123,6 @@ class ValidationLog extends Model
         return $query->where('severity', $severity);
     }
 
-    /**
-     * Mark log as resolved
-     */
     public function markAsResolved(?string $notes = null, ?int $resolvedBy = null): void
     {
         $this->update([
@@ -118,34 +131,5 @@ class ValidationLog extends Model
             'resolved_by' => $resolvedBy ?? auth()->id(),
             'resolution_notes' => $notes,
         ]);
-    }
-
-    /**
-     * Get severity color for Filament
-     */
-    public function getSeverityColor(): string
-    {
-        return match ($this->severity) {
-            'info' => 'info',
-            'warning' => 'warning',
-            'error' => 'danger',
-            'critical' => 'danger',
-            default => 'gray',
-        };
-    }
-
-    /**
-     * Get validation type label
-     */
-    public function getValidationTypeLabel(): string
-    {
-        return match ($this->validation_type) {
-            'duplicate' => 'Duplikat',
-            'stock' => 'Stok',
-            'required' => 'Wajib Diisi',
-            'format' => 'Format',
-            'business_rule' => 'Aturan Bisnis',
-            default => $this->validation_type,
-        };
     }
 }
