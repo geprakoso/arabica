@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PenjualanItem extends Model
@@ -44,28 +45,39 @@ class PenjualanItem extends Model
         });
 
         static::created(function (PenjualanItem $item): void {
-            self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
-            self::recalculatePenjualanTotals($item);
+            DB::transaction(function () use ($item) {
+                self::applyStockMutation($item, -1 * (int) $item->qty, 'sale');
+                self::recalculatePenjualanTotals($item);
+            });
         });
 
         static::updated(function (PenjualanItem $item): void {
-            $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
-            $originalQty = (int) $item->getOriginal('qty');
+            DB::transaction(function () use ($item) {
+                $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
+                $originalQty = (int) $item->getOriginal('qty');
+                $newBatchId = (int) $item->id_pembelian_item;
+                $newQty = (int) $item->qty;
 
-            if ($originalBatchId) {
-                self::applyStockMutation($originalBatchId, $originalQty);
-            }
+                // Kembalikan stok lama
+                if ($originalBatchId) {
+                    $originalItem = clone $item;
+                    $originalItem->id_pembelian_item = $originalBatchId;
+                    $originalItem->qty = $originalQty;
+                    self::applyStockMutation($originalItem, $originalQty, 'sale_return');
+                }
 
-            self::applyStockMutation($item->id_pembelian_item, -1 * (int) $item->qty);
-            self::recalculatePenjualanTotals($item);
+                // Kurangi stok baru
+                self::applyStockMutation($item, -1 * $newQty, 'sale');
+
+                self::recalculatePenjualanTotals($item);
+            });
         });
 
         static::deleted(function (PenjualanItem $item): void {
-            $originalBatchId = (int) $item->getOriginal('id_pembelian_item');
-            $originalQty = (int) $item->getOriginal('qty');
-
-            self::applyStockMutation($originalBatchId, $originalQty);
-            self::recalculatePenjualanTotals($item);
+            DB::transaction(function () use ($item) {
+                self::applyStockMutation($item, (int) $item->qty, 'sale_return');
+                self::recalculatePenjualanTotals($item);
+            });
         });
     }
 
@@ -84,6 +96,18 @@ class PenjualanItem extends Model
         return $this->belongsTo(PembelianItem::class, 'id_pembelian_item', 'id_pembelian_item');
     }
 
+    public function stockBatch()
+    {
+        return $this->hasOneThrough(
+            StockBatch::class,
+            PembelianItem::class,
+            'id_pembelian_item',
+            'pembelian_item_id',
+            'id_pembelian_item',
+            'id_pembelian_item'
+        );
+    }
+
     protected static function assertStockAvailable(PenjualanItem $item, bool $isUpdate = false): void
     {
         $batchId = $item->id_pembelian_item;
@@ -99,17 +123,16 @@ class PenjualanItem extends Model
             ]);
         }
 
-        $qtyColumn = PembelianItem::qtySisaColumn();
+        // ✅ Gunakan StockBatch sebagai sumber stok
+        $stockBatch = StockBatch::where('pembelian_item_id', $batchId)->first();
 
-        $batch = PembelianItem::query()->find($batchId);
-
-        if (! $batch) {
+        if (! $stockBatch) {
             throw ValidationException::withMessages([
-                'id_pembelian_item' => 'Batch pembelian tidak ditemukan.',
+                'id_pembelian_item' => 'StockBatch tidak ditemukan untuk batch ini.',
             ]);
         }
 
-        $availableQty = (int) ($batch->{$qtyColumn} ?? 0);
+        $availableQty = $stockBatch->qty_available;
 
         if ($isUpdate && $batchId === (int) $item->getOriginal('id_pembelian_item')) {
             $availableQty += (int) $item->getOriginal('qty');
@@ -117,28 +140,48 @@ class PenjualanItem extends Model
 
         if ($qty > $availableQty) {
             throw ValidationException::withMessages([
-                'qty' => 'Qty melebihi stok batch yang tersedia.',
+                'qty' => "Qty melebihi stok batch yang tersedia. Tersedia: {$availableQty}, Diminta: {$qty}",
             ]);
         }
     }
 
-    protected static function applyStockMutation(?int $batchId, int $qtyDelta): void
+    protected static function applyStockMutation(PenjualanItem $item, int $qtyDelta, string $mutationType = 'sale'): void
     {
+        $batchId = $item->id_pembelian_item;
+
         if (! $batchId || $qtyDelta === 0) {
             return;
         }
 
-        $qtyColumn = PembelianItem::qtySisaColumn();
+        $stockBatch = StockBatch::where('pembelian_item_id', $batchId)->first();
 
-        $batch = PembelianItem::query()->find($batchId);
-
-        if (! $batch) {
-            return;
+        if (! $stockBatch) {
+            throw new \RuntimeException("StockBatch tidak ditemukan untuk PembelianItem #{$batchId}");
         }
 
-        $updatedQty = max(0, (int) ($batch->{$qtyColumn} ?? 0) + $qtyDelta);
-        $batch->{$qtyColumn} = $updatedQty;
-        $batch->save();
+        if ($qtyDelta < 0) {
+            StockBatch::decrementWithLock(
+                $stockBatch->id,
+                abs($qtyDelta),
+                [
+                    'type' => $mutationType,
+                    'reference_type' => 'PenjualanItem',
+                    'reference_id' => $item->id_penjualan_item,
+                    'notes' => "Penjualan: {$item->qty} unit",
+                ]
+            );
+        } elseif ($qtyDelta > 0) {
+            StockBatch::incrementWithLock(
+                $stockBatch->id,
+                $qtyDelta,
+                [
+                    'type' => 'sale_return',
+                    'reference_type' => 'PenjualanItem',
+                    'reference_id' => $item->id_penjualan_item,
+                    'notes' => "Return/Cancel: {$qtyDelta} unit",
+                ]
+            );
+        }
     }
 
     protected static function applyBatchDefaults(PenjualanItem $item): void
@@ -184,6 +227,6 @@ class PenjualanItem extends Model
         }
 
         $penjualan->recalculateTotals();
-        $penjualan->clearCalculationCache();  // ✅ Clear cache saat item berubah
+        $penjualan->clearCalculationCache();
     }
 }

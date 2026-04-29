@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\SyncStockToWooCommerce;
 use App\Models\PembelianItem;
+use App\Models\StockBatch;
 use Illuminate\Support\Facades\Log;
 
 class PembelianItemObserver
@@ -17,6 +18,12 @@ class PembelianItemObserver
     {
         if (! $pembelianItem->wasChanged('qty_sisa')) {
             return;
+        }
+
+        // ✅ Sync qty_sisa ke StockBatch agar tetap konsisten
+        $batch = $pembelianItem->stockBatch;
+        if ($batch) {
+            $batch->update(['qty_available' => $pembelianItem->qty_sisa]);
         }
 
         $this->dispatchSyncIfNeeded($pembelianItem, 'updated');

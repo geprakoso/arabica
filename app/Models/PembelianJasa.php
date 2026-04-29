@@ -48,4 +48,9 @@ class PembelianJasa extends Model
     {
         return $this->belongsTo(Jasa::class, 'jasa_id');
     }
+
+    public function penjualanJasa()
+    {
+        return $this->hasMany(PenjualanJasa::class, 'pembelian_jasa_id', 'id_pembelian_jasa');
+    }
 }
