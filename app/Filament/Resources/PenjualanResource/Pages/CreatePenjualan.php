@@ -6,6 +6,7 @@ use App\Filament\Resources\PenjualanResource;
 use App\Models\PembelianItem;
 use App\Models\PenjualanItem;
 use App\Services\ValidationLogger;
+use Filament\Actions\Action;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -20,6 +21,8 @@ class CreatePenjualan extends CreateRecord
     protected static bool $canCreateAnother = false;
 
     protected array $itemsToCreate = [];
+
+    public string $saveMode = 'draft';
 
     protected function getRedirectUrl(): string
     {
@@ -37,16 +40,25 @@ class CreatePenjualan extends CreateRecord
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
 
-            // VALIDASI SEBELUM RECORD DIBUAT
-            // Validasi stok tersedia dan duplikat produk
-            $this->validateBeforeCreate($this->itemsToCreate);
+            // VALIDASI SEBELUM RECORD DIBUAT (hanya jika ada items)
+            if (! empty($this->itemsToCreate)) {
+                $this->validateBeforeCreate($this->itemsToCreate);
+            }
 
             unset($data['items_temp']);
         }
 
-        // Note: Fitur draft telah dihapus, semua penyimpanan langsung final
-        // Hapus status_dokumen jika ada (kolom ini akan dihapus dari database)
-        unset($data['status_dokumen']);
+        // Validasi: minimal harus ada 1 item produk atau 1 jasa
+        $hasItems = ! empty($this->itemsToCreate);
+        $hasJasa = ! empty($data['jasaItems'] ?? []);
+        if (! $hasItems && ! $hasJasa) {
+            throw ValidationException::withMessages([
+                'items_temp' => 'Minimal harus ada 1 item produk atau 1 jasa.',
+            ]);
+        }
+
+        // Set status sesuai pilihan user
+        $data['status_dokumen'] = $this->saveMode === 'final' ? 'final' : 'draft';
 
         return $data;
     }
@@ -56,27 +68,13 @@ class CreatePenjualan extends CreateRecord
      */
     protected function validateBeforeCreate(array $items): void
     {
-        // Start batch logging
         ValidationLogger::startBatch();
 
         if (empty($items)) {
-            // Log validation error
-            ValidationLogger::logMinimumItems(
-                sourceType: 'Penjualan',
-                sourceAction: 'create',
-                minRequired: 1,
-                currentCount: 0
-            );
-
-            throw ValidationException::withMessages([
-                'items_temp' => 'Minimal harus ada 1 item produk.',
-            ]);
+            return;
         }
 
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
-        // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis di baris berbeda
+        // Cek duplikat produk
         $productKeys = [];
         foreach ($items as $index => $item) {
             $productId = (int) ($item['id_produk'] ?? 0);
@@ -84,16 +82,14 @@ class CreatePenjualan extends CreateRecord
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
 
             if ($productId > 0) {
-                // Key unik: produk + batch + kondisi
                 $key = $productId.'|'.($condition ?? '').'|'.$batchId;
 
                 if (isset($productKeys[$key])) {
                     $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                     $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
-                    $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'. Jika stok tidak cukup, cukup tambahkan qty di baris yang sudah ada.';
+                    $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'.';
 
-                    // Log validation error
                     ValidationLogger::logDuplicate(
                         sourceType: 'Penjualan',
                         sourceAction: 'create',
@@ -108,7 +104,6 @@ class CreatePenjualan extends CreateRecord
                         ]
                     );
 
-                    // Kirim notifikasi toast dan database
                     Notification::make()
                         ->title('Validasi Gagal - Duplikat Produk')
                         ->body($errorMessage)
@@ -116,16 +111,6 @@ class CreatePenjualan extends CreateRecord
                         ->danger()
                         ->persistent()
                         ->send();
-
-                    $user = Auth::user();
-                    if ($user) {
-                        Notification::make()
-                            ->title('Validasi Gagal - Duplikat Produk')
-                            ->body($errorMessage)
-                            ->icon('heroicon-o-exclamation-triangle')
-                            ->danger()
-                            ->sendToDatabase($user);
-                    }
 
                     throw ValidationException::withMessages([
                         'items_temp' => $errorMessage,
@@ -135,7 +120,7 @@ class CreatePenjualan extends CreateRecord
             }
         }
 
-        // Aggregate total qty per produk (dengan mempertimbangkan batch dan kondisi)
+        // Aggregate total qty per produk
         $totalQtyMap = [];
         foreach ($items as $index => $item) {
             $productId = (int) ($item['id_produk'] ?? 0);
@@ -144,7 +129,6 @@ class CreatePenjualan extends CreateRecord
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
 
             if ($productId < 1) {
-                // Log validation error
                 ValidationLogger::logRequired(
                     sourceType: 'Penjualan',
                     sourceAction: 'create',
@@ -160,8 +144,6 @@ class CreatePenjualan extends CreateRecord
 
             if ($qty < 1) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
-
-                // Log validation error
                 ValidationLogger::logFormat(
                     sourceType: 'Penjualan',
                     sourceAction: 'create',
@@ -180,7 +162,6 @@ class CreatePenjualan extends CreateRecord
                 ]);
             }
 
-            // Buat key unik berdasarkan produk + batch + kondisi
             $key = $productId.'|'.($condition ?? '').'|'.$batchId;
 
             if (! isset($totalQtyMap[$key])) {
@@ -196,7 +177,7 @@ class CreatePenjualan extends CreateRecord
             $totalQtyMap[$key]['rows'][] = $index + 1;
         }
 
-        // Validasi setiap grup terhadap stok database
+        // Validasi stok database (gunakan StockBatch)
         foreach ($totalQtyMap as $group) {
             $productId = $group['product_id'];
             $condition = $group['condition'];
@@ -204,26 +185,26 @@ class CreatePenjualan extends CreateRecord
             $requestedQty = $group['qty'];
             $rows = $group['rows'];
 
-            $query = PembelianItem::query()
-                ->where($productColumn, $productId)
-                ->where($qtyColumn, '>', 0);
+            $query = \App\Models\StockBatch::query()
+                ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                    $q->where('id_produk', $productId);
+                    if ($condition) {
+                        $q->where('kondisi', $condition);
+                    }
+                })
+                ->where('qty_available', '>', 0);
 
             if ($batchId > 0) {
-                $query->whereKey($batchId);
+                $query->where('pembelian_item_id', $batchId);
             }
 
-            if ($condition) {
-                $query->where('kondisi', $condition);
-            }
-
-            $availableQty = (int) $query->sum($qtyColumn);
+            $availableQty = (int) $query->sum('qty_available');
 
             if ($availableQty < $requestedQty) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                 $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
                 $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
 
-                // Log validation error
                 ValidationLogger::logStock(
                     sourceType: 'Penjualan',
                     sourceAction: 'create',
@@ -238,7 +219,6 @@ class CreatePenjualan extends CreateRecord
                     ]
                 );
 
-                // Kirim notifikasi toast dan database
                 Notification::make()
                     ->title('Validasi Gagal - Stok Tidak Cukup')
                     ->body($errorMessage)
@@ -246,16 +226,6 @@ class CreatePenjualan extends CreateRecord
                     ->danger()
                     ->persistent()
                     ->send();
-
-                $user = Auth::user();
-                if ($user) {
-                    Notification::make()
-                        ->title('Validasi Gagal - Stok Tidak Cukup')
-                        ->body($errorMessage)
-                        ->icon('heroicon-o-exclamation-triangle')
-                        ->danger()
-                        ->sendToDatabase($user);
-                }
 
                 throw ValidationException::withMessages([
                     'items_temp' => $errorMessage,
@@ -274,11 +244,17 @@ class CreatePenjualan extends CreateRecord
         // Recalculate totals
         $this->record->recalculateTotals();
 
+        // Kalau mode final, post langsung
+        if ($this->saveMode === 'final' && $this->record->canPost()) {
+            $this->record->post();
+        }
+
         // Send notification
         $user = Auth::user();
         if ($user) {
+            $modeLabel = $this->saveMode === 'final' ? 'Final' : 'Draft';
             Notification::make()
-                ->title('Penjualan baru dibuat')
+                ->title("Penjualan {$modeLabel} berhasil dibuat")
                 ->body("No. Nota {$this->record->no_nota} berhasil disimpan.")
                 ->icon('heroicon-o-check-circle')
                 ->actions([
@@ -289,16 +265,8 @@ class CreatePenjualan extends CreateRecord
         }
     }
 
-    /**
-     * Validasi global: memeriksa total qty per produk/batch/kondisi
-     * terhadap stok yang tersedia di database.
-     */
     protected function validateTotalQtyAvailability(array $items): void
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
-        // Aggregate total qty per produk (dengan mempertimbangkan batch dan kondisi)
         $totalQtyMap = [];
         foreach ($items as $item) {
             $productId = (int) ($item['id_produk'] ?? 0);
@@ -310,7 +278,6 @@ class CreatePenjualan extends CreateRecord
                 continue;
             }
 
-            // Buat key unik berdasarkan produk + batch + kondisi
             $key = $productId.'|'.($condition ?? '').'|'.$batchId;
 
             if (! isset($totalQtyMap[$key])) {
@@ -324,26 +291,26 @@ class CreatePenjualan extends CreateRecord
             $totalQtyMap[$key]['qty'] += $qty;
         }
 
-        // Validasi setiap grup terhadap stok database
         foreach ($totalQtyMap as $group) {
             $productId = $group['product_id'];
             $condition = $group['condition'];
             $batchId = $group['batch_id'];
             $requestedQty = $group['qty'];
 
-            $query = PembelianItem::query()
-                ->where($productColumn, $productId)
-                ->where($qtyColumn, '>', 0);
+            $query = \App\Models\StockBatch::query()
+                ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                    $q->where('id_produk', $productId);
+                    if ($condition) {
+                        $q->where('kondisi', $condition);
+                    }
+                })
+                ->where('qty_available', '>', 0);
 
             if ($batchId > 0) {
-                $query->whereKey($batchId);
+                $query->where('pembelian_item_id', $batchId);
             }
 
-            if ($condition) {
-                $query->where('kondisi', $condition);
-            }
-
-            $availableQty = (int) $query->sum($qtyColumn);
+            $availableQty = (int) $query->sum('qty_available');
 
             if ($availableQty < $requestedQty) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
@@ -354,15 +321,8 @@ class CreatePenjualan extends CreateRecord
         }
     }
 
-    /**
-     * Create items using FIFO batch allocation.
-     */
     protected function createItemsWithFifo(array $items): void
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
-        // Validasi global: cek total qty per produk/batch/kondisi sebelum memulai transaksi
         $this->validateTotalQtyAvailability($items);
 
         foreach ($items as $item) {
@@ -378,23 +338,21 @@ class CreatePenjualan extends CreateRecord
             }
 
             if ($batchId > 0) {
-                $batch = PembelianItem::query()
-                    ->where($productColumn, $productId)
-                    ->whereKey($batchId)
-                    ->lockForUpdate()
+                $stockBatch = \App\Models\StockBatch::where('pembelian_item_id', $batchId)
+                    ->whereHas('pembelianItem', function ($q) use ($productId) {
+                        $q->where('id_produk', $productId);
+                    })
                     ->first();
 
-                if (! $batch) {
+                if (! $stockBatch) {
                     throw ValidationException::withMessages([
-                        'items_temp' => 'Batch pembelian tidak ditemukan.',
+                        'items_temp' => 'StockBatch tidak ditemukan.',
                     ]);
                 }
 
-                $available = (int) ($batch->{$qtyColumn} ?? 0);
-
-                if ($available < $qty) {
+                if ($stockBatch->qty_available < $qty) {
                     throw ValidationException::withMessages([
-                        'items_temp' => "Stok batch tidak cukup. Tersedia: {$available}, Dibutuhkan: {$qty}",
+                        'items_temp' => "Stok batch tidak cukup. Tersedia: {$stockBatch->qty_available}, Dibutuhkan: {$qty}",
                     ]);
                 }
 
@@ -403,29 +361,28 @@ class CreatePenjualan extends CreateRecord
                 PenjualanItem::create([
                     'id_penjualan' => $this->record->getKey(),
                     'id_produk' => $productId,
-                    'id_pembelian_item' => $batch->id_pembelian_item,
+                    'id_pembelian_item' => $stockBatch->pembelian_item_id,
                     'qty' => $qty,
                     'harga_jual' => $customPrice,
-                    'kondisi' => $batch->kondisi,
+                    'kondisi' => $stockBatch->pembelianItem->kondisi,
                     'serials' => empty($takeSerials) ? null : $takeSerials,
                 ]);
 
                 continue;
             }
 
-            // Get available batches using FIFO (oldest first)
-            $batchesQuery = PembelianItem::query()
-                ->where($productColumn, $productId)
-                ->where($qtyColumn, '>', 0)
-                ->orderBy('id_pembelian_item')
-                ->lockForUpdate();
-
-            if ($condition) {
-                $batchesQuery->where('kondisi', $condition);
-            }
+            $batchesQuery = \App\Models\StockBatch::query()
+                ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                    $q->where('id_produk', $productId);
+                    if ($condition) {
+                        $q->where('kondisi', $condition);
+                    }
+                })
+                ->where('qty_available', '>', 0)
+                ->orderBy('id');
 
             $batches = $batchesQuery->get();
-            $available = (int) $batches->sum(fn ($batch) => (int) ($batch->{$qtyColumn} ?? 0));
+            $available = (int) $batches->sum('qty_available');
 
             if ($available < $qty) {
                 throw ValidationException::withMessages([
@@ -435,12 +392,12 @@ class CreatePenjualan extends CreateRecord
 
             $remaining = $qty;
 
-            foreach ($batches as $batch) {
+            foreach ($batches as $stockBatch) {
                 if ($remaining <= 0) {
                     break;
                 }
 
-                $batchAvailable = (int) ($batch->{$qtyColumn} ?? 0);
+                $batchAvailable = $stockBatch->qty_available;
 
                 if ($batchAvailable <= 0) {
                     continue;
@@ -448,20 +405,18 @@ class CreatePenjualan extends CreateRecord
 
                 $takeQty = min($remaining, $batchAvailable);
 
-                // Split serials for this batch
                 $takeSerials = [];
                 if (! empty($serials)) {
                     $takeSerials = array_splice($serials, 0, $takeQty);
                 }
 
-                // Create PenjualanItem - model hooks will handle stock mutation
                 PenjualanItem::create([
                     'id_penjualan' => $this->record->getKey(),
                     'id_produk' => $productId,
-                    'id_pembelian_item' => $batch->id_pembelian_item,
+                    'id_pembelian_item' => $stockBatch->pembelian_item_id,
                     'qty' => $takeQty,
                     'harga_jual' => $customPrice,
-                    'kondisi' => $condition ?? $batch->kondisi,
+                    'kondisi' => $condition ?? $stockBatch->pembelianItem->kondisi,
                     'serials' => empty($takeSerials) ? null : $takeSerials,
                 ]);
 
@@ -477,15 +432,35 @@ class CreatePenjualan extends CreateRecord
         });
     }
 
+    public function saveDraft(): void
+    {
+        $this->saveMode = 'draft';
+        $this->create();
+    }
+
+    public function saveFinal(): void
+    {
+        $this->saveMode = 'final';
+        $this->create();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            $this->getCreateFormAction()
-                ->label('Simpan')
-                ->icon('heroicon-m-check')
-                ->formId('form'),
-            ...(static::canCreateAnother() ? [$this->getCreateAnotherFormAction()] : []),
-            $this->getCancelFormAction(),
+            Action::make('saveDraft')
+                ->label('Simpan Draft')
+                ->icon('heroicon-o-pencil')
+                ->color('warning')
+                ->action('saveDraft'),
+            Action::make('saveFinal')
+                ->label('Simpan Final')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->action('saveFinal'),
+            $this->getCancelFormAction()
+                ->label('Batal')
+                ->icon('heroicon-o-x-mark')
+                ->color('danger'),
         ];
     }
 

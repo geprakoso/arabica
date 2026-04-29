@@ -69,72 +69,79 @@ class ViewPenjualan extends ViewRecord
 
                     $this->refreshFormData(['foto_dokumen']);
                 }),
-            EditAction::make(),
-            Action::make('invoice')
+            EditAction::make()
+                ->visible(fn() => $this->record->canEditPayment() || $this->record->canEditItems()),
+            \Filament\Actions\ActionGroup::make([
+                Action::make('invoice')
+                    ->label('Invoice Detail')
+                    ->icon('heroicon-m-printer')
+                    ->color('primary')
+                    ->url(fn() => route('penjualan.invoice', $this->record))
+                    ->openUrlInNewTab(),
+                Action::make('invoice_simple')
+                    ->label('Invoice Simple')
+                    ->icon('heroicon-m-document-text')
+                    ->color('warning')
+                    ->url(fn() => route('penjualan.invoice.simple', $this->record))
+                    ->openUrlInNewTab(),
+                Action::make('email_invoice')
+                    ->label('Email Invoice')
+                    ->icon('heroicon-m-envelope')
+                    ->color('info')
+                    ->form([
+                        Textarea::make('message_note')
+                            ->label('Pesan untuk pelanggan')
+                            ->rows(4)
+                            ->placeholder('Terima kasih telah berbelanja di kami.'),
+                    ])
+                    ->requiresConfirmation()
+                    ->action(function (array $data): void {
+                        $memberEmail = $this->record->member?->email;
+
+                        if (! $memberEmail) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Email pelanggan belum diisi.')
+                                ->send();
+
+                            return;
+                        }
+
+                        $penjualan = $this->record->load([
+                            'items.produk',
+                            'items.pembelianItem.pembelian',
+                            'jasaItems.jasa',
+                            'member',
+                            'karyawan',
+                            'akunTransaksi',
+                            'pembayaran.akunTransaksi',
+                        ]);
+                        $profile = ProfilePerusahaan::first();
+
+                        try {
+                            $note = $data['message_note'] ?? null;
+                            Mail::to($memberEmail)->send(new InvoicePenjualanMail($penjualan, $profile, $note));
+                        } catch (Throwable $exception) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Gagal mengirim invoice.')
+                                ->body($exception->getMessage())
+                                ->send();
+
+                            return;
+                        }
+
+                        Notification::make()
+                            ->success()
+                            ->title('Invoice dikirim.')
+                            ->body('Invoice dikirim ke ' . $memberEmail)
+                            ->send();
+                    }),
+            ])
                 ->label('Invoice')
                 ->icon('heroicon-m-printer')
                 ->color('primary')
-                ->url(fn() => route('penjualan.invoice', $this->record))
-                ->openUrlInNewTab(),
-            Action::make('invoice_simple')
-                ->label('Invoice Simple')
-                ->icon('heroicon-m-document-text')
-                ->color('warning')
-                ->url(fn() => route('penjualan.invoice.simple', $this->record))
-                ->openUrlInNewTab(),
-            Action::make('email_invoice')
-                ->label('Email Invoice')
-                ->icon('heroicon-m-envelope')
-                ->color('info')
-                ->form([
-                    Textarea::make('message_note')
-                        ->label('Pesan untuk pelanggan')
-                        ->rows(4)
-                        ->placeholder('Terima kasih telah berbelanja di kami.'),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data): void {
-                    $memberEmail = $this->record->member?->email;
-
-                    if (! $memberEmail) {
-                        Notification::make()
-                            ->danger()
-                            ->title('Email pelanggan belum diisi.')
-                            ->send();
-
-                        return;
-                    }
-
-                    $penjualan = $this->record->load([
-                        'items.produk',
-                        'items.pembelianItem.pembelian',
-                        'jasaItems.jasa',
-                        'member',
-                        'karyawan',
-                        'akunTransaksi',
-                        'pembayaran.akunTransaksi',
-                    ]);
-                    $profile = ProfilePerusahaan::first();
-
-                    try {
-                        $note = $data['message_note'] ?? null;
-                        Mail::to($memberEmail)->send(new InvoicePenjualanMail($penjualan, $profile, $note));
-                    } catch (Throwable $exception) {
-                        Notification::make()
-                            ->danger()
-                            ->title('Gagal mengirim invoice.')
-                            ->body($exception->getMessage())
-                            ->send();
-
-                        return;
-                    }
-
-                    Notification::make()
-                        ->success()
-                        ->title('Invoice dikirim.')
-                        ->body('Invoice dikirim ke ' . $memberEmail)
-                        ->send();
-                }),
+                ->button(),
         ];
     }
 

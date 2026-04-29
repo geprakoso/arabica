@@ -74,11 +74,14 @@ class JasaRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Tambah Jasa'),
+                    ->label('Tambah Jasa')
+                    ->visible(fn () => $this->getOwnerRecord()->canEditJasa()),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn () => $this->getOwnerRecord()->canEditJasa()),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn () => $this->getOwnerRecord()->canEditJasa()),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

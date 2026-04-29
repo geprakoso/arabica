@@ -45,16 +45,35 @@ class EditPenjualan extends EditRecord
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
 
-            // VALIDASI SEBELUM SAVE
-            // Validasi stok tersedia dan duplikat produk
-            $this->validateBeforeSave($this->itemsToCreate);
+            // VALIDASI SEBELUM SAVE (hanya jika ada items)
+            if (! empty($this->itemsToCreate)) {
+                $this->validateBeforeSave($this->itemsToCreate);
+            }
 
             unset($data['items_temp']);
         }
 
-        // Hapus status_dokumen jika ada
-        unset($data['status_dokumen']);
+        // Validasi: minimal harus ada 1 item produk atau 1 jasa
+        $hasItems = ! empty($this->itemsToCreate);
+        $hasJasa = ! empty($data['jasaItems'] ?? []);
 
+        // Jika items tidak bisa diedit, hitung existing items
+        if (! $hasItems && $this->record && ! $this->record->canEditItems()) {
+            $hasItems = $this->record->items()->exists();
+        }
+
+        // Jika jasa tidak ada di form, hitung existing jasa
+        if (! $hasJasa && $this->record) {
+            $hasJasa = $this->record->jasaItems()->exists();
+        }
+
+        if (! $hasItems && ! $hasJasa) {
+            throw ValidationException::withMessages([
+                'items_temp' => 'Minimal harus ada 1 item produk atau 1 jasa.',
+            ]);
+        }
+
+        // Status dokumen tetap (tidak diubah dari form)
         return $data;
     }
 
@@ -67,21 +86,8 @@ class EditPenjualan extends EditRecord
         ValidationLogger::startBatch();
 
         if (empty($items)) {
-            // Log validation error
-            ValidationLogger::logMinimumItems(
-                sourceType: 'Penjualan',
-                sourceAction: 'update',
-                minRequired: 1,
-                currentCount: 0
-            );
-
-            throw ValidationException::withMessages([
-                'items_temp' => 'Minimal harus ada 1 item produk.',
-            ]);
+            return;
         }
-
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
 
         // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis di baris berbeda
         $productKeys = [];
@@ -203,7 +209,7 @@ class EditPenjualan extends EditRecord
             $totalQtyMap[$key]['rows'][] = $index + 1;
         }
 
-        // Validasi setiap grup terhadap stok database
+        // Validasi setiap grup terhadap stok database (gunakan StockBatch)
         foreach ($totalQtyMap as $group) {
             $productId = $group['product_id'];
             $condition = $group['condition'];
@@ -211,19 +217,20 @@ class EditPenjualan extends EditRecord
             $requestedQty = $group['qty'];
             $rows = $group['rows'];
 
-            $query = PembelianItem::query()
-                ->where($productColumn, $productId)
-                ->where($qtyColumn, '>', 0);
+            $query = \App\Models\StockBatch::query()
+                ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                    $q->where('id_produk', $productId);
+                    if ($condition) {
+                        $q->where('kondisi', $condition);
+                    }
+                })
+                ->where('qty_available', '>', 0);
 
             if ($batchId > 0) {
-                $query->whereKey($batchId);
+                $query->where('pembelian_item_id', $batchId);
             }
 
-            if ($condition) {
-                $query->where('kondisi', $condition);
-            }
-
-            $availableQty = (int) $query->sum($qtyColumn);
+            $availableQty = (int) $query->sum('qty_available');
 
             if ($availableQty < $requestedQty) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
@@ -274,6 +281,7 @@ class EditPenjualan extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         return DB::transaction(function () use ($record, $data) {
+            /** @var Penjualan $record */
             // Update penjualan record
             $record->update([
                 'id_karyawan' => $data['id_karyawan'] ?? $record->id_karyawan,
@@ -283,12 +291,14 @@ class EditPenjualan extends EditRecord
                 'diskon_total' => $data['diskon_total'] ?? $record->diskon_total ?? 0,
             ]);
 
-            // Delete existing items and recreate
-            $record->items()->delete();
+            // Hanya bisa edit items jika draft baru (belum ada item)
+            if ($record->canEditItems()) {
+                // Delete existing items and recreate (or clear if no new items)
+                $record->items()->delete();
 
-            // Create items with FIFO batch allocation
-            if (! empty($this->itemsToCreate)) {
-                $this->createItemsWithFifo($this->itemsToCreate);
+                if (! empty($this->itemsToCreate)) {
+                    $this->createItemsWithFifo($this->itemsToCreate);
+                }
             }
 
             // Recalculate totals
@@ -304,9 +314,6 @@ class EditPenjualan extends EditRecord
      */
     protected function createItemsWithFifo(array $items): void
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
         // Validasi global: cek total qty per produk/batch/kondisi sebelum memulai transaksi
         $this->validateTotalQtyAvailability($items);
 
@@ -335,13 +342,10 @@ class EditPenjualan extends EditRecord
 
     /**
      * Validasi global: memeriksa total qty per produk/batch/kondisi
-     * terhadap stok yang tersedia di database.
+     * terhadap stok yang tersedia di database (menggunakan StockBatch).
      */
     protected function validateTotalQtyAvailability(array $items): void
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
         // Aggregate total qty per produk (dengan mempertimbangkan batch dan kondisi)
         $totalQtyMap = [];
         foreach ($items as $index => $item) {
@@ -378,19 +382,20 @@ class EditPenjualan extends EditRecord
             $requestedQty = $group['qty'];
             $rows = $group['rows'];
 
-            $query = PembelianItem::query()
-                ->where($productColumn, $productId)
-                ->where($qtyColumn, '>', 0);
+            $query = \App\Models\StockBatch::query()
+                ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                    $q->where('id_produk', $productId);
+                    if ($condition) {
+                        $q->where('kondisi', $condition);
+                    }
+                })
+                ->where('qty_available', '>', 0);
 
             if ($batchId > 0) {
-                $query->whereKey($batchId);
+                $query->where('pembelian_item_id', $batchId);
             }
 
-            if ($condition) {
-                $query->where('kondisi', $condition);
-            }
-
-            $availableQty = (int) $query->sum($qtyColumn);
+            $availableQty = (int) $query->sum('qty_available');
 
             if ($availableQty < $requestedQty) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
@@ -406,11 +411,15 @@ class EditPenjualan extends EditRecord
      */
     protected function fulfillWithSpecificBatch(int $productId, int $qty, int $batchId, ?int $customPrice, ?string $condition, array $serials): void
     {
-        $batch = PembelianItem::find($batchId);
+        $stockBatch = \App\Models\StockBatch::where('pembelian_item_id', $batchId)
+            ->whereHas('pembelianItem', function ($q) use ($productId) {
+                $q->where('id_produk', $productId);
+            })
+            ->first();
 
-        if (! $batch) {
+        if (! $stockBatch) {
             throw ValidationException::withMessages([
-                'items_temp' => 'Batch pembelian tidak ditemukan.',
+                'items_temp' => 'StockBatch tidak ditemukan.',
             ]);
         }
 
@@ -420,7 +429,7 @@ class EditPenjualan extends EditRecord
             'id_pembelian_item' => $batchId,
             'qty' => $qty,
             'harga_jual' => $customPrice,
-            'kondisi' => $condition ?? $batch->kondisi,
+            'kondisi' => $condition ?? $stockBatch->pembelianItem->kondisi,
             'serials' => ! empty($serials) ? $serials : null,
         ]);
     }
@@ -430,25 +439,26 @@ class EditPenjualan extends EditRecord
      */
     protected function fulfillWithFifo(int $productId, int $qty, ?int $customPrice, ?string $condition, array $serials): void
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
         $remaining = $qty;
         $serialsToAssign = $serials;
 
-        $batches = PembelianItem::where($productColumn, $productId)
-            ->where($qtyColumn, '>', 0)
-            ->when($condition, fn ($q) => $q->where('kondisi', $condition))
-            ->orderBy('id_pembelian_item')
-            ->lockForUpdate()
+        $batches = \App\Models\StockBatch::query()
+            ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                $q->where('id_produk', $productId);
+                if ($condition) {
+                    $q->where('kondisi', $condition);
+                }
+            })
+            ->where('qty_available', '>', 0)
+            ->orderBy('id')
             ->get();
 
-        foreach ($batches as $batch) {
+        foreach ($batches as $stockBatch) {
             if ($remaining <= 0) {
                 break;
             }
 
-            $available = (int) $batch->{$qtyColumn};
+            $available = $stockBatch->qty_available;
             if ($available <= 0) {
                 continue;
             }
@@ -464,10 +474,10 @@ class EditPenjualan extends EditRecord
             PenjualanItem::create([
                 'id_penjualan' => $this->record->id_penjualan,
                 'id_produk' => $productId,
-                'id_pembelian_item' => $batch->id_pembelian_item,
+                'id_pembelian_item' => $stockBatch->pembelian_item_id,
                 'qty' => $take,
                 'harga_jual' => $customPrice,
-                'kondisi' => $condition ?? $batch->kondisi,
+                'kondisi' => $condition ?? $stockBatch->pembelianItem->kondisi,
                 'serials' => ! empty($batchSerials) ? $batchSerials : null,
             ]);
 

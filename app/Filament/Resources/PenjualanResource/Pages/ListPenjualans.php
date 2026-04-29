@@ -3,8 +3,11 @@
 namespace App\Filament\Resources\PenjualanResource\Pages;
 
 use App\Filament\Resources\PenjualanResource;
+use App\Models\Penjualan;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ListRecords\Tab;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListPenjualans extends ListRecords
 {
@@ -18,6 +21,28 @@ class ListPenjualans extends ListRecords
             Actions\CreateAction::make()
                 ->label('Tambah Penjualan')
                 ->icon('hugeicons-plus-sign'),
+        ];
+    }
+
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('Semua')
+                ->icon('heroicon-o-list-bullet')
+                ->badge(Penjualan::count())
+                ->badgeColor('gray'),
+
+            'draft' => Tab::make('Draft')
+                ->icon('heroicon-o-pencil')
+                ->badge(Penjualan::where('status_dokumen', 'draft')->count())
+                ->badgeColor('warning')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status_dokumen', 'draft')),
+
+            'final' => Tab::make('Final')
+                ->icon('heroicon-o-check-circle')
+                ->badge(Penjualan::where('status_dokumen', 'final')->count())
+                ->badgeColor('success')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status_dokumen', 'final')),
         ];
     }
 

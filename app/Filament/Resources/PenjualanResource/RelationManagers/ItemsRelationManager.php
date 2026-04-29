@@ -220,11 +220,14 @@ class ItemsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Produk')
+                    ->visible(fn () => $this->getOwnerRecord()->canEditItems())
                     ->using(fn(array $data): PenjualanItem => $this->createItemWithAutoBatch($data)),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn () => $this->getOwnerRecord()->canEditItems()),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn () => $this->getOwnerRecord()->canEditItems()),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
