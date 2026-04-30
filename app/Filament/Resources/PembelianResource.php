@@ -3,10 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PembelianResource\Pages;
+use App\Filament\Resources\PenjualanResource;
 use App\Models\Jasa;
 use App\Models\Pembelian;
 use App\Models\PembelianItem;
 use App\Models\RequestOrder;
+
 use App\Models\Supplier;
 use App\Support\WebpUpload;
 use Filament\Forms\Components\Actions\Action as FormAction;
@@ -39,6 +41,7 @@ use Filament\Infolists\Infolist;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
+use Filament\Actions\StaticAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -868,7 +871,7 @@ class PembelianResource extends BaseResource
                     ]),
                 // R06: Hanya 2 status pembayaran - TEMPO dan LUNAS (tidak ada DP)
                 TextColumn::make('status_pembayaran')
-                    ->label('Pembayaran')
+                    ->label('Tipe')
                     ->badge()
                     ->state(function (Pembelian $record): string {
                         $grandTotal = (float) $record->calculateTotalPembelian();
@@ -1053,30 +1056,213 @@ class PembelianResource extends BaseResource
 
             ])
             ->actions([
+                // R16: Lock Final (Draft -> Final)
+                Action::make('lock')
+                    ->label('')
+                    ->icon('heroicon-m-lock-closed')
+                    ->tooltip('Lock Final')
+                    ->color('danger')
+                    ->visible(fn(Pembelian $record) => ! $record->is_locked)
+                    ->requiresConfirmation()
+                    ->modalHeading('Lock Pembelian')
+                    ->modalDescription('Pembelian akan terkunci permanen. Tidak ada yang bisa diubah lagi. Lanjutkan?')
+                    ->action(function (Pembelian $record) {
+                        try {
+                            $record->lockFinal();
+                            Notification::make()
+                                ->title('Pembelian berhasil di-lock')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal mengunci')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make()
                         ->icon('heroicon-m-eye')
-                        ->color('primary')
+                        ->color('info')
                         ->tooltip('Lihat Detail'),
                     Tables\Actions\EditAction::make()
-                        ->label('Edit')
                         ->icon('heroicon-m-pencil-square')
-                        ->color('warning')
                         ->tooltip('Edit')
+                        ->visible(fn(Pembelian $record) => ! $record->is_locked)
                         ->action(function (Pembelian $record, \Filament\Tables\Actions\EditAction $action): void {
                             $livewire = $action->getLivewire();
                             $livewire->redirect(PembelianResource::getUrl('edit', ['record' => $record]));
                         }),
                     Tables\Actions\DeleteAction::make()
-                        ->icon('heroicon-m-trash'),
+                        ->icon('heroicon-m-trash')
+                        ->modalCancelAction(false)
+                        ->requiresConfirmation()
+                        ->modalHeading(
+                            fn(Pembelian $record): string => $record->canDelete()
+                                ? 'Hapus Pembelian'
+                                : 'Tidak Bisa Dihapus'
+                        )
+                        ->modalIcon(
+                            fn(Pembelian $record): string => $record->canDelete()
+                                ? 'heroicon-o-trash'
+                                : 'heroicon-o-exclamation-triangle'
+                        )
+                        ->modalIconColor(
+                            fn(Pembelian $record): string => $record->canDelete()
+                                ? 'danger'
+                                : 'warning'
+                        )
+                        ->modalDescription(function (Pembelian $record): string {
+                            if ($record->canDelete()) {
+                                return 'Apakah Anda yakin ingin menghapus pembelian ' . $record->no_po . '? Tindakan ini tidak dapat dibatalkan.';
+                            }
 
+                            $reasons = [];
+
+                            // R13: Cek NO TT
+                            if (! empty($record->no_tt)) {
+                                $reasons[] = '• Terikat Tukar Tambah: ' . $record->no_tt;
+                            }
+
+                            // R12: Cek penjualan
+                            $notas = $record->getBlockedPenjualanReferences()->pluck('nota')->filter()->values();
+                            if ($notas->isNotEmpty()) {
+                                $reasons[] = '• Dipakai di penjualan: ' . $notas->implode(', ');
+                            }
+
+                            return implode("\n", $reasons) ?: 'Pembelian ini tidak dapat dihapus.';
+                        })
+                        ->modalSubmitAction(fn(Pembelian $record) => $record->canDelete() ? null : false)
+                        ->modalCancelActionLabel('Tutup')
+                        ->extraModalFooterActions(function (Pembelian $record): array {
+                            if ($record->canDelete()) {
+                                return [];
+                            }
+
+                            return $record->getBlockedPenjualanReferences()
+                                ->filter(fn(array $ref) => ! empty($ref['id']))
+                                ->map(function (array $ref, int $index) {
+                                    $nota = $ref['nota'] ?? null;
+                                    $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
+
+                                    return StaticAction::make('viewPenjualan' . $index)
+                                        ->button()
+                                        ->label($label)
+                                        ->icon('heroicon-m-arrow-top-right-on-square')
+                                        ->url(PenjualanResource::getUrl('view', ['record' => $ref['id']]))
+                                        ->openUrlInNewTab()
+                                        ->color('warning');
+                                })
+                                ->values()
+                                ->all();
+                        }),
                 ])
                     ->label('Aksi')
                     ->tooltip('Aksi'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('delete')
+                        ->label('Hapus')
+                        ->icon('heroicon-m-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalCancelAction(false)
+                        ->modalHeading('Hapus Pembelian')
+                        ->modalIcon('heroicon-o-trash')
+                        ->modalIconColor('danger')
+                        ->modalContent(function (\Illuminate\Database\Eloquent\Collection $records): \Illuminate\Support\HtmlString {
+                            $canDelete = $records->filter(fn(Pembelian $r) => $r->canDelete());
+                            $blocked   = $records->filter(fn(Pembelian $r) => ! $r->canDelete());
+
+                            $html = '<div class="space-y-4 text-sm">';
+
+                            // Bisa dihapus
+                            if ($canDelete->isNotEmpty()) {
+                                $html .= '<div>';
+                                $html .= '<p class="font-semibold text-success-600 dark:text-success-400 mb-1">✅ Akan dihapus (' . $canDelete->count() . ')</p>';
+                                $html .= '<ul class="space-y-1 pl-3">';
+                                foreach ($canDelete as $r) {
+                                    $html .= '<li class="flex items-center gap-2">'
+                                        . '<span class="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">' . e($r->no_po) . '</span>'
+                                        . '</li>';
+                                }
+                                $html .= '</ul>';
+                                $html .= '</div>';
+                            }
+
+                            // Tidak bisa dihapus
+                            if ($blocked->isNotEmpty()) {
+                                $html .= '<div>';
+                                $html .= '<p class="font-semibold text-danger-600 dark:text-danger-400 mb-1">⛔ Tidak bisa dihapus (' . $blocked->count() . ')</p>';
+                                $html .= '<ul class="space-y-2 pl-3">';
+                                foreach ($blocked as $r) {
+                                    $reasons = [];
+                                    if (! empty($r->no_tt)) {
+                                        $reasons[] = '<span class="text-warning-600 dark:text-warning-400">Tukar Tambah: ' . e($r->no_tt) . '</span>';
+                                    }
+                                    $notas = $r->getBlockedPenjualanReferences()->pluck('nota')->filter()->implode(', ');
+                                    if ($notas) {
+                                        $reasons[] = '<span class="text-danger-600 dark:text-danger-400">Penjualan: ' . e($notas) . '</span>';
+                                    }
+                                    $html .= '<li>'
+                                        . '<span class="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">' . e($r->no_po) . '</span>';
+                                    if ($reasons) {
+                                        $html .= '<ul class="mt-1 pl-4 space-y-0.5">';
+                                        foreach ($reasons as $reason) {
+                                            $html .= '<li class="text-xs">— ' . $reason . '</li>';
+                                        }
+                                        $html .= '</ul>';
+                                    }
+                                    $html .= '</li>';
+                                }
+                                $html .= '</ul>';
+                                $html .= '</div>';
+                            }
+
+                            // Semua terblokir
+                            if ($canDelete->isEmpty()) {
+                                $html .= '<p class="text-center text-gray-500 dark:text-gray-400 text-xs pt-1">Tidak ada pembelian yang bisa dihapus dari pilihan ini.</p>';
+                            }
+
+                            $html .= '</div>';
+
+                            return new \Illuminate\Support\HtmlString($html);
+                        })
+                        ->modalSubmitActionLabel('Hapus yang Bisa Dihapus')
+                        ->modalCancelActionLabel('Batal')
+                        ->deselectRecordsAfterCompletion()
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records): void {
+                            $deleted = 0;
+                            $skipped = 0;
+
+                            foreach ($records as $record) {
+                                if (! $record->canDelete()) {
+                                    $skipped++;
+                                    continue;
+                                }
+
+                                try {
+                                    $record->delete();
+                                    $deleted++;
+                                } catch (\Exception $e) {
+                                    $skipped++;
+                                }
+                            }
+
+                            $body = "Berhasil menghapus {$deleted} pembelian.";
+                            if ($skipped > 0) {
+                                $body .= " {$skipped} dilewati karena tidak bisa dihapus.";
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title($deleted > 0 ? 'Hapus Selesai' : 'Tidak Ada yang Dihapus')
+                                ->body($body)
+                                ->color($deleted > 0 ? 'success' : 'warning')
+                                ->send();
+                        }),
                 ]),
             ]);
     }

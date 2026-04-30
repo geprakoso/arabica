@@ -128,7 +128,7 @@ class PenjualanItem extends Model
 
         if (! $stockBatch) {
             throw ValidationException::withMessages([
-                'id_pembelian_item' => 'StockBatch tidak ditemukan untuk batch ini.',
+                'id_pembelian_item' => 'StockBatch tidak ditemukan untuk batch ini. Pastikan sudah melakukan sync stok.',
             ]);
         }
 
@@ -156,7 +156,7 @@ class PenjualanItem extends Model
         $stockBatch = StockBatch::where('pembelian_item_id', $batchId)->first();
 
         if (! $stockBatch) {
-            throw new \RuntimeException("StockBatch tidak ditemukan untuk PembelianItem #{$batchId}");
+            throw new \RuntimeException("StockBatch tidak ditemukan untuk PembelianItem #{$batchId}. Pastikan sudah melakukan sync stok.");
         }
 
         if ($qtyDelta < 0) {

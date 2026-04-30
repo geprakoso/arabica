@@ -583,9 +583,9 @@ class PenjualanResource extends BaseResource
                                                             ->orWhere('nota_supplier', 'like', "%{$search}%");
                                                     });
                                                 })
-                                                ->orWhereHas('jasa', function ($qq) use ($search) {
-                                                    $qq->where('nama_jasa', 'like', "%{$search}%");
-                                                });
+                                                    ->orWhereHas('jasa', function ($qq) use ($search) {
+                                                        $qq->where('nama_jasa', 'like', "%{$search}%");
+                                                    });
                                             })
                                             ->limit(50)
                                             ->get()
@@ -876,7 +876,7 @@ class PenjualanResource extends BaseResource
                             return null;
                         }
 
-                        return \Illuminate\Support\Str::limit($contact, 20);
+                        return \Illuminate\Support\Str::limit($contact, 15);
                     })
                     ->weight('medium')
                     ->toggleable()
@@ -898,7 +898,7 @@ class PenjualanResource extends BaseResource
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('status_dokumen')
-                    ->label('Status Dokumen')
+                    ->label('Status')
                     ->badge()
                     ->state(function (Penjualan $record): string {
                         if ($record->isFinal() && $record->is_locked) {
@@ -922,7 +922,7 @@ class PenjualanResource extends BaseResource
                     ->alignCenter(),
 
                 TextColumn::make('status_pembayaran')
-                    ->label('Status Bayar')
+                    ->label('Tipe')
                     ->badge()
                     ->copyable()
                     ->state(function (Penjualan $record): string {

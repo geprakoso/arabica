@@ -4,11 +4,14 @@ namespace App\Filament\Resources\PembelianResource\Pages;
 
 use App\Filament\Resources\PembelianResource;
 use App\Filament\Resources\PenjualanResource;
+use App\Models\Pembelian;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ListRecords\Tab;
 use Filament\Actions;
 use Filament\Actions\StaticAction;
 use Filament\Support\Enums\Alignment;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListPembelians extends ListRecords
 {
@@ -27,8 +30,30 @@ class ListPembelians extends ListRecords
     {
         return [
                 Actions\CreateAction::make()
-                    ->label('Pembelian')
+                    ->label('Tambah Pembelian')
                     ->icon('heroicon-s-plus'),
+        ];
+    }
+
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('Semua')
+                ->icon('heroicon-o-list-bullet')
+                ->badge(Pembelian::count())
+                ->badgeColor('gray'),
+
+            'draft' => Tab::make('Draft')
+                ->icon('heroicon-o-pencil')
+                ->badge(Pembelian::where('is_locked', false)->count())
+                ->badgeColor('warning')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_locked', false)),
+
+            'final' => Tab::make('Final')
+                ->icon('heroicon-o-check-circle')
+                ->badge(Pembelian::where('is_locked', true)->count())
+                ->badgeColor('success')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_locked', true)),
         ];
     }
 

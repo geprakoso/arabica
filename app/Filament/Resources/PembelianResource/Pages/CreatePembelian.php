@@ -5,8 +5,9 @@ namespace App\Filament\Resources\PembelianResource\Pages;
 use App\Models\Pembelian;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\PembelianResource;
 
@@ -14,19 +15,39 @@ class CreatePembelian extends CreateRecord
 {
     protected static string $resource = PembelianResource::class;
 
+    public string $saveMode = 'draft';
+
     protected function getHeaderActions(): array
     {
         return [
-            $this->getCreateFormAction()
-                ->label('Buat')
-                ->icon('heroicon-o-plus')
-                ->formId('form'),
+            Action::make('saveDraft')
+                ->label('Simpan Draft')
+                ->icon('heroicon-o-pencil')
+                ->color('warning')
+                ->action('saveDraft'),
+            Action::make('saveFinal')
+                ->label('Simpan Final')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->action('saveFinal'),
             $this->getCancelFormAction()
                 ->label('Batal')
                 ->formId('form')
                 ->color('danger')
                 ->icon('heroicon-o-x-mark'),
         ];
+    }
+
+    public function saveDraft(): void
+    {
+        $this->saveMode = 'draft';
+        $this->create();
+    }
+
+    public function saveFinal(): void
+    {
+        $this->saveMode = 'final';
+        $this->create();
     }
 
     protected function getRedirectUrl(): string
@@ -99,19 +120,34 @@ class CreatePembelian extends CreateRecord
 
     protected function afterCreate(): void
     {
+        // R16: Jika mode final, lock langsung setelah create
+        if ($this->saveMode === 'final') {
+            try {
+                $this->record->lockFinal();
+            } catch (\Exception $e) {
+                Notification::make()
+                    ->title('Gagal mengunci pembelian')
+                    ->body($e->getMessage())
+                    ->danger()
+                    ->send();
+            }
+        }
+
         $user = Auth::user();
 
         if (! $user) {
             return;
         }
 
+        $modeLabel = $this->saveMode === 'final' ? 'Final' : 'Draft';
+
         Notification::make()
-            ->title('Pembelian baru dibuat')
+            ->title("Pembelian {$modeLabel} berhasil dibuat")
             ->body("No.PO {$this->record->no_po} ditambahkan inventory.")
             ->icon('heroicon-o-check-circle')
             ->actions([
-                Action::make('Lihat')
-                    ->url(PembelianResource::getUrl('edit', ['record' => $this->record])),
+                NotificationAction::make('Lihat')
+                    ->url(PembelianResource::getUrl('view', ['record' => $this->record])),
             ])
             ->sendToDatabase($user);
     }

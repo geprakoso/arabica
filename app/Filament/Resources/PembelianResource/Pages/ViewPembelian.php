@@ -45,44 +45,6 @@ class ViewPembelian extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            // R16: Lock Final Action (hanya muncul jika belum locked)
-            Action::make('lock_final')
-                ->label('Lock Final')
-                ->icon('heroicon-m-lock-closed')
-                ->color('warning')
-                ->visible(fn() => ! $this->record->is_locked)
-                ->requiresConfirmation()
-                ->modalHeading('Kunci Data Pembelian')
-                ->modalDescription('PERHATIAN: Setelah dikunci, data tidak dapat diedit lagi. Namun data MASIH BISA DIHAPUS jika belum ada transaksi penjualan dan belum memiliki NO TT.')
-                ->modalSubmitActionLabel('Ya, Kunci Permanen')
-                ->action(function (): void {
-                    try {
-                        $this->record->lockFinal();
-
-                        Notification::make()
-                            ->title('Data berhasil dikunci')
-                            ->body('Pembelian ini sekarang tidak dapat diedit.')
-                            ->success()
-                            ->send();
-
-                        $this->refreshFormData(['is_locked']);
-                    } catch (\Exception $e) {
-                        Notification::make()
-                            ->title('Gagal mengunci data')
-                            ->body($e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-                }),
-
-            // Badge Lock Status
-            Action::make('lock_status')
-                ->label(fn() => $this->record->is_locked ? 'LOCKED' : '🟢 OPEN')
-                ->icon('')
-                ->color(fn() => $this->record->is_locked ? 'danger' : 'success')
-                ->disabled()
-                ->visible(fn() => true),
-
             Action::make('upload_dokumen')
                 ->label('Upload Foto')
                 ->icon('heroicon-m-camera')
@@ -137,21 +99,77 @@ class ViewPembelian extends ViewRecord
                     $this->redirect(PembelianResource::getUrl('edit', ['record' => $this->record]));
                 }),
 
-            // R12, R13, R16: Delete button - always visible but check canDelete()
+            // R12, R13: Delete button
             Action::make('delete')
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->modalHeading('Hapus Pembelian')
+                ->modalCancelAction(false)
+                ->modalHeading(
+                    fn(): string => $this->record->canDelete()
+                        ? 'Hapus Pembelian'
+                        : 'Tidak Bisa Dihapus'
+                )
+                ->modalIcon(
+                    fn(): string => $this->record->canDelete()
+                        ? 'heroicon-o-trash'
+                        : 'heroicon-o-exclamation-triangle'
+                )
+                ->modalIconColor(
+                    fn(): string => $this->record->canDelete()
+                        ? 'danger'
+                        : 'warning'
+                )
                 ->modalDescription(function (): string {
-                    if (! $this->record->canDelete()) {
-                        return 'Pembelian ini tidak dapat dihapus karena: sudah ada transaksi penjualan atau memiliki NO TT.';
+                    if ($this->record->canDelete()) {
+                        return 'Apakah Anda yakin ingin menghapus pembelian ' . $this->record->no_po . '? Tindakan ini tidak dapat dibatalkan.';
                     }
-                    return 'Apakah Anda yakin ingin menghapus pembelian ini?';
+
+                    $reasons = [];
+
+                    // R13: Cek NO TT
+                    if (! empty($this->record->no_tt)) {
+                        $reasons[] = '• Terikat Tukar Tambah: ' . $this->record->no_tt;
+                    }
+
+                    // R12: Cek penjualan
+                    $notas = $this->record->getBlockedPenjualanReferences()->pluck('nota')->filter()->values();
+                    if ($notas->isNotEmpty()) {
+                        $reasons[] = '• Dipakai di penjualan: ' . $notas->implode(', ');
+                    }
+
+                    return implode("\n", $reasons) ?: 'Pembelian ini tidak dapat dihapus.';
                 })
-                ->disabled(fn() => ! $this->record->canDelete())
+                ->modalSubmitAction(fn() => $this->record->canDelete() ? null : false)
+                ->modalCancelActionLabel('Tutup')
+                ->extraModalFooterActions(function (): array {
+                    if ($this->record->canDelete()) {
+                        return [];
+                    }
+
+                    return $this->record->getBlockedPenjualanReferences()
+                        ->filter(fn(array $ref) => ! empty($ref['id']))
+                        ->map(function (array $ref, int $index) {
+                            $nota = $ref['nota'] ?? null;
+                            $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
+
+                            return StaticAction::make('viewPenjualan' . $index)
+                                ->button()
+                                ->label($label)
+                                ->icon('heroicon-m-arrow-top-right-on-square')
+                                ->url(PenjualanResource::getUrl('view', ['record' => $ref['id']]))
+                                ->openUrlInNewTab()
+                                ->color('warning');
+                        })
+                        ->values()
+                        ->all();
+                })
                 ->action(function (): void {
+                    if (! $this->record->canDelete()) {
+                        return;
+                    }
+
                     try {
                         $this->record->delete();
                     } catch (ValidationException $exception) {
