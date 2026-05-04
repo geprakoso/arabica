@@ -288,11 +288,40 @@ class EditPenjualan extends EditRecord
     {
         // Aggregate total qty per produk (dengan mempertimbangkan batch dan kondisi)
         $totalQtyMap = [];
+
+        // Kumpulkan existing item IDs untuk query qty yang sudah ter-alokasi di database
+        $existingItemIds = collect($items)
+            ->pluck('id_penjualan_item')
+            ->filter()
+            ->values()
+            ->all();
+
+        // Query qty yang sudah ter-alokasi dari database
+        $existingAllocations = [];
+        if (! empty($existingItemIds)) {
+            $existingAllocations = \App\Models\PenjualanItem::whereIn('id_penjualan_item', $existingItemIds)
+                ->get()
+                ->keyBy('id_penjualan_item')
+                ->map(fn ($item) => [
+                    'qty' => (int) $item->qty,
+                    'batch_id' => (int) $item->id_pembelian_item,
+                    'product_id' => (int) $item->id_produk,
+                ])
+                ->all();
+        }
+
         foreach ($items as $index => $item) {
             $productId = (int) ($item['id_produk'] ?? 0);
             $qty = (int) ($item['qty'] ?? 0);
             $condition = $item['kondisi'] ?? null;
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
+            $itemId = $item['id_penjualan_item'] ?? null;
+
+            // Ambil original qty dari database
+            $originalQty = 0;
+            if ($itemId && isset($existingAllocations[$itemId])) {
+                $originalQty = $existingAllocations[$itemId]['qty'];
+            }
 
             if ($productId < 1 || $qty < 1) {
                 continue;
@@ -307,10 +336,12 @@ class EditPenjualan extends EditRecord
                     'condition' => $condition,
                     'batch_id' => $batchId,
                     'qty' => 0,
+                    'original_qty' => 0,
                     'rows' => [],
                 ];
             }
             $totalQtyMap[$key]['qty'] += $qty;
+            $totalQtyMap[$key]['original_qty'] += $originalQty;
             $totalQtyMap[$key]['rows'][] = $index + 1;
         }
 
@@ -320,6 +351,7 @@ class EditPenjualan extends EditRecord
             $condition = $group['condition'];
             $batchId = $group['batch_id'];
             $requestedQty = $group['qty'];
+            $originalQty = $group['original_qty'];
             $rows = $group['rows'];
 
             $query = \App\Models\StockBatch::query()
@@ -336,6 +368,10 @@ class EditPenjualan extends EditRecord
             }
 
             $availableQty = (int) $query->sum('qty_available');
+
+            // Tambahkan kembali qty yang sudah ter-alokasi untuk item ini
+            // (stok sudah dikurangi saat create, jadi perlu "dikembalikan" untuk validasi edit)
+            $availableQty += $originalQty;
 
             if ($availableQty < $requestedQty) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
