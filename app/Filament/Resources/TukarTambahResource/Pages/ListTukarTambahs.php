@@ -4,11 +4,14 @@ namespace App\Filament\Resources\TukarTambahResource\Pages;
 
 use App\Filament\Resources\PenjualanResource;
 use App\Filament\Resources\TukarTambahResource;
+use App\Models\TukarTambah;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\StaticAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ListRecords\Tab;
 use Filament\Support\Enums\Alignment;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListTukarTambahs extends ListRecords
 {
@@ -21,6 +24,28 @@ class ListTukarTambahs extends ListRecords
     public ?string $editBlockedMessage = null;
 
     public ?string $deleteBlockedMessage = null;
+
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('Semua')
+                ->icon('heroicon-o-list-bullet')
+                ->badge(TukarTambah::count())
+                ->badgeColor('gray'),
+
+            'draft' => Tab::make('Draft')
+                ->icon('heroicon-o-pencil')
+                ->badge(TukarTambah::where('status_dokumen', 'draft')->count())
+                ->badgeColor('warning')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status_dokumen', 'draft')),
+
+            'final' => Tab::make('Final')
+                ->icon('heroicon-o-check-circle')
+                ->badge(TukarTambah::where('status_dokumen', 'final')->count())
+                ->badgeColor('success')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status_dokumen', 'final')),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {

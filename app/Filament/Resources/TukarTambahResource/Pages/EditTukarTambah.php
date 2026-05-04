@@ -37,11 +37,14 @@ class EditTukarTambah extends EditRecord
 
     protected function getHeaderActions(): array
     {
+        $record = $this->record;
+
         return [
             $this->getSaveFormAction()
                 ->label('Simpan')
                 ->icon('heroicon-m-check-circle')
-                ->formId('form'),
+                ->formId('form')
+                ->disabled(fn () => ! $record->canEditItems() && ! $record->canEditPayment()),
             $this->getCancelFormAction()
                 ->label('Batal')
                 ->icon('heroicon-m-x-mark')
@@ -51,6 +54,7 @@ class EditTukarTambah extends EditRecord
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')
                 ->color('danger')
+                ->visible(fn () => $record->canDelete())
                 ->requiresConfirmation()
                 ->modalHeading('Hapus Tukar Tambah')
                 ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
@@ -300,9 +304,6 @@ class EditTukarTambah extends EditRecord
             ]);
         }
 
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
         // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis
         $productKeys = [];
         foreach ($items as $index => $item) {
@@ -319,7 +320,6 @@ class EditTukarTambah extends EditRecord
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
                     $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'.';
 
-                    // Log validation error
                     ValidationLogger::logDuplicate(
                         sourceType: 'TukarTambah',
                         sourceAction: 'update',
@@ -357,6 +357,7 @@ class EditTukarTambah extends EditRecord
             $qty = (int) ($item['qty'] ?? 0);
             $condition = $item['kondisi'] ?? null;
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
+            $originalQty = (int) ($item['_original_qty'] ?? 0);
 
             if ($productId < 1 || $qty < 1) {
                 continue;
@@ -370,41 +371,43 @@ class EditTukarTambah extends EditRecord
                     'condition' => $condition,
                     'batch_id' => $batchId,
                     'qty' => 0,
+                    'original_qty' => 0,
                     'rows' => [],
                 ];
             }
             $totalQtyMap[$key]['qty'] += $qty;
+            $totalQtyMap[$key]['original_qty'] += $originalQty;
             $totalQtyMap[$key]['rows'][] = $index + 1;
         }
 
-        // Validasi stok tersedia
+        // Validasi stok tersedia menggunakan StockBatch (sama seperti Penjualan standar)
         foreach ($totalQtyMap as $group) {
             $productId = $group['product_id'];
-            $condition = $group['condition'];
             $batchId = $group['batch_id'];
             $requestedQty = $group['qty'];
+            $originalQty = $group['original_qty'];
             $rows = $group['rows'];
 
-            $query = PembelianItem::query()
-                ->where($productColumn, $productId)
-                ->where($qtyColumn, '>', 0);
+            $query = \App\Models\StockBatch::query()
+                ->whereHas('pembelianItem', function ($q) use ($productId) {
+                    $q->where('id_produk', $productId);
+                })
+                ->where('qty_available', '>', 0);
 
             if ($batchId > 0) {
-                $query->whereKey($batchId);
+                $query->where('pembelian_item_id', $batchId);
             }
 
-            if ($condition) {
-                $query->where('kondisi', $condition);
-            }
+            $availableQty = (int) $query->sum('qty_available');
 
-            $availableQty = (int) $query->sum($qtyColumn);
+            // Add back original qty if editing
+            $availableQty += $originalQty;
 
             if ($availableQty < $requestedQty) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                 $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
                 $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
 
-                // Log validation error
                 ValidationLogger::logStock(
                     sourceType: 'TukarTambah',
                     sourceAction: 'update',
@@ -414,7 +417,6 @@ class EditTukarTambah extends EditRecord
                     inputData: [
                         'product_id' => $productId,
                         'batch_id' => $batchId,
-                        'condition' => $condition,
                         'rows' => $rows,
                     ]
                 );
@@ -436,6 +438,13 @@ class EditTukarTambah extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
+        /** @var \App\Models\TukarTambah $record */
+        if ($record->is_locked) {
+            throw ValidationException::withMessages([
+                'status_dokumen' => 'Tukar Tambah sudah terkunci. Tidak bisa diubah.',
+            ]);
+        }
+
         return DB::transaction(function () use ($record, $data) {
             $tanggal = array_key_exists('tanggal', $data) ? $data['tanggal'] : $record->tanggal;
             $catatan = array_key_exists('catatan', $data) ? $data['catatan'] : $record->catatan;
@@ -511,13 +520,21 @@ class EditTukarTambah extends EditRecord
 
     protected function syncPenjualanDetails(Penjualan $penjualan, array $payload): void
     {
-        $penjualan->items()->get()->each->delete();
-        $penjualan->jasaItems()->get()->each->delete();
-        $penjualan->pembayaran()->get()->each->delete();
+        $tukarTambah = $penjualan->tukarTambah;
+        $canEditItems = $tukarTambah?->canEditItems() ?? true;
+        $canEditPayment = $tukarTambah?->canEditPayment() ?? true;
 
-        $this->createPenjualanItems($penjualan, $payload['items'] ?? []);
-        $this->createPenjualanJasaItems($penjualan, $payload['jasa_items'] ?? []);
-        $this->createPenjualanPembayaran($penjualan, $payload['pembayaran'] ?? []);
+        if ($canEditItems) {
+            $penjualan->items()->get()->each->delete();
+            $penjualan->jasaItems()->get()->each->delete();
+            $this->createPenjualanItems($penjualan, $payload['items'] ?? []);
+            $this->createPenjualanJasaItems($penjualan, $payload['jasa_items'] ?? []);
+        }
+
+        if ($canEditPayment) {
+            $penjualan->pembayaran()->get()->each->delete();
+            $this->createPenjualanPembayaran($penjualan, $payload['pembayaran'] ?? []);
+        }
 
         $penjualan->recalculateTotals();
         $penjualan->recalculatePaymentStatus();
@@ -525,6 +542,12 @@ class EditTukarTambah extends EditRecord
 
     protected function syncPembelianDetails(Pembelian $pembelian, array $payload, ?int $penjualanId): void
     {
+        $tukarTambah = $pembelian->tukarTambah;
+        $canEditPayment = $tukarTambah?->canEditPayment() ?? true;
+
+        // Pembelian items SELALU locked di TT (mengikuti kebijakan Pembelian standar)
+        // Tidak pernah bisa dihapus/dibuat ulang saat edit
+
         $externalPenjualanNotas = $pembelian->items()
             ->whereHas('penjualanItems', function ($query) use ($penjualanId): void {
                 if ($penjualanId) {
@@ -541,25 +564,20 @@ class EditTukarTambah extends EditRecord
             ->values();
 
         if ($externalPenjualanNotas->isNotEmpty()) {
-            $pembelian->pembayaran()->get()->each->delete();
-            $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+            // Jika item pembelian sudah dipakai di penjualan luar, hanya update pembayaran jika boleh
+            if ($canEditPayment) {
+                $pembelian->pembayaran()->get()->each->delete();
+                $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+            }
 
             return;
         }
 
-        // if ($externalPenjualanNotas->isNotEmpty()) {
-        //     $notaList = $externalPenjualanNotas->implode(', ');
-        //
-        //     throw ValidationException::withMessages([
-        //         'pembelian.items' => 'Item pembelian sudah terpakai di transaksi lain. Edit tukar tambah diblokir. Nota: ' . $notaList . '.',
-        //     ]);
-        // }
-
-        $pembelian->items()->get()->each->delete();
-        $pembelian->pembayaran()->get()->each->delete();
-
-        $this->createPembelianItems($pembelian, $payload['items'] ?? []);
-        $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+        // Hanya update pembayaran, items tidak pernah dihapus (locked)
+        if ($canEditPayment) {
+            $pembelian->pembayaran()->get()->each->delete();
+            $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+        }
     }
 
     protected function createPenjualanItems(Penjualan $penjualan, array $items): void
@@ -600,59 +618,54 @@ class EditTukarTambah extends EditRecord
 
     protected function fulfillPenjualanWithBatch(Penjualan $penjualan, int $productId, int $qty, int $batchId, ?int $customPrice, ?string $condition, array $serials): void
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
-        $batch = PembelianItem::query()
-            ->where($productColumn, $productId)
-            ->whereKey($batchId)
+        $stockBatch = \App\Models\StockBatch::query()
+            ->where('pembelian_item_id', $batchId)
             ->lockForUpdate()
             ->first();
 
-        if (! $batch) {
+        if (! $stockBatch) {
             throw ValidationException::withMessages([
-                'penjualan.items' => 'Batch pembelian tidak ditemukan.',
+                'penjualan.items' => 'Batch stok tidak ditemukan.',
             ]);
         }
 
-        $available = (int) ($batch->{$qtyColumn} ?? 0);
-
-        if ($available < $qty) {
+        if ($stockBatch->qty_available < $qty) {
             throw ValidationException::withMessages([
-                'penjualan.items' => "Stok batch tidak cukup. Tersedia: {$available}, Dibutuhkan: {$qty}",
+                'penjualan.items' => "Stok batch tidak cukup. Tersedia: {$stockBatch->qty_available}, Dibutuhkan: {$qty}",
             ]);
         }
+
+        // Stock decrement is handled by PenjualanItem::created model event
+        // Do NOT manually decrement here to avoid double-deduction
 
         $takeSerials = ! empty($serials) ? array_splice($serials, 0, $qty) : [];
 
         PenjualanItem::query()->create([
             'id_penjualan' => $penjualan->getKey(),
             'id_produk' => $productId,
-            'id_pembelian_item' => $batch->getKey(),
+            'id_pembelian_item' => $batchId,
             'qty' => $qty,
             'harga_jual' => $customPrice,
-            'kondisi' => $batch->kondisi,
+            'kondisi' => $stockBatch->pembelianItem?->kondisi ?? $condition,
             'serials' => empty($takeSerials) ? null : $takeSerials,
         ]);
     }
 
     protected function fulfillPenjualanUsingFifo(Penjualan $penjualan, int $productId, int $qty, ?int $customPrice, ?string $condition, array $serials): Collection
     {
-        $qtyColumn = PembelianItem::qtySisaColumn();
-        $productColumn = PembelianItem::productForeignKey();
-
-        $batchesQuery = PembelianItem::query()
-            ->where($productColumn, $productId)
-            ->where($qtyColumn, '>', 0)
-            ->orderBy('id_pembelian_item')
+        $batchesQuery = \App\Models\StockBatch::query()
+            ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
+                $q->where('id_produk', $productId);
+                if ($condition) {
+                    $q->where('kondisi', $condition);
+                }
+            })
+            ->where('qty_available', '>', 0)
+            ->orderBy('id')
             ->lockForUpdate();
 
-        if ($condition) {
-            $batchesQuery->where('kondisi', $condition);
-        }
-
         $batches = $batchesQuery->get();
-        $available = (int) $batches->sum(fn (PembelianItem $batch): int => (int) ($batch->{$qtyColumn} ?? 0));
+        $available = (int) $batches->sum(fn (\App\Models\StockBatch $batch): int => $batch->qty_available);
 
         if ($available < $qty) {
             throw ValidationException::withMessages([
@@ -664,12 +677,12 @@ class EditTukarTambah extends EditRecord
         $created = collect();
         $serials = array_values($serials);
 
-        foreach ($batches as $batch) {
+        foreach ($batches as $stockBatch) {
             if ($remaining <= 0) {
                 break;
             }
 
-            $batchAvailable = (int) ($batch->{$qtyColumn} ?? 0);
+            $batchAvailable = $stockBatch->qty_available;
 
             if ($batchAvailable <= 0) {
                 continue;
@@ -682,10 +695,13 @@ class EditTukarTambah extends EditRecord
                 $takeSerials = array_splice($serials, 0, $takeQty);
             }
 
+            // Stock decrement is handled by PenjualanItem::created model event
+            // Do NOT manually decrement here to avoid double-deduction
+
             $record = PenjualanItem::query()->create([
                 'id_penjualan' => $penjualan->getKey(),
                 'id_produk' => $productId,
-                'id_pembelian_item' => $batch->getKey(),
+                'id_pembelian_item' => $stockBatch->pembelian_item_id,
                 'qty' => $takeQty,
                 'harga_jual' => $customPrice,
                 'kondisi' => $condition,

@@ -26,11 +26,22 @@ class TukarTambah extends Model
         'penjualan_id',
         'pembelian_id',
         'foto_dokumen',
+        'status_dokumen',
+        'is_locked',
+        'void_used',
+        'posted_at',
+        'posted_by_id',
+        'voided_at',
+        'voided_by_id',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
         'foto_dokumen' => 'array',
+        'is_locked' => 'boolean',
+        'void_used' => 'boolean',
+        'posted_at' => 'datetime',
+        'voided_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -158,6 +169,114 @@ class TukarTambah extends Model
             : '';
 
         return 'Tukar tambah tidak bisa diedit karena item pembelian dipakai transaksi lain.'.$suffix;
+    }
+
+    // ============================================================
+    // STATE MACHINE (mirroring Penjualan)
+    // ============================================================
+
+    public function isDraft(): bool
+    {
+        return $this->status_dokumen === 'draft';
+    }
+
+    public function isFinal(): bool
+    {
+        return $this->status_dokumen === 'final';
+    }
+
+    public function canEditItems(): bool
+    {
+        return $this->isDraft()
+            && ! $this->is_locked;
+    }
+
+    public function canEditJasa(): bool
+    {
+        return $this->canEditItems();
+    }
+
+    public function canEditPayment(): bool
+    {
+        return $this->isDraft() && ! $this->is_locked;
+    }
+
+    public function canPost(): bool
+    {
+        return $this->isDraft() && ! $this->is_locked;
+    }
+
+    public function canVoid(): bool
+    {
+        return $this->isFinal()
+            && ! $this->is_locked
+            && ! $this->void_used;
+    }
+
+    public function canLock(): bool
+    {
+        return $this->isFinal() && ! $this->is_locked;
+    }
+
+    public function canDelete(): bool
+    {
+        return $this->isDraft()
+            && ! $this->is_locked;
+    }
+
+    public function post(): void
+    {
+        if (! $this->canPost()) {
+            throw new \RuntimeException('Tukar Tambah tidak bisa di-post.');
+        }
+
+        DB::transaction(function (): void {
+            $this->update([
+                'status_dokumen' => 'final',
+                'posted_at' => now(),
+                'posted_by_id' => auth()->id(),
+            ]);
+
+            // Sync Penjualan & Pembelian
+            $this->penjualan?->update(['status_dokumen' => 'final']);
+            $this->pembelian?->update(['is_locked' => true]);
+        });
+    }
+
+    public function voidToDraft(): void
+    {
+        if (! $this->canVoid()) {
+            throw new \RuntimeException('Tukar Tambah tidak bisa di-void.');
+        }
+
+        $this->update([
+            'status_dokumen' => 'draft',
+            'void_used' => true,
+            'voided_at' => now(),
+            'voided_by_id' => auth()->id(),
+        ]);
+
+        // Penjualan: kembali ke draft (sama seperti Penjualan standar)
+        $this->penjualan?->update([
+            'status_dokumen' => 'draft',
+            'void_used' => true,
+            'voided_at' => now(),
+            'voided_by_id' => auth()->id(),
+        ]);
+        // Pembelian tetap locked
+    }
+
+    public function lockFinal(): void
+    {
+        if (! $this->canLock()) {
+            throw new \RuntimeException('Tukar Tambah tidak bisa di-lock.');
+        }
+
+        DB::transaction(function (): void {
+            $this->update(['is_locked' => true]);
+            $this->penjualan?->update(['is_locked' => true]);
+            $this->pembelian?->update(['is_locked' => true]);
+        });
     }
 
     public function getKodeAttribute(): string

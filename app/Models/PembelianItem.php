@@ -116,6 +116,11 @@ class PembelianItem extends Model
             }
         });
 
+        // R01b: Hapus stock batch saat item dihapus (untuk Tukar Tambah cascade delete)
+        static::deleted(function (PembelianItem $item): void {
+            $item->stockBatch?->delete();
+        });
+
         static::updating(function (PembelianItem $item): void {
             // R03: Auto-recalculate subtotal when qty or hpp changes
             if ($item->isDirty('qty') || $item->isDirty('hpp')) {
@@ -220,6 +225,14 @@ class PembelianItem extends Model
         });
 
         static::deleted(function (PembelianItem $item): void {
+            // Clean up associated StockBatch and its mutations
+            $stockBatch = StockBatch::where('pembelian_item_id', $item->getKey())->first();
+            if ($stockBatch) {
+                // Delete mutations first (foreign key dependency)
+                StockMutation::where('stock_batch_id', $stockBatch->id)->delete();
+                $stockBatch->delete();
+            }
+
             $item->pembelian?->recalculatePaymentStatus();
             $item->pembelian?->clearCalculationCache();  // ✅ Clear cache saat item dihapus
         });

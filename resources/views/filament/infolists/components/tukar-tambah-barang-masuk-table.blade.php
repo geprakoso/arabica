@@ -14,12 +14,13 @@
     <table class="lr-table min-w-full w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
-                <th class="w-[20rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Produk</th>
-                <th class="w-[8rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Kondisi</th>
-                <th class="w-[5rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Qty</th>
-                <th class="w-[10rem] px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">HPP (Beli)</th>
-                <th class="w-[10rem] px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">Subtotal</th>
-                <th class="w-[8rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Aksi</th>
+                <th class="w-[18rem] px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Produk</th>
+                <th class="w-[7rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Kondisi</th>
+                <th class="w-[4rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Qty</th>
+                <th class="w-[9rem] px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">HPP (Beli)</th>
+                <th class="w-[9rem] px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">Rencana Jual</th>
+                <th class="w-[9rem] px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">Subtotal</th>
+                <th class="w-[6rem] px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-200">Aksi</th>
             </tr>
         </thead>
 
@@ -38,6 +39,7 @@
                     $conditionLabel = $condition ? ucfirst((string) $condition) : '-';
 
                     $hpp = (float) (data_get($item, 'hpp') ?? 0);
+                    $hargaJual = (float) (data_get($item, 'harga_jual') ?? 0);
                     $qty = (int) (data_get($item, 'qty') ?? 0);
                     $subtotal = $qty * $hpp;
 
@@ -47,7 +49,7 @@
 
                 <tr class="lr-row border-b border-gray-200 transition bg-white dark:border-gray-700 dark:bg-transparent hover:bg-gray-100 hover:[&>td]:bg-gray-100 dark:hover:bg-gray-900/50 dark:hover:[&>td]:bg-gray-900/50">
                     <td class="px-4 py-3">
-                        <div class="max-w-[20rem] truncate font-medium text-gray-800 dark:text-gray-100">
+                        <div class="max-w-[18rem] truncate font-medium text-gray-800 dark:text-gray-100">
                             {{ data_get($item, 'produk.nama_produk') ?? '-' }}
                         </div>
                     </td>
@@ -61,6 +63,9 @@
                     </td>
                     <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-100 whitespace-nowrap">
                         Rp {{ number_format($hpp, 0, ',', '.') }}
+                    </td>
+                    <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                        Rp {{ number_format($hargaJual, 0, ',', '.') }}
                     </td>
                     <td class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         Rp {{ number_format($subtotal, 0, ',', '.') }}
@@ -88,7 +93,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                    <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
                         Belum ada item pembelian.
                     </td>
                 </tr>

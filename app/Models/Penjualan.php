@@ -148,10 +148,25 @@ class Penjualan extends Model
 
     public function canDelete(): bool
     {
+        // Allow cascade deletion from TukarTambah
+        if (self::$allowTukarTambahDeletion) {
+            return true;
+        }
+
         if (filled($this->no_tt) || $this->tukarTambah()->exists() || $this->sumber_transaksi === 'tukar_tambah') {
             return false;
         }
         return true;
+    }
+
+    public function isEditLockedByTukarTambah(): bool
+    {
+        if (! $this->tukarTambah) {
+            return false;
+        }
+
+        return $this->tukarTambah->isFinal()
+            || $this->tukarTambah->is_locked;
     }
 
     public function delete(): ?bool
@@ -163,14 +178,10 @@ class Penjualan extends Model
         }
 
         return DB::transaction(function () {
-            // Items akan dihapus oleh event deleting di booted()
-            // Setiap item deletion otomatis mengembalikan stok via PenjualanItem observer
-            // Hapus mutations setelah items dihapus
             $itemIds = $this->items->pluck('id_penjualan_item')->toArray();
 
-            $result = parent::delete();
-
-            // Hapus mutations yang tersisa
+            // Hapus mutations lama SEBELUM items dihapus,
+            // supaya tidak menghapus mutation return yang akan dibuat oleh deleted event
             StockMutation::where('reference_type', 'Penjualan')
                 ->where('reference_id', $this->id_penjualan)
                 ->delete();
@@ -178,6 +189,10 @@ class Penjualan extends Model
             StockMutation::where('reference_type', 'PenjualanItem')
                 ->whereIn('reference_id', $itemIds)
                 ->delete();
+
+            // Items dihapus oleh event deleting di booted()
+            // Setiap item deletion otomatis mengembalikan stok via PenjualanItem observer
+            $result = parent::delete();
 
             return $result;
         });
