@@ -147,6 +147,40 @@ test('update penjualan_item batch mengembalikan stok lama dan kurangi stok baru'
     expect($batchB->fresh()->qty_available)->toBe(8);   // terdeduct
 });
 
+test('update qty penjualan_item in-place memperbarui stok batch', function () {
+    $batch = createStockBatch(10);
+    $penjualan = createPenjualan(['status_dokumen' => 'draft']);
+    $item = createPenjualanItem($penjualan, $batch, 2);
+
+    expect($batch->fresh()->qty_available)->toBe(8);
+
+    // Update qty in-place (batch sama)
+    $item->update(['qty' => 5]);
+
+    expect($item->fresh()->qty)->toBe(5);
+    expect($item->fresh()->id_penjualan_item)->toBe($item->id_penjualan_item); // ID tetap
+    expect($batch->fresh()->qty_available)->toBe(5); // 10 - 5
+});
+
+test('sync items menghapus yang tidak ada dan menambah yang baru', function () {
+    $batchA = createStockBatch(10);
+    $batchB = createStockBatch(10);
+    $penjualan = createPenjualan(['status_dokumen' => 'draft']);
+    $item = createPenjualanItem($penjualan, $batchA, 2);
+    $originalId = $item->id_penjualan_item;
+
+    expect($batchA->fresh()->qty_available)->toBe(8);
+    expect($batchB->fresh()->qty_available)->toBe(10);
+
+    // Simulasi sync: hapus item lama, buat item baru (batch B)
+    $item->delete();
+    $newItem = createPenjualanItem($penjualan, $batchB, 3);
+
+    expect($penjualan->items()->count())->toBe(1);
+    expect($batchA->fresh()->qty_available)->toBe(10); // stok kembali
+    expect($batchB->fresh()->qty_available)->toBe(7);  // stok baru terpotong
+});
+
 test('penjualan melebihi stok gagal dengan exception', function () {
     $batch = createStockBatch(5);
     $penjualan = createPenjualan();
@@ -203,13 +237,13 @@ test('draft baru bisa edit items dan jasa', function () {
     expect($penjualan->canEditJasa())->toBeTrue();
 });
 
-test('draft saved tidak bisa edit items dan jasa', function () {
+test('draft saved bisa edit items dan jasa', function () {
     $penjualan = createPenjualan(['status_dokumen' => 'draft']);
     createPenjualanItem($penjualan, createStockBatch(10), 2);
     $penjualan->refresh();
 
-    expect($penjualan->canEditItems())->toBeFalse();
-    expect($penjualan->canEditJasa())->toBeFalse();
+    expect($penjualan->canEditItems())->toBeTrue();
+    expect($penjualan->canEditJasa())->toBeTrue();
     expect($penjualan->canEditPayment())->toBeTrue();
 });
 
@@ -221,14 +255,14 @@ test('final tidak bisa edit apapun', function () {
     expect($penjualan->canEditPayment())->toBeFalse();
 });
 
-test('draft hasil void hanya bisa edit payment', function () {
+test('draft hasil void bisa edit items, jasa, dan payment', function () {
     $penjualan = createPenjualan(['status_dokumen' => 'final']);
     createPenjualanItem($penjualan, createStockBatch(10), 2);
     $penjualan->voidToDraft();
     $penjualan->refresh();
 
-    expect($penjualan->canEditItems())->toBeFalse();
-    expect($penjualan->canEditJasa())->toBeFalse();
+    expect($penjualan->canEditItems())->toBeTrue();
+    expect($penjualan->canEditJasa())->toBeTrue();
     expect($penjualan->canEditPayment())->toBeTrue();
 });
 

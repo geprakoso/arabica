@@ -1,374 +1,419 @@
-# 🧪 Panduan Test Manual Modul Inventory
+# 🧪 Panduan Test Manual: Penjualan & Inventory
 
-## 📋 Status Data Saat Ini
-
-```
-Produk: 13 item
-Pembelian: 14 transaksi  
-StockBatch: 14 batch (sudah di-sync)
-```
+> **Tujuan:** Memastikan alur Pembelian → Stok → Penjualan bekerja dengan akurat dan tanpa bug.
 
 ---
 
-## 🔍 STEP 0: Verifikasi Data Awal
+## 🗺️ Alur Sistem (Baca Dulu!)
 
-Jalankan query ini di database Anda (phpMyAdmin/Sequel Pro/TablePlus):
+```
+[Pembelian] → StockBatch dibuat → qty_available bertambah
+                                          ↓
+[Penjualan] → PenjualanItem dibuat → qty_available berkurang
+                                          ↓
+[RMA]        → qty_available bertambah (kembali)
+[Opname]     → qty_available dikoreksi manual
+[Adjustment] → qty_available diubah manual
+```
+
+Semua perubahan stok selalu dicatat di tabel `stock_mutations` sebagai audit trail.
+
+---
+
+## 📋 Persiapan Sebelum Test
+
+### 1. Backup database
+```bash
+mysqldump -u root -p arabica > backup_sebelum_test_$(date +%Y%m%d).sql
+```
+
+### 2. Cek kondisi awal stok
+Jalankan query ini di database tool (TablePlus / phpMyAdmin):
 
 ```sql
--- Cek apakah StockBatch sinkron dengan PembelianItem
 SELECT 
+    p.nama_produk,
+    pi.kondisi,
     pi.id_pembelian_item,
-    p.nama_produk,
-    pi.qty_sisa,
-    sb.qty_available,
-    pi.qty_sisa - sb.qty_available as diff
-FROM tb_pembelian_item pi
+    sb.qty_available   AS stok_siap,
+    pi.qty_sisa        AS qty_sisa_lama,
+    pb.no_po
+FROM stock_batches sb
+JOIN tb_pembelian_item pi ON pi.id_pembelian_item = sb.pembelian_item_id
 JOIN md_produk p ON p.id = pi.id_produk
-LEFT JOIN stock_batches sb ON sb.pembelian_item_id = pi.id_pembelian_item
-ORDER BY diff DESC;
-```
-
-**Ekspektasi:** Kolom `diff` harus 0 untuk semua row (atau null kalau batch belum ada).
-
----
-
-## ✅ TEST 1: Stock Opname (Penambahan Stok)
-
-### Langkah UI:
-1. Buka menu **Inventori → Stock Opname**
-2. Klik **"Buat Stock Opname"**
-3. Pilih tanggal hari ini
-4. Pilih produk yang ada stok (contoh: Intel Core i7-14700K)
-5. Pilih batch pembelian
-6. Catat **Stok Sistem** yang muncul (misal: 20)
-7. Isi **Stok Fisik** lebih besar dari sistem (misal: 23)
-8. Klik **Simpan**
-9. Kembali ke list, klik **Posting**
-10. Perhatikan modal summary (Total Item, Selisih Positif, dll)
-11. Klik **Ya, Posting**
-
-### Verifikasi Database (Setelah Posting):
-```sql
--- Cek StockBatch berkurang/tambah
-SELECT * FROM stock_batches 
-WHERE pembelian_item_id = [ID_BATCH_YANG_DIPILIH];
--- Ekspektasi: qty_available = 23 (dari 20)
-
--- Cek audit trail
-SELECT * FROM stock_mutations 
-WHERE reference_type = 'StockOpname' 
-ORDER BY created_at DESC LIMIT 5;
--- Ekspektasi: Ada record type='opname', qty_change=+3
-
--- Cek status opname
-SELECT * FROM tb_stock_opname ORDER BY created_at DESC LIMIT 1;
--- Ekspektasi: status = 'posted', posted_at tidak null
-```
-
----
-
-## ✅ TEST 2: Stock Opname (Pengurangan Stok)
-
-### Langkah UI:
-1. Buat Stock Opname baru
-2. Pilih produk & batch yang sama
-3. Isi **Stok Fisik** lebih kecil dari sistem (misal: 18)
-4. Simpan & Posting
-
-### Verifikasi Database:
-```sql
--- Cek StockBatch
-SELECT qty_available FROM stock_batches 
-WHERE pembelian_item_id = [ID_BATCH];
--- Ekspektasi: 18 (dari 23, berkurang 5)
-
--- Cek mutation
-SELECT * FROM stock_mutations 
-WHERE type = 'opname' 
-ORDER BY created_at DESC LIMIT 1;
--- Ekspektasi: qty_change = -5
-```
-
----
-
-## ✅ TEST 3: Stock Opname (Selisih 0)
-
-### Langkah UI:
-1. Buat Stock Opname baru
-2. Isi Stok Fisik = Stok Sistem (sama persis)
-3. Simpan & Posting
-
-### Verifikasi Database:
-```sql
--- Cek mutation
-SELECT * FROM stock_mutations 
-WHERE type = 'opname' 
-ORDER BY created_at DESC LIMIT 1;
--- Ekspektasi: TIDAK ADA record baru (selisih 0 di-skip)
-```
-
----
-
-## ✅ TEST 4: Stock Opname Validasi (RMA Aktif)
-
-### Siapkan Data:
-```sql
--- Cari batch yang ada stok
-SELECT pi.id_pembelian_item, p.nama_produk, sb.qty_available
-FROM tb_pembelian_item pi
-JOIN md_produk p ON p.id = pi.id_produk
-JOIN stock_batches sb ON sb.pembelian_item_id = pi.id_pembelian_item
+JOIN tb_pembelian pb ON pb.id_pembelian = pi.id_pembelian
 WHERE sb.qty_available > 0
-LIMIT 1;
-
--- Catat id_pembelian_item-nya, lalu buat RMA:
-INSERT INTO tb_rma (id_pembelian_item, status_garansi, rma_di_mana, tanggal, created_at, updated_at)
-VALUES ([ID_TADI], 'di_packing', 'supplier', NOW(), NOW(), NOW());
+ORDER BY p.nama_produk, sb.id
+LIMIT 20;
 ```
 
-### Langkah UI:
-1. Buat Stock Opname
-2. Pilih batch yang barusan dibuatkan RMA
-3. Isi Stok Fisik berbeda dari Stok Sistem
-4. Simpan & coba Posting
+> **Catat:** Pilih 1 produk dari hasil query di atas sebagai "produk uji coba".  
+> Contoh: `Intel Core i7-14700K`, kondisi `Baru`, `id_pembelian_item = 3`, stok = **9**
 
-### Ekspektasi:
-- ❌ **Gagal!** Muncul toast merah: *"Batch sedang dalam proses RMA aktif..."*
-- Stok **tidak berubah**
-- Status opname tetap **draft**
+---
 
-### Bersihkan:
+## 🔬 TEST A: Penjualan Normal (Happy Path)
+
+### Tujuan
+Memastikan membuat penjualan mengurangi stok dengan benar.
+
+---
+
+### LANGKAH A-1: Catat stok awal produk uji
+
 ```sql
--- Hapus RMA test
-DELETE FROM tb_rma WHERE id_pembelian_item = [ID];
+-- Ganti [ID_PEMBELIAN_ITEM] dengan id yang dicatat di Persiapan
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+
+-- Catat hasilnya, misal: 9
 ```
+
+**Catatan saya:** Stok awal = `____`
 
 ---
 
-## ✅ TEST 5: Stock Adjustment (Penambahan)
+### LANGKAH A-2: Buat Penjualan Baru
 
-### Langkah UI:
-1. Buka **Inventori → Stock Adjustment**
-2. Klik **Buat Stock Adjustment**
-3. Pilih produk & batch
-4. Isi **Qty** positif (misal: +5)
-5. Keterangan: "Tambah stok testing"
-6. Simpan & Posting
+1. Buka **Transaksi → Input Penjualan**
+2. Klik **+ Tambah Penjualan**
+3. Isi form:
 
-### Verifikasi Database:
+| Field | Isi |
+|-------|-----|
+| Tanggal Penjualan | Hari ini (sudah terisi) |
+| Karyawan | Pilih karyawan mana saja |
+| Member | Pilih member mana saja |
+
+4. Di seksi **Daftar Produk**, klik **Tambah Produk**
+5. Isi baris produk:
+
+| Field | Yang harus terjadi |
+|-------|-------------------|
+| **Produk** | Pilih produk uji (misal: Intel Core i7-14700K) |
+| **Kondisi** | Otomatis terisi "Baru" — **verifikasi ini benar** |
+| **Batch** | Otomatis terpilih batch dengan stok — **verifikasi ini muncul** |
+| **Qty** | Ketik `1` lalu klik area lain (blur) |
+| **Placeholder Qty** | Harus tampil `Stok: 9` (atau sesuai stok awal) |
+| **HPP** | Harus otomatis terisi — **verifikasi tidak kosong** |
+| **Harga** | Harus otomatis terisi — **verifikasi tidak kosong** |
+
+6. Lihat seksi **Grand Total** — catat nilainya:
+
+**Grand Total = `Rp ____.____.___`**
+
+7. Di seksi **Pembayaran**, klik **Tambah Pembayaran**
+8. Isi baris pembayaran:
+
+| Field | Isi |
+|-------|-----|
+| Tanggal | Hari ini |
+| Metode | Tunai |
+| Jumlah | Ketik angka sesuai Grand Total (misal: 7500000) |
+
+9. Klik **Simpan Final** di pojok kanan atas
+
+---
+
+### LANGKAH A-3: Verifikasi Hasil Penjualan
+
+**Yang harus terjadi setelah klik Simpan Final:**
+- ✅ Notifikasi hijau muncul: *"Penjualan Final berhasil dibuat"*
+- ✅ Halaman berpindah ke View Penjualan (detail nota)
+- ✅ No. Nota terisi (misal: `PJ-202604-XXX`)
+- ✅ Status badge: **FINAL**
+- ✅ Status pembayaran: **LUNAS** (bukan TEMPO)
+- ✅ Grand Total di view = Grand Total yang dihitung di form
+
+**Catat No. Nota:** `______________`
+
+---
+
+### LANGKAH A-4: Verifikasi Stok Berkurang
+
+Kembali ke database, jalankan query:
+
 ```sql
-SELECT qty_available FROM stock_batches WHERE pembelian_item_id = [ID];
--- Ekspektasi: Bertambah 5
-
-SELECT * FROM stock_mutations WHERE type = 'adjustment' ORDER BY created_at DESC LIMIT 1;
--- Ekspektasi: qty_change = +5
+-- Cek stok setelah penjualan
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Ekspektasi: berkurang 1 (dari 9 menjadi 8)
 ```
 
----
+**Catat:** Stok sesudah = `____`  
+**Selisih = stok awal - stok sesudah = `____` (harus = qty yang dijual)**
 
-## ✅ TEST 6: Stock Adjustment (Pengurangan)
-
-### Langkah UI:
-1. Buat Stock Adjustment baru
-2. Isi **Qty** negatif (misal: -3)
-3. Keterangan: "Kurang stok testing"
-4. Simpan & Posting
-
-### Verifikasi:
-- Stok berkurang 3
-- Mutation tercatat: qty_change = -3
-
----
-
-## ✅ TEST 7: Stock Adjustment Validasi (Stok Negatif)
-
-### Langkah UI:
-1. Pilih batch dengan stok kecil (misal: 2 unit)
-2. Buat Adjustment dengan qty = -5
-3. Coba Posting
-
-### Ekspektasi:
-- ❌ **Gagal!** Toast merah: *"Adjustment mengakibatkan stok negatif..."*
-- Stok **tidak berubah** (atomic rollback)
-
----
-
-## ✅ TEST 8: RMA Auto-Return Stok
-
-### Langkah UI:
-1. Buka **Inventori → RMA**
-2. Klik **Buat RMA**
-3. Pilih batch yang ada stok
-4. Status: **di_packing**
-5. Simpan
-6. Edit RMA → Ubah status jadi **selesai**
-7. Simpan
-
-### Verifikasi Database (Sebelum & Sesudah):
 ```sql
--- Sebelum update status (catat dulu)
-SELECT qty_available FROM stock_batches WHERE pembelian_item_id = [ID];
--- Misal: 10
+-- Cek audit trail (stock_mutations)
+SELECT id, type, qty_change, reference_type, reference_id, created_at
+FROM stock_mutations
+WHERE reference_type = 'PenjualanItem'
+ORDER BY created_at DESC
+LIMIT 5;
+-- Ekspektasi: ada record dengan type='sale', qty_change = -1
+```
 
--- Setelah update status ke 'selesai'
-SELECT qty_available FROM stock_batches WHERE pembelian_item_id = [ID];
--- Ekspektasi: 11 (bertambah 1)
+```sql
+-- Cek di UI Stock Ready
+-- Buka Inventori → Stock Ready, cari produk uji
+-- Verifikasi kolom "Stok" sesuai dengan qty_available di DB
+```
 
--- Cek mutation RMA
-SELECT * FROM stock_mutations WHERE type = 'rma_return' ORDER BY created_at DESC LIMIT 1;
--- Ekspektasi: qty_change = +1, reference_type = 'Rma'
+**✅ TEST A LULUS jika:** stok berkurang tepat sebanyak qty yang dijual.
+
+---
+
+## 🔬 TEST B: Validasi Stok Tidak Cukup
+
+### Tujuan
+Memastikan sistem menolak penjualan jika qty melebihi stok.
+
+---
+
+### LANGKAH B-1: Cari stok saat ini
+
+```sql
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Misal hasilnya: 8
 ```
 
 ---
 
-## ✅ TEST 9: Inventory Resource (Tampilan)
+### LANGKAH B-2: Coba input qty melebihi stok
 
-### Langkah UI:
+1. Buka **+ Tambah Penjualan**
+2. Isi Karyawan & Member
+3. Tambah produk yang sama
+4. Di field **Qty**, ketik angka yang LEBIH BESAR dari stok (misal: `999`)
+5. Klik area lain (blur)
+
+**Yang harus terjadi:**
+- ✅ Error merah muncul langsung di bawah field Qty: `"Stok tidak cukup! Maksimal X unit."`
+- ✅ Tombol Simpan Final masih bisa diklik tapi akan ditolak
+
+6. Klik **Simpan Final**
+
+**Yang harus terjadi:**
+- ✅ Notifikasi merah: *"Validasi Gagal - Stok Tidak Cukup"*
+- ✅ Penjualan **TIDAK tersimpan**
+- ✅ Halaman tetap di form (tidak redirect)
+
+```sql
+-- Verifikasi stok tidak berubah
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Ekspektasi: sama dengan sebelumnya (8), tidak berkurang
+```
+
+**✅ TEST B LULUS jika:** sistem menolak dan stok tidak berubah.
+
+---
+
+## 🔬 TEST C: Validasi Duplikat Produk
+
+### Tujuan
+Memastikan 1 nota tidak bisa berisi produk yang sama dua kali.
+
+---
+
+### LANGKAH:
+
+1. Buat Penjualan baru
+2. Isi Karyawan & Member
+3. Tambah produk (misal: Intel Core i7-14700K, qty=1)
+4. Klik **Tambah Produk** lagi
+5. Pilih **produk yang sama** (Intel Core i7-14700K), qty=1
+6. Klik **Simpan Final**
+
+**Yang harus terjadi:**
+- ✅ Notifikasi merah: *"Validasi Gagal - Duplikat Produk"*
+- ✅ Penjualan tidak tersimpan
+
+**✅ TEST C LULUS jika:** sistem menolak dan menampilkan pesan duplikat.
+
+---
+
+## 🔬 TEST D: Penjualan Tempo (Pembayaran Sebagian)
+
+### Tujuan
+Memastikan status TEMPO muncul jika pembayaran belum lunas.
+
+---
+
+### LANGKAH:
+
+1. Buat Penjualan baru (produk qty=1, harga misal Rp 7.500.000)
+2. Di seksi **Pembayaran**, isi jumlah **separuh** dari Grand Total (misal: Rp 3.000.000)
+3. Klik **Simpan Final**
+
+**Yang harus terjadi:**
+- ✅ Tersimpan berhasil
+- ✅ Di view detail: status pembayaran = **TEMPO**
+- ✅ Kolom "Sisa Bayar" di list = Rp 4.500.000 (selisih)
+- ✅ Stok tetap berkurang (1 unit)
+
+```sql
+-- Verifikasi stok tetap berkurang meski tempo
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Ekspektasi: berkurang 1 dari sebelumnya
+```
+
+**✅ TEST D LULUS jika:** status TEMPO, stok tetap berkurang.
+
+---
+
+## 🔬 TEST E: Hapus Penjualan → Stok Kembali
+
+### Tujuan
+Memastikan menghapus penjualan mengembalikan stok.
+
+---
+
+### LANGKAH E-1: Catat stok sebelum
+
+```sql
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Catat: misal 7
+```
+
+### LANGKAH E-2: Hapus penjualan dari TEST D
+
+1. Buka **Input Penjualan** → list
+2. Cari nota dari TEST D
+3. Klik **⋮ → Hapus**
+4. Konfirmasi
+
+**Yang harus terjadi:**
+- ✅ Modal konfirmasi muncul dengan teks "Apakah Anda yakin..."
+- ✅ Setelah konfirmasi: notifikasi hijau
+- ✅ Record hilang dari list
+
+### LANGKAH E-3: Verifikasi stok kembali
+
+```sql
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Ekspektasi: kembali ke 7 (sebelum TEST D)
+```
+
+```sql
+-- Cek mutation (harus ada record reversal)
+SELECT * FROM stock_mutations
+WHERE reference_type IN ('Penjualan', 'PenjualanItem')
+ORDER BY created_at DESC LIMIT 5;
+```
+
+**✅ TEST E LULUS jika:** stok kembali ke nilai sebelum penjualan.
+
+---
+
+## 🔬 TEST F: Penjualan dari TukarTambah — Tidak Bisa Dihapus
+
+### Tujuan
+Memastikan penjualan yang terikat Tukar Tambah tidak bisa dihapus.
+
+---
+
+### LANGKAH:
+
+1. Buka **Input Penjualan** → list
+2. Cari nota yang ada di kolom Tukar Tambah (jika ada)
+3. Klik **⋮ → Hapus**
+
+**Yang harus terjadi:**
+- ✅ Modal muncul dengan header: **"Tidak Bisa Dihapus"**
+- ✅ Isi modal menjelaskan alasan (terikat TT)
+- ✅ Tombol hapus tidak ada / tidak aktif
+- ✅ Hanya ada tombol **"Tutup"**
+
+**✅ TEST F LULUS jika:** sistem memblokir hapus dan menjelaskan alasannya.
+
+---
+
+## 🔬 TEST G: Stock Ready — Verifikasi Tampilan
+
+### Tujuan
+Memastikan UI Inventory menampilkan data yang akurat dari DB.
+
+---
+
+### LANGKAH:
+
 1. Buka **Inventori → Stock Ready**
-2. Perhatikan kolom **Stok** — harus sama dengan StockBatch.qty_available
-3. Klik **Filter** → pilih **Status Stok** → **Low Stock**
-4. Harus muncul produk dengan stok 1-10
-5. Klik **Detail** (icon mata) pada salah satu produk
-6. Perhatikan **Batch Pembelian Aktif** — harus sesuai dengan stock_batches
+2. Perhatikan kolom **Stok** untuk produk uji
 
-### Verifikasi Database:
 ```sql
--- Bandingkan tampilan UI dengan query ini:
+-- Bandingkan dengan DB
 SELECT 
     p.nama_produk,
-    p.sku,
-    sb.qty_available,
-    pi.qty_sisa
-FROM md_produk p
-JOIN stock_batches sb ON sb.produk_id = p.id
+    SUM(sb.qty_available) AS total_stok
+FROM stock_batches sb
 JOIN tb_pembelian_item pi ON pi.id_pembelian_item = sb.pembelian_item_id
+JOIN md_produk p ON p.id = pi.id_produk
 WHERE sb.qty_available > 0
+GROUP BY p.id, p.nama_produk
 ORDER BY p.nama_produk;
-
--- Ekspektasi: qty_available (UI) == sb.qty_available (DB)
 ```
+
+**✅ TEST G LULUS jika:** angka di UI sama dengan SUM dari DB.
 
 ---
 
-## ✅ TEST 10: Atomicity (Rollback Test)
+## 🔬 TEST H: Stock Opname
 
-### Siapkan:
-Buat 2 item adjustment dalam 1 transaksi:
-- Item 1: qty = -2 (valid, stok cukup)
-- Item 2: qty = -999 (invalid, stok tidak cukup)
+### Tujuan
+Koreksi stok manual via opname.
 
-### Langkah:
-1. Buat Stock Adjustment
-2. Tambah 2 item di atas
-3. Simpan & Posting
+---
 
-### Ekspektasi:
-- ❌ **Gagal total!** (bukan partial)
-- Item 1: **Tidak berkurang** (rollback)
-- Item 2: **Tidak berkurang** (rollback)
-- Status adjustment tetap **draft**
+### LANGKAH:
 
-### Verifikasi:
+1. Catat stok produk uji saat ini (misal: 8)
+2. Buka **Inventori → Stock Opname** → Buat baru
+3. Pilih produk & batch yang sama
+4. **Stok Sistem** akan muncul otomatis (8)
+5. Isi **Stok Fisik** = 10 (lebih besar)
+6. Simpan → Posting
+
 ```sql
-SELECT qty_available FROM stock_batches WHERE id = [ITEM1_ID];
--- Ekspektasi: Sama seperti sebelum posting (tidak berubah)
+-- Verifikasi
+SELECT qty_available FROM stock_batches
+WHERE pembelian_item_id = [ID_PEMBELIAN_ITEM];
+-- Ekspektasi: 10
+
+SELECT type, qty_change FROM stock_mutations
+WHERE type = 'opname' ORDER BY created_at DESC LIMIT 1;
+-- Ekspektasi: qty_change = +2
 ```
+
+**✅ TEST H LULUS jika:** stok berubah ke nilai fisik dan mutation tercatat.
 
 ---
 
-## ✅ TEST 11: Filter Produk Terhapus
+## 📊 Checklist Akhir
 
-### Langkah UI:
-1. Buka **Stock Ready**
-2. Klik **Filter** → aktifkan **Tampilkan Produk Terhapus**
-3. Perhatikan produk yang ada indikator `[DELETED]` atau `⚠️`
-
----
-
-## ✅ TEST 12: Sync Command
-
-### Terminal:
-```bash
-cd /Applications/MAMP/htdocs/arabica
-php artisan inventory:sync-stock-batch --dry-run
-```
-
-### Ekspektasi:
-- Kalau semua sync: *"All StockBatch are in sync"*
-- Kalau ada diff: akan ditampilkan tabel perbedaannya
-
-```bash
-# Kalau mau sync (run for real):
-php artisan inventory:sync-stock-batch
-```
+| Test | Deskripsi | Status |
+|------|-----------|--------|
+| ☐ A | Penjualan normal → stok berkurang | |
+| ☐ B | Qty > stok → ditolak | |
+| ☐ C | Produk duplikat di 1 nota → ditolak | |
+| ☐ D | Pembayaran sebagian → status TEMPO | |
+| ☐ E | Hapus penjualan → stok kembali | |
+| ☐ F | Penjualan TT → tidak bisa dihapus | |
+| ☐ G | UI Stock Ready akurat vs DB | |
+| ☐ H | Opname koreksi stok benar | |
 
 ---
 
-## 📊 Checklist Test
+## 🐛 Troubleshooting
 
-| Test | Status |
-|------|--------|
-| ☐ Opname tambah stok | |
-| ☐ Opname kurang stok | |
-| ☐ Opname selisih 0 (skip) | |
-| ☐ Opname gagal karena RMA aktif | |
-| ☐ Adjustment tambah | |
-| ☐ Adjustment kurang | |
-| ☐ Adjustment gagal stok negatif | |
-| ☐ RMA auto-return saat selesai | |
-| ☐ Inventory tampilan benar | |
-| ☐ Atomic rollback | |
-| ☐ Filter produk terhapus | |
-| ☐ Sync command | |
-
----
-
-## 🐛 Kalau Ada Error
-
-### Error 1: "StockBatch tidak ditemukan"
-```sql
--- Solusi: Sync ulang
-php artisan inventory:sync-stock-batch
-```
-
-### Error 2: "Stok tidak sama antara UI dan DB"
-```bash
-# Clear cache
-php artisan cache:clear
-php artisan config:clear
-```
-
-### Error 3: "WooCommerce error saat test"
-```php
-// Di .env testing, pastikan:
-WOOCOMMERCE_STORE_URL=
-WOOCOMMERCE_CONSUMER_KEY=
-WOOCOMMERCE_CONSUMER_SECRET=
-// (Kosongkan kalau tidak ada)
-```
-
----
-
-## 💾 Backup Sebelum Test
-
-**Sangat direkomendasikan** backup dulu:
-
-```bash
-mysqldump -u root -p arabica > backup_before_manual_test.sql
-```
-
-Atau pakai TablePlus/phpMyAdmin → Export.
-
----
-
-## 🎯 Ringkasan Flow Test
-
-```
-1. Cek data awal (SQL)
-2. Lakukan aksi di UI
-3. Cek hasil di UI (toast, badge, tabel)
-4. Verifikasi di database (SQL)
-5. Kalau salah → rollback/clear data test
-```
-
-Selamat testing! 🚀
+| Gejala | Kemungkinan Penyebab | Solusi |
+|--------|----------------------|--------|
+| Stok tidak berkurang setelah penjualan | Observer PenjualanItem tidak berjalan | Cek `PenjualanItemObserver`, cek log |
+| Status tetap TEMPO meski bayar lunas | `grand_total` di DB salah | Cek `recalculateTotals()` dipanggil |
+| Field Qty tidak show placeholder stok | `getAvailableQty()` return 0 | Cek `StockBatch` ada datanya |
+| UI Stock berbeda dari DB | Cache belum di-clear | `php artisan cache:clear` |
+| Sync error | StockBatch belum dibuat | `php artisan inventory:sync-stock-batch` |

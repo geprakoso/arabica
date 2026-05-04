@@ -27,6 +27,7 @@ class EditPenjualan extends EditRecord
         // Transform existing items to items_temp format for the form
         $data['items_temp'] = collect($this->record->items)
             ->map(fn ($item) => [
+                'id_penjualan_item' => $item->id_penjualan_item,
                 'id_produk' => $item->id_produk,
                 'id_pembelian_item' => $item->id_pembelian_item,
                 'kondisi' => $item->kondisi,
@@ -44,11 +45,6 @@ class EditPenjualan extends EditRecord
         // Extract items_temp for processing
         if (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
-
-            // VALIDASI SEBELUM SAVE (hanya jika ada items)
-            if (! empty($this->itemsToCreate)) {
-                $this->validateBeforeSave($this->itemsToCreate);
-            }
 
             unset($data['items_temp']);
         }
@@ -78,86 +74,24 @@ class EditPenjualan extends EditRecord
     }
 
     /**
-     * Validasi sebelum save: stok dan duplikat produk
+     * Validasi duplikat dan format item (tanpa cek stok total).
+     * Stok divalidasi per item oleh observer PenjualanItem.
      */
-    protected function validateBeforeSave(array $items): void
+    protected function validateDuplicatesAndFormat(array $items): void
     {
-        // Start batch logging
         ValidationLogger::startBatch();
 
         if (empty($items)) {
             return;
         }
 
-        // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis di baris berbeda
         $productKeys = [];
         foreach ($items as $index => $item) {
             $productId = (int) ($item['id_produk'] ?? 0);
             $condition = $item['kondisi'] ?? null;
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
 
-            if ($productId > 0) {
-                // Key unik: produk + batch + kondisi
-                $key = $productId.'|'.($condition ?? '').'|'.$batchId;
-
-                if (isset($productKeys[$key])) {
-                    $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
-                    $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
-                    $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
-                    $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'. Jika stok tidak cukup, cukup tambahkan qty di baris yang sudah ada.';
-
-                    // Log validation error
-                    ValidationLogger::logDuplicate(
-                        sourceType: 'Penjualan',
-                        sourceAction: 'update',
-                        productName: $productName,
-                        row: $index + 1,
-                        inputData: [
-                            'product_id' => $productId,
-                            'batch_id' => $batchId,
-                            'condition' => $condition,
-                            'duplicate_row' => $productKeys[$key],
-                            'current_row' => $index + 1,
-                        ]
-                    );
-
-                    // Kirim notifikasi toast dan database
-                    Notification::make()
-                        ->title('Validasi Gagal - Duplikat Produk')
-                        ->body($errorMessage)
-                        ->icon('heroicon-o-exclamation-triangle')
-                        ->danger()
-                        ->persistent()
-                        ->send();
-
-                    $user = Auth::user();
-                    if ($user) {
-                        Notification::make()
-                            ->title('Validasi Gagal - Duplikat Produk')
-                            ->body($errorMessage)
-                            ->icon('heroicon-o-exclamation-triangle')
-                            ->danger()
-                            ->sendToDatabase($user);
-                    }
-
-                    throw ValidationException::withMessages([
-                        'items_temp' => $errorMessage,
-                    ]);
-                }
-                $productKeys[$key] = $index + 1;
-            }
-        }
-
-        // Aggregate total qty per produk (dengan mempertimbangkan batch dan kondisi)
-        $totalQtyMap = [];
-        foreach ($items as $index => $item) {
-            $productId = (int) ($item['id_produk'] ?? 0);
-            $qty = (int) ($item['qty'] ?? 0);
-            $condition = $item['kondisi'] ?? null;
-            $batchId = (int) ($item['id_pembelian_item'] ?? 0);
-
             if ($productId < 1) {
-                // Log validation error
                 ValidationLogger::logRequired(
                     sourceType: 'Penjualan',
                     sourceAction: 'update',
@@ -171,10 +105,10 @@ class EditPenjualan extends EditRecord
                 ]);
             }
 
+            $qty = (int) ($item['qty'] ?? 0);
             if ($qty < 1) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
 
-                // Log validation error
                 ValidationLogger::logFormat(
                     sourceType: 'Penjualan',
                     sourceAction: 'update',
@@ -193,68 +127,30 @@ class EditPenjualan extends EditRecord
                 ]);
             }
 
-            // Buat key unik berdasarkan produk + batch + kondisi
+            // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis di baris berbeda
             $key = $productId.'|'.($condition ?? '').'|'.$batchId;
-
-            if (! isset($totalQtyMap[$key])) {
-                $totalQtyMap[$key] = [
-                    'product_id' => $productId,
-                    'condition' => $condition,
-                    'batch_id' => $batchId,
-                    'qty' => 0,
-                    'rows' => [],
-                ];
-            }
-            $totalQtyMap[$key]['qty'] += $qty;
-            $totalQtyMap[$key]['rows'][] = $index + 1;
-        }
-
-        // Validasi setiap grup terhadap stok database (gunakan StockBatch)
-        foreach ($totalQtyMap as $group) {
-            $productId = $group['product_id'];
-            $condition = $group['condition'];
-            $batchId = $group['batch_id'];
-            $requestedQty = $group['qty'];
-            $rows = $group['rows'];
-
-            $query = \App\Models\StockBatch::query()
-                ->whereHas('pembelianItem', function ($q) use ($productId, $condition) {
-                    $q->where('id_produk', $productId);
-                    if ($condition) {
-                        $q->where('kondisi', $condition);
-                    }
-                })
-                ->where('qty_available', '>', 0);
-
-            if ($batchId > 0) {
-                $query->where('pembelian_item_id', $batchId);
-            }
-
-            $availableQty = (int) $query->sum('qty_available');
-
-            if ($availableQty < $requestedQty) {
+            if (isset($productKeys[$key])) {
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
-                $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
-                $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
+                $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
+                $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
+                $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'. Jika stok tidak cukup, cukup tambahkan qty di baris yang sudah ada.';
 
-                // Log validation error
-                ValidationLogger::logStock(
+                ValidationLogger::logDuplicate(
                     sourceType: 'Penjualan',
                     sourceAction: 'update',
                     productName: $productName,
-                    available: $availableQty,
-                    requested: $requestedQty,
+                    row: $index + 1,
                     inputData: [
                         'product_id' => $productId,
                         'batch_id' => $batchId,
                         'condition' => $condition,
-                        'rows' => $rows,
+                        'duplicate_row' => $productKeys[$key],
+                        'current_row' => $index + 1,
                     ]
                 );
 
-                // Kirim notifikasi toast dan database
                 Notification::make()
-                    ->title('Validasi Gagal - Stok Tidak Cukup')
+                    ->title('Validasi Gagal - Duplikat Produk')
                     ->body($errorMessage)
                     ->icon('heroicon-o-exclamation-triangle')
                     ->danger()
@@ -264,7 +160,7 @@ class EditPenjualan extends EditRecord
                 $user = Auth::user();
                 if ($user) {
                     Notification::make()
-                        ->title('Validasi Gagal - Stok Tidak Cukup')
+                        ->title('Validasi Gagal - Duplikat Produk')
                         ->body($errorMessage)
                         ->icon('heroicon-o-exclamation-triangle')
                         ->danger()
@@ -275,6 +171,7 @@ class EditPenjualan extends EditRecord
                     'items_temp' => $errorMessage,
                 ]);
             }
+            $productKeys[$key] = $index + 1;
         }
     }
 
@@ -291,13 +188,56 @@ class EditPenjualan extends EditRecord
                 'diskon_total' => $data['diskon_total'] ?? $record->diskon_total ?? 0,
             ]);
 
-            // Hanya bisa edit items jika draft baru (belum ada item)
+            // Edit items jika draft dan belum di-lock
             if ($record->canEditItems()) {
-                // Delete existing items and recreate (or clear if no new items)
-                $record->items()->delete();
+                $incomingItems = $this->itemsToCreate ?? [];
 
-                if (! empty($this->itemsToCreate)) {
-                    $this->createItemsWithFifo($this->itemsToCreate);
+                // Validasi duplikat & format (stok divalidasi per item oleh observer)
+                if (! empty($incomingItems)) {
+                    $this->validateDuplicatesAndFormat($incomingItems);
+                }
+
+                $existingItems = $record->items()->get()->keyBy('id_penjualan_item');
+
+                $incomingIds = collect($incomingItems)
+                    ->pluck('id_penjualan_item')
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                // 1. Hapus item yang tidak ada di form (user menghapus row)
+                $toDelete = $existingItems->keys()->diff($incomingIds);
+                foreach ($toDelete as $deleteId) {
+                    $existingItems[$deleteId]->delete(); // stok kembali via observer
+                }
+
+                // 2. Update item yang sudah ada, create item baru
+                foreach ($incomingItems as $itemData) {
+                    $itemId = $itemData['id_penjualan_item'] ?? null;
+
+                    if ($itemId && $existingItems->has($itemId)) {
+                        $existingItem = $existingItems[$itemId];
+                        $existingItem->update([
+                            'id_produk' => $itemData['id_produk'],
+                            'id_pembelian_item' => $itemData['id_pembelian_item'],
+                            'qty' => $itemData['qty'],
+                            'harga_jual' => $itemData['harga_jual'],
+                            'kondisi' => $itemData['kondisi'] ?? null,
+                            'serials' => $itemData['serials'] ?? null,
+                        ]);
+                        // Stok adjustment otomatis via observer PenjualanItem::updated
+                    } else {
+                        PenjualanItem::create([
+                            'id_penjualan' => $record->id_penjualan,
+                            'id_produk' => $itemData['id_produk'],
+                            'id_pembelian_item' => $itemData['id_pembelian_item'],
+                            'qty' => $itemData['qty'],
+                            'harga_jual' => $itemData['harga_jual'],
+                            'kondisi' => $itemData['kondisi'] ?? null,
+                            'serials' => $itemData['serials'] ?? null,
+                        ]);
+                        // Stok deduction otomatis via observer PenjualanItem::created
+                    }
                 }
             }
 

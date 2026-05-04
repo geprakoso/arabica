@@ -255,7 +255,7 @@ class PenjualanResource extends BaseResource
                                     return 'Draft (Voided)';
                                 }
                                 if ($record->items()->exists() || $record->jasaItems()->exists()) {
-                                    return 'Draft (Saved) - Item & Jasa Locked';
+                                    return 'Draft (Saved)';
                                 }
                                 return 'Draft (Baru)';
                             })
@@ -269,6 +269,24 @@ class PenjualanResource extends BaseResource
                             ->deletable(fn(?Penjualan $record) => ! $record || $record->canEditItems())
                             ->disabled(fn(?Penjualan $record) => $record && ! $record->canEditItems())
                             ->addActionLabel('Tambah Produk')
+                            // ->deleteAction(
+                            //     fn (FormAction $action): FormAction => $action
+                            //         ->requiresConfirmation()
+                            //         ->modalHeading('Hapus Item Produk')
+                            //         ->modalDescription('Item akan dihapus dari database dan stok akan dikembalikan ke batch. Lanjutkan?')
+                            //         ->action(function (array $arguments, \Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater $component): void {
+                            //             $items = $component->getState();
+                            //             $itemKey = $arguments['item'];
+                            //             $itemData = $items[$itemKey] ?? [];
+                            //             $itemId = $itemData['id_penjualan_item'] ?? null;
+
+                            //             if ($itemId) {
+                            //                 \App\Models\PenjualanItem::find($itemId)?->delete();
+                            //             }
+
+                            //             $component->deleteItem($itemKey);
+                            //         })
+                            // )
                             ->validationMessages([
                                 'items_temp' => 'Terjadi kesalahan pada item produk. Periksa stok dan duplikat produk.',
                             ])
@@ -282,6 +300,10 @@ class PenjualanResource extends BaseResource
                                 'serials_count' => 'width: 13%;',
                             ])
                             ->childComponents([
+                                Hidden::make('id_penjualan_item')
+                                    ->default(null)
+                                    ->dehydrated(true),
+
                                 Select::make('id_produk')
                                     ->label('Produk')
                                     ->options(function (Get $get): array {
@@ -302,7 +324,7 @@ class PenjualanResource extends BaseResource
                                                 ->all();
                                             foreach ($extras as $id => $label) {
                                                 if (! array_key_exists($id, $options)) {
-                                                    $extras[$id] = '<span>' . e($label) . '</span> <span style="color: red;">(stok habis)</span>';
+                                                    $extras[$id] = '<span>' . e($label) . '</span> <span style="color: #ff0000ff;">(stok habis)</span>';
                                                 }
                                             }
                                             $options = $options + $extras;
@@ -373,6 +395,20 @@ class PenjualanResource extends BaseResource
                                         $condition = $get('kondisi');
 
                                         return self::getBatchOptions($productId, $condition);
+                                    })
+                                    ->getOptionLabelUsing(function ($value): ?string {
+                                        $item = PembelianItem::with(['pembelian', 'stockBatch'])->find($value);
+                                        if (! $item) {
+                                            return null;
+                                        }
+
+                                        $batch = $item->stockBatch;
+                                        $po = $item->pembelian?->no_po;
+                                        $label = $po ? '#' . $po : 'Batch';
+
+                                        return $label
+                                            . ' | Qty: ' . number_format($batch?->qty_available ?? 0, 0, ',', '.')
+                                            . ' | HPP: Rp ' . number_format((int) ($item->hpp ?? 0), 0, ',', '.');
                                     })
                                     ->native(false)
                                     ->searchable()

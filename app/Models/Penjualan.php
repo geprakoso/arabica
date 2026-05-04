@@ -76,9 +76,7 @@ class Penjualan extends Model
     public function canEditItems(): bool
     {
         return $this->isDraft()
-            && ! $this->is_locked
-            && ! $this->items()->exists()
-            && ! $this->jasaItems()->exists();
+            && ! $this->is_locked;
     }
 
     public function canEditJasa(): bool
