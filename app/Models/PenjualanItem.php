@@ -58,6 +58,14 @@ class PenjualanItem extends Model
                 $newBatchId = (int) $item->id_pembelian_item;
                 $newQty = (int) $item->qty;
 
+                // ✅ FIX: Skip stock mutation jika batch dan qty tidak berubah
+                // Mencegah double return/deduction saat edit tanpa perubahan material
+                if ($originalBatchId === $newBatchId && $originalQty === $newQty) {
+                    self::recalculatePenjualanTotals($item);
+
+                    return;
+                }
+
                 // Kembalikan stok lama
                 if ($originalBatchId) {
                     $originalItem = clone $item;

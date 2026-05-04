@@ -166,6 +166,7 @@ class EditTukarTambah extends EditRecord
                         $serials = is_array($item->serials ?? null) ? $item->serials : [];
 
                         return [
+                            'id_penjualan_item' => $item->id_penjualan_item,
                             'id_produk' => $item->id_produk,
                             'id_pembelian_item' => $item->id_pembelian_item, // Added
                             'hpp' => (int) ($item->hpp ?? 0), // Added
@@ -525,9 +526,67 @@ class EditTukarTambah extends EditRecord
         $canEditPayment = $tukarTambah?->canEditPayment() ?? true;
 
         if ($canEditItems) {
-            $penjualan->items()->get()->each->delete();
+            $incomingItems = $payload['items'] ?? [];
+
+            // Smart sync: compare existing vs incoming to avoid unnecessary delete-create cycles
+            // yang menyebabkan double stock mutation (return + re-deduction)
+            $existingItems = $penjualan->items()->get()->keyBy('id_penjualan_item');
+
+            $incomingIds = collect($incomingItems)
+                ->pluck('id_penjualan_item')
+                ->filter()
+                ->values()
+                ->all();
+
+            // 1. Hapus item yang tidak ada di form (user menghapus row)
+            $toDelete = $existingItems->keys()->diff($incomingIds);
+            foreach ($toDelete as $deleteId) {
+                $existingItems[$deleteId]->delete(); // stok kembali via PenjualanItem::deleted event
+            }
+
+            // 2. Update existing items atau create baru
+            foreach ($incomingItems as $itemData) {
+                $itemId = $itemData['id_penjualan_item'] ?? null;
+
+                if ($itemId && $existingItems->has($itemId)) {
+                    // Update existing item
+                    // PenjualanItem::updated event akan skip stock mutation jika batch+qty tidak berubah
+                    $existingItem = $existingItems[$itemId];
+                    $existingItem->update([
+                        'id_produk' => $itemData['id_produk'],
+                        'id_pembelian_item' => $itemData['id_pembelian_item'],
+                        'qty' => $itemData['qty'],
+                        'harga_jual' => ($itemData['harga_jual'] === '' || $itemData['harga_jual'] === null) ? null : (int) $itemData['harga_jual'],
+                        'kondisi' => $itemData['kondisi'] ?? null,
+                        'serials' => $itemData['serials'] ?? null,
+                    ]);
+                } else {
+                    // Create new item (stok dikurangi via PenjualanItem::created event)
+                    $productId = (int) ($itemData['id_produk'] ?? 0);
+                    $qty = (int) ($itemData['qty'] ?? 0);
+                    $batchId = (int) ($itemData['id_pembelian_item'] ?? 0);
+
+                    if ($productId < 1 || $qty < 1) {
+                        continue;
+                    }
+
+                    $customPrice = $itemData['harga_jual'] ?? null;
+                    $customPrice = ($customPrice === '' || $customPrice === null) ? null : (int) $customPrice;
+                    $condition = $itemData['kondisi'] ?? null;
+                    $serials = is_array($itemData['serials'] ?? null) ? array_values($itemData['serials']) : [];
+
+                    DB::transaction(function () use ($penjualan, $productId, $qty, $batchId, $customPrice, $condition, $serials): void {
+                        if ($batchId > 0) {
+                            $this->fulfillPenjualanWithBatch($penjualan, $productId, $qty, $batchId, $customPrice, $condition, $serials);
+                        } else {
+                            $this->fulfillPenjualanUsingFifo($penjualan, $productId, $qty, $customPrice, $condition, $serials);
+                        }
+                    });
+                }
+            }
+
+            // Jasa items: tetap delete-recreate (tidak ada stock impact)
             $penjualan->jasaItems()->get()->each->delete();
-            $this->createPenjualanItems($penjualan, $payload['items'] ?? []);
             $this->createPenjualanJasaItems($penjualan, $payload['jasa_items'] ?? []);
         }
 

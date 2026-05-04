@@ -36,6 +36,28 @@ class StockBatch extends Model
     ];
 
     // ============================================================
+    // LIFECYCLE EVENTS
+    // ============================================================
+
+    protected static function booted(): void
+    {
+        // Auto-sync PembelianItem.qty_sisa setiap kali qty_available berubah
+        // Ini menjamin qty_sisa selalu mirror/shadow dari qty_available,
+        // tidak peduli dari mana perubahannya (decrementWithLock, incrementWithLock, atau direct update)
+        static::updated(function (StockBatch $batch): void {
+            if ($batch->wasChanged('qty_available')) {
+                $qtySisaColumn = PembelianItem::qtySisaColumn();
+                $pembelianItem = PembelianItem::find($batch->pembelian_item_id);
+
+                if ($pembelianItem) {
+                    $pembelianItem->{$qtySisaColumn} = max(0, (int) $batch->qty_available);
+                    $pembelianItem->saveQuietly(); // Quiet supaya tidak trigger PembelianItemObserver → infinite loop
+                }
+            }
+        });
+    }
+
+    // ============================================================
     // LOCKING METHODS (R17)
     // ============================================================
 

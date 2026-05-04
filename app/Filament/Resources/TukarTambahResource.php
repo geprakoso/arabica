@@ -348,6 +348,8 @@ class TukarTambahResource extends BaseResource
                                                         $set('hpp', $batch->hpp);
                                                         $set('kondisi', $batch->kondisi);
                                                     }),
+                                                Hidden::make('id_penjualan_item')
+                                                    ->dehydrated(),
                                                 Hidden::make('_original_qty')
                                                     ->dehydrated(false)
                                                     ->afterStateHydrated(function ($component, $state, Get $get) {
@@ -861,7 +863,7 @@ class TukarTambahResource extends BaseResource
 
                                                         return (int) $cleaned;
                                                     })
-                                                    ->live(onBlur: true)
+                                                    ->live(debounce: '300ms')
                                                     ->afterStateUpdated(function (Set $set, Get $get): void {
                                                         // Trigger parent repeater update
                                                         $items = $get('../../items') ?? [];
@@ -912,7 +914,7 @@ class TukarTambahResource extends BaseResource
 
                                                         return (int) $cleaned;
                                                     })
-                                                    ->live(onBlur: true),
+                                                    ->live(debounce: '300ms'),
                                             ])
                                             ->columns(6)
                                             ->colStyles([
