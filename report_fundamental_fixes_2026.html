@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fundamental Fixes Report — 24 April – 5 Mei 2026</title>
+    <meta name="description" content="Laporan perbaikan sistem periode 24 April – 5 Mei 2026">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* ─── Design Tokens ─── */
+        :root {
+            --bg-page: #f8f9fc;
+            --bg-white: #ffffff;
+            --bg-subtle: #f1f3f8;
+            --bg-accent-light: #eef2ff;
+            --border-light: #e2e5f0;
+            --border-medium: #d0d4e2;
+            --text-primary: #1a1d2e;
+            --text-secondary: #474d66;
+            --text-muted: #8189a5;
+            --accent-indigo: #4f46e5;
+            --accent-indigo-light: #eef2ff;
+            --accent-rose: #e11d48;
+            --accent-rose-bg: #fff1f2;
+            --accent-rose-border: #fecdd3;
+            --accent-amber: #d97706;
+            --accent-amber-bg: #fffbeb;
+            --accent-amber-border: #fde68a;
+            --accent-teal: #0d9488;
+            --accent-teal-bg: #f0fdfa;
+            --accent-teal-border: #99f6e4;
+            --accent-violet: #7c3aed;
+            --accent-violet-bg: #f5f3ff;
+            --accent-violet-border: #ddd6fe;
+            --accent-sky: #0284c7;
+            --accent-sky-bg: #f0f9ff;
+            --accent-sky-border: #bae6fd;
+            --accent-orange: #ea580c;
+            --accent-orange-bg: #fff7ed;
+            --accent-orange-border: #fed7aa;
+            --accent-slate: #475569;
+            --accent-slate-bg: #f8fafc;
+            --accent-slate-border: #cbd5e1;
+            --accent-emerald: #059669;
+            --accent-emerald-bg: #ecfdf5;
+            --accent-emerald-border: #a7f3d0;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .page {
+            max-width: 960px;
+            margin: 32px auto;
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+
+        .report-banner {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4f46e5 100%);
+            padding: 24px 28px 28px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .report-banner::before { content:''; position:absolute; top:-40%; right:-10%; width:320px; height:320px; background:rgba(255,255,255,0.05); border-radius:50%; }
+        .report-banner::after { content:''; position:absolute; bottom:-50%; left:5%; width:240px; height:240px; background:rgba(255,255,255,0.03); border-radius:50%; }
+
+        .banner-content { position:relative; z-index:1; }
+        .banner-label {
+            display:inline-flex; align-items:center; gap:6px;
+            background:rgba(255,255,255,0.12); backdrop-filter:blur(8px);
+            padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600;
+            border:1px solid rgba(255,255,255,0.18); margin-bottom:10px; letter-spacing:0.3px;
+        }
+        .banner-title { font-size:22px; font-weight:800; letter-spacing:-0.4px; line-height:1.3; margin-bottom:6px; }
+        .banner-subtitle { font-size:13px; font-weight:400; color:rgba(255,255,255,0.75); line-height:1.5; }
+
+        .summary-strip { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--border-light); }
+        .summary-item { padding:18px 20px; text-align:center; border-right:1px solid var(--border-light); }
+        .summary-item:last-child { border-right:none; }
+        .summary-item .sum-value { font-size:26px; font-weight:800; color:var(--accent-indigo); letter-spacing:-1px; line-height:1.2; }
+        .summary-item .sum-label { display:flex; align-items:center; justify-content:center; gap:5px; font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.7px; margin-top:4px; }
+        .summary-item .sum-label .icon { font-size:12px; }
+
+        .report-body { padding:32px 40px 40px; }
+
+        .section-title { display:flex; align-items:center; gap:10px; margin-bottom:18px; margin-top:36px; }
+        .section-title:first-of-type { margin-top:0; }
+        .section-title .line { flex:1; height:1px; background:var(--border-light); }
+        .section-title h2 { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; white-space:nowrap; }
+        .section-icon { font-size:14px; }
+
+        .legend-bar { display:flex; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+        .legend-item { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--text-muted); }
+        .legend-dot { width:8px; height:8px; border-radius:50%; }
+        .sev-critical { background:var(--accent-rose); }
+        .sev-high { background:var(--accent-amber); }
+        .sev-medium { background:var(--accent-sky); }
+        .sev-low { background:var(--accent-slate); }
+
+        .data-table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; border:1px solid var(--border-light); border-radius:var(--radius-md); overflow:hidden; margin-bottom:8px; }
+        .data-table thead th { padding:12px 16px; text-align:left; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; background:var(--bg-subtle); border-bottom:1px solid var(--border-light); }
+        .data-table thead th:not(:last-child) { border-right:1px solid var(--border-light); }
+        .data-table tbody td { padding:14px 16px; vertical-align:top; border-bottom:1px solid var(--border-light); }
+        .data-table tbody td:not(:last-child) { border-right:1px solid var(--border-light); }
+        .data-table tbody tr:last-child td { border-bottom:none; }
+        .data-table tbody tr:hover { background:var(--bg-accent-light); }
+
+        .td-date { font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums; white-space:nowrap; font-size:12px; }
+        .td-date .day { display:block; font-size:10px; font-weight:500; color:var(--text-muted); margin-top:2px; }
+
+        .badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:100px; font-size:11px; font-weight:600; white-space:nowrap; }
+        .badge-bugfix { background:var(--accent-rose-bg); color:var(--accent-rose); border:1px solid var(--accent-rose-border); }
+        .badge-purchase { background:var(--accent-amber-bg); color:var(--accent-amber); border:1px solid var(--accent-amber-border); }
+        .badge-feature { background:var(--accent-teal-bg); color:var(--accent-teal); border:1px solid var(--accent-teal-border); }
+        .badge-design { background:var(--accent-violet-bg); color:var(--accent-violet); border:1px solid var(--accent-violet-border); }
+        .badge-service { background:var(--accent-orange-bg); color:var(--accent-orange); border:1px solid var(--accent-orange-border); }
+        .badge-impl { background:var(--accent-sky-bg); color:var(--accent-sky); border:1px solid var(--accent-sky-border); }
+        .badge-migrate { background:var(--accent-slate-bg); color:var(--accent-slate); border:1px solid var(--accent-slate-border); }
+        .badge-emerald { background:var(--accent-emerald-bg); color:var(--accent-emerald); border:1px solid var(--accent-emerald-border); }
+        .badge-icon { font-size:12px; line-height:1; }
+
+        .td-feature { font-weight:600; color:var(--accent-indigo); font-size:13px; }
+        .td-detail { color:var(--text-secondary); font-size:13px; line-height:1.7; }
+        .td-detail strong { color:var(--text-primary); font-weight:600; }
+
+        .insight-box { background:var(--bg-subtle); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:16px 20px; margin-bottom:24px; font-size:13px; color:var(--text-secondary); line-height:1.7; }
+        .insight-box strong { color:var(--text-primary); }
+        .insight-box ul { margin-top:8px; margin-left:18px; }
+        .insight-box li { margin-bottom:4px; }
+
+        .report-footer { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; background:var(--bg-subtle); border-top:1px solid var(--border-light); font-size:11px; color:var(--text-muted); }
+        .footer-left { display:flex; align-items:center; gap:6px; }
+        .footer-left svg { width:12px; height:12px; opacity:0.5; }
+        .footer-right { font-weight:500; }
+
+        @media print {
+            @page { margin:12mm 10mm; size:A4; }
+            body { background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
+            .page { margin:0; border:none; border-radius:0; box-shadow:none; max-width:100%; }
+            .report-banner { background:linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4f46e5 100%) !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:18px 24px 22px; }
+            .report-banner::before,.report-banner::after { display:none; }
+            .banner-title { font-size:20px; }
+            .summary-item { padding:14px 16px; }
+            .summary-item .sum-value { font-size:20px; }
+            .report-body { padding:24px 32px 28px; }
+            .data-table { border:1px solid #d0d4e2; }
+            .data-table thead th { background:#f1f3f8 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:10px 14px; }
+            .data-table tbody td { padding:10px 14px; }
+            .data-table tbody tr:hover { background:none; }
+            .badge { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            .badge-bugfix { background:#fff1f2 !important; border-color:#fecdd3 !important; color:#e11d48 !important; }
+            .badge-impl { background:#f0f9ff !important; border-color:#bae6fd !important; color:#0284c7 !important; }
+            .badge-feature { background:#f0fdfa !important; border-color:#99f6e4 !important; color:#0d9488 !important; }
+            .badge-emerald { background:#ecfdf5 !important; border-color:#a7f3d0 !important; color:#059669 !important; }
+            .td-feature { color:#4f46e5 !important; }
+            .report-footer { background:#f1f3f8 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:12px 32px; }
+            tr { page-break-inside:avoid; }
+        }
+
+        @media screen {
+            .page { animation:slideUp 0.5s ease-out; }
+            @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+            .data-table tbody tr { transition:background 0.15s ease; }
+        }
+
+        @media screen and (max-width:640px) {
+            .page { margin:0; border-radius:0; border:none; }
+            .report-banner { padding:18px 20px; }
+            .banner-title { font-size:18px; }
+            .summary-strip { grid-template-columns:repeat(2,1fr); }
+            .summary-item { border-right:none; border-bottom:1px solid var(--border-light); padding:14px 20px; }
+            .summary-item:nth-child(odd) { border-right:1px solid var(--border-light); }
+            .summary-item:last-child,.summary-item:nth-last-child(2) { border-bottom:none; }
+            .report-body { padding:24px; }
+            .report-footer { padding:14px 24px; flex-direction:column; gap:6px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <header class="report-banner">
+            <div class="banner-content">
+                <div class="banner-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                    Technical Deep-Dive Report
+                </div>
+                <h1 class="banner-title">Fundamental Fixes Report</h1>
+                <p class="banner-subtitle">Periode 24 April – 5 Mei 2026 &nbsp;|&nbsp; Inventory, Penjualan, Pembelian &amp; Dokumen Lifecycle</p>
+            </div>
+        </header>
+
+        <div class="summary-strip">
+            <div class="summary-item">
+                <div class="sum-value">13</div>
+                <div class="sum-label"><span class="icon">🛠</span> Total Fixes</div>
+            </div>
+            <div class="summary-item">
+                <div class="sum-value">4</div>
+                <div class="sum-label"><span class="icon">📦</span> Modules</div>
+            </div>
+            <div class="summary-item">
+                <div class="sum-value">6</div>
+                <div class="sum-label"><span class="icon">🔴</span> Critical/High</div>
+            </div>
+            <div class="summary-item">
+                <div class="sum-value">100%</div>
+                <div class="sum-label"><span class="icon">🔒</span> Data Integrity</div>
+            </div>
+        </div>
+
+        <main class="report-body">
+
+            <div class="insight-box">
+                <strong>Ringkasan Eksekutif (24 Apr – 5 Mei 2026):</strong> Dua minggu intensif difokuskan pada perbaikan fondasi data stok, lifecycle dokumen transaksi, dan keamanan akses. Seluruh perubahan bersifat <em>structural</em> — mempengaruhi cara data stok dicatat, dilacak, dan dikunci — guna mencegah <strong>oversell</strong>, <strong>race condition</strong>, dan <strong>inkonsistensi data</strong>.
+                <ul>
+                    <li><strong>Stock Batch (SoT)</strong> menjadi sumber kebenaran tunggal dengan pessimistic locking.</li>
+                    <li><strong>Draft → Final state machine</strong> mengontrol versioning dokumen penjualan.</li>
+                    <li><strong>Atomic transaction</strong> menjamin operasi stok all-or-nothing.</li>
+                </ul>
+            </div>
+
+            <div class="legend-bar">
+                <div class="legend-item"><span class="legend-dot sev-critical"></span> Critical</div>
+                <div class="legend-item"><span class="legend-dot sev-high"></span> High</div>
+                <div class="legend-item"><span class="legend-dot sev-medium"></span> Medium</div>
+                <div class="legend-item"><span class="legend-dot sev-low"></span> Low / Polish</div>
+            </div>
+
+            <!-- ─── Section 1: Inventory & Stock Batch ─── -->
+            <div class="section-title">
+                <span class="line"></span>
+                <h2><span class="section-icon">📦</span> Inventory &amp; Stock Batch Foundation</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table">
+                <thead><tr><th style="width:11%">Tanggal</th><th style="width:12%">Severity</th><th style="width:22%">Isu / Topik</th><th style="width:55%">Solusi &amp; Dampak</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">2026-05-04<span class="day">Senin</span></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🔴</span> Critical</span></td>
+                        <td class="td-feature">Fix Penjualan, Pembelian, StockBatch</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Sinkronisasi tripartit antara Penjualan, Pembelian, dan StockBatch. <strong>Dampak:</strong> Perhitungan total, status stok, dan update batch konsisten real-time. Menghilangkan dual-source problem <code>qty_sisa</code> vs <code>qty_available</code>.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🔴</span> Critical</span></td>
+                        <td class="td-feature">Fix Problem Tukar Tambah &amp; Stock Batch SoT</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan perhitungan selisih harga TT dan pelacakan batch stok. <strong>Dampak:</strong> Transaksi TT mengurangi stok batch dengan benar dan mencatat mutation log akurat.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-27<span class="day">Senin</span></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🔴</span> Critical</span></td>
+                        <td class="td-feature">Pondasi Solid Inventory Stock</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penguatan fondasi inventory dengan konsistensi data stok, perbaikan mutation log, dan penanganan <strong>race condition</strong>. <strong>Dampak:</strong> Operasi stok masuk/keluar tercatat dalam audit trail <code>StockMutation</code>. Stok tidak bisa berkurang bersamaan melebihi ketersediaan.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-24<span class="day">Jumat</span></td>
+                        <td><span class="badge badge-purchase"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Fix Problem Inventory Phase 1</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan query N+1 pada tampilan inventory, sinkronisasi batch stock antar resource, dan pembaruan resource Filament Inventory. <strong>Dampak:</strong> Halaman inventory load lebih cepat. Data batch stok di UI sinkron dengan database.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-purchase"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Delete Produk Fixing</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan proses penghapusan produk agar tidak merusak relasi inventory dan stok. <strong>Dampak:</strong> Integritas referensial terjaga. Produk dengan riwayat transaksi tetap dapat di-disable tanpa menghapus data historis.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Bug Pembelian</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Memperbaiki bug pada modul pembelian terkait perhitungan total, validasi item, dan sinkronisasi status pembayaran. <strong>Dampak:</strong> Transaksi pembelian kini menghitung total dengan benar dan status pembayaran tersinkronisasi.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ─── Section 2: Document Lifecycle ─── -->
+            <div class="section-title">
+                <span class="line"></span>
+                <h2><span class="section-icon">📄</span> Document Lifecycle — Draft &amp; Final State Machine</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table">
+                <thead><tr><th style="width:11%">Tanggal</th><th style="width:12%">Severity</th><th style="width:22%">Isu / Topik</th><th style="width:55%">Solusi &amp; Dampak</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">2026-04-29<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-feature"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Upgrade Draft &amp; Final Dokumen</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Implementasi state machine Draft → Final pada modul penjualan. Dokumen draft dapat di-upgrade menjadi final dengan <strong>penguncian data permanen</strong> setelah finalisasi. <strong>Dampak:</strong> Mencegah edit dokumen transaksi yang sudah disetujui. Data final tidak dapat diubah tanpa proses void/reschedule tercatat.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-21<span class="day">Selasa</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Draft Update</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Pembaruan kolom dan logika draft pada tabel penjualan untuk mendukung workflow draft yang lebih robust. <strong>Dampak:</strong> Draft dokumen menyimpan metadata tambahan (timestamp, editor, revision note) sebelum dipromosikan ke final.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-12<span class="day">Minggu</span></td>
+                        <td><span class="badge badge-migrate"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Delete Force Delete &amp; Delete Draft Dokument</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penghapusan mekanisme <code>force delete</code> dan kolom <code>draft</code> pada dokumen transaksi. Lifecycle status dokumen disederhanakan. <strong>Dampak:</strong> Menghilangkan celah penghapusan permanen yang tidak tercatat. Semua penghapusan melalui soft-delete dengan audit trail.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ─── Section 3: Race Condition, Locking & Integrity ─── -->
+            <div class="section-title">
+                <span class="line"></span>
+                <h2><span class="section-icon">🔒</span> Race Condition, Locking &amp; Data Integrity</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table">
+                <thead><tr><th style="width:11%">Tanggal</th><th style="width:12%">Severity</th><th style="width:22%">Isu / Topik</th><th style="width:55%">Solusi &amp; Dampak</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">2026-04-29<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🔴</span> Critical</span></td>
+                        <td class="td-feature">Foundation Penjualan — Restrukturisasi &amp; Validasi</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Restrukturisasi <strong>service layer</strong> modul penjualan, penambahan <strong>validasi bisnis</strong> di model event, dan penyesuaian <strong>policy akses</strong>. <strong>Dampak:</strong> Validasi stok dilakukan di layer model (bukan hanya UI), mencegah bypass via API/manual insert. Policy guard membatasi aksi berdasarkan role.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-05-05<span class="day">Selasa</span></td>
+                        <td><span class="badge badge-purchase"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Disable Produk — Integritas Referensial</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan mekanisme disable/hapus produk agar tidak merusak data transaksi historis. <strong>Dampak:</strong> Produk yang pernah dibeli/dijual tidak dapat dihapus fisik; hanya dapat di-disable. Semua riwayat transaksi tetap valid dan dapat direport.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-29<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-emerald"><span class="badge-icon">🟢</span> Architecture</span></td>
+                        <td class="td-feature">Pessimistic Locking (R17) — <code>decrementWithLock</code></td>
+                        <td class="td-detail"><strong>Solusi:</strong> Implementasi <code>DB::transaction</code> + <code>lockForUpdate()</code> pada model <code>StockBatch</code> via method <code>decrementWithLock()</code> dan <code>incrementWithLock()</code>. <strong>Dampak:</strong> Mencegah <strong>oversell</strong> saat dua kasir/lebih mengakses stok batch yang sama secara bersamaan.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-emerald"><span class="badge-icon">🟢</span> Architecture</span></td>
+                        <td class="td-feature">Atomic Transaction — All or Nothing</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Seluruh operasi stok (kurangi batch, catat mutation, update total, sync WooCommerce) dibungkus dalam <strong>satu DB transaction</strong>. <strong>Dampak:</strong> Jika salah satu langkah gagal, seluruh operasi di-rollback. Tidak ada kondisi di mana stok sudah berkurang tapi mutation tidak tercatat.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-emerald"><span class="badge-icon">🟢</span> Architecture</span></td>
+                        <td class="td-feature">Audit Trail — <code>StockMutation</code></td>
+                        <td class="td-detail"><strong>Solusi:</strong> Setiap perubahan stok wajib mencatat entry di <code>stock_mutations</code> dengan konteks: type, reference_type, reference_id, notes. <strong>Dampak:</strong> Full audit trail untuk debugging dan compliance. Setiap perubahan stok dapat ditelusuri ke transaksi asalnya.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-13<span class="day">Senin</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Guard Penjualan &amp; Tukar Tambah</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penerapan <strong>policy guard</strong> pada resource Penjualan dan Tukar Tambah. Aksi create/edit dibatasi berdasarkan role pengguna. <strong>Dampak:</strong> Mencegah user yang tidak berwenang mengubah transaksi penting. Penjualan final hanya bisa di-void oleh admin.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ─── Section 4: Performance & Query ─── -->
+            <div class="section-title">
+                <span class="line"></span>
+                <h2><span class="section-icon">⚡</span> Performance, Query &amp; System Optimization</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table">
+                <thead><tr><th style="width:11%">Tanggal</th><th style="width:12%">Severity</th><th style="width:22%">Isu / Topik</th><th style="width:55%">Solusi &amp; Dampak</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">2026-04-29<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Fixing N+1 Update + Performance Query</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan query N+1 pada tampilan inventory dan optimasi performa query utama modul pembelian/penjualan. <strong>Dampak:</strong> Waktu load halaman inventory dan daftar transaksi berkurang signifikan. Mengurangi beban database.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Fixing Error View Page Validation Log</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan error saat membuka halaman view validation log di PC lokal lain yang disebabkan oleh path file lokal yang tidak tersedia. <strong>Dampak:</strong> Halaman validation log kini dapat dibuka di semua environment tanpa error.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-12<span class="day">Minggu</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Eager Loading &amp; Setup Redis Lokal</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Implementasi eager loading pada query utama modul pembelian/penjualan dan konfigurasi Redis untuk caching lokal. <strong>Dampak:</strong> Mengurangi jumlah query ke database dan meningkatkan response time pada data yang sering diakses.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ─── Section 5: Cross-Module Sync ─── -->
+            <div class="section-title">
+                <span class="line"></span>
+                <h2><span class="section-icon">🧩</span> Cross-Module Synchronization</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table">
+                <thead><tr><th style="width:11%">Tanggal</th><th style="width:12%">Severity</th><th style="width:22%">Isu / Topik</th><th style="width:55%">Solusi &amp; Dampak</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">2026-05-04<span class="day">Senin</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Penjualan Flexible</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penambahan fleksibilitas pada modul penjualan untuk mendukung berbagai skenario transaksi, penyesuaian validasi, dan perbaikan flow input data. <strong>Dampak:</strong> Form penjualan dapat menangani edge-case seperti partial payment, split payment, dan multi-batch allocation dalam satu transaksi.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td><span class="badge badge-service"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Fix Exiting File Penjualan &amp; Tukar Tambah</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan pada proses exiting file dokumen (attachment/bukti) agar file dapat diakses dan diunduh dengan benar. <strong>Dampak:</strong> Dokumen attachment yang diupload pada transaksi penjualan dan tukar tambah kini persisten dan tidak hilang saat edit/view.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-13<span class="day">Senin</span></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Tukar Tambah Solve</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penyelesaian bug pada modul tukar tambah terkait perhitungan selisih harga dan update status transaksi. <strong>Dampak:</strong> Transaksi tukar tambah kini menghitung grand total dengan benar, termasuk diskon, biaya tambahan, dan selisih harga trade-in.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-18<span class="day">Sabtu</span></td>
+                        <td><span class="badge badge-service"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Fix Icon Incorrect Product</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Memperbaiki icon yang salah pada tampilan produk di panel inventory dan penjualan. <strong>Dampak:</strong> Visualisasi produk lebih akurat dan tidak membingungkan user.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-15<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Update UI Validation Log</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Peningkatan tampilan UI pada halaman validation log, termasuk perbaikan warna, layout, dan responsivitas. <strong>Dampak:</strong> Halaman validation log lebih mudah dibaca dan di-navigasi.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-14<span class="day">Selasa</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Validation Log Page &amp; Fix Validation</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Memperbaiki halaman validation log dan logika validasi data transaksi agar lebih akurat dalam mendeteksi anomali. <strong>Dampak:</strong> Sistem dapat mendeteksi dan menandai transaksi yang mencurigakan atau tidak valid dengan lebih baik.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-29<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Policy Validation Log &amp; RMA</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penerapan policy access control pada modul validation log dan RMA (Return Merchandise Authorization). <strong>Dampak:</strong> Hanya user dengan role yang sesuai yang dapat mengakses dan mengubah data validation log dan RMA.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-30<span class="day">Kamis</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Update Tampilan Pembelian &amp; Penjualan</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan tampilan UI pada modul pembelian dan penjualan, penyesuaian layout dan komponen tampilan agar lebih konsisten. <strong>Dampak:</strong> Tampilan form dan tabel transaksi lebih rapi dan mudah digunakan.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-16<span class="day">Kamis</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Up Production</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Update dan deployment versi terbaru ke environment production. <strong>Dampak:</strong> Fitur dan perbaikan terbaru tersedia untuk user production.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-12<span class="day">Minggu</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Resolve Production</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penyelesaian masalah yang muncul di environment production. <strong>Dampak:</strong> Sistem production kembali stabil dan berjalan normal.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ─── Section 6: Deployment ─── -->
+            <div class="section-title">
+                <span class="line"></span>
+                <h2><span class="section-icon">🚀</span> Deployment &amp; Infrastructure</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table">
+                <thead><tr><th style="width:11%">Tanggal</th><th style="width:12%">Severity</th><th style="width:22%">Isu / Topik</th><th style="width:55%">Solusi &amp; Dampak</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">2026-05-05<span class="day">Selasa</span></td>
+                        <td><span class="badge badge-service"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Update Deploy.md</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Pembaruan dokumentasi deployment terkait konfigurasi server, environment variable, dan prosedur deploy terbaru. <strong>Dampak:</strong> Tim deployment memiliki referensi yang akurat dan up-to-date.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-05-04<span class="day">Senin</span></td>
+                        <td><span class="badge badge-service"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Update Deploy.md (Docker Config)</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penyesuaian instruksi deployment dan konfigurasi Docker untuk environment production. <strong>Dampak:</strong> Deployment ke server production lebih lancar dan terdokumentasi.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-29<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Docs: Membuat Roadmap Penjualan Fixing &amp; Upgrade</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penyusunan dokumentasi roadmap untuk fase perbaikan dan upgrade modul penjualan. <strong>Dampak:</strong> Tim development memiliki panduan jelas untuk perbaikan dan upgrade modul penjualan ke depan.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-04-16<span class="day">Kamis</span></td>
+                        <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
+                        <td class="td-feature">Add Dokumentasi Penjualan</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Penambahan dokumentasi teknis dan user guide untuk modul penjualan serta tukar tambah. <strong>Dampak:</strong> Dokumentasi membantu tim support dan developer baru memahami alur bisnis modul penjualan.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </main>
+
+        <footer class="report-footer">
+            <div class="footer-left">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                Generated from Git commits &amp; technical docs — Filtered 24 Apr – 5 Mei 2026
+            </div>
+            <div class="footer-right">
+                Arabica System · Fundamental Fixes v2026.05
+            </div>
+        </footer>
+
+    </div>
+</body>
+
+</html>

@@ -186,15 +186,16 @@ class TukarTambahResource extends BaseResource
                                 Group::make()
                                     ->statePath('penjualan')
                                     ->schema([
-                                        // Section::make('Data Penjualan')
-                                        //     ->description('Informasi pelanggan dan sales')
-                                        //     ->icon('heroicon-m-user-group')
-                                        //     ->schema([
-                                        //         Grid::make(2)
-                                        //             ->schema([
-                                        //             ]),
-                                        //     ])
-                                        //     ->compact(),
+                                        TextInput::make('diskon_total')
+                                            ->label('Diskon Penjualan')
+                                            ->prefix('Rp')
+                                            ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
+                                            ->default(0)
+                                            ->helperText('Diskon untuk barang keluar')
+                                            ->dehydrateStateUsing(function ($state) {
+                                                $cleaned = preg_replace('/[^0-9]/', '', (string) $state);
+                                                return (int) $cleaned;
+                                            }),
 
                                         TableRepeater::make('items')
                                             ->label('Daftar Barang Keluar')
@@ -528,7 +529,7 @@ class TukarTambahResource extends BaseResource
                                                 TextInput::make('serials_count')
                                                     ->label('Serial Number & Garansi')
                                                     ->formatStateUsing(fn(Get $get): string => count(array_filter($get('serials') ?? [], fn($s) => ! empty($s['sn']))) . ' serials')
-                                                    ->live()
+                                                    // ->live()
                                                     ->disabled()
                                                     ->dehydrated(true)
                                                     ->suffixAction(
@@ -732,6 +733,8 @@ class TukarTambahResource extends BaseResource
                                                     ->suffixIcon('heroicon-m-banknotes'),
                                             ])
                                             ->columnSpanFull(),
+
+
                                     ]),
                             ]),
 
@@ -759,6 +762,12 @@ class TukarTambahResource extends BaseResource
                                                 return $supplier->id;
                                             })
                                             ->dehydrated(),
+
+                                        Select::make('tipe_pembelian')
+                                            ->label('Pajak Pembelian')
+                                            ->options(['non_ppn' => 'Non PPN', 'ppn' => 'PPN (11%)'])
+                                            ->default('non_ppn')
+                                            ->helperText('Pajak untuk barang masuk'),
 
                                         TableRepeater::make('items')
                                             ->label('Barang')
@@ -972,6 +981,8 @@ class TukarTambahResource extends BaseResource
                                                 $set('total_pembelian_summary', number_format($total, 0, ',', '.'));
                                             })
                                             ->suffixIcon('heroicon-m-calculator'),
+
+
                                     ]),
                             ]),
                     ])
@@ -1024,73 +1035,40 @@ class TukarTambahResource extends BaseResource
                     ])
                     ->collapsed(false),
 
-                // Unified Pembayaran Section
+                // Pembayaran Section
                 Section::make('Pembayaran')
                     ->description('Pembayaran untuk penjualan dan pembelian')
                     ->icon('heroicon-m-banknotes')
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('penjualan.diskon_total')
-                                    ->label('Diskon Penjualan')
-                                    ->prefix('Rp')
-                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->default(0)
-                                    ->helperText('Diskon untuk barang keluar')
-                                    ->dehydrateStateUsing(function ($state) {
-                                        $cleaned = preg_replace('/[^0-9]/', '', (string) $state);
-                                        return (int) $cleaned;
-                                    }),
-                                Select::make('pembelian.tipe_pembelian')
-                                    ->label('Pajak Pembelian')
-                                    ->options(['non_ppn' => 'Non PPN', 'ppn' => 'PPN (11%)'])
-                                    ->default('non_ppn')
-                                    ->helperText('Pajak untuk barang masuk'),
-                            ]),
-
-                        TableRepeater::make('unified_pembayaran')
-                            ->label('Metode Pembayaran')
+                        TableRepeater::make('pembayaran')
+                            ->label('Riwayat Pembayaran')
                             ->addActionLabel('+ Tambah Pembayaran')
+                            ->dehydrated(true)
+                            ->live(debounce: '200ms')
                             ->schema([
+                                Select::make('tipe')
+                                    ->label('Tipe')
+                                    ->options(['penjualan' => 'Penjualan', 'pembelian' => 'Pembelian'])
+                                    ->default('penjualan')
+                                    ->native(false)
+                                    ->dehydrated(true)
+                                    ->live(debounce: '200ms'),
                                 DatePicker::make('tanggal')
                                     ->label('Tanggal')
                                     ->default(now())
                                     ->native(false)
-                                    ->required(fn(Get $get): bool => filled($get('metode_bayar')) || filled($get('jumlah')) || filled($get('bukti_transfer')))
-                                    ->validationMessages([
-                                        'required' => 'Perlu diisi',
-                                    ]),
-                                Select::make('tipe_transaksi')
-                                    ->label('Untuk')
-                                    ->options([
-                                        'penjualan' => 'Penjualan',
-                                        'pembelian' => 'Pembelian',
-                                    ])
-                                    ->required(fn(Get $get): bool => filled($get('metode_bayar')) || filled($get('jumlah')) || filled($get('bukti_transfer')))
-                                    ->validationMessages([
-                                        'required' => 'Perlu diisi',
-                                    ])
-                                    ->reactive(),
-
+                                    ->dehydrated(true),
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
-                                    ->required(fn(Get $get): bool => filled($get('jumlah')) || filled($get('bukti_transfer')) || filled($get('akun_transaksi_id')))
-                                    ->validationMessages([
-                                        'required' => 'Perlu diisi',
-                                    ])
-                                    ->reactive(),
+                                    ->dehydrated(true),
                                 Select::make('akun_transaksi_id')
                                     ->label('Akun Transaksi')
                                     ->options(fn() => AkunTransaksi::query()->where('is_active', true)->pluck('nama_akun', 'id'))
                                     ->searchable()
-                                    ->required(fn(Get $get) => $get('metode_bayar') === 'transfer')
-                                    ->validationMessages([
-                                        'required' => 'Perlu diisi',
-                                    ]),
+                                    ->dehydrated(true),
                                 TextInput::make('jumlah')
                                     ->label('Nominal')
-                                    ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
                                     ->dehydrated(true)
@@ -1098,60 +1076,31 @@ class TukarTambahResource extends BaseResource
                                         $cleaned = preg_replace('/[^0-9]/', '', (string) $state);
                                         return (int) $cleaned;
                                     })
-                                    ->placeholder(function (Get $get, $livewire): string {
-                                        $tipeTransaksi = $get('tipe_transaksi');
-
-                                        if (! $tipeTransaksi) {
-                                            return 'Pilih tipe transaksi dulu';
+                                    ->live(debounce: '200ms')
+                                    ->helperText(function (Get $get): ?string {
+                                        $tipe = $get('tipe');
+                                        if ($tipe === 'penjualan') {
+                                            $items = $get('penjualan.items') ?? [];
+                                            $jasaItems = $get('penjualan.jasa_items') ?? [];
+                                            $diskon = (int) ($get('penjualan.diskon_total') ?? 0);
+                                            $productTotal = collect($items)->sum(fn ($i) => (int) ($i['qty'] ?? 0) * (int) ($i['harga_jual'] ?? 0));
+                                            $serviceTotal = collect($jasaItems)->sum(fn ($i) => (int) ($i['qty'] ?? 0) * (int) ($i['harga'] ?? 0));
+                                            $total = $productTotal + $serviceTotal - $diskon;
+                                            $payments = $get('pembayaran') ?? [];
+                                            $paid = collect($payments)->where('tipe', 'penjualan')->sum(fn ($p) => (int) ($p['jumlah'] ?? 0));
+                                            $sisa = max(0, $total - $paid);
+                                            return 'Sisa Penjualan: Rp ' . number_format($sisa, 0, ',', '.');
                                         }
-
-                                        try {
-                                            $formData = $livewire->data ?? [];
-
-                                            if ($tipeTransaksi === 'penjualan') {
-                                                // Calculate penjualan total from form data
-                                                $items = $formData['penjualan']['items'] ?? [];
-                                                $jasaItems = $formData['penjualan']['jasa_items'] ?? [];
-
-                                                $productTotal = collect($items)->sum(function ($item) {
-                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                    $price = (int) ($item['harga_jual'] ?? 0);
-
-                                                    return $qty * $price;
-                                                });
-
-                                                $serviceTotal = collect($jasaItems)->sum(function ($item) {
-                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                    $price = (int) ($item['harga'] ?? 0);
-
-                                                    return $qty * $price;
-                                                });
-
-                                                $diskon = (int) ($formData['penjualan']['diskon_total'] ?? 0);
-                                                $total = max(0, ($productTotal + $serviceTotal) - $diskon);
-
-                                                return $total > 0 ? 'Saran: Rp ' . number_format($total, 0, ',', '.') : 'Total Penjualan';
-                                            } elseif ($tipeTransaksi === 'pembelian') {
-                                                // Calculate pembelian total from form data
-                                                $items = $formData['pembelian']['items'] ?? [];
-
-                                                $total = collect($items)->sum(function ($item) {
-                                                    $qty = (int) ($item['qty'] ?? 0);
-                                                    $hpp = (int) ($item['hpp'] ?? 0);
-
-                                                    return $qty * $hpp;
-                                                });
-
-                                                return $total > 0 ? 'Saran: Rp ' . number_format($total, 0, ',', '.') : 'Total Pembelian';
-                                            }
-                                        } catch (\Exception $e) {
-                                            // Fallback if form data is not available
-                                            return $tipeTransaksi === 'penjualan' ? 'Total Penjualan' : 'Total Pembelian';
+                                        if ($tipe === 'pembelian') {
+                                            $items = $get('pembelian.items') ?? [];
+                                            $total = collect($items)->sum(fn ($i) => (int) ($i['qty'] ?? 0) * (int) ($i['hpp'] ?? 0));
+                                            $payments = $get('pembayaran') ?? [];
+                                            $paid = collect($payments)->where('tipe', 'pembelian')->sum(fn ($p) => (int) ($p['jumlah'] ?? 0));
+                                            $sisa = max(0, $total - $paid);
+                                            return 'Sisa Pembelian: Rp ' . number_format($sisa, 0, ',', '.');
                                         }
-
-                                        return 'Masukkan nominal';
-                                    })
-                                    ->live(onBlur: true),
+                                        return null;
+                                    }),
                                 FileUpload::make('bukti_transfer')
                                     ->label('Bukti')
                                     ->image()
@@ -1163,125 +1112,47 @@ class TukarTambahResource extends BaseResource
                                         $directory = 'tukar-tambah/bukti-transfer';
                                         $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                                         $filename = \Illuminate\Support\Str::slug($filename) . '-' . uniqid() . '.webp';
-
-                                        // Create temp path for processed image
                                         $tempPath = sys_get_temp_dir() . '/' . $filename;
-
-                                        // Get image dimensions
                                         $imageInfo = getimagesize($file->getRealPath());
                                         $width = $imageInfo[0] ?? 0;
                                         $height = $imageInfo[1] ?? 0;
-
-                                        // FHD limits
                                         $maxWidth = 1920;
                                         $maxHeight = 1080;
-
-                                        // Use Spatie Image
                                         $image = \Spatie\Image\Image::load($file->getRealPath());
-
-                                        // Only resize if image is larger than FHD
                                         if ($width > $maxWidth || $height > $maxHeight) {
                                             $image->width($maxWidth)
                                                 ->height($maxHeight)
                                                 ->fit(\Spatie\Image\Enums\Fit::Contain);
                                         }
-
-                                        // Convert to webp with 80% quality and save
                                         $image->format('webp')
                                             ->quality(80)
                                             ->save($tempPath);
-
-                                        // Store to disk
                                         $path = $directory . '/' . $filename;
                                         \Illuminate\Support\Facades\Storage::disk('public')->put($path, file_get_contents($tempPath));
-
-                                        // Cleanup temp file
                                         @unlink($tempPath);
-
                                         return $path;
                                     })
                                     ->openable()
                                     ->downloadable()
                                     ->previewable(false)
                                     ->extraAttributes(['class' => 'compact-file-upload'])
-                                    ->helperText(new \Illuminate\Support\HtmlString('
-                                        <style>
-                                            .compact-file-upload .filepond--root,
-                                            .compact-file-upload .filepond--panel-root {
-                                                min-height: 38px !important;
-                                                height: 38px !important;
-                                                border-radius: 0.5rem;
-                                            }
-                                            .compact-file-upload .filepond--drop-label {
-                                                min-height: 38px !important;
-                                                display: flex;
-                                                align-items: center;
-                                                justify-content: center;
-                                                transform: none !important;
-                                                padding: 0 !important;
-                                                color: rgb(var(--primary-600)) !important;
-                                                cursor: pointer;
-                                            }
-                                        </style>
-                                    ')),
+                                    ->dehydrated(true),
                             ])
                             ->colStyles([
+                                'tipe' => 'width: 12%;',
                                 'tanggal' => 'width: 13%;',
-                                'tipe_transaksi' => 'width: 12%;',
-                                'metode_bayar' => 'width: 18%;',
-                                'akun_transaksi_id' => 'width: 18%;',
-                                'jumlah' => 'width: 19%;',
-                                'bukti_transfer' => 'width: 29%;',
+                                'metode_bayar' => 'width: 13%;',
+                                'akun_transaksi_id' => 'width: 20%;',
+                                'jumlah' => 'width: 22%;',
+                                'bukti_transfer' => 'width: 20%;',
                             ])
                             ->columns(6)
                             ->minItems(0)
-                            ->defaultItems(2)
-                            ->default([
-                                [
-                                    'tipe_transaksi' => 'penjualan',
-                                    'tanggal' => now()->format('Y-m-d'),
-                                    'metode_bayar' => null,
-                                    'akun_transaksi_id' => null,
-                                    'jumlah' => null,
-                                    'bukti_transfer' => null,
-                                ],
-                                [
-                                    'tipe_transaksi' => 'pembelian',
-                                    'tanggal' => now()->format('Y-m-d'),
-                                    'metode_bayar' => null,
-                                    'akun_transaksi_id' => null,
-                                    'jumlah' => null,
-                                    'bukti_transfer' => null,
-                                ],
-                            ])
-                            ->reorderable(false)
-                            ->afterStateHydrated(function (Set $set, Get $get, $state) {
-                                // On edit, load existing payments from both penjualan and pembelian
-                                if (filled($state)) {
-                                    return;
-                                }
-
-                                $unifiedPayments = [];
-
-                                // Load penjualan payments
-                                $penjualanPayments = $get('penjualan.pembayaran') ?? [];
-                                foreach ($penjualanPayments as $payment) {
-                                    $unifiedPayments[] = array_merge($payment, ['tipe_transaksi' => 'penjualan']);
-                                }
-
-                                // Load pembelian payments
-                                $pembelianPayments = $get('pembelian.pembayaran') ?? [];
-                                foreach ($pembelianPayments as $payment) {
-                                    $unifiedPayments[] = array_merge($payment, ['tipe_transaksi' => 'pembelian']);
-                                }
-
-                                if (! empty($unifiedPayments)) {
-                                    $set('unified_pembayaran', $unifiedPayments);
-                                }
-                            }),
+                            ->defaultItems(0)
+                            ->reorderable(false),
                     ])
-                    ->collapsible()
-                    ->collapsed(false),
+                    ->columnSpanFull(),
+
 
             ]);
     }

@@ -186,14 +186,6 @@ class EditTukarTambah extends EditRecord
                     ])
                     ->values()
                     ->all(),
-                'pembayaran' => $penjualan->pembayaran
-                    ->map(fn (PenjualanPembayaran $item): array => [
-                        'metode_bayar' => $item->metode_bayar,
-                        'akun_transaksi_id' => $item->akun_transaksi_id,
-                        'jumlah' => (int) ($item->jumlah ?? 0),
-                    ])
-                    ->values()
-                    ->all(),
             ];
         }
 
@@ -220,49 +212,44 @@ class EditTukarTambah extends EditRecord
                     })
                     ->values()
                     ->all(),
-                'pembayaran' => $pembelian->pembayaran
-                    ->map(fn (PembelianPembayaran $item): array => [
-                        'metode_bayar' => $item->metode_bayar,
-                        'akun_transaksi_id' => $item->akun_transaksi_id,
-                        'jumlah' => (int) ($item->jumlah ?? 0),
-                    ])
-                    ->values()
-                    ->all(),
             ];
         }
 
-        // Populate unified_pembayaran
+        // Unified payments
         $unifiedPayments = [];
-
         if ($penjualan) {
-            foreach ($penjualan->pembayaran as $payment) {
-                $unifiedPayments[] = [
-                    'tipe_transaksi' => 'penjualan',
-                    'tanggal' => $payment->tanggal,
-                    'metode_bayar' => $payment->metode_bayar,
-                    'akun_transaksi_id' => $payment->akun_transaksi_id,
-                    'jumlah' => (int) $payment->jumlah,
-                    'bukti_transfer' => $payment->bukti_transfer,
-                    'catatan' => $payment->catatan,
-                ];
-            }
+            $unifiedPayments = array_merge($unifiedPayments,
+                $penjualan->pembayaran
+                    ->map(fn (PenjualanPembayaran $item): array => [
+                        'tipe' => 'penjualan',
+                        'tanggal' => $item->tanggal?->format('Y-m-d'),
+                        'metode_bayar' => $item->metode_bayar,
+                        'akun_transaksi_id' => $item->akun_transaksi_id,
+                        'jumlah' => (int) ($item->jumlah ?? 0),
+                        'bukti_transfer' => $item->bukti_transfer,
+                        'catatan' => $item->catatan,
+                    ])
+                    ->values()
+                    ->all()
+            );
         }
-
         if ($pembelian) {
-            foreach ($pembelian->pembayaran as $payment) {
-                $unifiedPayments[] = [
-                    'tipe_transaksi' => 'pembelian',
-                    'tanggal' => $payment->tanggal,
-                    'metode_bayar' => $payment->metode_bayar,
-                    'akun_transaksi_id' => $payment->akun_transaksi_id,
-                    'jumlah' => (int) $payment->jumlah,
-                    'bukti_transfer' => $payment->bukti_transfer,
-                    'catatan' => $payment->catatan,
-                ];
-            }
+            $unifiedPayments = array_merge($unifiedPayments,
+                $pembelian->pembayaran
+                    ->map(fn (PembelianPembayaran $item): array => [
+                        'tipe' => 'pembelian',
+                        'tanggal' => $item->tanggal?->format('Y-m-d'),
+                        'metode_bayar' => $item->metode_bayar,
+                        'akun_transaksi_id' => $item->akun_transaksi_id,
+                        'jumlah' => (int) ($item->jumlah ?? 0),
+                        'bukti_transfer' => $item->bukti_transfer,
+                        'catatan' => $item->catatan,
+                    ])
+                    ->values()
+                    ->all()
+            );
         }
-
-        $data['unified_pembayaran'] = $unifiedPayments;
+        $data['pembayaran'] = $unifiedPayments;
 
         // Populate id_member at root level for the form field
         if ($penjualan && $penjualan->id_member) {
@@ -278,8 +265,8 @@ class EditTukarTambah extends EditRecord
         if (isset($rawState['penjualan']['items']) && is_array($rawState['penjualan']['items'])) {
             $data['penjualan']['items'] = $rawState['penjualan']['items'];
         }
-        if (isset($rawState['unified_pembayaran']) && is_array($rawState['unified_pembayaran'])) {
-            $data['unified_pembayaran'] = $rawState['unified_pembayaran'];
+        if (isset($rawState['pembayaran']) && is_array($rawState['pembayaran'])) {
+            $data['pembayaran'] = $rawState['pembayaran'];
         }
 
         // VALIDASI: cek duplikat dan stok penjualan items
@@ -494,40 +481,9 @@ class EditTukarTambah extends EditRecord
 
             $penjualanPayload = is_array($data['penjualan'] ?? null) ? $data['penjualan'] : [];
             $pembelianPayload = is_array($data['pembelian'] ?? null) ? $data['pembelian'] : [];
-
-            // Process unified payments and split them
-            $unifiedPayments = $data['unified_pembayaran'] ?? [];
-            $penjualanPayments = [];
-            $pembelianPayments = [];
-
-            foreach ($unifiedPayments as $payment) {
-                if (! is_array($payment)) {
-                    continue;
-                }
-
-                $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
-                $metodeBayar = $payment['metode_bayar'] ?? null;
-                $jumlah = $this->normalizePaymentAmount($payment['jumlah'] ?? null);
-
-                if (! $tipeTransaksi || ! $metodeBayar || $jumlah <= 0) {
-                    continue;
-                }
-
-                // Remove tipe_transaksi from payment data before saving
-                $paymentData = $payment;
-                unset($paymentData['tipe_transaksi']);
-                $paymentData['jumlah'] = $jumlah;
-
-                if ($tipeTransaksi === 'penjualan') {
-                    $penjualanPayments[] = $paymentData;
-                } elseif ($tipeTransaksi === 'pembelian') {
-                    $pembelianPayments[] = $paymentData;
-                }
-            }
-
-            // Override pembayaran arrays with unified payments
-            $penjualanPayload['pembayaran'] = $penjualanPayments;
-            $pembelianPayload['pembayaran'] = $pembelianPayments;
+            $allPayments = $data['pembayaran'] ?? [];
+            $penjualanPayments = collect($allPayments)->where('tipe', 'penjualan')->values()->all();
+            $pembelianPayments = collect($allPayments)->where('tipe', 'pembelian')->values()->all();
 
             $penjualan = $record->penjualan;
             if ($penjualan) {
@@ -540,7 +496,7 @@ class EditTukarTambah extends EditRecord
                     'no_nota' => $penjualanPayload['no_nota'] ?? $penjualan->no_nota,
                 ]);
 
-                $this->syncPenjualanDetails($penjualan, $penjualanPayload);
+                $this->syncPenjualanDetails($penjualan, $penjualanPayload, $penjualanPayments);
             }
 
             $pembelian = $record->pembelian;
@@ -554,7 +510,7 @@ class EditTukarTambah extends EditRecord
                     'tipe_pembelian' => $pembelianPayload['tipe_pembelian'] ?? $pembelian->tipe_pembelian,
                 ]);
 
-                $this->syncPembelianDetails($pembelian, $pembelianPayload, $penjualan?->getKey());
+                $this->syncPembelianDetails($pembelian, $pembelianPayload, $pembelianPayments, $penjualan?->getKey());
             }
 
             $record->update([
@@ -567,7 +523,7 @@ class EditTukarTambah extends EditRecord
         });
     }
 
-    protected function syncPenjualanDetails(Penjualan $penjualan, array $payload): void
+    protected function syncPenjualanDetails(Penjualan $penjualan, array $payload, array $payments = []): void
     {
         $tukarTambah = $penjualan->tukarTambah;
         $canEditItems = $tukarTambah?->canEditItems() ?? true;
@@ -640,14 +596,14 @@ class EditTukarTambah extends EditRecord
 
         if ($canEditPayment) {
             $penjualan->pembayaran()->get()->each->delete();
-            $this->createPenjualanPembayaran($penjualan, $payload['pembayaran'] ?? []);
+            $this->createPenjualanPembayaran($penjualan, $payments);
         }
 
         $penjualan->recalculateTotals();
         $penjualan->recalculatePaymentStatus();
     }
 
-    protected function syncPembelianDetails(Pembelian $pembelian, array $payload, ?int $penjualanId): void
+    protected function syncPembelianDetails(Pembelian $pembelian, array $payload, array $payments, ?int $penjualanId): void
     {
         $tukarTambah = $pembelian->tukarTambah;
         $canEditPayment = $tukarTambah?->canEditPayment() ?? true;
@@ -674,7 +630,7 @@ class EditTukarTambah extends EditRecord
             // Jika item pembelian sudah dipakai di penjualan luar, hanya update pembayaran jika boleh
             if ($canEditPayment) {
                 $pembelian->pembayaran()->get()->each->delete();
-                $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+                $this->createPembelianPembayaran($pembelian, $payments);
             }
 
             return;
@@ -683,7 +639,7 @@ class EditTukarTambah extends EditRecord
         // Hanya update pembayaran, items tidak pernah dihapus (locked)
         if ($canEditPayment) {
             $pembelian->pembayaran()->get()->each->delete();
-            $this->createPembelianPembayaran($pembelian, $payload['pembayaran'] ?? []);
+            $this->createPembelianPembayaran($pembelian, $payments);
         }
     }
 
@@ -882,7 +838,7 @@ class EditTukarTambah extends EditRecord
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => $jumlah,
                 'catatan' => $item['catatan'] ?? null,
-                'bukti_transfer' => $item['bukti_transfer'] ?? null,
+                'bukti_transfer' => $this->normalizePaymentFilePath($item['bukti_transfer'] ?? null),
             ]);
         }
     }
@@ -908,13 +864,20 @@ class EditTukarTambah extends EditRecord
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
                 'jumlah' => $jumlah,
                 'catatan' => $item['catatan'] ?? null,
-                'bukti_transfer' => $item['bukti_transfer'] ?? null,
+                'bukti_transfer' => $this->normalizePaymentFilePath($item['bukti_transfer'] ?? null),
             ]);
         }
     }
 
     protected function normalizePaymentAmount(mixed $value): int
     {
+        if (is_array($value)) {
+            $value = collect($value)
+                ->flatten()
+                ->filter(fn ($amount): bool => filled($amount))
+                ->first();
+        }
+
         if (is_int($value)) {
             return $value;
         }
@@ -926,6 +889,24 @@ class EditTukarTambah extends EditRecord
         $cleaned = preg_replace('/[^0-9]/', '', (string) ($value ?? ''));
 
         return (int) ($cleaned ?: 0);
+    }
+
+    protected function normalizePaymentFilePath(mixed $value): ?string
+    {
+        if (is_string($value)) {
+            return $value === '' ? null : $value;
+        }
+
+        if (is_array($value)) {
+            $first = collect($value)
+                ->flatten()
+                ->filter(fn ($path): bool => is_string($path) && $path !== '')
+                ->first();
+
+            return $first ?: null;
+        }
+
+        return null;
     }
 
     protected function createPenjualanJasaItems(Penjualan $penjualan, array $items): void

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Development Division Report — Mei 2026</title>
+    <meta name="description" content="Laporan aktivitas divisi Web Development bulan Mei 2026">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* ─── Design Tokens ─── */
+        :root {
+            --bg-page: #f8f9fc;
+            --bg-white: #ffffff;
+            --bg-subtle: #f1f3f8;
+            --bg-accent-light: #eef2ff;
+            --border-light: #e2e5f0;
+            --border-medium: #d0d4e2;
+            --text-primary: #1a1d2e;
+            --text-secondary: #474d66;
+            --text-muted: #8189a5;
+            --accent-indigo: #4f46e5;
+            --accent-indigo-light: #eef2ff;
+            --accent-indigo-dark: #3730a3;
+            --accent-rose: #e11d48;
+            --accent-rose-bg: #fff1f2;
+            --accent-rose-border: #fecdd3;
+            --accent-amber: #d97706;
+            --accent-amber-bg: #fffbeb;
+            --accent-amber-border: #fde68a;
+            --accent-teal: #0d9488;
+            --accent-teal-bg: #f0fdfa;
+            --accent-teal-border: #99f6e4;
+            --accent-violet: #7c3aed;
+            --accent-violet-bg: #f5f3ff;
+            --accent-violet-border: #ddd6fe;
+            --accent-sky: #0284c7;
+            --accent-sky-bg: #f0f9ff;
+            --accent-sky-border: #bae6fd;
+            --accent-orange: #ea580c;
+            --accent-orange-bg: #fff7ed;
+            --accent-orange-border: #fed7aa;
+            --accent-slate: #475569;
+            --accent-slate-bg: #f8fafc;
+            --accent-slate-border: #cbd5e1;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        /* ─── Reset & Base ─── */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ─── Page Container (A4 optimized) ─── */
+        .page {
+            max-width: 860px;
+            margin: 32px auto;
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 24px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+
+        /* ─── Header Banner ─── */
+        .report-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+            padding: 20px 20px 20px;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-banner::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 50%;
+        }
+
+        .report-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -60%;
+            left: 10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 50%;
+        }
+
+        .banner-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .report-period-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            padding: 5px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 8px;
+        }
+
+        .report-period-badge svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .banner-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 0;
+        }
+
+        /* ─── Summary Strip ─── */
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .summary-item {
+            padding: 20px 24px;
+            text-align: center;
+            border-right: 1px solid var(--border-light);
+        }
+
+        .summary-item:last-child {
+            border-right: none;
+        }
+
+        .summary-item .sum-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--accent-indigo);
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        .summary-item .sum-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 2px;
+        }
+
+        .summary-item .sum-label .icon {
+            font-size: 13px;
+        }
+
+        /* ─── Body Content ─── */
+        .report-body {
+            padding: 32px 48px 40px;
+        }
+
+        /* ─── Section Title ─── */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .section-title .line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-light);
+        }
+
+        .section-title h2 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+
+        /* ─── Table ─── */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .data-table thead th {
+            padding: 12px 18px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table thead th:not(:last-child) {
+            border-right: 1px solid var(--border-light);
+        }
+
+        .data-table tbody td {
+            padding: 14px 18px;
+            vertical-align: top;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table tbody td:not(:last-child) {
+            border-right: 1px solid var(--border-light);
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-accent-light);
+        }
+
+        /* Date */
+        .td-date {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .td-date .day {
+            display: block;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        /* Category Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-bugfix {
+            background: var(--accent-rose-bg);
+            color: var(--accent-rose);
+            border: 1px solid var(--accent-rose-border);
+        }
+
+        .badge-purchase {
+            background: var(--accent-amber-bg);
+            color: var(--accent-amber);
+            border: 1px solid var(--accent-amber-border);
+        }
+
+        .badge-feature {
+            background: var(--accent-teal-bg);
+            color: var(--accent-teal);
+            border: 1px solid var(--accent-teal-border);
+        }
+
+        .badge-design {
+            background: var(--accent-violet-bg);
+            color: var(--accent-violet);
+            border: 1px solid var(--accent-violet-border);
+        }
+
+        .badge-service {
+            background: var(--accent-orange-bg);
+            color: var(--accent-orange);
+            border: 1px solid var(--accent-orange-border);
+        }
+
+        .badge-impl {
+            background: var(--accent-sky-bg);
+            color: var(--accent-sky);
+            border: 1px solid var(--accent-sky-border);
+        }
+
+        .badge-migrate {
+            background: var(--accent-slate-bg);
+            color: var(--accent-slate);
+            border: 1px solid var(--accent-slate-border);
+        }
+
+        .badge-icon {
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        /* Feature */
+        .td-feature {
+            font-weight: 600;
+            color: var(--accent-indigo);
+            font-size: 13px;
+        }
+
+        /* Detail */
+        .td-detail {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* ─── Footer ─── */
+        .report-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 48px;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-light);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-left svg {
+            width: 12px;
+            height: 12px;
+            opacity: 0.5;
+        }
+
+        .footer-right {
+            font-weight: 500;
+        }
+
+        /* ─── Print Styles ─── */
+        @media print {
+            @page {
+                margin: 12mm 10mm;
+                size: A4;
+            }
+
+            body {
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color-adjust: exact;
+            }
+
+            .page {
+                margin: 0;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            .report-banner {
+                background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 14px 20px;
+            }
+
+            .report-banner::before,
+            .report-banner::after {
+                display: none;
+            }
+
+            .banner-title {
+                font-size: 24px;
+            }
+
+            .report-period-badge {
+                background: rgba(255, 255, 255, 0.25) !important;
+                border: 1px solid rgba(255, 255, 255, 0.5) !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                backdrop-filter: none;
+            }
+
+            .summary-strip {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .summary-item {
+                padding: 14px 18px;
+            }
+
+            .summary-item .sum-value {
+                font-size: 22px;
+                color: var(--accent-indigo) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report-body {
+                padding: 24px 36px 28px;
+            }
+
+            .data-table {
+                border: 1px solid #d0d4e2;
+            }
+
+            .data-table thead th {
+                background: #f1f3f8 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 10px 14px;
+            }
+
+            .data-table tbody td {
+                padding: 10px 14px;
+            }
+
+            .data-table tbody tr:hover {
+                background: none;
+            }
+
+            .badge {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .badge-bugfix {
+                background: #fff1f2 !important;
+                border-color: #fecdd3 !important;
+                color: #e11d48 !important;
+            }
+
+            .badge-purchase {
+                background: #fffbeb !important;
+                border-color: #fde68a !important;
+                color: #d97706 !important;
+            }
+
+            .td-feature {
+                color: #4f46e5 !important;
+            }
+
+            .report-footer {
+                background: #f1f3f8 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 12px 36px;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* ─── Screen Animations (disabled in print) ─── */
+        @media screen {
+            .page {
+                animation: slideUp 0.5s ease-out;
+            }
+
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(16px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .data-table tbody tr {
+                transition: background 0.15s ease;
+            }
+        }
+
+        /* ─── Responsive ─── */
+        @media screen and (max-width: 640px) {
+            .page {
+                margin: 0;
+                border-radius: 0;
+                border: none;
+            }
+
+            .report-banner {
+                padding: 16px 20px;
+            }
+
+            .report-period-badge {
+                position: static;
+                transform: none;
+                margin-bottom: 8px;
+            }
+
+            .banner-title {
+                font-size: 20px;
+            }
+
+            .summary-strip {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-item {
+                border-right: none;
+                border-bottom: 1px solid var(--border-light);
+                padding: 14px 24px;
+            }
+
+            .summary-item:last-child {
+                border-bottom: none;
+            }
+
+            .report-body {
+                padding: 24px;
+            }
+
+            .report-footer {
+                padding: 14px 24px;
+                flex-direction: column;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- ─── Banner Header ─── -->
+        <header class="report-banner" id="report-header">
+            <div class="banner-content">
+                <h1 class="banner-title">Web Development Division Report</h1>
+                <span class="report-period-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                    </svg>
+                    Mei 2026
+                </span>
+            </div>
+        </header>
+
+        <!-- ─── Summary Strip ─── -->
+        <div class="summary-strip" id="summary-section">
+            <div class="summary-item">
+                <div class="sum-value">7</div>
+                <div class="sum-label"><span class="icon">📋</span> Total Entri</div>
+            </div>
+            <div class="summary-item">
+                <div class="sum-value">3</div>
+                <div class="sum-label"><span class="icon">🏷️</span> Kategori</div>
+            </div>
+            <div class="summary-item">
+                <div class="sum-value">7</div>
+                <div class="sum-label"><span class="icon">✅</span> Tasks Selesai</div>
+            </div>
+        </div>
+
+        <!-- ─── Body ─── -->
+        <main class="report-body">
+
+            <div class="section-title">
+                <span class="line"></span>
+                <h2>Detail Changelog</h2>
+                <span class="line"></span>
+            </div>
+
+            <table class="data-table" id="changelog-table">
+                <thead>
+                    <tr>
+                        <th style="width: 14%;">Tanggal</th>
+                        <th style="width: 18%;">Kategori</th>
+                        <th style="width: 22%;">Fitur / Topik</th>
+                        <th style="width: 46%;">Detail Perubahan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="td-date">
+                            2026-05-05
+                            <span class="day">Selasa</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-bugfix">
+                                <span class="badge-icon">🐛</span> Perbaikan Bug
+                            </span>
+                        </td>
+                        <td class="td-feature">Disable Produk</td>
+                        <td class="td-detail">Perbaikan mekanisme disable/hapus produk agar tidak mempengaruhi data transaksi historis dan memastikan integritas referensial tetap terjaga.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td>
+                            <span class="badge badge-service">
+                                <span class="badge-icon">⚙️</span> Konfigurasi
+                            </span>
+                        </td>
+                        <td class="td-feature">Update Deploy.md</td>
+                        <td class="td-detail">Pembaruan dokumentasi deployment terkait konfigurasi server, environment variable, dan prosedur deploy terbaru.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">
+                            2026-05-04
+                            <span class="day">Senin</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-bugfix">
+                                <span class="badge-icon">🐛</span> Perbaikan Bug
+                            </span>
+                        </td>
+                        <td class="td-feature">Fix Exiting File Penjualan dan Tukar Tambah</td>
+                        <td class="td-detail">Perbaikan pada proses exiting file dokumen penjualan dan tukar tambah, memastikan file attachment dapat diakses dan diunduh dengan benar.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td>
+                            <span class="badge badge-service">
+                                <span class="badge-icon">⚙️</span> Konfigurasi
+                            </span>
+                        </td>
+                        <td class="td-feature">Update Deploy.md</td>
+                        <td class="td-detail">Penyesuaian instruksi deployment dan konfigurasi Docker untuk environment production.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td>
+                            <span class="badge badge-bugfix">
+                                <span class="badge-icon">🐛</span> Perbaikan Bug
+                            </span>
+                        </td>
+                        <td class="td-feature">Fix Penjualan, Pembelian, Stock Batch</td>
+                        <td class="td-detail">Perbaikan bug pada modul penjualan, pembelian, dan stock batch terkait sinkronisasi data stok, perhitungan total, dan update status transaksi.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td>
+                            <span class="badge badge-bugfix">
+                                <span class="badge-icon">🐛</span> Perbaikan Bug
+                            </span>
+                        </td>
+                        <td class="td-feature">Fix Problem Tukar Tambah dan Stock Batch SoT</td>
+                        <td class="td-detail">Penyelesaian masalah pada modul tukar tambah dan stock batch SoT (Stock on Track), memperbaiki logika perhitungan selisih harga dan pelacakan batch stok.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date"></td>
+                        <td>
+                            <span class="badge badge-impl">
+                                <span class="badge-icon">🚀</span> Implementasi
+                            </span>
+                        </td>
+                        <td class="td-feature">Penjualan Flexible</td>
+                        <td class="td-detail">Penambahan fleksibilitas pada modul penjualan untuk mendukung berbagai skenario transaksi, penyesuaian validasi, dan perbaikan flow input data.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </main>
+
+        <!-- ─── Footer ─── -->
+        <footer class="report-footer" id="report-footer">
+            <div class="footer-left">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                Generated from Git commits & worktree changes
+            </div>
+            <div class="footer-right">
+                Arabica System · v2026.05
+            </div>
+        </footer>
+
+    </div>
+</body>
+
+</html>
