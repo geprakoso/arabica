@@ -306,6 +306,10 @@ class PenjualanResource extends BaseResource
 
                                 Select::make('id_produk')
                                     ->label('Produk')
+                                    ->disabled(function (Get $get): bool {
+                                        return filled($get('id_penjualan_item'));
+                                    })
+                                    ->dehydrated(true)
                                     ->options(function (Get $get): array {
                                         $options = self::getAvailableProductOptions();
                                         $items = $get('../../items_temp') ?? [];
@@ -356,6 +360,10 @@ class PenjualanResource extends BaseResource
                                     }),
                                 Select::make('kondisi')
                                     ->label('Kondisi')
+                                    ->disabled(function (Get $get): bool {
+                                        return filled($get('id_penjualan_item'));
+                                    })
+                                    ->dehydrated(true)
                                     ->options(function (Get $get): array {
                                         $productId = (int) ($get('id_produk') ?? 0);
 
@@ -414,7 +422,13 @@ class PenjualanResource extends BaseResource
                                     ->searchable()
                                     ->preload()
                                     ->reactive()
-                                    ->disabled(fn(Get $get): bool => ! $get('id_produk'))
+                                    ->disabled(function (Get $get): bool {
+                                        if (! $get('id_produk')) {
+                                            return true;
+                                        }
+                                        return filled($get('id_penjualan_item'));
+                                    })
+                                    ->dehydrated(true)
                                     ->placeholder('Pilih Batch')
                                     ->afterStateUpdated(function (Set $set, ?int $state): void {
                                         if (! $state) {
@@ -434,6 +448,10 @@ class PenjualanResource extends BaseResource
                                 TextInput::make('qty')
                                     ->label('Qty')
                                     ->numeric()
+                                    ->disabled(function (Get $get): bool {
+                                        return filled($get('id_penjualan_item'));
+                                    })
+                                    ->dehydrated(true)
                                     ->minValue(1)
                                     ->maxValue(function (Get $get): ?int {
                                         $productId = (int) ($get('id_produk') ?? 0);
@@ -442,8 +460,15 @@ class PenjualanResource extends BaseResource
                                         }
                                         $condition = $get('kondisi');
                                         $batchId = (int) ($get('id_pembelian_item') ?? 0);
+                                        $available = self::getAvailableQty($productId, $condition, $batchId);
 
-                                        return self::getAvailableQty($productId, $condition, $batchId) ?: null;
+                                        $itemId = $get('id_penjualan_item');
+                                        if ($itemId) {
+                                            $originalQty = \App\Models\PenjualanItem::find($itemId)?->qty ?? 0;
+                                            $available += $originalQty;
+                                        }
+
+                                        return $available ?: null;
                                     })
                                     ->required()
                                     ->live(onBlur: true)
@@ -455,6 +480,12 @@ class PenjualanResource extends BaseResource
                                         $condition = $get('kondisi');
                                         $batchId = (int) ($get('id_pembelian_item') ?? 0);
                                         $available = self::getAvailableQty($productId, $condition, $batchId);
+
+                                        $itemId = $get('id_penjualan_item');
+                                        if ($itemId) {
+                                            $originalQty = \App\Models\PenjualanItem::find($itemId)?->qty ?? 0;
+                                            $available += $originalQty;
+                                        }
 
                                         return 'Stok: ' . number_format($available, 0, ',', '.');
                                     })
@@ -480,7 +511,7 @@ class PenjualanResource extends BaseResource
                                     ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->readOnly()
+                                    ->disabled()
                                     ->dehydrated(true),
                                 TextInput::make('harga_jual')
                                     ->label('Harga')

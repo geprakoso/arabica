@@ -32,6 +32,7 @@ class EditPenjualan extends EditRecord
                 'id_pembelian_item' => $item->id_pembelian_item,
                 'kondisi' => $item->kondisi,
                 'qty' => $item->qty,
+                'hpp' => $item->hpp,
                 'harga_jual' => $item->harga_jual,
                 'serials' => $item->serials ?? [],
             ])
@@ -43,11 +44,14 @@ class EditPenjualan extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // Extract items_temp for processing
-        if (isset($data['items_temp']) && is_array($data['items_temp'])) {
+        $rawItems = $this->form->getRawState()['items_temp'] ?? null;
+        if (is_array($rawItems)) {
+            $this->itemsToCreate = $rawItems;
+        } elseif (isset($data['items_temp']) && is_array($data['items_temp'])) {
             $this->itemsToCreate = $data['items_temp'];
-
-            unset($data['items_temp']);
         }
+
+        unset($data['items_temp']);
 
         // Validasi: minimal harus ada 1 item produk atau 1 jasa
         $hasItems = ! empty($this->itemsToCreate);
@@ -86,7 +90,9 @@ class EditPenjualan extends EditRecord
         }
 
         $productKeys = [];
-        foreach ($items as $index => $item) {
+        $rowNumber = 0;
+        foreach ($items as $item) {
+            $rowNumber++;
             $productId = (int) ($item['id_produk'] ?? 0);
             $condition = $item['kondisi'] ?? null;
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
@@ -97,11 +103,11 @@ class EditPenjualan extends EditRecord
                     sourceAction: 'update',
                     fieldName: 'id_produk',
                     fieldLabel: 'Produk',
-                    inputData: ['row' => $index + 1]
+                    inputData: ['row' => $rowNumber]
                 );
 
                 throw ValidationException::withMessages([
-                    'items_temp' => 'Produk pada baris '.($index + 1).' harus dipilih.',
+                    'items_temp' => 'Produk pada baris '.$rowNumber.' harus dipilih.',
                 ]);
             }
 
@@ -118,7 +124,7 @@ class EditPenjualan extends EditRecord
                         'product_id' => $productId,
                         'product_name' => $productName,
                         'qty' => $qty,
-                        'row' => $index + 1,
+                        'row' => $rowNumber,
                     ]
                 );
 
@@ -133,19 +139,19 @@ class EditPenjualan extends EditRecord
                 $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                 $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                 $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
-                $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'. Jika stok tidak cukup, cukup tambahkan qty di baris yang sudah ada.';
+                $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris {$rowNumber}. Jika stok tidak cukup, cukup tambahkan qty di baris yang sudah ada.";
 
                 ValidationLogger::logDuplicate(
                     sourceType: 'Penjualan',
                     sourceAction: 'update',
                     productName: $productName,
-                    row: $index + 1,
+                    row: $rowNumber,
                     inputData: [
                         'product_id' => $productId,
                         'batch_id' => $batchId,
                         'condition' => $condition,
                         'duplicate_row' => $productKeys[$key],
-                        'current_row' => $index + 1,
+                        'current_row' => $rowNumber,
                     ]
                 );
 
@@ -171,7 +177,7 @@ class EditPenjualan extends EditRecord
                     'items_temp' => $errorMessage,
                 ]);
             }
-            $productKeys[$key] = $index + 1;
+            $productKeys[$key] = $rowNumber;
         }
     }
 
@@ -193,9 +199,7 @@ class EditPenjualan extends EditRecord
                 $incomingItems = $this->itemsToCreate ?? [];
 
                 // Validasi duplikat & format (stok divalidasi per item oleh observer)
-                if (! empty($incomingItems)) {
-                    $this->validateDuplicatesAndFormat($incomingItems);
-                }
+                $this->validateDuplicatesAndFormat($incomingItems);
 
                 $existingItems = $record->items()->get()->keyBy('id_penjualan_item');
 
@@ -470,6 +474,19 @@ class EditPenjualan extends EditRecord
     protected function getSavedNotificationTitle(): ?string
     {
         return 'Penjualan berhasil diupdate.';
+    }
+
+    protected function getSavedNotification(): ?Notification
+    {
+        return Notification::make()
+            ->success()
+            ->title('Data berhasil disimpan')
+            ->body('Perubahan penjualan sudah tersimpan.');
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 
     protected function getHeaderActions(): array

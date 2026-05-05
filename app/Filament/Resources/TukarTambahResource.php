@@ -199,6 +199,7 @@ class TukarTambahResource extends BaseResource
                                         TableRepeater::make('items')
                                             ->label('Daftar Barang Keluar')
                                             ->addActionLabel('+ Tambah Barang')
+                                            ->addable(fn($livewire) => ! ($livewire->record instanceof \App\Models\TukarTambah) || $livewire->record->canEditItems())
                                             ->disabled(fn($livewire) => $livewire->record instanceof \App\Models\TukarTambah && ! $livewire->record->canEditItems())
                                             ->deletable(fn($livewire) => ! ($livewire->record instanceof \App\Models\TukarTambah) || $livewire->record->canEditItems())
                                             ->reorderable(false)
@@ -243,6 +244,10 @@ class TukarTambahResource extends BaseResource
                                             ->schema([
                                                 Select::make('id_produk')
                                                     ->label('Produk')
+                                                    ->disabled(function (Get $get): bool {
+                                                        return filled($get('id_penjualan_item'));
+                                                    })
+                                                    ->dehydrated(true)
                                                     ->options(function (Get $get): array {
                                                         $options = \App\Filament\Resources\PenjualanResource::getAvailableProductOptions();
                                                         $currentId = $get('id_produk');
@@ -279,6 +284,10 @@ class TukarTambahResource extends BaseResource
                                                     }),
                                                 Select::make('kondisi')
                                                     ->label('Kondisi')
+                                                    ->disabled(function (Get $get): bool {
+                                                        return filled($get('id_penjualan_item'));
+                                                    })
+                                                    ->dehydrated(true)
                                                     ->options(function (Get $get): array {
                                                         $productId = (int) ($get('id_produk') ?? 0);
 
@@ -331,7 +340,14 @@ class TukarTambahResource extends BaseResource
                                                     ->searchable()
                                                     ->preload()
                                                     ->reactive()
-                                                    ->disabled(fn(Get $get): bool => ! $get('id_produk'))
+                                                    ->disabled(function (Get $get): bool {
+                                                        if (! $get('id_produk')) {
+                                                            return true;
+                                                        }
+
+                                                        return filled($get('id_penjualan_item'));
+                                                    })
+                                                    ->dehydrated(true)
                                                     ->placeholder('Pilih Batch')
                                                     ->afterStateUpdated(function (Set $set, ?int $state): void {
                                                         if (! $state) {
@@ -360,6 +376,10 @@ class TukarTambahResource extends BaseResource
                                                 TextInput::make('qty')
                                                     ->label('Qty')
                                                     ->numeric()
+                                                    ->disabled(function (Get $get): bool {
+                                                        return filled($get('id_penjualan_item'));
+                                                    })
+                                                    ->dehydrated(true)
                                                     ->step(1)
                                                     ->minValue(1)
                                                     ->maxValue(function (Get $get): ?int {
@@ -368,7 +388,8 @@ class TukarTambahResource extends BaseResource
                                                             return null;
                                                         }
                                                         $condition = $get('kondisi');
-                                                        $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+                                                        $batchId = (int) ($get('id_pembelian_item') ?? 0);
+                                                        $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition, $batchId);
 
                                                         // Add back the original qty if editing an existing item
                                                         $originalQty = (int) ($get('_original_qty') ?? 0);
@@ -381,8 +402,9 @@ class TukarTambahResource extends BaseResource
                                                     ->extraInputAttributes(function (Get $get): array {
                                                         $productId = (int) ($get('id_produk') ?? 0);
                                                         $condition = $get('kondisi');
+                                                        $batchId = (int) ($get('id_pembelian_item') ?? 0);
                                                         $max = $productId > 0
-                                                            ? \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition)
+                                                            ? \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition, $batchId)
                                                             : null;
 
                                                         // Add back the original qty if editing an existing item
@@ -403,7 +425,8 @@ class TukarTambahResource extends BaseResource
                                                             return '';
                                                         }
                                                         $condition = $get('kondisi');
-                                                        $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+                                                        $batchId = (int) ($get('id_pembelian_item') ?? 0);
+                                                        $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition, $batchId);
 
                                                         // Add back the original qty if editing an existing item
                                                         $originalQty = (int) ($get('_original_qty') ?? 0);
@@ -421,9 +444,10 @@ class TukarTambahResource extends BaseResource
                                                         $qty = (int) ($state ?? 0);
                                                         $productId = (int) ($get('id_produk') ?? 0);
                                                         $condition = $get('kondisi');
+                                                        $batchId = (int) ($get('id_pembelian_item') ?? 0);
 
                                                         if ($productId > 0) {
-                                                            $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition);
+                                                            $available = \App\Filament\Resources\PenjualanResource::getAvailableQty($productId, $condition, $batchId);
 
                                                             // Add back the original qty if editing an existing item
                                                             $originalQty = (int) ($get('_original_qty') ?? 0);
@@ -454,7 +478,7 @@ class TukarTambahResource extends BaseResource
                                                     ->numeric()
                                                     ->prefix('Rp')
                                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                                    ->readOnly()
+                                                    ->disabled()
                                                     ->dehydrated(true)
                                                     ->afterStateHydrated(function (TextInput $component, $state, $record) {
                                                         // If state is already filled, do nothing
@@ -498,7 +522,8 @@ class TukarTambahResource extends BaseResource
 
                                                 Hidden::make('serials')
                                                     ->default([])
-                                                    ->reactive(),
+                                                    ->reactive()
+                                                    ->dehydrated(true),
 
                                                 TextInput::make('serials_count')
                                                     ->label('Serial Number & Garansi')
@@ -1031,7 +1056,7 @@ class TukarTambahResource extends BaseResource
                                     ->label('Tanggal')
                                     ->default(now())
                                     ->native(false)
-                                    ->required()
+                                    ->required(fn(Get $get): bool => filled($get('metode_bayar')) || filled($get('jumlah')) || filled($get('bukti_transfer')))
                                     ->validationMessages([
                                         'required' => 'Perlu diisi',
                                     ]),
@@ -1041,7 +1066,7 @@ class TukarTambahResource extends BaseResource
                                         'penjualan' => 'Penjualan',
                                         'pembelian' => 'Pembelian',
                                     ])
-                                    ->required()
+                                    ->required(fn(Get $get): bool => filled($get('metode_bayar')) || filled($get('jumlah')) || filled($get('bukti_transfer')))
                                     ->validationMessages([
                                         'required' => 'Perlu diisi',
                                     ])
@@ -1050,7 +1075,7 @@ class TukarTambahResource extends BaseResource
                                 Select::make('metode_bayar')
                                     ->label('Metode')
                                     ->options(['cash' => 'Tunai', 'transfer' => 'Transfer'])
-                                    ->required()
+                                    ->required(fn(Get $get): bool => filled($get('jumlah')) || filled($get('bukti_transfer')) || filled($get('akun_transaksi_id')))
                                     ->validationMessages([
                                         'required' => 'Perlu diisi',
                                     ])
@@ -1065,12 +1090,10 @@ class TukarTambahResource extends BaseResource
                                     ]),
                                 TextInput::make('jumlah')
                                     ->label('Nominal')
+                                    ->numeric()
                                     ->prefix('Rp')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 0)
-                                    ->required()
-                                    ->validationMessages([
-                                        'required' => 'Perlu diisi',
-                                    ])
+                                    ->dehydrated(true)
                                     ->dehydrateStateUsing(function ($state) {
                                         $cleaned = preg_replace('/[^0-9]/', '', (string) $state);
                                         return (int) $cleaned;

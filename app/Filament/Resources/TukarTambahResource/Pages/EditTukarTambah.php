@@ -274,6 +274,14 @@ class EditTukarTambah extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $rawState = $this->form->getRawState();
+        if (isset($rawState['penjualan']['items']) && is_array($rawState['penjualan']['items'])) {
+            $data['penjualan']['items'] = $rawState['penjualan']['items'];
+        }
+        if (isset($rawState['unified_pembayaran']) && is_array($rawState['unified_pembayaran'])) {
+            $data['unified_pembayaran'] = $rawState['unified_pembayaran'];
+        }
+
         // VALIDASI: cek duplikat dan stok penjualan items
         $penjualanItems = $data['penjualan']['items'] ?? [];
         if (! empty($penjualanItems)) {
@@ -307,7 +315,9 @@ class EditTukarTambah extends EditRecord
 
         // Cek duplikat produk - tidak boleh ada produk+batch+kondisi yang sama persis
         $productKeys = [];
-        foreach ($items as $index => $item) {
+        $rowNumber = 0;
+        foreach ($items as $item) {
+            $rowNumber++;
             $productId = (int) ($item['id_produk'] ?? 0);
             $condition = $item['kondisi'] ?? null;
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
@@ -319,19 +329,19 @@ class EditTukarTambah extends EditRecord
                     $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
                     $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
-                    $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris ".($index + 1).'.';
+                    $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris {$rowNumber}.";
 
                     ValidationLogger::logDuplicate(
                         sourceType: 'TukarTambah',
                         sourceAction: 'update',
                         productName: $productName,
-                        row: $index + 1,
+                        row: $rowNumber,
                         inputData: [
                             'product_id' => $productId,
                             'batch_id' => $batchId,
                             'condition' => $condition,
                             'duplicate_row' => $productKeys[$key],
-                            'current_row' => $index + 1,
+                            'current_row' => $rowNumber,
                         ]
                     );
 
@@ -347,7 +357,7 @@ class EditTukarTambah extends EditRecord
                         'penjualan.items' => $errorMessage,
                     ]);
                 }
-                $productKeys[$key] = $index + 1;
+                $productKeys[$key] = $rowNumber;
             }
         }
 
@@ -375,7 +385,9 @@ class EditTukarTambah extends EditRecord
                 ->all();
         }
 
-        foreach ($items as $index => $item) {
+        $rowNumber = 0;
+        foreach ($items as $item) {
+            $rowNumber++;
             $productId = (int) ($item['id_produk'] ?? 0);
             $qty = (int) ($item['qty'] ?? 0);
             $condition = $item['kondisi'] ?? null;
@@ -406,7 +418,7 @@ class EditTukarTambah extends EditRecord
             }
             $totalQtyMap[$key]['qty'] += $qty;
             $totalQtyMap[$key]['original_qty'] += $originalQty;
-            $totalQtyMap[$key]['rows'][] = $index + 1;
+            $totalQtyMap[$key]['rows'][] = $rowNumber;
         }
 
         // Validasi stok tersedia menggunakan StockBatch (sama seperti Penjualan standar)
@@ -494,10 +506,17 @@ class EditTukarTambah extends EditRecord
                 }
 
                 $tipeTransaksi = $payment['tipe_transaksi'] ?? null;
+                $metodeBayar = $payment['metode_bayar'] ?? null;
+                $jumlah = $this->normalizePaymentAmount($payment['jumlah'] ?? null);
+
+                if (! $tipeTransaksi || ! $metodeBayar || $jumlah <= 0) {
+                    continue;
+                }
 
                 // Remove tipe_transaksi from payment data before saving
                 $paymentData = $payment;
                 unset($paymentData['tipe_transaksi']);
+                $paymentData['jumlah'] = $jumlah;
 
                 if ($tipeTransaksi === 'penjualan') {
                     $penjualanPayments[] = $paymentData;
@@ -850,9 +869,9 @@ class EditTukarTambah extends EditRecord
             }
 
             $metode = $item['metode_bayar'] ?? null;
-            $jumlah = $item['jumlah'] ?? null;
+            $jumlah = $this->normalizePaymentAmount($item['jumlah'] ?? null);
 
-            if (! $metode || $jumlah === null || $jumlah === '') {
+            if (! $metode || $jumlah <= 0) {
                 continue;
             }
 
@@ -861,7 +880,7 @@ class EditTukarTambah extends EditRecord
                 'tanggal' => $item['tanggal'] ?? now(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
-                'jumlah' => (int) $jumlah,
+                'jumlah' => $jumlah,
                 'catatan' => $item['catatan'] ?? null,
                 'bukti_transfer' => $item['bukti_transfer'] ?? null,
             ]);
@@ -876,9 +895,9 @@ class EditTukarTambah extends EditRecord
             }
 
             $metode = $item['metode_bayar'] ?? null;
-            $jumlah = $item['jumlah'] ?? null;
+            $jumlah = $this->normalizePaymentAmount($item['jumlah'] ?? null);
 
-            if (! $metode || $jumlah === null || $jumlah === '') {
+            if (! $metode || $jumlah <= 0) {
                 continue;
             }
 
@@ -887,11 +906,26 @@ class EditTukarTambah extends EditRecord
                 'tanggal' => $item['tanggal'] ?? now(),
                 'metode_bayar' => $metode,
                 'akun_transaksi_id' => $item['akun_transaksi_id'] ?? null,
-                'jumlah' => (int) $jumlah,
+                'jumlah' => $jumlah,
                 'catatan' => $item['catatan'] ?? null,
                 'bukti_transfer' => $item['bukti_transfer'] ?? null,
             ]);
         }
+    }
+
+    protected function normalizePaymentAmount(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_float($value)) {
+            return (int) $value;
+        }
+
+        $cleaned = preg_replace('/[^0-9]/', '', (string) ($value ?? ''));
+
+        return (int) ($cleaned ?: 0);
     }
 
     protected function createPenjualanJasaItems(Penjualan $penjualan, array $items): void
