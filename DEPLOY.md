@@ -36,7 +36,46 @@ npm install && npm run build
 php artisan migrate --force
 ```
 
-### 5. Cache Konfigurasi
+### 5. Sinkronisasi Data
+
+> Langkah ini wajib dijalankan setelah migrasi jika ada perubahan struktur stok/inventory.
+
+#### 5a. Sync StockBatch (Inventory → StockBatch)
+
+```bash
+# Preview: cek PembelianItem tanpa StockBatch & data tidak sinkron
+php artisan inventory:sync-stock-batch --dry-run
+
+# Buat StockBatch untuk PembelianItem yang belum punya batch
+php artisan inventory:sync-stock-batch --fix-missing
+
+# Sync qty_sisa ke StockBatch.qty_available
+php artisan inventory:sync-stock-batch
+```
+
+#### 5b. Sync qty_sisa (StockBatch → PembelianItem)
+
+```bash
+# Preview perubahan (tidak mengubah data)
+php artisan stock:sync-qty-sisa --dry-run
+
+# Jalankan sync
+php artisan stock:sync-qty-sisa
+```
+
+#### 5c. Test WooCommerce Connection (jika aktif)
+
+```bash
+php artisan sync:woocommerce:test
+```
+
+#### 5d. Fix Avatar Storage (jika ada foto karyawan 403)
+
+```bash
+php artisan fix:publish-avatars
+```
+
+### 6. Cache Konfigurasi
 
 ```bash
 php artisan config:cache
@@ -46,10 +85,16 @@ php artisan icon:cache
 php artisan filament:cache-components
 ```
 
-### 6. Restart Queue (jika pakai)
+### 7. Restart Queue (jika pakai)
 
 ```bash
 php artisan queue:restart
+```
+
+### 8. Clear Application Cache
+
+```bash
+php artisan arabica:clear-cache --all
 ```
 
 ---
@@ -61,17 +106,8 @@ php artisan queue:restart
 
 ### Rilis: Fix Sinkronisasi Stok (Mei 2026)
 
-**Setelah Step 5**, jalankan:
+**Sudah tercover di Step 5a & 5b.** Verifikasi tambahan:
 
-```bash
-# Preview perubahan (tidak mengubah data)
-php artisan stock:sync-qty-sisa --dry-run
-
-# Jalankan sync
-php artisan stock:sync-qty-sisa
-```
-
-**Verifikasi:**
 ```bash
 php artisan tinker --execute="
 \$col = \App\Models\PembelianItem::qtySisaColumn();
