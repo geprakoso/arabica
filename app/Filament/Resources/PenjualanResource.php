@@ -771,21 +771,21 @@ class PenjualanResource extends BaseResource
                             ->label('Pembayaran (Split)')
                             ->relationship('pembayaran')
                             ->minItems(0)
-                            ->addable(function (Get $get): bool {
-                                // Grand Total
-                                $items = $get('items_temp') ?? [];
-                                $productTotal = collect($items)->sum(fn($item) => (int) ($item['qty'] ?? 0) * (int) ($item['harga_jual'] ?? 0));
-                                $jasaItems = $get('jasaItems') ?? [];
-                                $serviceTotal = collect($jasaItems)->sum(fn($item) => (int) ($item['qty'] ?? 0) * (int) ($item['harga'] ?? 0));
-                                $diskon = (int) ($get('diskon_total') ?? 0);
-                                $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
+                            // ->addable(function (Get $get): bool {
+                            //     // Grand Total
+                            //     $items = $get('items_temp') ?? [];
+                            //     $productTotal = collect($items)->sum(fn($item) => (int) ($item['qty'] ?? 0) * (int) ($item['harga_jual'] ?? 0));
+                            //     $jasaItems = $get('jasaItems') ?? [];
+                            //     $serviceTotal = collect($jasaItems)->sum(fn($item) => (int) ($item['qty'] ?? 0) * (int) ($item['harga'] ?? 0));
+                            //     $diskon = (int) ($get('diskon_total') ?? 0);
+                            //     $grandTotal = max(0, ($productTotal + $serviceTotal) - $diskon);
 
-                                // Paid
-                                $payments = $get('pembayaran') ?? [];
-                                $paidTotal = collect($payments)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
+                            //     // Paid
+                            //     $payments = $get('pembayaran') ?? [];
+                            //     $paidTotal = collect($payments)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
 
-                                return $grandTotal > $paidTotal;
-                            })
+                            //     return $grandTotal > $paidTotal;
+                            // })
                             ->addActionLabel('Tambah Pembayaran')
                             ->colStyles([
                                 'tanggal' => 'width: 15%;',

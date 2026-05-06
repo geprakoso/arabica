@@ -216,7 +216,7 @@
 
         <div class="summary-strip">
             <div class="summary-item">
-                <div class="sum-value">13</div>
+                <div class="sum-value">14</div>
                 <div class="sum-label"><span class="icon">🛠</span> Total Fixes</div>
             </div>
             <div class="summary-item">
@@ -224,7 +224,7 @@
                 <div class="sum-label"><span class="icon">📦</span> Modules</div>
             </div>
             <div class="summary-item">
-                <div class="sum-value">6</div>
+                <div class="sum-value">7</div>
                 <div class="sum-label"><span class="icon">🔴</span> Critical/High</div>
             </div>
             <div class="summary-item">
@@ -241,6 +241,7 @@
                     <li><strong>Stock Batch (SoT)</strong> menjadi sumber kebenaran tunggal dengan pessimistic locking.</li>
                     <li><strong>Draft → Final state machine</strong> mengontrol versioning dokumen penjualan.</li>
                     <li><strong>Atomic transaction</strong> menjamin operasi stok all-or-nothing.</li>
+                    <li><strong>Fix Pembayaran Tukar Tambah</strong> memastikan status bayar dan stok keluar konsisten.</li>
                 </ul>
             </div>
 
@@ -480,6 +481,12 @@
                         <td><span class="badge badge-impl"><span class="badge-icon">🔵</span> Medium</span></td>
                         <td class="td-feature">Resolve Production</td>
                         <td class="td-detail"><strong>Solusi:</strong> Penyelesaian masalah yang muncul di environment production. <strong>Dampak:</strong> Sistem production kembali stabil dan berjalan normal.</td>
+                    </tr>
+                    <tr>
+                        <td class="td-date">2026-05-05<span class="day">Selasa</span></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Fix Pembayaran Tukar Tambah</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Perbaikan mekanisme pembayaran pada modul tukar tambah, termasuk validasi status pembayaran, perhitungan sisa bayar, dan sinkronisasi dengan stok keluar. <strong>Dampak:</strong> Transaksi tukar tambah kini mencatat status pembayaran (Lunas/Sebagian/Belum) dengan akurat dan tidak menyebabkan inkonsistensi stok.</td>
                     </tr>
                 </tbody>
             </table>

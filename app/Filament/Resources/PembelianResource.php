@@ -468,19 +468,6 @@ class PembelianResource extends BaseResource
                             ->relationship('pembayaran')
                             ->minItems(0)
                             ->addActionLabel('Tambah Pembayaran')
-                            ->addable(function (Get $get) {
-                                $items = $get('items') ?? [];
-                                $jasaItems = $get('jasaItems') ?? [];
-                                $pembayaran = $get('pembayaran') ?? [];
-
-                                $totalBarang = collect($items)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['hpp'] ?? 0)));
-                                $totalJasa = collect($jasaItems)->sum(fn($item) => ((int) ($item['qty'] ?? 0)) * ((int) ($item['harga'] ?? 0)));
-                                $grandTotal = $totalBarang + $totalJasa;
-
-                                $totalPaid = collect($pembayaran)->sum(fn($p) => (int) ($p['jumlah'] ?? 0));
-
-                                return $totalPaid < $grandTotal;
-                            })
                             ->childComponents([
                                 DatePicker::make('tanggal')
                                     ->label('Tanggal')
