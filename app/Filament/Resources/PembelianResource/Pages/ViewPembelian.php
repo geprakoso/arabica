@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PembelianResource\Pages;
 
 use App\Filament\Resources\PembelianResource;
 use App\Filament\Resources\PenjualanResource;
+use App\Models\Pembelian;
 use App\Support\WebpUpload;
 use Filament\Actions\Action;
 use Filament\Actions\StaticAction;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\Alignment;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -90,7 +92,6 @@ class ViewPembelian extends ViewRecord
                     $this->refreshFormData(['foto_dokumen']);
                 }),
 
-            // R16: Edit button - hidden if locked
             Action::make('edit')
                 ->label('Ubah')
                 ->icon('heroicon-m-pencil-square')
@@ -99,50 +100,35 @@ class ViewPembelian extends ViewRecord
                     $this->redirect(PembelianResource::getUrl('edit', ['record' => $this->record]));
                 }),
 
-            // R12, R13: Delete button
             Action::make('delete')
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')
                 ->color('danger')
+                ->visible(fn() => auth()->user()?->hasRole('godmode'))
                 ->requiresConfirmation()
-                ->modalCancelAction(false)
-                ->modalHeading(
-                    fn(): string => $this->record->canDelete()
-                        ? 'Hapus Pembelian'
-                        : 'Tidak Bisa Dihapus'
-                )
-                ->modalIcon(
-                    fn(): string => $this->record->canDelete()
-                        ? 'heroicon-o-trash'
-                        : 'heroicon-o-exclamation-triangle'
-                )
-                ->modalIconColor(
-                    fn(): string => $this->record->canDelete()
-                        ? 'danger'
-                        : 'warning'
-                )
+                ->modalHeading('Konfirmasi Hapus Pembelian')
                 ->modalDescription(function (): string {
-                    if ($this->record->canDelete()) {
-                        return 'Apakah Anda yakin ingin menghapus pembelian ' . $this->record->no_po . '? Tindakan ini tidak dapat dibatalkan.';
+                    $record = $this->record;
+
+                    if (! $record->canDelete()) {
+                        $reasons = [];
+
+                        if (! empty($record->no_tt)) {
+                            $reasons[] = '• Terikat Tukar Tambah: ' . $record->no_tt;
+                        }
+
+                        $notas = $record->getBlockedPenjualanReferences()->pluck('nota')->filter()->values();
+                        if ($notas->isNotEmpty()) {
+                            $reasons[] = '• Dipakai di penjualan: ' . $notas->implode(', ');
+                        }
+
+                        return implode("\n", $reasons) ?: 'Pembelian ini tidak dapat dihapus.';
                     }
 
-                    $reasons = [];
-
-                    // R13: Cek NO TT
-                    if (! empty($this->record->no_tt)) {
-                        $reasons[] = '• Terikat Tukar Tambah: ' . $this->record->no_tt;
-                    }
-
-                    // R12: Cek penjualan
-                    $notas = $this->record->getBlockedPenjualanReferences()->pluck('nota')->filter()->values();
-                    if ($notas->isNotEmpty()) {
-                        $reasons[] = '• Dipakai di penjualan: ' . $notas->implode(', ');
-                    }
-
-                    return implode("\n", $reasons) ?: 'Pembelian ini tidak dapat dihapus.';
+                    return 'Apakah Anda yakin ingin menghapus pembelian **' . $record->no_po . '**? Langkah ini tidak dapat dibatalkan.';
                 })
-                ->modalSubmitAction(fn() => $this->record->canDelete() ? null : false)
-                ->modalCancelActionLabel('Tutup')
+                ->modalSubmitActionLabel('Lanjutkan ke Langkah 2')
+                ->modalCancelActionLabel('Batal')
                 ->extraModalFooterActions(function (): array {
                     if ($this->record->canDelete()) {
                         return [];
@@ -167,101 +153,87 @@ class ViewPembelian extends ViewRecord
                 })
                 ->action(function (): void {
                     if (! $this->record->canDelete()) {
+                        $this->replaceMountedAction('deleteBlocked');
                         return;
                     }
 
-                    try {
-                        $this->record->delete();
-                    } catch (ValidationException $exception) {
-                        // Godmode: Start Force Delete Flow (Step 1 -> Step 2)
-                        if (auth()->user()?->hasRole('godmode')) {
-                            $this->replaceMountedAction('forceDeleteStep2');
-                            return;
-                        }
-
-                        $messages = collect($exception->errors())
-                            ->flatten()
-                            ->implode(' ');
-
-                        $this->deleteBlockedMessage = $messages ?: 'Gagal menghapus pembelian.';
-                        $this->deleteBlockedPenjualanReferences = $this->record->getBlockedPenjualanReferences()->all();
-                        $this->replaceMountedAction('deleteBlocked');
-                        $this->halt(true);
-                    }
-
-                    $this->redirect(PembelianResource::getUrl('index'));
+                    $this->replaceMountedAction('deleteStep2');
                 }),
+
+            // Action::make('deleteBlocked')
+            //     ->modalHeading('Tidak Bisa Dihapus')
+            //     ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus pembelian.')
+            //     ->modalIcon('heroicon-o-exclamation-triangle')
+            //     ->modalIconColor('danger')
+            //     ->modalWidth('md')
+            //     ->modalAlignment(Alignment::Center)
+            //     ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            //     ->modalFooterActionsAlignment(Alignment::Center)
+            //     ->modalSubmitAction(false)
+            //     ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
+            //     ->color('danger'),
         ];
     }
 
-    protected function deleteBlockedAction(): Action
+    public function deleteStep2Action(): Action
     {
-        return Action::make('deleteBlocked')
-            ->modalHeading('Gagal menghapus')
-            ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus pembelian.')
-            ->modalIcon('heroicon-o-exclamation-triangle')
-            ->modalIconColor('danger')
-            ->modalWidth('md')
-            ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
-            ->modalFooterActionsAlignment(Alignment::Center)
-            ->modalSubmitAction(false)
-            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
-            ->color('danger');
-    }
-
-    // Force Delete Step 2: Show affected Penjualan
-    public function forceDeleteStep2Action(): Action
-    {
-        return Action::make('forceDeleteStep2')
-            ->modalHeading('⚠️ Perhatian!')
-            ->modalDescription(function () {
+        return Action::make('deleteStep2')
+            ->modalHeading('⚠️ Dampak Penghapusan')
+            ->modalDescription(function (): string {
                 $record = $this->record;
-                $isTukarTambah = $record->tukarTambah()->exists();
+                $desc = "**Anda akan menghapus pembelian {$record->no_po}.**\n\n";
 
-                $desc = '';
+                $itemsCount = $record->items()->count();
+                if ($itemsCount > 0) {
+                    $desc .= "**Item barang yang akan dihapus ({$itemsCount}):**\n";
+                    foreach ($record->items->take(5) as $item) {
+                        $productName = $item->produk?->nama_produk ?? 'Unknown';
+                        $desc .= "- {$productName} (Qty: {$item->qty}, HPP: Rp " . number_format($item->hpp ?? 0, 0, ',', '.') . ")\n";
+                    }
+                    if ($itemsCount > 5) {
+                        $desc .= '- dan ' . ($itemsCount - 5) . " item lainnya...\n";
+                    }
+                    $desc .= "\n";
+                }
 
-                if ($isTukarTambah) {
+                $jasaCount = $record->jasaItems()->count();
+                if ($jasaCount > 0) {
+                    $desc .= "**Item jasa yang akan dihapus ({$jasaCount})**\n\n";
+                }
+
+                $paymentCount = $record->pembayaran()->count();
+                if ($paymentCount > 0) {
+                    $totalPayment = number_format($record->pembayaran->sum('jumlah'), 0, ',', '.');
+                    $desc .= "**Data pembayaran yang akan dihapus ({$paymentCount}):**\n";
+                    $desc .= "Total: Rp {$totalPayment}\n\n";
+                }
+
+                if ($record->tukarTambah()->exists()) {
                     $ttKode = $record->tukarTambah?->kode ?? 'TT-XXXXX';
-                    $desc .= "⚠️ Dengan menghapus pembelian ini, Tukar Tambah ({$ttKode}) akan diputus. dan mungkin akan tidak dapat diakses lagi.\n\n";
+                    $desc .= "**⚠️ PERINGATAN: Pembelian ini bagian dari Tukar Tambah ({$ttKode}).**\n";
+                    $desc .= "Tukar Tambah akan kehilangan relasi pembelian-nya.\n\n";
                 }
 
-                $affectedNotas = $record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
-                if (empty($affectedNotas)) {
-                    $desc .= 'Tidak ada Penjualan yang terpengaruh. Lanjutkan untuk konfirmasi password.';
-                } else {
-                    $notaList = implode(', ', $affectedNotas);
-                    $desc .= "Penjualan berikut akan ditandai sebagai 'Nerf' (kehilangan referensi batch pembelian):\n\n**{$notaList}**";
-                }
+                $desc .= 'Apakah Anda yakin ingin melanjutkan?';
 
                 return $desc;
             })
-            ->modalIcon('heroicon-o-exclamation-circle')
+            ->modalIcon('heroicon-o-exclamation-triangle')
             ->modalIconColor('warning')
             ->modalWidth('md')
             ->modalSubmitActionLabel('Lanjutkan ke Konfirmasi Password')
+            ->modalCancelActionLabel('Batal')
             ->action(function (): void {
-                $this->replaceMountedAction('forceDeleteStep3');
+                $this->replaceMountedAction('deleteStep3');
             })
             ->color('warning');
     }
 
-    // Force Delete Step 3: Password Confirmation + Final List
-    public function forceDeleteStep3Action(): Action
+    public function deleteStep3Action(): Action
     {
-        return Action::make('forceDeleteStep3')
+        return Action::make('deleteStep3')
             ->modalHeading('🔐 Konfirmasi Password')
-            ->modalDescription(function () {
-                $affectedNotas = $this->record->getBlockedPenjualanReferences()->pluck('nota')->toArray();
-
-                $desc = "Masukkan password Anda untuk mengkonfirmasi penghapusan permanen.\n\n";
-                if (! empty($affectedNotas)) {
-                    $notaList = implode(', ', $affectedNotas);
-                    $desc .= "**Penjualan yang akan di-Nerf:** {$notaList}";
-                }
-
-                return $desc;
-            })
+            ->modalDescription('Masukkan password Anda untuk mengkonfirmasi penghapusan. Tindakan ini tidak dapat dibatalkan.')
             ->modalIcon('heroicon-o-lock-closed')
             ->modalIconColor('danger')
             ->modalWidth('md')
@@ -272,13 +244,13 @@ class ViewPembelian extends ViewRecord
                     ->required()
                     ->placeholder('Masukkan password akun Anda'),
             ])
-            ->modalSubmitActionLabel('🔥 Hapus Permanen')
+            ->modalSubmitActionLabel('🔥 Hapus Pembelian')
+            ->modalCancelActionLabel('Batal')
             ->action(function (array $data): void {
                 $user = auth()->user();
 
-                // Verify password
-                if (! $user || ! \Illuminate\Support\Facades\Hash::check($data['password'], $user->password)) {
-                    \Filament\Notifications\Notification::make()
+                if (! $user || ! Hash::check($data['password'], $user->password)) {
+                    Notification::make()
                         ->title('Password salah')
                         ->body('Password yang Anda masukkan tidak sesuai.')
                         ->danger()
@@ -287,20 +259,24 @@ class ViewPembelian extends ViewRecord
                     return;
                 }
 
-                // Execute force delete
-                $result = $this->record->forceDeleteWithCascade();
+                try {
+                    $this->record->delete();
+                } catch (ValidationException $exception) {
+                    $messages = collect($exception->errors())
+                        ->flatten()
+                        ->implode(' ');
 
-                $affectedCount = $result['affected_penjualan']->count();
-                $affectedNotas = $result['affected_penjualan']->pluck('no_nota')->implode(', ');
+                    Notification::make()
+                        ->title('Gagal menghapus')
+                        ->body($messages ?: 'Terjadi kesalahan saat menghapus.')
+                        ->danger()
+                        ->send();
 
-                $body = 'Pembelian berhasil dihapus.';
-                if ($affectedCount > 0) {
-                    $body .= " {$affectedCount} Penjualan ditandai sebagai Nerf: {$affectedNotas}";
+                    return;
                 }
 
-                \Filament\Notifications\Notification::make()
-                    ->title('Force Delete Berhasil')
-                    ->body($body)
+                Notification::make()
+                    ->title('Pembelian berhasil dihapus')
                     ->success()
                     ->send();
 

@@ -1084,6 +1084,7 @@ class PembelianResource extends BaseResource
                         }),
                     Tables\Actions\DeleteAction::make()
                         ->icon('heroicon-m-trash')
+                        ->visible(fn() => auth()->user()?->hasRole('godmode'))
                         ->modalCancelAction(false)
                         ->requiresConfirmation()
                         ->modalHeading(
@@ -1108,12 +1109,10 @@ class PembelianResource extends BaseResource
 
                             $reasons = [];
 
-                            // R13: Cek NO TT
                             if (! empty($record->no_tt)) {
                                 $reasons[] = '• Terikat Tukar Tambah: ' . $record->no_tt;
                             }
 
-                            // R12: Cek penjualan
                             $notas = $record->getBlockedPenjualanReferences()->pluck('nota')->filter()->values();
                             if ($notas->isNotEmpty()) {
                                 $reasons[] = '• Dipakai di penjualan: ' . $notas->implode(', ');
@@ -1155,9 +1154,10 @@ class PembelianResource extends BaseResource
                         ->label('Hapus')
                         ->icon('heroicon-m-trash')
                         ->color('danger')
+                        ->visible(fn() => auth()->user()?->hasRole('godmode'))
                         ->requiresConfirmation()
                         ->modalCancelAction(false)
-                        ->modalHeading('Hapus Pembelian')
+                        ->modalHeading('⚠️ Hapus Pembelian')
                         ->modalIcon('heroicon-o-trash')
                         ->modalIconColor('danger')
                         ->modalContent(function (\Illuminate\Database\Eloquent\Collection $records): \Illuminate\Support\HtmlString {
@@ -1166,7 +1166,6 @@ class PembelianResource extends BaseResource
 
                             $html = '<div class="space-y-4 text-sm">';
 
-                            // Bisa dihapus
                             if ($canDelete->isNotEmpty()) {
                                 $html .= '<div>';
                                 $html .= '<p class="font-semibold text-success-600 dark:text-success-400 mb-1">✅ Akan dihapus (' . $canDelete->count() . ')</p>';
@@ -1180,7 +1179,6 @@ class PembelianResource extends BaseResource
                                 $html .= '</div>';
                             }
 
-                            // Tidak bisa dihapus
                             if ($blocked->isNotEmpty()) {
                                 $html .= '<div>';
                                 $html .= '<p class="font-semibold text-danger-600 dark:text-danger-400 mb-1">⛔ Tidak bisa dihapus (' . $blocked->count() . ')</p>';
@@ -1209,19 +1207,41 @@ class PembelianResource extends BaseResource
                                 $html .= '</div>';
                             }
 
-                            // Semua terblokir
                             if ($canDelete->isEmpty()) {
                                 $html .= '<p class="text-center text-gray-500 dark:text-gray-400 text-xs pt-1">Tidak ada pembelian yang bisa dihapus dari pilihan ini.</p>';
                             }
+
+                            $html .= '<div class="mt-4 p-3 bg-warning-50 dark:bg-warning-900/20 rounded-lg border border-warning-200 dark:border-warning-800">';
+                            $html .= '<p class="text-warning-800 dark:text-warning-200 text-xs"><strong>⚠️ Perhatian:</strong> Stok akan dikembalikan dan data terkait (StockBatch, StockMutation) akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>';
+                            $html .= '</div>';
 
                             $html .= '</div>';
 
                             return new \Illuminate\Support\HtmlString($html);
                         })
-                        ->modalSubmitActionLabel('Hapus yang Bisa Dihapus')
+                        ->form([
+                            \Filament\Forms\Components\TextInput::make('password')
+                                ->label('Konfirmasi Password')
+                                ->password()
+                                ->required()
+                                ->placeholder('Masukkan password akun Anda'),
+                        ])
+                        ->modalSubmitActionLabel('🔥 Hapus yang Bisa Dihapus')
                         ->modalCancelActionLabel('Batal')
                         ->deselectRecordsAfterCompletion()
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records): void {
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data): void {
+                            $user = auth()->user();
+
+                            if (! $user || ! \Illuminate\Support\Facades\Hash::check($data['password'], $user->password)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Password salah')
+                                    ->body('Password yang Anda masukkan tidak sesuai.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
                             $deleted = 0;
                             $skipped = 0;
 
