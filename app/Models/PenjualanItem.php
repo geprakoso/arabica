@@ -46,7 +46,9 @@ class PenjualanItem extends Model
 
         static::created(function (PenjualanItem $item): void {
             DB::transaction(function () use ($item) {
-                self::applyStockMutation($item, -1 * (int) $item->qty, 'sale');
+                $isTukarTambah = $item->penjualan?->sumber_transaksi === 'tukar_tambah';
+                $mutationType = $isTukarTambah ? 'sale_tt' : 'sale';
+                self::applyStockMutation($item, -1 * (int) $item->qty, $mutationType);
                 self::recalculatePenjualanTotals($item);
             });
         });
@@ -58,24 +60,24 @@ class PenjualanItem extends Model
                 $newBatchId = (int) $item->id_pembelian_item;
                 $newQty = (int) $item->qty;
 
-                // ✅ FIX: Skip stock mutation jika batch dan qty tidak berubah
-                // Mencegah double return/deduction saat edit tanpa perubahan material
                 if ($originalBatchId === $newBatchId && $originalQty === $newQty) {
                     self::recalculatePenjualanTotals($item);
 
                     return;
                 }
 
-                // Kembalikan stok lama
+                $isTukarTambah = $item->penjualan?->sumber_transaksi === 'tukar_tambah';
+
                 if ($originalBatchId) {
                     $originalItem = clone $item;
                     $originalItem->id_pembelian_item = $originalBatchId;
                     $originalItem->qty = $originalQty;
-                    self::applyStockMutation($originalItem, $originalQty, 'sale_return');
+                    $returnType = $isTukarTambah ? 'sale_return_tt' : 'sale_return';
+                    self::applyStockMutation($originalItem, $originalQty, $returnType);
                 }
 
-                // Kurangi stok baru
-                self::applyStockMutation($item, -1 * $newQty, 'sale');
+                $saleType = $isTukarTambah ? 'sale_tt' : 'sale';
+                self::applyStockMutation($item, -1 * $newQty, $saleType);
 
                 self::recalculatePenjualanTotals($item);
             });
@@ -83,7 +85,9 @@ class PenjualanItem extends Model
 
         static::deleted(function (PenjualanItem $item): void {
             DB::transaction(function () use ($item) {
-                self::applyStockMutation($item, (int) $item->qty, 'sale_return');
+                $isTukarTambah = $item->penjualan?->sumber_transaksi === 'tukar_tambah';
+                $returnType = $isTukarTambah ? 'sale_return_tt' : 'sale_return';
+                self::applyStockMutation($item, (int) $item->qty, $returnType);
                 self::recalculatePenjualanTotals($item);
             });
         });
@@ -167,26 +171,33 @@ class PenjualanItem extends Model
             throw new \RuntimeException("StockBatch tidak ditemukan untuk PembelianItem #{$batchId}. Pastikan sudah melakukan sync stok.");
         }
 
+        $isTukarTambah = $item->penjualan?->sumber_transaksi === 'tukar_tambah';
+        $referenceType = $isTukarTambah ? 'TukarTambah' : 'PenjualanItem';
+        $referenceId = $isTukarTambah
+            ? ($item->penjualan?->tukarTambah?->getKey() ?? $item->id_penjualan_item)
+            : $item->id_penjualan_item;
+
         if ($qtyDelta < 0) {
             StockBatch::decrementWithLock(
                 $stockBatch->id,
                 abs($qtyDelta),
                 [
                     'type' => $mutationType,
-                    'reference_type' => 'PenjualanItem',
-                    'reference_id' => $item->id_penjualan_item,
-                    'notes' => "Penjualan: {$item->qty} unit",
+                    'reference_type' => $referenceType,
+                    'reference_id' => $referenceId,
+                    'notes' => ($isTukarTambah ? 'Tukar Tambah' : 'Penjualan') . ": {$item->qty} unit",
                 ]
             );
         } elseif ($qtyDelta > 0) {
+            $incrementType = $mutationType === 'sale_return_tt' ? 'sale_return_tt' : 'sale_return';
             StockBatch::incrementWithLock(
                 $stockBatch->id,
                 $qtyDelta,
                 [
-                    'type' => 'sale_return',
-                    'reference_type' => 'PenjualanItem',
-                    'reference_id' => $item->id_penjualan_item,
-                    'notes' => "Return/Cancel: {$qtyDelta} unit",
+                    'type' => $incrementType,
+                    'reference_type' => $referenceType,
+                    'reference_id' => $referenceId,
+                    'notes' => ($isTukarTambah ? 'Return Tukar Tambah' : 'Return/Cancel') . ": {$qtyDelta} unit",
                 ]
             );
         }

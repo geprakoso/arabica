@@ -97,15 +97,23 @@ class PembelianItem extends Model
                     'qty_available' => $item->qty_sisa ?? $item->qty_masuk ?? $item->qty,
                 ]);
 
+                $isTukarTambah = $item->pembelian?->tukarTambah()->exists();
+                $mutationType = $isTukarTambah ? 'purchase_tt' : 'purchase';
+                $referenceType = $isTukarTambah ? 'TukarTambah' : 'PembelianItem';
+                $referenceId = $isTukarTambah
+                    ? $item->pembelian?->tukarTambah?->getKey()
+                    : $item->id_pembelian_item;
+                $notesPrefix = $isTukarTambah ? 'Stok masuk dari Tukar Tambah' : 'Stok masuk dari pembelian';
+
                 StockMutation::create([
                     'stock_batch_id' => $stockBatch->id,
-                    'type' => 'purchase',
+                    'type' => $mutationType,
                     'qty_change' => $item->qty,
                     'qty_before' => 0,
                     'qty_after' => $item->qty_sisa ?? $item->qty_masuk ?? $item->qty,
-                    'reference_type' => 'PembelianItem',
-                    'reference_id' => $item->id_pembelian_item,
-                    'notes' => 'Stok masuk dari pembelian: ' . $item->qty . ' unit',
+                    'reference_type' => $referenceType,
+                    'reference_id' => $referenceId,
+                    'notes' => $notesPrefix . ': ' . $item->qty . ' unit',
                 ]);
             }
         });
@@ -214,16 +222,14 @@ class PembelianItem extends Model
         });
 
         static::deleted(function (PembelianItem $item): void {
-            // Clean up associated StockBatch and its mutations
             $stockBatch = StockBatch::where('pembelian_item_id', $item->getKey())->first();
             if ($stockBatch) {
-                // Delete mutations first (foreign key dependency)
                 StockMutation::where('stock_batch_id', $stockBatch->id)->delete();
                 $stockBatch->delete();
             }
 
             $item->pembelian?->recalculatePaymentStatus();
-            $item->pembelian?->clearCalculationCache();  // ✅ Clear cache saat item dihapus
+            $item->pembelian?->clearCalculationCache();
         });
     }
 
