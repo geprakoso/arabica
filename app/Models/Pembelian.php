@@ -127,7 +127,7 @@ class Pembelian extends Model
      */
     public function clearCalculationCache(): void
     {
-        CacheHelper::flush([CacheHelper::TAG_PEMBELIAN]);
+        CacheHelper::flush([CacheHelper::TAG_PEMBELIAN, CacheHelper::TAG_PEMBELIAN . ':paid']);
     }
 
     public static function generatePO(): string
@@ -195,9 +195,8 @@ class Pembelian extends Model
      */
     public function getStatusAttribute(): string
     {
-        // Gunakan total_paid jika sudah di-set, jika tidak hitung dari pembayaran
-        $paid = $this->total_paid ?? $this->calculateTotalPaidCached();
-        $total = $this->grand_total ?? $this->calculateTotalPembelianCached();
+        $paid = $this->total_paid > 0 ? (float) $this->total_paid : $this->calculateTotalPaidCached();
+        $total = $this->grand_total > 0 ? (float) $this->grand_total : $this->calculateTotalPembelianCached();
 
         return $paid >= $total ? 'LUNAS' : 'TEMPO';
     }
@@ -207,10 +206,10 @@ class Pembelian extends Model
      */
     public function getKelebihanAttribute(): float
     {
-        $paid = $this->total_paid ?? $this->calculateTotalPaidCached();
-        $total = $this->grand_total ?? $this->calculateTotalPembelianCached();
+        $paid = $this->total_paid > 0 ? (float) $this->total_paid : $this->calculateTotalPaidCached();
+        $total = $this->grand_total > 0 ? (float) $this->grand_total : $this->calculateTotalPembelianCached();
 
-        return max(0, $paid - $total);
+        return max(0, (float) $paid - (float) $total);
     }
 
     /**
@@ -382,12 +381,10 @@ class Pembelian extends Model
         $totalPaid = (float) ($this->pembayaran()->sum('jumlah') ?? 0);
         $status = $total <= 0 || $totalPaid >= $total ? 'lunas' : 'tempo';
 
-        if ($this->jenis_pembayaran === $status) {
-            return;
-        }
-
         $this->forceFill([
             'jenis_pembayaran' => $status,
+            'grand_total' => $total,
+            'total_paid' => $totalPaid,
         ])->saveQuietly();
     }
 

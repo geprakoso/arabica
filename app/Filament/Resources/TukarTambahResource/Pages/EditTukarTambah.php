@@ -35,6 +35,11 @@ class EditTukarTambah extends EditRecord
         return [];
     }
 
+    protected function getRedirectUrl(): string
+    {
+        return TukarTambahResource::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         $record = $this->record;
@@ -44,7 +49,7 @@ class EditTukarTambah extends EditRecord
                 ->label('Simpan')
                 ->icon('heroicon-m-check-circle')
                 ->formId('form')
-                ->disabled(fn () => ! $record->canEditItems() && ! $record->canEditPayment()),
+                ->disabled(fn() => ! $record->canEditItems() && ! $record->canEditPayment()),
             $this->getCancelFormAction()
                 ->label('Batal')
                 ->icon('heroicon-m-x-mark')
@@ -54,7 +59,7 @@ class EditTukarTambah extends EditRecord
                 ->label('Hapus')
                 ->icon('heroicon-m-trash')
                 ->color('danger')
-                ->visible(fn () => $record->canDelete())
+                ->visible(fn() => $record->canDelete())
                 ->requiresConfirmation()
                 ->modalHeading('Hapus Tukar Tambah')
                 ->modalDescription('Tukar tambah yang masih dipakai transaksi lain akan diblokir.')
@@ -106,27 +111,27 @@ class EditTukarTambah extends EditRecord
     {
         return Action::make('deleteBlocked')
             ->modalHeading('Gagal menghapus')
-            ->modalDescription(fn () => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
+            ->modalDescription(fn() => $this->deleteBlockedMessage ?? 'Gagal menghapus tukar tambah.')
             ->modalIcon('heroicon-o-exclamation-triangle')
             ->modalIconColor('danger')
             ->modalWidth('md')
             ->modalAlignment(Alignment::Center)
-            ->modalFooterActions(fn () => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
+            ->modalFooterActions(fn() => $this->buildPenjualanFooterActions($this->deleteBlockedPenjualanReferences))
             ->modalFooterActionsAlignment(Alignment::Center)
             ->modalSubmitAction(false)
-            ->modalCancelAction(fn (StaticAction $action) => $action->label('Tutup'))
+            ->modalCancelAction(fn(StaticAction $action) => $action->label('Tutup'))
             ->color('danger');
     }
 
     protected function buildPenjualanFooterActions(array $references): array
     {
         return collect($references)
-            ->filter(fn (array $reference) => ! empty($reference['id']))
+            ->filter(fn(array $reference) => ! empty($reference['id']))
             ->map(function (array $reference, int $index) {
                 $nota = $reference['nota'] ?? null;
-                $label = $nota ? 'Lihat '.$nota : 'Lihat Penjualan';
+                $label = $nota ? 'Lihat ' . $nota : 'Lihat Penjualan';
 
-                return StaticAction::make('viewPenjualan'.$index)
+                return StaticAction::make('viewPenjualan' . $index)
                     ->button()
                     ->label($label)
                     ->url(PenjualanResource::getUrl('view', ['record' => $reference['id'] ?? 0]))
@@ -179,7 +184,7 @@ class EditTukarTambah extends EditRecord
                     ->values()
                     ->all(),
                 'jasa_items' => $penjualan->jasaItems
-                    ->map(fn (PenjualanJasa $item): array => [
+                    ->map(fn(PenjualanJasa $item): array => [
                         'jasa_id' => $item->jasa_id,
                         'qty' => (int) ($item->qty ?? 0),
                         'harga' => (int) ($item->harga ?? 0),
@@ -218,9 +223,10 @@ class EditTukarTambah extends EditRecord
         // Unified payments
         $unifiedPayments = [];
         if ($penjualan) {
-            $unifiedPayments = array_merge($unifiedPayments,
+            $unifiedPayments = array_merge(
+                $unifiedPayments,
                 $penjualan->pembayaran
-                    ->map(fn (PenjualanPembayaran $item): array => [
+                    ->map(fn(PenjualanPembayaran $item): array => [
                         'tipe' => 'penjualan',
                         'tanggal' => $item->tanggal?->format('Y-m-d'),
                         'metode_bayar' => $item->metode_bayar,
@@ -234,9 +240,10 @@ class EditTukarTambah extends EditRecord
             );
         }
         if ($pembelian) {
-            $unifiedPayments = array_merge($unifiedPayments,
+            $unifiedPayments = array_merge(
+                $unifiedPayments,
                 $pembelian->pembayaran
-                    ->map(fn (PembelianPembayaran $item): array => [
+                    ->map(fn(PembelianPembayaran $item): array => [
                         'tipe' => 'pembelian',
                         'tanggal' => $item->tanggal?->format('Y-m-d'),
                         'metode_bayar' => $item->metode_bayar,
@@ -310,10 +317,10 @@ class EditTukarTambah extends EditRecord
             $batchId = (int) ($item['id_pembelian_item'] ?? 0);
 
             if ($productId > 0) {
-                $key = $productId.'|'.($condition ?? '').'|'.$batchId;
+                $key = $productId . '|' . ($condition ?? '') . '|' . $batchId;
 
                 if (isset($productKeys[$key])) {
-                    $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
+                    $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #' . $productId;
                     $batchInfo = $batchId > 0 ? ' (batch sama)' : '';
                     $conditionInfo = $condition ? " (kondisi: {$condition})" : '';
                     $errorMessage = "Produk '{$productName}'{$conditionInfo}{$batchInfo} sudah ada di baris {$productKeys[$key]}. Hapus duplikat di baris {$rowNumber}.";
@@ -364,7 +371,7 @@ class EditTukarTambah extends EditRecord
             $existingAllocations = \App\Models\PenjualanItem::whereIn('id_penjualan_item', $existingItemIds)
                 ->get()
                 ->keyBy('id_penjualan_item')
-                ->map(fn ($item) => [
+                ->map(fn($item) => [
                     'qty' => (int) $item->qty,
                     'batch_id' => (int) $item->id_pembelian_item,
                     'product_id' => (int) $item->id_produk,
@@ -391,7 +398,7 @@ class EditTukarTambah extends EditRecord
                 continue;
             }
 
-            $key = $productId.'|'.($condition ?? '').'|'.$batchId;
+            $key = $productId . '|' . ($condition ?? '') . '|' . $batchId;
 
             if (! isset($totalQtyMap[$key])) {
                 $totalQtyMap[$key] = [
@@ -433,8 +440,8 @@ class EditTukarTambah extends EditRecord
             $availableQty += $originalQty;
 
             if ($availableQty < $requestedQty) {
-                $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #'.$productId;
-                $rowInfo = count($rows) > 1 ? ' (baris: '.implode(', ', $rows).')' : '';
+                $productName = \App\Models\Produk::find($productId)?->nama_produk ?? 'Produk #' . $productId;
+                $rowInfo = count($rows) > 1 ? ' (baris: ' . implode(', ', $rows) . ')' : '';
                 $errorMessage = "Stok tidak cukup untuk {$productName}{$rowInfo}. Tersedia: {$availableQty}, Dibutuhkan: {$requestedQty}";
 
                 ValidationLogger::logStock(
@@ -619,9 +626,9 @@ class EditTukarTambah extends EditRecord
             })
             ->with(['penjualanItems.penjualan'])
             ->get()
-            ->flatMap(fn (PembelianItem $item) => $item->penjualanItems)
-            ->filter(fn ($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
-            ->map(fn ($item) => $item->penjualan?->no_nota)
+            ->flatMap(fn(PembelianItem $item) => $item->penjualanItems)
+            ->filter(fn($item) => ! $penjualanId || (int) $item->id_penjualan !== $penjualanId)
+            ->map(fn($item) => $item->penjualan?->no_nota)
             ->filter()
             ->unique()
             ->values();
@@ -728,11 +735,11 @@ class EditTukarTambah extends EditRecord
             ->lockForUpdate();
 
         $batches = $batchesQuery->get();
-        $available = (int) $batches->sum(fn (\App\Models\StockBatch $batch): int => $batch->qty_available);
+        $available = (int) $batches->sum(fn(\App\Models\StockBatch $batch): int => $batch->qty_available);
 
         if ($available < $qty) {
             throw ValidationException::withMessages([
-                'penjualan.items' => 'Qty melebihi stok tersedia ('.$available.').',
+                'penjualan.items' => 'Qty melebihi stok tersedia (' . $available . ').',
             ]);
         }
 
@@ -874,7 +881,7 @@ class EditTukarTambah extends EditRecord
         if (is_array($value)) {
             $value = collect($value)
                 ->flatten()
-                ->filter(fn ($amount): bool => filled($amount))
+                ->filter(fn($amount): bool => filled($amount))
                 ->first();
         }
 
@@ -900,7 +907,7 @@ class EditTukarTambah extends EditRecord
         if (is_array($value)) {
             $first = collect($value)
                 ->flatten()
-                ->filter(fn ($path): bool => is_string($path) && $path !== '')
+                ->filter(fn($path): bool => is_string($path) && $path !== '')
                 ->first();
 
             return $first ?: null;

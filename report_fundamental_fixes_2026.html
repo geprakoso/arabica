@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fundamental Fixes Report — 24 April – 5 Mei 2026</title>
-    <meta name="description" content="Laporan perbaikan sistem periode 24 April – 5 Mei 2026">
+    <title>Fundamental Fixes Report — 24 April – 6 Mei 2026</title>
+    <meta name="description" content="Laporan perbaikan sistem periode 24 April – 6 Mei 2026">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -210,13 +210,13 @@
                     Technical Deep-Dive Report
                 </div>
                 <h1 class="banner-title">Fundamental Fixes Report</h1>
-                <p class="banner-subtitle">Periode 24 April – 5 Mei 2026 &nbsp;|&nbsp; Inventory, Penjualan, Pembelian &amp; Dokumen Lifecycle</p>
+                <p class="banner-subtitle">Periode 24 April – 6 Mei 2026 &nbsp;|&nbsp; Inventory, Penjualan, Pembelian &amp; Dokumen Lifecycle</p>
             </div>
         </header>
 
         <div class="summary-strip">
             <div class="summary-item">
-                <div class="sum-value">14</div>
+                <div class="sum-value">15</div>
                 <div class="sum-label"><span class="icon">🛠</span> Total Fixes</div>
             </div>
             <div class="summary-item">
@@ -242,6 +242,7 @@
                     <li><strong>Draft → Final state machine</strong> mengontrol versioning dokumen penjualan.</li>
                     <li><strong>Atomic transaction</strong> menjamin operasi stok all-or-nothing.</li>
                     <li><strong>Fix Pembayaran Tukar Tambah</strong> memastikan status bayar dan stok keluar konsisten.</li>
+                    <li><strong>Disable Addable Repeater</strong> mencegah penambahan item tidak valid di form transaksi.</li>
                 </ul>
             </div>
 
@@ -435,6 +436,12 @@
                         <td class="td-detail"><strong>Solusi:</strong> Perbaikan pada proses exiting file dokumen (attachment/bukti) agar file dapat diakses dan diunduh dengan benar. <strong>Dampak:</strong> Dokumen attachment yang diupload pada transaksi penjualan dan tukar tambah kini persisten dan tidak hilang saat edit/view.</td>
                     </tr>
                     <tr>
+                        <td class="td-date">2026-05-06<span class="day">Rabu</span></td>
+                        <td><span class="badge badge-bugfix"><span class="badge-icon">🟠</span> High</span></td>
+                        <td class="td-feature">Hapus Fungsi Addable pada Repeatable Penjualan &amp; Pembelian</td>
+                        <td class="td-detail"><strong>Solusi:</strong> Menonaktifkan fungsi <code>addable</code> pada komponen repeatable (repeater) item di form Penjualan dan Pembelian untuk mencegah penambahan item kosong atau duplikat yang tidak terkontrol. <strong>Dampak:</strong> User tidak lagi bisa menambah item baru secara manual melalui tombol tambah di repeater; item hanya dapat ditambah melalui mekanisme FIFO/selector yang valid, mengurangi human error dan inkonsistensi data transaksi.</td>
+                    </tr>
+                    <tr>
                         <td class="td-date">2026-04-13<span class="day">Senin</span></td>
                         <td><span class="badge badge-bugfix"><span class="badge-icon">🟠</span> High</span></td>
                         <td class="td-feature">Tukar Tambah Solve</td>
@@ -535,7 +542,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
-                Generated from Git commits &amp; technical docs — Filtered 24 Apr – 5 Mei 2026
+                Generated from Git commits &amp; technical docs —                 Filtered 24 Apr – 6 Mei 2026
             </div>
             <div class="footer-right">
                 Arabica System · Fundamental Fixes v2026.05

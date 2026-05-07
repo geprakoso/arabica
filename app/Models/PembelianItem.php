@@ -82,43 +82,32 @@ class PembelianItem extends Model
             }
         });
 
-        // R02: Tangkap error database unique constraint
         static::saved(function (PembelianItem $item): void {
             $item->pembelian?->recalculatePaymentStatus();
             $item->pembelian?->clearCalculationCache();
         });
 
-        // Handle database unique constraint violation dengan notifikasi
-        static::saved(function () {
-            // Tidak melakukan apa-apa, sudah ditangani di creating
-        });
-
-        // Override default exception handling untuk unique constraint
-        static::creating(function (PembelianItem $item) {
-            try {
-                // Validasi sudah dilakukan di atas
-            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-                throw ValidationException::withMessages([
-                    'items' => 'GAGAL SIMPAN: Produk dengan kondisi yang sama tidak boleh duplikat.'
-                ]);
-            }
-        });
-
-        // R01: Auto-create stock batch saat item dibuat
+        // R01: Auto-create stock batch dan stock mutation saat item dibuat
         static::created(function (PembelianItem $item): void {
             if ($item->qty > 0) {
-                StockBatch::create([
+                $stockBatch = StockBatch::create([
                     'pembelian_item_id' => $item->id_pembelian_item,
                     'produk_id' => $item->id_produk ?? $item->produk_id ?? $item->id_barang,
                     'qty_total' => $item->qty,
                     'qty_available' => $item->qty_sisa ?? $item->qty_masuk ?? $item->qty,
                 ]);
-            }
-        });
 
-        // R01b: Hapus stock batch saat item dihapus (untuk Tukar Tambah cascade delete)
-        static::deleted(function (PembelianItem $item): void {
-            $item->stockBatch?->delete();
+                StockMutation::create([
+                    'stock_batch_id' => $stockBatch->id,
+                    'type' => 'purchase',
+                    'qty_change' => $item->qty,
+                    'qty_before' => 0,
+                    'qty_after' => $item->qty_sisa ?? $item->qty_masuk ?? $item->qty,
+                    'reference_type' => 'PembelianItem',
+                    'reference_id' => $item->id_pembelian_item,
+                    'notes' => 'Stok masuk dari pembelian: ' . $item->qty . ' unit',
+                ]);
+            }
         });
 
         static::updating(function (PembelianItem $item): void {
