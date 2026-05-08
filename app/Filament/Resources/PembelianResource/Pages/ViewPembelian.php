@@ -106,7 +106,9 @@ class ViewPembelian extends ViewRecord
                 ->color('danger')
                 ->visible(fn() => auth()->user()?->hasRole('godmode'))
                 ->requiresConfirmation()
-                ->modalHeading('Konfirmasi Hapus Pembelian')
+                ->modalHeading(fn() => $this->record->canDelete() ? 'Konfirmasi Hapus Pembelian' : 'Tidak Bisa Dihapus')
+                ->modalIcon(fn() => $this->record->canDelete() ? 'heroicon-o-trash' : 'heroicon-o-exclamation-triangle')
+                ->modalIconColor(fn() => $this->record->canDelete() ? 'danger' : 'warning')
                 ->modalDescription(function (): string {
                     $record = $this->record;
 
@@ -127,8 +129,8 @@ class ViewPembelian extends ViewRecord
 
                     return 'Apakah Anda yakin ingin menghapus pembelian **' . $record->no_po . '**? Langkah ini tidak dapat dibatalkan.';
                 })
-                ->modalSubmitActionLabel('Lanjutkan ke Langkah 2')
-                ->modalCancelActionLabel('Batal')
+                ->modalSubmitAction(fn() => $this->record->canDelete() ? null : false)
+                ->modalCancelAction(false)
                 ->extraModalFooterActions(function (): array {
                     if ($this->record->canDelete()) {
                         return [];
@@ -152,11 +154,6 @@ class ViewPembelian extends ViewRecord
                         ->all();
                 })
                 ->action(function (): void {
-                    if (! $this->record->canDelete()) {
-                        $this->replaceMountedAction('deleteBlocked');
-                        return;
-                    }
-
                     $this->replaceMountedAction('deleteStep2');
                 }),
 
@@ -222,7 +219,7 @@ class ViewPembelian extends ViewRecord
             ->modalIconColor('warning')
             ->modalWidth('md')
             ->modalSubmitActionLabel('Lanjutkan ke Konfirmasi Password')
-            ->modalCancelActionLabel('Batal')
+            ->modalCancelAction(false)
             ->action(function (): void {
                 $this->replaceMountedAction('deleteStep3');
             })
@@ -245,7 +242,7 @@ class ViewPembelian extends ViewRecord
                     ->placeholder('Masukkan password akun Anda'),
             ])
             ->modalSubmitActionLabel('🔥 Hapus Pembelian')
-            ->modalCancelActionLabel('Batal')
+            ->modalCancelAction(false)
             ->action(function (array $data): void {
                 $user = auth()->user();
 
